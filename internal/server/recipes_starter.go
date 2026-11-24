@@ -47,18 +47,24 @@ func (c *itemCtx) markStarter(j recipeJSON, e starter.Entry) recipeJSON {
 	return j
 }
 
-// starterMatches are the starter recipes a search and a category keep, in the order of the approved list.
+// starterMatches are the starter recipes a search and a category keep, sorted A to Z by name.
 func (c *itemCtx) starterMatches(q, cat string) []starter.Entry {
-	var out []starter.Entry
+	type hit struct {
+		e   starter.Entry
+		key string
+	}
+	var hits []hit
 	for _, e := range starter.All() {
 		r := e.Recipe(c.lang)
 		if (cat == "" || string(r.Category) == cat) && recipe.Matches(r, q) {
-			out = append(out, e)
+			hits = append(hits, hit{e, recipe.NameKey(r.Name)})
 		}
 	}
-	slices.SortStableFunc(out, func(a, b starter.Entry) int {
-		return strings.Compare(recipe.NameKey(a.Recipe(c.lang).Name), recipe.NameKey(b.Recipe(c.lang).Name))
-	})
+	slices.SortStableFunc(hits, func(a, b hit) int { return strings.Compare(a.key, b.key) })
+	out := make([]starter.Entry, len(hits))
+	for i, h := range hits {
+		out[i] = h.e
+	}
 	return out
 }
 
@@ -86,7 +92,7 @@ func (s *server) handleStarterRecipes(w http.ResponseWriter, r *http.Request) {
 		filters = append(filters, rcpFilter{Href: listHrefAt(starterPath, q, string(k)), Symbol: k.Symbol(), Text: c.categoryName(k), Current: cat == string(k)})
 	}
 	data := map[string]any{
-		"Lead": c.t("recipes.starter.lead", "n", strconv.Itoa(len(starter.All()))), "Rows": rows, "Q": q, "Cat": cat, "Filters": filters, "Searching": q != "" || cat != "",
+		"Lead": c.t("recipes.starter.lead", "n", strconv.Itoa(starter.Count())), "Rows": rows, "Q": q, "Cat": cat, "Filters": filters, "Searching": q != "" || cat != "",
 		"FreeText": s.freeText(c.st), "ClearHref": listHrefAt(starterPath, "", cat), "AllHref": starterPath, "OwnHref": recipesPath,
 		"Parent": auth.RoleAllows(p.person.Role, auth.Perm("meals", auth.Write)),
 	}

@@ -156,7 +156,7 @@ func (s *server) handleRecipes(w http.ResponseWriter, r *http.Request) {
 	data := map[string]any{
 		"Rows": rows, "Q": q, "Cat": cat, "Parent": parent, "Filters": filters, "Any": len(list) > 0, "Searching": q != "" || cat != "",
 		"FreeText": s.freeText(c.st), "ClearHref": listHref("", cat), "AllHref": recipesPath, "NewHref": recipesPath + "/new",
-		"StarterHref": starterPath, "StarterLink": c.t("recipes.starter.link", "n", strconv.Itoa(len(starter.All()))),
+		"StarterHref": starterPath, "StarterLink": c.t("recipes.starter.link", "n", strconv.Itoa(starter.Count())),
 	}
 	switch {
 	case q != "":

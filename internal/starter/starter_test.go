@@ -163,7 +163,7 @@ func TestIngredientsAreLibraryArticlesOrFreeText(t *testing.T) {
 	if got[1].ArticleID != "butter" || got[1].Amount != 25 || got[1].Unit != "g" {
 		t.Errorf("butter line = %+v", got[1])
 	}
-	if got[2].Unit != "tbsp" || got[2].ArticleID != "" {
+	if got[2].Unit != "tbsp" || got[2].ArticleID != "wheat-flour" {
 		t.Errorf("flour line = %+v", got[2])
 	}
 	if got[5].Amount != 0 || got[5].Unit != "" || got[5].ArticleID != "salt" {
@@ -236,6 +236,114 @@ func TestALineWithAnAlternativeStaysFreeText(t *testing.T) {
 			if in.ArticleID != "" && (strings.Contains(in.Text, " oder ") || strings.Contains(in.Text, " und ")) && !strings.Contains(in.Text, "(") {
 				t.Errorf("%s: %q is an article", e.Slug, in.Text)
 			}
+		}
+	}
+}
+
+func TestCountIsTheNumberOfRecipes(t *testing.T) {
+	if starter.Count() != 200 || starter.Count() != len(starter.All()) {
+		t.Errorf("Count = %d", starter.Count())
+	}
+}
+
+// Review of #329: the file spelling is not the library's ("Mehl" for Weizenmehl),
+// so a reviewed map finds the article and the allergy check does not miss it.
+func TestRahmspinatFlourIsWheatFlourAndWarnsAGlutenAllergy(t *testing.T) {
+	e, _ := starter.ByID("starter-rahmspinat")
+	flour := e.Recipe("de").Ingredients[2]
+	art, ok := library.ShippedByID(flour.ArticleID)
+	if !ok || flour.ArticleID != "wheat-flour" {
+		t.Fatalf("flour = %+v", flour)
+	}
+	w := library.Warnings(art, []library.Person{{ID: "p1", Allergens: []string{"gluten"}}, {ID: "p2"}})
+	if len(w) != 1 || !slices.Equal(w[0].People, []string{"p1"}) || !slices.Equal(w[0].Allergens, []string{"gluten"}) {
+		t.Errorf("warnings = %+v", w)
+	}
+}
+
+// One group per allergen: the names of the files and the article they mean.
+func TestAllergenIngredientsUnderAnotherSpellingResolveToTheirArticle(t *testing.T) {
+	groups := map[string]map[string]string{
+		"gluten": {"Mehl": "wheat-flour", "Mehl Type 405": "wheat-flour", "Mehl Type 550": "wheat-flour", "Weizenvollkornmehl": "wheat-flour",
+			"Dinkelvollkornmehl": "spelt-flour", "Semmelbrösel": "bread-crumbs", "Brösel": "bread-crumbs", "Penne": "pasta", "Tortillas": "tortilla-wraps"},
+		"eggs":      {"Eigelb": "eggs", "Eiweiß": "eggs", "Bio-Eier": "eggs"},
+		"milk":      {"Schlagsahne": "cream", "Vollmilch": "milk", "Schmand": "sour-cream", "Magerquark": "quark", "Butterschmalz": "butter", "Naturjoghurt": "yoghurt"},
+		"soy":       {"Sojasauce": "soy-sauce"},
+		"mustard":   {"Dijonsenf": "mustard"},
+		"sulphites": {"Weißweinessig": "vinegar", "Rotwein": "wine", "Weißwein": "wine"},
+	}
+	for group, names := range groups {
+		for name, want := range names {
+			seen := 0
+			for _, e := range starter.All() {
+				for _, in := range e.Recipe("de").Ingredients {
+					if strings.SplitN(in.Text, " (", 2)[0] != name {
+						continue
+					}
+					seen++
+					if in.ArticleID != want {
+						t.Errorf("%s: %s in %s is %q, want %q", group, name, e.Slug, in.ArticleID, want)
+					}
+				}
+			}
+			if seen == 0 {
+				t.Errorf("%s: no recipe has %q any more; pick another example", group, name)
+			}
+		}
+	}
+	// The carrot of the library is the Möhre of the files.
+	for _, e := range starter.All() {
+		for _, in := range e.Recipe("de").Ingredients {
+			if strings.HasPrefix(in.Text, "Möhren") && in.ArticleID != "carrots" {
+				t.Errorf("%s: %q is %q", e.Slug, in.Text, in.ArticleID)
+			}
+		}
+	}
+}
+
+// A line with an alternative stays free text even when the map knows the first name.
+func TestAMappedNameWithAnAlternativeStaysFreeText(t *testing.T) {
+	for _, e := range starter.All() {
+		for _, in := range e.Recipe("de").Ingredients {
+			head := strings.SplitN(in.Text, " (", 2)[0]
+			if strings.Contains(head, " oder ") && in.ArticleID != "" {
+				t.Errorf("%s: %q is %q", e.Slug, in.Text, in.ArticleID)
+			}
+		}
+	}
+}
+
+// Review of #329: a length of ginger is one piece, but the length stays in the text.
+func TestALengthStaysInTheText(t *testing.T) {
+	cases := map[string][2]string{
+		"starter-kichererbsen-curry":      {"Ingwer (Stück, 5 cm)", "Ginger (piece, 5 cm)"},
+		"starter-haehnchen-teriyaki-reis": {"Ingwer (ein Stück, 2 cm)", "Ginger (one piece, 2 cm)"},
+	}
+	for id, want := range cases {
+		e, ok := starter.ByID(id)
+		if !ok {
+			t.Fatalf("%s not found", id)
+		}
+		found := 0
+		for i, lang := range langs {
+			for _, in := range e.Recipe(lang).Ingredients {
+				if in.Text == want[i] {
+					found++
+					if in.Unit != "piece" || in.Amount != 1 || in.ArticleID != "ginger" {
+						t.Errorf("%s: %+v", id, in)
+					}
+				}
+			}
+		}
+		if found != 2 {
+			t.Errorf("%s: %d of 2 languages show the length (%v)", id, found, want)
+		}
+	}
+	// A note that already says the length is not doubled.
+	e, _ := starter.ByID("starter-gemuesestrudel-paprikasauce")
+	for _, in := range e.Recipe("de").Ingredients {
+		if strings.Contains(in.Text, "Ingwer") && strings.Count(in.Text, "cm") != 1 {
+			t.Errorf("length doubled: %q", in.Text)
 		}
 	}
 }

@@ -32,7 +32,7 @@ func TestTheAPIListsTheStarterCollectionAndReadsOneRecipe(t *testing.T) {
 	if butter := ings[1].(map[string]any); butter["article_id"] != "butter" || butter["quantity"] != float64(25) || butter["unit"] != "g" {
 		t.Errorf("butter = %v", butter)
 	}
-	if flour := ings[2].(map[string]any); flour["unit"] != "tbsp" || flour["article_id"] != nil {
+	if flour := ings[2].(map[string]any); flour["unit"] != "tbsp" || flour["article_id"] != "wheat-flour" {
 		t.Errorf("flour = %v", flour)
 	}
 	if status, _, list := c.call(http.MethodGet, "/starter-recipes?category=snack", nil); status != http.StatusOK || len(list) != 10 {

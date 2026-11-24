@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -114,6 +115,12 @@ func All() []Entry {
 	return slices.Clone(entries)
 }
 
+// Count is the number of recipes, without copying them.
+func Count() int {
+	load()
+	return len(entries)
+}
+
 // ByID finds a starter recipe by its id ("starter-rahmspinat").
 func ByID(id string) (Entry, bool) {
 	load()
@@ -167,7 +174,14 @@ func ingredient(in rawIngredient, lang string, arts []library.Article) recipe.In
 	if in.Amount != nil {
 		out.Amount = *in.Amount
 	}
+	var length string // "5 cm": a length becomes one piece, but stays in the text
 	if in.Unit != nil {
+		if *in.Unit == "cm" {
+			length = strconv.FormatFloat(out.Amount, 'f', -1, 64) + " cm"
+			if lang == "de" {
+				length = strings.Replace(length, ".", ",", 1)
+			}
+		}
 		u, amount, ok := MapUnit(*in.Unit, out.Amount)
 		if !ok {
 			panic("starter: unit spelling without a mapping: " + *in.Unit)
@@ -188,8 +202,15 @@ func ingredient(in rawIngredient, lang string, arts []library.Article) recipe.In
 	if out.Text == "" {
 		out.Text = other
 	}
-	if note != nil && strings.TrimSpace(*note) != "" {
-		out.Text += " (" + strings.TrimSpace(*note) + ")"
+	var n string
+	if note != nil {
+		n = strings.TrimSpace(*note)
+	}
+	if length != "" && !strings.Contains(n, length) {
+		n = strings.Join(slices.DeleteFunc([]string{n, length}, func(s string) bool { return s == "" }), ", ")
+	}
+	if n != "" {
+		out.Text += " (" + n + ")"
 	}
 	return out
 }
@@ -199,15 +220,21 @@ func ingredient(in rawIngredient, lang string, arts []library.Article) recipe.In
 // allergen is missed because the first name is an article.
 var alternative = []string{"oder", "und", "bzw.", "sowie", "or", "and"}
 
-// resolve finds the article a German ingredient name means: the whole name, or
-// an article's name followed by a description ("Linsen, rot").
+func alternativeWord(w string) bool { return slices.Contains(alternative, w) }
+
+// resolve finds the article a German ingredient name means: a reviewed spelling
+// of the files, the whole name, or an article's name followed by a description
+// ("Linsen, rot").
 func resolve(name string, arts []library.Article) (library.Article, bool) {
+	if a, ok := spelled(name, arts); ok {
+		return a, true
+	}
 	if a, ok := library.Resolve(name, arts); ok {
 		return a, true
 	}
 	if a, rest, ok := library.LeadingName(name, arts); ok {
 		for _, w := range strings.Fields(strings.ToLower(rest)) {
-			if slices.Contains(alternative, strings.Trim(w, ",;()")) {
+			if alternativeWord(strings.Trim(w, ",;()")) {
 				return library.Article{}, false
 			}
 		}
@@ -229,7 +256,8 @@ var units = map[string]string{
 
 // MapUnit turns a spelling of the files into a recipe unit and the amount in
 // it. Centilitres become millilitres; a length ("5 cm" of ginger) becomes one
-// piece, so no ingredient is free text because of its unit. ok is false for a
+// piece, so no ingredient is free text because of its unit (the line keeps the
+// length in its text). ok is false for a
 // spelling nobody decided.
 func MapUnit(spelling string, amount float64) (key string, converted float64, ok bool) {
 	switch spelling {

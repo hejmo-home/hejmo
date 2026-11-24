@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/badge"
+	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/task"
 )
 
@@ -487,4 +488,28 @@ func TestThePersonPageSaysBadgesStayStoredWhileTheSwitchIsOff(t *testing.T) {
 
 func taskWithStars(person string) task.Task {
 	return task.Task{PersonID: person, Title: "Tidy room", Repeat: task.Daily, Date: "2026-11-01", Stars: 2}
+}
+
+func TestMCPReadsBadgesUnderTheTasksAreaAndCannotWriteThem(t *testing.T) {
+	t.Parallel()
+	rb := newRewardBox(t)
+	c := rb.parent
+	c.switchMCP(t, true)
+	s := c.mcpSession(t, c.newMCPToken(t, "Claude", allAreas))
+	var names []string
+	for _, tool := range server.MCPTools() {
+		if strings.Contains(tool.Name, "badge") {
+			names = append(names, tool.Name)
+			if tool.Permission.Resource != "tasks" || tool.Method != http.MethodGet {
+				t.Errorf("%s: %s %s, want a read in the tasks area", tool.Name, tool.Method, tool.Permission)
+			}
+		}
+	}
+	if len(names) != 1 || names[0] != "get_badges" {
+		t.Fatalf("badge tools = %v, want only get_badges", names)
+	}
+	rb.book(t, rb.miaID, 100)
+	if out, failed := callTool(s, "get_badges", map[string]any{"id": rb.miaID}); failed || !strings.Contains(out, "stars_100") || !strings.Contains(out, "first_star") {
+		t.Errorf("get_badges = %v %s", failed, out)
+	}
 }

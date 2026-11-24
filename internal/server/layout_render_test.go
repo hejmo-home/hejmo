@@ -29,6 +29,7 @@ import (
 	"github.com/chromedp/chromedp"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
+	"github.com/hejmo-home/hejmo/internal/badge"
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/contact"
@@ -329,6 +330,7 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	f.outlook = f.addOutlook(t)
 	f.rewards = f.addRewards(t)
 	f.addRequests(t)
+	f.addBadges(t)
 	if r := f.post("/caldav/tokens", url.Values{"name": {"iPhone von Friedrich mit langem Gerätenamen"}}); r.status != http.StatusOK {
 		t.Fatalf("CalDAV token = %d\n%s", r.status, r.body)
 	}
@@ -609,10 +611,18 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 		}
 	}
 	pages = append(pages, rewardFormPages(t, f)...)
+	// The badges of three children (#295): six of them two new, all ten, none. The crawl renders only the first
+	// person's page, so the others are added by hand.
+	for _, id := range []string{f.ids[3], f.ids[2], f.ids[4]} {
+		if p := "/tasks/badges/" + id; !have[p] {
+			add(parent, p)
+		}
+	}
 	// The child's personal device shows lists as tiles by default (#166): the tiles of articles with a picture, a symbol and the warning of several people, and of free text.
 	kid := siteOf("child personal device", f.box, f.kid.client)
 	add(kid, "/tasks")
 	add(kid, "/tasks/rewards")
+	add(kid, "/tasks/badges") // the child with all ten badges (#295)
 	add(kid, "/lists")
 	add(kid, "/lists/"+f.lists[0])
 	add(kid, "/lists/"+f.lists[1])
@@ -622,6 +632,8 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	add(display, "/display")
 	add(display, "/display/person/"+f.ids[1])
 	add(display, "/display/person/"+f.ids[3])
+	add(display, "/display/person/"+f.ids[2]) // the badges at the foot of the days (#295): all ten, six of them (two new), none
+	add(display, "/display/person/"+f.ids[4])
 	add(display, "/display/lists/"+f.lists[0])
 	add(display, "/display/lists/"+f.lists[1])
 	add(display, "/display/saver")
@@ -1377,6 +1389,29 @@ func (f *layoutFixture) addRewards(t *testing.T) []string {
 		t.Fatal(err)
 	}
 	return []string{redeemed, never, byHand, gone}
+}
+
+// addBadges gives three children their badges (#295): Konstantin six, two of them new (today and yesterday),
+// Anna-Lena all ten (the child of the personal device), Wilhelmine none. The store awards by history only, so
+// the rows are written as if earned at these moments.
+func (f *layoutFixture) addBadges(t *testing.T) {
+	t.Helper()
+	give := func(who string, keys []badge.Key, days []int) {
+		t.Helper()
+		// What the fixture's own history awarded on the way is replaced by the dates below.
+		if _, err := f.db.SQL().Exec(`DELETE FROM badges WHERE person_id = ?`, f.people[who].ID); err != nil {
+			t.Fatal(err)
+		}
+		for i, k := range keys {
+			at := f.at(days[i], 9, 30).UTC().Format(time.RFC3339)
+			if _, err := f.db.SQL().Exec(`INSERT OR IGNORE INTO badges (household_id, person_id, key, earned_at, quiet) VALUES (?, ?, ?, ?, 0)`, f.householdID, f.people[who].ID, string(k), at); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	give("Konstantin", []badge.Key{badge.FirstStar, badge.FirstRoutine, badge.WholeDay, badge.Streak7, badge.Stars100, badge.FirstReward}, []int{2, 2, 5, 9, 13, 14})
+	give("Anna-Lena", badge.Catalogue, []int{1, 1, 3, 6, 8, 1, 9, 12, 7, 14})
+	give("Wilhelmine", nil, nil)
 }
 
 // addRequests makes the open requests of the layout fixture (#292): every child asks for two rewards, so

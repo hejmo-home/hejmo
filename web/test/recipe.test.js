@@ -41,6 +41,14 @@ test('a chosen suggestion sets the article and its variety, and clears a variety
   assert.deepEqual(JSON.parse(JSON.stringify(ctx.rcpOptionFields({ free: true }))), { article: '', variety: '' }, 'free text: no article, no variety');
 });
 
+test('retyping the name of a line drops its variety unless the name is still the same one', () => {
+  assert.equal(ctx.rcpKeepsVariety('Mehl · Type 405', 'Zucker'), false);
+  assert.equal(ctx.rcpKeepsVariety('Mehl · Type 405', 'Mehl · Type 550'), true, 'same article name, the variety is part of the text');
+  assert.equal(ctx.rcpKeepsVariety('Mehl', 'mehl '), true);
+  assert.equal(ctx.rcpKeepsVariety('Mehl', 'Mehlsack'), false);
+  assert.equal(ctx.rcpKeepsVariety('', 'Zucker'), true, 'a new line has no variety to lose');
+});
+
 test('the portions stepper stays between 1 and 99 and starts from a sensible number', () => {
   assert.equal(ctx.rcpStep('4', 1), 5);
   assert.equal(ctx.rcpStep('4', -1), 3);

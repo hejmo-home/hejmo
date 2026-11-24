@@ -538,6 +538,20 @@ func TestACraftedCategoryIsRefusedInWordsNotWithTheStoresMessage(t *testing.T) {
 	}
 }
 
+func TestACraftedMealtimeIsNamedInTheSummaryLink(t *testing.T) {
+	t.Parallel()
+	rb := newRecipeBox(t)
+	f := rcpFormOf("Crafted", lines(nil, nil, nil))
+	f["mealtime"] = []string{"midnight"}
+	r := rb.save(t, "/meals/recipes", f)
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("save = %d", r.status)
+	}
+	if !strings.Contains(r.body, "the mealtimes") || strings.Contains(r.body, "unknown mealtime") {
+		t.Errorf("the summary does not name the mealtimes in words:\n%s", r.body)
+	}
+}
+
 func TestTheEditFormTellsInWordsWhatHejmoMadeOfEachIngredient(t *testing.T) {
 	t.Parallel()
 	rb := newRecipeBox(t)

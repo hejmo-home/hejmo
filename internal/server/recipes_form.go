@@ -332,6 +332,12 @@ func (c *itemCtx) buildRecipe(f *rcpForm, known []string, existing []store.Recip
 	if !recipe.ValidCategory(string(r.Category)) {
 		is.add("rcp", c.t("recipes.err.link.category")) // only a crafted request: the form offers the categories
 	}
+	for _, m := range r.Mealtimes {
+		if !meal.Mealtime(m).Valid() {
+			is.add("rcp", c.t("recipes.err.link.mealtimes")) // only a crafted request: the form offers the mealtimes
+			break
+		}
+	}
 	if r.Portions < 1 || r.Portions > recipe.MaxPortions {
 		is.Portions = c.t("recipes.err.portions")
 		is.add("rcp", c.t("recipes.err.link.portions"))

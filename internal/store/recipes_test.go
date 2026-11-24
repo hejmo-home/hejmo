@@ -115,6 +115,8 @@ func TestANameIsTakenIgnoringCaseAndSpacesAndTheErrorNamesTheExistingRecipe(t *t
 	}
 }
 
+// A regression guard, not a fix: the store opens SQLite with _txlock=immediate, so write transactions run one
+// at a time and the name check inside the transaction already sees the first save.
 func TestTwoParentsSavingTheSameNewNameAtOnceGetTheNameTakenError(t *testing.T) {
 	f := newRewardFixture(t)
 	const n = 8

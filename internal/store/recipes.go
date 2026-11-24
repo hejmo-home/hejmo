@@ -173,18 +173,6 @@ func nameTaken(q interface {
 	return &RecipeNameTakenError{ExistingID: id, ExistingName: existing}
 }
 
-// nameRace turns the database's unique-name rule into the name-taken error: two
-// parents saved the same new name at once and the other one was first.
-func (db *DB) nameRace(err error, householdID, name, except string) error {
-	if !isUniqueViolation(err) || !strings.Contains(err.Error(), "recipes.name_key") {
-		return err
-	}
-	if taken := nameTaken(db.sql, householdID, name, except); taken != nil {
-		return taken
-	}
-	return err
-}
-
 func writeRecipeParts(tx *sql.Tx, id string, r recipe.Recipe) error {
 	for i, in := range r.Ingredients {
 		if _, err := tx.Exec(`INSERT INTO recipe_ingredients (recipe_id, position, amount, unit, text, article_id, variety) VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -225,7 +213,7 @@ func (db *DB) CreateRecipe(householdID, personID string, r recipe.Recipe) (Recip
 	if _, err := tx.Exec(`INSERT INTO recipes (id, household_id, name, name_key, category, portions, minutes, mealtimes, tips, source, created_by, created_at, updated_by, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, ''), ?, NULLIF(?, ''), ?)`,
 		id, householdID, r.Name, recipe.NameKey(r.Name), string(r.Category), r.Portions, r.Minutes, strings.Join(r.Mealtimes, ","), r.Tips, r.Source, personID, ts, personID, ts); err != nil {
-		return Recipe{}, db.nameRace(err, householdID, r.Name, "")
+		return Recipe{}, err
 	}
 	if err := writeRecipeParts(tx, id, r); err != nil {
 		return Recipe{}, err
@@ -262,7 +250,7 @@ func (db *DB) UpdateRecipe(householdID, personID string, r recipe.Recipe) (Recip
 	if _, err := tx.Exec(`UPDATE recipes SET name = ?, name_key = ?, category = ?, portions = ?, minutes = ?, mealtimes = ?, tips = ?, source = ?, updated_by = NULLIF(?, ''), updated_at = ?
 		WHERE id = ? AND household_id = ?`,
 		r.Name, recipe.NameKey(r.Name), string(r.Category), r.Portions, r.Minutes, strings.Join(r.Mealtimes, ","), r.Tips, r.Source, personID, now(), id, householdID); err != nil {
-		return Recipe{}, db.nameRace(err, householdID, r.Name, id)
+		return Recipe{}, err
 	}
 	for _, t := range []string{"recipe_ingredients", "recipe_steps", "recipe_tags"} {
 		if _, err := tx.Exec(`DELETE FROM `+t+` WHERE recipe_id = ?`, id); err != nil {

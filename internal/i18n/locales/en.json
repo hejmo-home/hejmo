@@ -4693,6 +4693,7 @@
   "recipes.err.link.portions": "the servings",
   "recipes.err.link.minutes": "the time",
   "recipes.err.link.category": "the category",
+  "recipes.err.link.mealtimes": "the mealtimes",
   "recipes.err.link.save": "the recipe",
   "recipes.err.link.ing": "ingredient {n}",
   "recipes.err.link.step": "step {n}",

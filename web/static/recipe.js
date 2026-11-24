@@ -32,6 +32,13 @@ function rcpOptionFields(opt) {
   return { text: rcpOptionText(opt.name, variety), article: opt.article || "", variety: variety };
 }
 
+// rcpKeepsVariety says whether a line keeps its variety when its name changes from `was` to `now`: yes while
+// the name before the middle dot is still the same one (ignoring case and spaces), and for a line that had no name.
+function rcpKeepsVariety(was, now) {
+  var key = function (t) { return String(t || "").split("·")[0].replace(/\s+/g, " ").trim().toLowerCase(); };
+  return key(was) === "" || key(was) === key(now);
+}
+
 // rcpStep moves a number one step up or down within 1 and 99 (portions).
 function rcpStep(value, dir) {
   var n = parseInt(String(value).trim(), 10);
@@ -56,6 +63,9 @@ function rcpFocusAfter(count, removed) { return Math.min(removed, count - 1); }
   if (!form) return;
   var base = form.getAttribute("data-suggest");
   var MAX = { ing: 100, step: 100 };
+
+  var named = form.querySelectorAll("input.in");
+  for (var q = 0; q < named.length; q++) named[q].setAttribute("data-was", named[q].value);
 
   function list(kind) { return form.querySelector('[data-lines="' + kind + '"]'); }
   function template(kind) { return form.querySelector('template[data-line="' + kind + '"]'); }
@@ -179,6 +189,8 @@ function rcpFocusAfter(count, removed) { return Math.min(removed, count - 1); }
     if (el.matches && el.matches("input.in")) {
       var li = el.closest("li.ing");
       li.querySelector('input[name="ing_article"]').value = ""; // typing again: Hejmo matches the name when it saves
+      var vi = li.querySelector('input[name="ing_variety"]');
+      if (vi && !rcpKeepsVariety(el.getAttribute("data-was"), el.value)) vi.value = ""; // another name, another article: not this variety
       clearTimeout(timer);
       timer = setTimeout(function () { ask(li, el.value); }, 200);
     }
@@ -193,6 +205,7 @@ function rcpFocusAfter(count, removed) { return Math.min(removed, count - 1); }
     var name = li.querySelector("input.in");
     var f = rcpOptionFields({ free: opt.hasAttribute("data-free"), name: opt.getAttribute("data-name"), variety: opt.getAttribute("data-variety"), article: opt.getAttribute("data-article") });
     if (f.text !== undefined) name.value = f.text;
+    name.setAttribute("data-was", name.value);
     li.querySelector('input[name="ing_article"]').value = f.article;
     li.querySelector('input[name="ing_variety"]').value = f.variety;
     serial++;

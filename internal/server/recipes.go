@@ -3,6 +3,8 @@ package server
 import (
 	"errors"
 	"fmt"
+	"html"
+	"html/template"
 	"net/http"
 	"slices"
 	"strings"
@@ -63,7 +65,8 @@ func (c *itemCtx) recipeIngredient(in recipe.IngredientInput) (recipe.Ingredient
 			art = &it
 		} else if a, rest, ok := library.LeadingName(name, c.visibleArticles()); ok {
 			if it, ok := c.article(a.ID); ok {
-				art, name = &it, a.Name(c.lang)
+				art = &it
+				name = strings.TrimRight(strings.TrimSuffix(name, rest), " \t,·-:") // the name as typed, without the variety
 				if strings.TrimSpace(variety) == "" {
 					variety = rest
 				}
@@ -129,6 +132,26 @@ func (c *itemCtx) freeNames(r recipe.Recipe) []string {
 // warnings are the family's allergy warnings of a recipe, one per allergen.
 func (c *itemCtx) warnings(r recipe.Recipe) []library.Warning {
 	return recipe.Warnings(c.articlesOf(r), c.st.persons)
+}
+
+// warnLines are warning lines in words: "Contains peanuts: ● Mia is allergic",
+// as the library says it (#164) with the allergens in lower case in English,
+// as the sentence runs on in the preview of ticket 279. One line per group.
+func (c *itemCtx) warnLines(ws []library.Warning) []template.HTML {
+	out := make([]template.HTML, 0, len(ws))
+	for _, w := range ws {
+		key := "lib.warn.one"
+		if len(w.People) > 1 {
+			key = "lib.warn.many"
+		}
+		words := c.s.allergenWords(c.lang, w.Allergens)
+		if c.lang == "en" {
+			words = strings.ToLower(words)
+		}
+		text := repl(html.EscapeString(c.s.i18n.T(c.lang, key)), "{allergens}", html.EscapeString(words), "{who}", c.s.whoHTML(c.st, w.People))
+		out = append(out, template.HTML(`<span class="allergen-warn">`+triangleIcon+`<span>`+text+`</span></span>`)) // #nosec G203 -- names escaped, the text is ours
+	}
+	return out
 }
 
 // ---- REST API

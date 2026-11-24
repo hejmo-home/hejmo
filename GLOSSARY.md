@@ -425,6 +425,10 @@ _Avoid_: alias, display name
 A category a contact belongs to: family, childcare and school, doctors, emergency, other, or one a parent adds.
 _Avoid_: tag, label, category
 
+**Contact photo**:
+The one square JPEG (at most 512 by 512 pixels, no metadata) of a contact, set by a parent from the camera or gallery or sent by a phone over contact sync. Without one, Hejmo shows the initials of the Hejmo name.
+_Avoid_: avatar, profile picture
+
 **Birthdays calendar**:
 The generated, read-only calendar of the birthdays in the address book: one yearly all-day event per contact, titled with the Hejmo name and, when the year of birth is known, the age ("Mia (7)"). 29 February repeats on the last day of February in years without one. Every contact can be switched out of it; it is made when the first birthday is saved. Name days are not part of it yet: they follow as an option with a household switch (decided on ticket 302, ticket 318).
 _Avoid_: birthday list, anniversary calendar

@@ -29,13 +29,21 @@ type contactJSON struct {
 	Address  contactAddress    `json:"address"`
 	Birthday *contactBirthday  `json:"birthday"`
 	// ShowInBirthdays is whether the birthday is in the generated calendar Birthdays.
-	ShowInBirthdays bool     `json:"show_in_birthdays"`
-	Note            string   `json:"note"`
-	Groups          []string `json:"groups"`
-	CreatedBy       *string  `json:"created_by"`
-	CreatedAt       string   `json:"created_at"`
-	UpdatedBy       *string  `json:"updated_by"`
-	UpdatedAt       string   `json:"updated_at"`
+	ShowInBirthdays bool              `json:"show_in_birthdays"`
+	Note            string            `json:"note"`
+	Groups          []string          `json:"groups"`
+	Photo           *contactPhotoJSON `json:"photo"`
+	CreatedBy       *string           `json:"created_by"`
+	CreatedAt       string            `json:"created_at"`
+	UpdatedBy       *string           `json:"updated_by"`
+	UpdatedAt       string            `json:"updated_at"`
+}
+
+type contactPhotoJSON struct {
+	Origin string  `json:"origin"`
+	By     *string `json:"by"`
+	Device string  `json:"device"`
+	At     string  `json:"at"`
 }
 
 type contactAddress struct {
@@ -80,6 +88,9 @@ func (s *server) contactToJSON(p principal, c store.Contact) contactJSON {
 		Numbers: linesJSON(c.Numbers), Emails: linesJSON(c.Emails), Address: contactAddress{c.Street, c.Postcode, c.City, c.Country},
 		ShowInBirthdays: !c.HideBirthday, Note: c.Note, Groups: append([]string{}, c.GroupIDs...), CreatedBy: strPtr(c.CreatedBy), CreatedAt: rfc3339(c.CreatedAt, loc),
 		UpdatedBy: strPtr(c.UpdatedBy), UpdatedAt: rfc3339(c.UpdatedAt, loc),
+	}
+	if c.HasPhoto {
+		out.Photo = &contactPhotoJSON{Origin: c.PhotoOrigin, By: strPtr(c.PhotoBy), Device: c.PhotoDevice, At: rfc3339(c.PhotoAt, loc)}
 	}
 	if c.BdayDay != 0 {
 		b := &contactBirthday{Day: c.BdayDay, Month: c.BdayMonth}

@@ -211,6 +211,28 @@ func TestSpecDimensionsAndTypographyExistAsTokens(t *testing.T) {
 			t.Errorf("DESIGN.md typography.%s = %v", c.name, e)
 		}
 	}
+	// Ticket 286: the cooking view reads at arm's length (Figtree, weight 500).
+	for _, c := range []struct{ name, size, weight string }{
+		{"cook-step", "28px", "500"},
+		{"cook-step-phone", "24px", "500"},
+		{"cook-ingredient", "22px", "500"},
+		{"cook-ingredient-phone", "20px", "500"},
+	} {
+		if got := root["--fs-"+c.name]; got != c.size {
+			t.Errorf("css --fs-%s = %q, want %s", c.name, got, c.size)
+		}
+		if strings.HasSuffix(c.name, "-phone") {
+			if got, ok := root["--fw-"+c.name]; ok {
+				t.Errorf("css --fw-%s = %q: the phone sizes share the weight of their base token", c.name, got)
+			}
+		} else if got := root["--fw-"+c.name]; got != c.weight {
+			t.Errorf("css --fw-%s = %q, want %s", c.name, got, c.weight)
+		}
+		e := d.Typography[c.name]
+		if e["fontFamily"] != "Figtree" || e["fontSize"] != c.size || e["fontWeight"] != c.weight {
+			t.Errorf("DESIGN.md typography.%s = %v", c.name, e)
+		}
+	}
 	if got := themed(t, css, "bw")["--fw-event-title"]; got != "700" {
 		t.Errorf("bw --fw-event-title = %q, want 700", got)
 	}

@@ -2292,9 +2292,15 @@ paths:
         (`source` and `template_dish` say which). A meal emptied for a week is
         not listed.
 
-        Every entry also appears as an all-day event "<Mealtime>: <text>" in
+        An entry is free text or a recipe (`recipe_id`, with `portions`);
+        `dish` is the recipe's current name, or the text. A renamed recipe
+        shows its new name here at once; a deleted recipe leaves its name as
+        free text.
+
+        Every entry also appears as an all-day event "<Mealtime>: <dish>" in
         the generated, read-only calendar of kind `meals` (see `/calendars`),
-        which is shared through the box by default (ADR 0015).
+        which is shared through the box by default (ADR 0015). Portions and
+        warnings are not part of the event.
       parameters:
         - { name: from, in: query, required: false, schema: { type: string, format: date } }
         - { name: to, in: query, required: false, schema: { type: string, format: date } }
@@ -2314,15 +2320,19 @@ paths:
       operationId: setMeal
       summary: Plan a meal, or change the planned one (scope meals:write, parents only)
       description: |
-        Sets the free-text entry of a day and mealtime and writes its all-day
-        event in the meal-plan calendar, which is created on first use. The
-        event title uses the language of the request (Accept-Language), for
-        example "Dinner: Pasta bake". Saving the same text again changes
-        nothing. An empty text is refused with 422: remove a meal with DELETE.
+        Sets the entry of a day and mealtime, free `text` or a recipe
+        (`recipe_id` with `portions` from 1 to 99; without `portions` they are
+        the number of people in the household), and writes its all-day event in
+        the meal-plan calendar, which is created on first use. The event title
+        uses the language of the request (Accept-Language), for example
+        "Dinner: Pasta bake" or, for a recipe, its name. Saving the same entry
+        again changes nothing. Give `text` or `recipe_id`, not both (else 422);
+        an empty text is refused with 422: remove a meal with DELETE. A recipe
+        of another household, or none, is refused with 422.
 
-        Where a meal plan template fills the day, the text is that week's
-        adjustment (`source` adjusted); typing the template's own dish is no
-        adjustment.
+        Where a meal plan template fills the day, the entry is that week's
+        adjustment (`source` adjusted; a recipe always is one); typing the
+        template's own dish is no adjustment.
       parameters:
         - { name: date, in: path, required: true, schema: { type: string, format: date } }
         - { name: mealtime, in: path, required: true, schema: { $ref: "#/components/schemas/Mealtime" } }
@@ -2332,9 +2342,10 @@ paths:
           application/json:
             schema:
               type: object
-              required: [text]
               properties:
-                text: { type: string, maxLength: 200, description: "One line, trimmed; at most 200 characters" }
+                text: { type: string, maxLength: 200, description: "Free text: one line, trimmed; at most 200 characters. Not with recipe_id" }
+                recipe_id: { type: string, description: "A recipe of the household (`/recipes`). Not with text" }
+                portions: { type: integer, description: "With recipe_id: how many portions, 1 to 99 (else 422); default the number of people in the household" }
       responses:
         "200":
           description: The meal as stored
@@ -6160,12 +6171,15 @@ components:
     Mealtime: { type: string, enum: [breakfast, lunch, snack, dinner] }
     Meal:
       type: object
-      description: One entry of the shared meal plan, free text for a day and a mealtime.
-      required: [date, mealtime, text, source]
+      description: "One entry of the shared meal plan for a day and a mealtime: free text, or a recipe with portions."
+      required: [date, mealtime, text, dish, source]
       properties:
         date: { type: string, format: date }
         mealtime: { $ref: "#/components/schemas/Mealtime" }
-        text: { type: string, maxLength: 200 }
+        text: { type: string, maxLength: 200, description: "The same as dish, kept for clients that read text" }
+        dish: { type: string, maxLength: 200, description: "What there is to eat: the recipe's current name, or the free text" }
+        recipe_id: { type: string, description: "The recipe, when the entry is one; absent for free text" }
+        portions: { type: integer, minimum: 1, maximum: 99, description: "Portions of the recipe; absent for free text" }
         source:
           type: string
           enum: [manual, template, adjusted]

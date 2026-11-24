@@ -172,6 +172,10 @@ func TestADisplayGetsThePhotosOfEmergencyContactsOnly(t *testing.T) {
 	if r := newScreen(f.box).get("/display/contacts/"+in.ID+"/photo", "de"); r.status != http.StatusForbidden {
 		t.Errorf("a display that is not paired: %d", r.status)
 	}
+	f.saveLayout(t, f.layoutForm(true, []string{"Mama", "Papa", "Sebastian", "Mia"}, defaultOn...))
+	if r := f.display.get(m[1], "de"); r.status != http.StatusNotFound {
+		t.Errorf("a photo with the block off: %d", r.status)
+	}
 }
 
 func sosSection(t *testing.T, f sosFamily, lang map[string]string) string {
@@ -202,7 +206,7 @@ func TestTheSettingsNameWhoAppearsAndWhoLacksANumberWhetherOnOrOff(t *testing.T)
 			"Emergency numbers",
 			"From the group “Emergency”: Notruf, Oma Gerda and Papa.",
 			"Order as under Contacts: further contacts from A to Z, then your family.",
-			"Without a phone number and so not included: Frau Huber.",
+			"Without a number and so not included: Frau Huber.",
 			"Open the group “Emergency” under Contacts",
 		} {
 			if !strings.Contains(text, want) {
@@ -219,7 +223,7 @@ func TestTheSettingsNameWhoAppearsAndWhoLacksANumberWhetherOnOrOff(t *testing.T)
 			t.Errorf("link to the group:\n%s", sec)
 		}
 	}
-	if de := inText(sosSection(t, f, map[string]string{"Accept-Language": "de"})); !strings.Contains(de, "Aus der Gruppe „Notfall“: Notruf, Oma Gerda und Papa.") || !strings.Contains(de, "Ohne Telefonnummer und darum nicht dabei: Frau Huber.") {
+	if de := inText(sosSection(t, f, map[string]string{"Accept-Language": "de"})); !strings.Contains(de, "Aus der Gruppe „Notfall“: Notruf, Oma Gerda und Papa.") || !strings.Contains(de, "Ohne Nummer und darum nicht dabei: Frau Huber.") {
 		t.Errorf("German: %s", de)
 	}
 }
@@ -265,7 +269,7 @@ func TestTheSettingsSayTheTileStaysAwayWithoutAContactWithANumber(t *testing.T) 
 	t.Parallel()
 	f := newSOSFamily(t)
 	sec := sosSection(t, f, en)
-	if !strings.Contains(inText(sec), "No contact in the group “Emergency” has a phone number yet. Until then the tile stays off the display. Open contacts") || !strings.Contains(sec, `class="why nosos"`) {
+	if !strings.Contains(inText(sec), "No contact in the group “Emergency” has a number yet. Until then the tile stays off the display. Open contacts") || !strings.Contains(sec, `class="why nosos"`) {
 		t.Errorf("empty state:\n%s", sec)
 	}
 	if strings.Contains(sec, `name="b_emergency" disabled`) || strings.Contains(sec, "sos-sub") {

@@ -444,8 +444,9 @@ func (s *server) fillLayout(r *http.Request, p principal, v *displayPage, d stor
 				sos, err := s.layoutSosFor(h, lang, d.Name, d.Portrait)
 				if err != nil {
 					s.logger.Error("emergency numbers", "err", err)
+				} else {
+					row.Sos = &sos
 				}
-				row.Sos = &sos
 			case layout.List:
 				row.Sub = "list"
 				row.Disabled = pg.NoList

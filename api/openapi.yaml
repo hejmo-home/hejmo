@@ -5358,7 +5358,7 @@ components:
         rotate_daily: { type: boolean, description: "Every day at 03:00 each person moves one column to the right, the rightmost goes to the left (round-robin), the same on every display with this switched on. Default false" }
         blocks:
           type: array
-          description: "Every block with its zone and switch, in the order shown inside each zone. The block `emergency` (emergency numbers, ticket 303) is the last of the footer and off by default: it shows the contacts of the shipped group `notfall` that have at least one phone number, in the order of the contacts overview, in a footer row of its own; it stays away while there is none, and in a personal view"
+          description: "Every block with its zone and switch, in the order shown inside each zone. The block `emergency` (emergency numbers, ticket 303) is the last of the footer and off by default: it shows the contacts of the shipped group `notfall` that have at least one number, in the order of the contacts overview, in a footer row of its own; it stays away while there is none, and in a personal view"
           items:
             type: object
             required: [id, zone, enabled]

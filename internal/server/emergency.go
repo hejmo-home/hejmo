@@ -114,8 +114,17 @@ func (s *server) emergencyInputs(h store.Household, lang string) ([]familyview.E
 // handleDisplayContactPhoto serves the photo of a contact of the group "Notfall" to a paired display, which has no
 // session: the emergency numbers tile shows it. No other contact's photo leaves the box this way.
 func (s *server) handleDisplayContactPhoto(w http.ResponseWriter, r *http.Request) {
-	_, h, ok := s.pairedDisplay(w, r)
+	d, h, ok := s.pairedDisplay(w, r)
 	if !ok {
+		return
+	}
+	lay, err := s.db.DisplayLayout(h.ID, d.ID)
+	if err != nil {
+		s.fail(w, "display layout", err)
+		return
+	}
+	if !lay.Enabled(layout.Emergency) {
+		http.NotFound(w, r)
 		return
 	}
 	group, has, err := s.notfallGroup(h.ID)
@@ -144,13 +153,14 @@ func (s *server) handleDisplayContactPhoto(w http.ResponseWriter, r *http.Reques
 type layoutSos struct {
 	Empty    bool   // no contact with a number: the tile stays off the display
 	Names    string // "Notruf, Oma Gerda und Papa."
-	Missing  string // "Ohne Telefonnummer und darum nicht dabei: ...", "" when nobody
+	Missing  string // "Ohne Nummer und darum nicht dabei: ...", "" when nobody
 	Warn     string // more contacts than fit, "" otherwise
 	LinkHref string
 	Count    int
 }
 
-var rowWords = []string{"", "", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"}
+// maxRowWord is the largest row count that has a word of its own (layout.sos.rows.N); more rows say the number.
+const maxRowWord = 12
 
 func (s *server) layoutSosFor(h store.Household, lang, display string, portrait bool) (layoutSos, error) {
 	g, err := s.emergencyGroup(h, lang)
@@ -176,7 +186,7 @@ func (s *server) layoutSosFor(h store.Household, lang, display string, portrait 
 	if n, fit := len(g.WithNumbers), layout.EmergencyFit(portrait); n > fit {
 		rows := layout.EmergencyRows(n, portrait)
 		rowsText := say("layout.sos.rows.n", "n", strconv.Itoa(rows))
-		if rows < len(rowWords) {
+		if rows <= maxRowWord {
 			rowsText = say("layout.sos.rows." + strconv.Itoa(rows))
 		}
 		orient := say("layout.orient.landscape")

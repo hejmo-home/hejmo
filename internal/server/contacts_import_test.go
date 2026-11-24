@@ -424,7 +424,7 @@ func TestTheOverviewOffersTheImportBesideTheNewButtonAndInTheEmptyBox(t *testing
 	c := newCtBox(t)
 	empty := c.page("/contacts", "de").body
 	ctHas(t, "empty overview", empty, `<p class="ct-acts"><a class="button" href="/contacts/new">Kontakt anlegen</a></p>`, `<div class="empty" data-empty><p>Noch keine weiteren Kontakte. Hierher gehören Großeltern, Kita, Arztpraxen und alle, die ihr anrufen wollt.</p>`,
-		"Stehen sie schon in deinem Handy?", `<a class="button secondary" href="/contacts/import">`, "Kontakte aus Datei übernehmen")
+		"Stehen sie schon in deinem Adressbuch?", `<a class="button secondary" href="/contacts/import">`, "Kontakte aus Datei übernehmen")
 	c.add(t, contactForm("Oma Gerda", "", nil, nil))
 	full := c.page("/contacts", "de").body
 	ctHas(t, "overview", full, `<p class="ct-acts"><a class="button" href="/contacts/new">Kontakt anlegen</a><a class="button secondary" href="/contacts/import">`)
@@ -712,5 +712,5 @@ func TestTheLicencesPageNamesTheLibraryThatReadsPhoneNumbers(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
 	body := b.do(http.MethodGet, "/settings/licences", nil, map[string]string{"Accept-Language": "en"}).body
-	ctHas(t, "licences", body, `data-licence="phonenumbers"`, "nyaruka/phonenumbers (MIT licence", "libphonenumber", "nothing is looked up on the internet")
+	ctHas(t, "licences", body, `data-licence="numbers"`, "Go library of Nyaruka (MIT licence", "libphonenumber", "nothing is looked up on the internet")
 }

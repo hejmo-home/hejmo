@@ -655,7 +655,7 @@ paths:
       description: |
         Send a vCard file (2.1 with quoted-printable and a charset, 3.0 or 4.0) as `multipart/form-data` in the
         part `file`, at most 25 MB. Nothing is saved. The answer says which cards look like contacts Hejmo has
-        (`duplicates`: the same phone number read with the household's home country, the same e-mail address
+        (`duplicates`: the same number read with the household's home country, the same e-mail address
         without regard to case, or only the same name; empty values never match), which are new (`new`, with the
         name the contact would get), which are already exactly in Hejmo (`same`) and which Hejmo cannot read
         (`unreadable`). Embedded photos are made under the picture rules (512 px, no location or camera data); a

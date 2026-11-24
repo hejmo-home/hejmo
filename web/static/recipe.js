@@ -32,17 +32,19 @@ function rcpOptionFields(opt) {
 }
 
 // rcpSplitVariety splits a typed name at the first middle dot: the name before it and the variety after it, which
-// belongs in the variety field. Without a dot, or with nothing after it, the text stays as it is (variety null).
-function rcpSplitVariety(text) {
+// belongs in the variety field. Without a dot, with nothing after it, or on a line that is not a library article
+// (isArticle false: free text has no variety), the text stays as it is (variety null).
+function rcpSplitVariety(text, isArticle) {
   var t = String(text || ""), i = t.indexOf("·");
-  if (i < 0) return { name: t, variety: null };
+  if (!isArticle || i < 0) return { name: t, variety: null };
   var variety = t.slice(i + 1).replace(/\s+/g, " ").trim();
   if (variety === "") return { name: t, variety: null };
   return { name: t.slice(0, i).trim(), variety: variety };
 }
 
-// rcpKeepsVariety says whether a line keeps its variety when its name changes from `was` to `now`: yes while
-// the name before the middle dot is still the same one (ignoring case and spaces), and for a line that had no name.
+// rcpKeepsVariety says whether a line keeps its variety (held in its own field, not in the name) when its name
+// changes from `was` to `now`: yes while the name before a middle dot is still the same one (ignoring case and
+// spaces), and for a line that had no name.
 function rcpKeepsVariety(was, now) {
   var key = function (t) { return String(t || "").split("·")[0].replace(/\s+/g, " ").trim().toLowerCase(); };
   return key(was) === "" || key(was) === key(now);
@@ -210,7 +212,7 @@ function rcpFocusAfter(count, removed) { return Math.min(removed, count - 1); }
     var el = e.target;
     if (!(el.matches && el.matches("input.in"))) return;
     var li = el.closest("li.ing"), vi = li && li.querySelector('input[name="ing_variety"]');
-    var parts = rcpSplitVariety(el.value);
+    var parts = rcpSplitVariety(el.value, !!vi && vi.type !== "hidden"); // free text and blank lines carry a hidden field: no variety there
     if (!vi || parts.variety === null) return;
     el.value = parts.name; // what was typed after the dot is the variety, edited in its own field
     vi.value = parts.variety;

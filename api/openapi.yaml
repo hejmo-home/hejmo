@@ -6236,7 +6236,7 @@ components:
         unit: { type: string, nullable: true, description: "A key of GET /recipe-units; none for a plain number" }
         name: { type: string, maxLength: 200 }
         article_id: { type: string, nullable: true, description: The key of a shipped article or the id of an own one }
-        variety: { type: string, nullable: true, maxLength: 60, description: 'The more exact kind, such as "Type 405"; only an article has one. Wins over a variety written in `text` ("Mehl Type 405" with variety "Type 550" is Type 550); the text''s variety counts only when this is null, empty or left out' }
+        variety: { type: string, nullable: true, maxLength: 60, description: 'The more exact kind, such as "Type 405"; only an article has one. A variety written in `text` wins over this ("Mehl Type 405" with variety "Type 550" is Type 405); this counts only when `text` has none' }
     NewRecipe:
       type: object
       required: [name]

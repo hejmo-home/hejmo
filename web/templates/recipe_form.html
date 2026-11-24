@@ -41,7 +41,7 @@
     <fieldset id="more" class="more-card">
       <legend class="vh">{{t "recipes.f.more"}}</legend>
       {{template "moreOpen" (dict "Label" (t "recipes.f.more") "Summary" .MoreSum "Class" "more-rcp" "Open" .MoreOpen)}}
-        <fieldset class="tag-pick"><legend>{{t "recipes.f.mealtimes"}}</legend>{{range .Mealtimes}}<label class="pchip plain"><input type="checkbox" name="mealtime" value="{{.Key}}"{{if .Checked}} checked{{end}}>{{template "mealIcon" .Key}}{{.Name}}{{template "tickChip"}}</label>{{end}}</fieldset>
+        <fieldset class="tag-pick"{{if and .Issues .Issues.More.mealtimes}} aria-invalid="true" aria-describedby="err-mealtimes"{{end}}><legend>{{t "recipes.f.mealtimes"}}</legend>{{range .Mealtimes}}<label class="pchip plain"><input type="checkbox" name="mealtime" value="{{.Key}}"{{if .Checked}} checked{{end}}>{{template "mealIcon" .Key}}{{.Name}}{{template "tickChip"}}</label>{{end}}</fieldset>
         {{if and .Issues .Issues.More.mealtimes}}<p class="ferr" id="err-mealtimes" role="alert">{{template "errIcon"}}<span>{{.Issues.More.mealtimes}}</span></p>{{end}}
         <p class="hint">{{t "recipes.f.mealtimes.hint"}}</p>
         <fieldset class="tag-pick"><legend>{{t "recipes.f.tags"}}</legend>{{range .TagChips}}<label class="pchip plain"><input type="checkbox" name="tag" value="{{.Tag}}"{{if .Checked}} checked{{end}}>{{.Tag}}{{template "tickChip"}}</label>{{end}}</fieldset>

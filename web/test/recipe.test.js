@@ -41,7 +41,7 @@ test('a chosen suggestion sets the article and its variety, and clears a variety
 });
 
 test('a variety typed after a middle dot moves into the variety field', () => {
-  const split = (t) => JSON.parse(JSON.stringify(ctx.rcpSplitVariety(t)));
+  const split = (t) => JSON.parse(JSON.stringify(ctx.rcpSplitVariety(t, true)));
   assert.deepEqual(split('Weizenmehl · Type 550'), { name: 'Weizenmehl', variety: 'Type 550' });
   assert.deepEqual(split('Mehl·  Type   550 '), { name: 'Mehl', variety: 'Type 550' });
   assert.deepEqual(split('Weizenmehl'), { name: 'Weizenmehl', variety: null }, 'no dot: the text stays');
@@ -49,9 +49,15 @@ test('a variety typed after a middle dot moves into the variety field', () => {
   assert.deepEqual(split(null), { name: '', variety: null });
 });
 
+test('free text with a middle dot stays whole; only a library article line is split', () => {
+  const split = (t, article) => JSON.parse(JSON.stringify(ctx.rcpSplitVariety(t, article)));
+  assert.deepEqual(split('Omas Gewürzmischung · scharf', false), { name: 'Omas Gewürzmischung · scharf', variety: null }, 'free text has no variety field');
+  assert.deepEqual(split('Weizenmehl · Type 550', true), { name: 'Weizenmehl', variety: 'Type 550' });
+});
+
 test('retyping the name of a line drops its variety unless the name is still the same one', () => {
   assert.equal(ctx.rcpKeepsVariety('Mehl · Type 405', 'Zucker'), false);
-  assert.equal(ctx.rcpKeepsVariety('Mehl · Type 405', 'Mehl · Type 550'), true, 'same article name, the variety is part of the text');
+  assert.equal(ctx.rcpKeepsVariety('Mehl · Type 405', 'Mehl · Type 550'), true, 'the same article name keeps the variety held in its own field');
   assert.equal(ctx.rcpKeepsVariety('Mehl', 'mehl '), true);
   assert.equal(ctx.rcpKeepsVariety('Mehl', 'Mehlsack'), false);
   assert.equal(ctx.rcpKeepsVariety('', 'Zucker'), true, 'a new line has no variety to lose');

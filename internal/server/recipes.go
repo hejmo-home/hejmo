@@ -47,9 +47,9 @@ const (
 
 // recipeIngredient reads an ingredient line: an article (named by its id, by
 // the exact name typed, or by an article's name followed by a variety such as
-// "Mehl Type 405"), else free text. A given variety wins over one written in the
-// name (the form edits it only in its own field); the name's variety is used when
-// none is given. The error is a
+// "Mehl Type 405"), else free text. A variety written in the name wins over a
+// different one given in the field; the given variety counts when the name has
+// none. The error is a
 // *recipe.FieldError, ErrBlank for an empty line.
 func (c *itemCtx) recipeIngredient(in recipe.IngredientInput) (recipe.Ingredient, *articleItem, error) {
 	name := strings.Join(strings.Fields(in.Name), " ")

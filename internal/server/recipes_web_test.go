@@ -580,6 +580,7 @@ func TestAChangeOnlyInTheVarietyFieldIsKept(t *testing.T) {
 		t.Errorf("line = %+v, want wheat flour, variety Type 550", in)
 	}
 }
+
 func TestAVarietyClearedInItsFieldIsGone(t *testing.T) {
 	t.Parallel()
 	rb := newRecipeBox(t)
@@ -680,6 +681,9 @@ func TestACraftedMealtimeIsNamedInTheSummaryLink(t *testing.T) {
 	}
 	if !strings.Contains(r.body, `id="err-mealtimes"`) {
 		t.Errorf("the error is not shown at the mealtimes field:\n%s", r.body)
+	}
+	if !strings.Contains(r.body, `<fieldset class="tag-pick" aria-invalid="true" aria-describedby="err-mealtimes">`) {
+		t.Errorf("the mealtimes checkboxes are not linked to their error:\n%s", r.body)
 	}
 }
 

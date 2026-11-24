@@ -35,6 +35,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/passkey/passkeytest"
+	"github.com/hejmo-home/hejmo/internal/recipe"
 	"github.com/hejmo-home/hejmo/internal/reward"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/streak"
@@ -268,6 +269,21 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	must(err)
 	must(db.SetLibrarySettings(h, store.LibrarySettings{HideAllergen: true, Everyone: true, ConfirmedBy: f.ids[0]}))
 	must(db.SetArticleHidden(h, "walnuts", true))
+	// Recipes (ticket 279): long names that break between words, a long variety and a long web address, several
+	// people of the same allergen named in one line, free-text ingredients, a recipe without anything but a name.
+	for _, r := range []recipe.Recipe{
+		{Name: "Omas schwäbische Käsespätzle mit Röstzwiebeln und Bergkäse aus dem Allgäu", Category: recipe.Main, Portions: 8, Minutes: 50, Mealtimes: []string{"lunch", "dinner"},
+			Tags: []string{"Kinder mögen es", "Sonntagsessen bei Oma und Opa"}, Tips: "Den Teig lieber zu fest als zu weich rühren.\nDie Spätzle schmecken am nächsten Tag in der Pfanne geröstet noch besser.",
+			Source: "https://www.beispiel-kochseite.de/rezepte/omas-schwaebische-kaesespaetzle-mit-roestzwiebeln-und-bergkaese-aus-dem-allgaeu",
+			Ingredients: []recipe.Ingredient{{Amount: 500, Unit: "g", Text: "Weizenmehl", ArticleID: "wheat-flour", Variety: "Type 405"}, {Amount: 6, Text: "Eier", ArticleID: "eggs"},
+				{Amount: 400, Unit: "g", Text: "Butter", ArticleID: "butter", Variety: "Allgäuer Bergkäse, mindestens 6 Monate gereift, aus der Sennerei"}, {Amount: 1, Unit: "pinch", Text: "Muskatnuss"}, {Amount: 2, Unit: "can", Text: "Röstzwiebeln"}},
+			Steps: []string{"Mehl, Eier, 1 TL Salz und etwa 150 ml Wasser mit dem Kochlöffel schlagen, bis der Teig Blasen wirft.", "Den Teig portionsweise durch die Spätzlepresse in kochendes Salzwasser drücken."}},
+		{Name: "Gurkensalat", Category: recipe.Side, Portions: 4},
+	} {
+		if _, err := db.CreateRecipe(h, f.ids[0], r); err != nil {
+			t.Fatal(err)
+		}
+	}
 
 	// Groups, a calendar, a day note.
 	_, err = db.CreateGroup(h, "Kindergartenkinder-Elternbeirat", f.ids[:3])

@@ -523,3 +523,73 @@ func TestTwoCardsThatShareANumberButAreTiedToDifferentContactsAreMergedIntoNeith
 		}
 	}
 }
+
+// Acceptance: duplicates found by phone number. A card that shares a number with two cards that share nothing
+// themselves joins them into one question; no card of the three stays a preselected new contact.
+func TestACardThatBridgesTwoClustersMakesThemOneQuestion(t *testing.T) {
+	t.Parallel()
+	p := Build([]vcard.Card{
+		card(1, "A", []string{"0160 111 111"}, nil),
+		card(2, "B", []string{"0160 222 222"}, nil),
+		card(3, "C", []string{"0160 111 111", "0160 222 222"}, nil),
+	}, hejmo(), "DE")
+	if len(p.News) != 0 || len(p.Dups) != 1 || len(p.Dups[0].Cards) != 3 {
+		t.Fatalf("want one question with the cards 1, 2 and 3: %+v", p)
+	}
+	if p.Dups[0].Preselect != ChoiceMerge {
+		t.Errorf("preselect = %q", p.Dups[0].Preselect)
+	}
+}
+
+// The grouping does not depend on the order of the cards in the file.
+func TestTheGroupingOfCardsDoesNotDependOnTheOrderOfTheFile(t *testing.T) {
+	t.Parallel()
+	cards := []vcard.Card{
+		card(1, "Gerda", []string{"0171 3456789", "0160 111 111"}, nil),
+		card(2, "Praxis", []string{"089 1234 5670", "0160 222 222"}, nil),
+		card(3, "X", []string{"0160 333 333"}, nil),
+		card(4, "Y", []string{"0160 222 222", "0160 555 555"}, nil),
+		card(5, "Z", []string{"0160 111 111", "0160 666 666"}, nil),
+		card(6, "W", []string{"0160 555 555", "0160 666 666"}, nil),
+	}
+	signature := func(p Plan) string {
+		var parts []string
+		for _, d := range p.Dups {
+			var ns []string
+			for _, c := range d.Cards {
+				ns = append(ns, itoa(c.Number))
+			}
+			slices.Sort(ns)
+			id := "file"
+			if d.Existing != nil {
+				id = d.Existing.ID
+			}
+			parts = append(parts, id+":"+strings.Join(ns, ","))
+		}
+		for _, n := range p.News {
+			parts = append(parts, "new:"+itoa(n.Card.Number))
+		}
+		slices.Sort(parts)
+		return strings.Join(parts, " ")
+	}
+	want := signature(Build(slices.Clone(cards), hejmo(), "DE"))
+	var perm func(k int, a []vcard.Card)
+	perm = func(k int, a []vcard.Card) {
+		if k == len(a) {
+			if got := signature(Build(slices.Clone(a), hejmo(), "DE")); got != want {
+				t.Fatalf("order %v: %q, want %q", a, got, want)
+			}
+			return
+		}
+		for i := k; i < len(a); i++ {
+			a[k], a[i] = a[i], a[k]
+			perm(k+1, a)
+			a[k], a[i] = a[i], a[k]
+		}
+	}
+	perm(0, slices.Clone(cards))
+	// 4, 5 and 6 are chained and tied to two contacts: none joins either question.
+	if !strings.Contains(want, "file:4,5,6") || !strings.Contains(want, "oma:1") || !strings.Contains(want, "arzt:2") {
+		t.Errorf("grouping = %q", want)
+	}
+}

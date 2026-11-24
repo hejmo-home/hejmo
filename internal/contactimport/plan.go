@@ -425,23 +425,32 @@ type cluster struct {
 	match []Match
 }
 
-// addToClusters puts a new card in the first cluster that has a card it shares a number, an e-mail address or the
-// name with, else in a cluster of its own.
+// addToClusters puts a new card in the cluster that has a card it shares a number, an e-mail address or the name
+// with; a card that matches several clusters joins them into one; else it is a cluster of its own.
 func addToClusters(clusters []*cluster, ci cardInfo, region string) []*cluster {
+	into := &cluster{infos: []cardInfo{ci}}
+	var out []*cluster
 	for _, cl := range clusters {
+		var ms []Match
 		for _, other := range cl.infos {
-			ms := ci.matchOf(other.card.Numbers, other.card.Emails, other.nm, region)
-			if len(ms) == 0 {
-				continue
+			if ms = ci.matchOf(other.card.Numbers, other.card.Emails, other.nm, region); len(ms) > 0 {
+				break
 			}
-			cl.infos = append(cl.infos, ci)
-			if len(cl.match) == 0 || (cl.match[0].Kind == MatchName && ms[0].Kind != MatchName) {
-				cl.match = ms
+		}
+		if len(ms) == 0 {
+			out = append(out, cl)
+			continue
+		}
+		into.infos = append(into.infos, cl.infos...)
+		for _, m := range [][]Match{cl.match, ms} {
+			if len(m) > 0 && (len(into.match) == 0 || (into.match[0].Kind == MatchName && m[0].Kind != MatchName)) {
+				into.match = m
 			}
-			return clusters
 		}
 	}
-	return append(clusters, &cluster{infos: []cardInfo{ci}})
+	// The cards of a cluster are in the order of the file, whichever card joined it last.
+	slices.SortStableFunc(into.infos, func(a, b cardInfo) int { return a.card.Number - b.card.Number })
+	return append(out, into)
 }
 
 func clustersOf(infos []cardInfo, region string) []*cluster {
@@ -514,78 +523,53 @@ func Build(cards []vcard.Card, existing []store.Contact, region string) Plan {
 	// contacts, or to cards that belong to different ones, goes into no question (it stays a card of its own), and a
 	// card tied to them by name alone does too. The matches between cards are not reasons (they are no value of the
 	// contact), so they are not kept.
-	const (
-		unset    = -1
-		conflict = -2
-	)
-	setTarget := func(t *int, i int) {
-		switch {
-		case *t == unset:
-			*t = i
-		case *t != i:
-			*t = conflict
-		}
-	}
+	// The conflict rule is applied once, to the final ties: the cards of a cluster that are tied to each other by a
+	// number or an e-mail address form a group; a group tied to one contact joins its question whole, a group tied
+	// to several contacts joins none (it stays new cards), whichever card comes first in the file.
 	var left []*cluster
 	for _, cl := range clusters {
-		target := make([]int, len(cl.infos))
+		n := len(cl.infos)
+		group := make([]int, n)
+		for k := range group {
+			group[k] = k
+		}
+		root := func(k int) int {
+			for group[k] != k {
+				group[k] = group[group[k]]
+				k = group[k]
+			}
+			return k
+		}
 		for k, ci := range cl.infos {
-			target[k] = unset
+			for j := k + 1; j < n; j++ {
+				if len(ci.matchOf(cl.infos[j].card.Numbers, cl.infos[j].card.Emails, nil, region)) > 0 {
+					group[root(j)] = root(k)
+				}
+			}
+		}
+		ties := map[int][]int{} // group -> the questions its cards are tied to
+		for k, ci := range cl.infos {
 			for i := range p.Dups {
 				d := &p.Dups[i]
-				if d.Matches[0].Kind == MatchName {
+				if d.Matches[0].Kind == MatchName { // a name alone does not join
 					continue
 				}
-				for _, dc := range d.Cards {
-					if len(ci.matchOf(dc.Numbers, dc.Emails, nil, region)) > 0 { // a name alone does not join
-						setTarget(&target[k], i)
-					}
-				}
-			}
-		}
-		// Two cards that share a number or an e-mail address but are each tied to a different contact are linked to
-		// both: like a card tied to two contacts, they stay new cards.
-		linked := make([]bool, len(target))
-		for k, ci := range cl.infos {
-			for j, other := range cl.infos {
-				if k != j && target[k] >= 0 && target[j] >= 0 && target[k] != target[j] &&
-					len(ci.matchOf(other.card.Numbers, other.card.Emails, nil, region)) > 0 {
-					linked[k] = true
-				}
-			}
-		}
-		for k := range target {
-			if linked[k] {
-				target[k] = conflict
-			}
-		}
-		direct := slices.Clone(target)
-		for changed := true; changed; {
-			changed = false
-			for k, ci := range cl.infos {
-				if target[k] != unset {
-					continue
-				}
-				t := unset
-				for j, other := range cl.infos {
-					if direct[j] >= 0 && len(ci.matchOf(other.card.Numbers, other.card.Emails, nil, region)) > 0 {
-						setTarget(&t, direct[j])
-					}
-				}
-				if t != unset {
-					target[k], direct[k], changed = t, t, true
+				if slices.ContainsFunc(d.Cards, func(dc vcard.Card) bool {
+					return len(ci.matchOf(dc.Numbers, dc.Emails, nil, region)) > 0
+				}) && !slices.Contains(ties[root(k)], i) {
+					ties[root(k)] = append(ties[root(k)], i)
 				}
 			}
 		}
 		var rest []cardInfo
 		for k, ci := range cl.infos {
-			if target[k] >= 0 {
-				p.Dups[target[k]].join(ci.card, nil)
+			if t := ties[root(k)]; len(t) == 1 {
+				p.Dups[t[0]].join(ci.card, nil)
 			} else {
 				rest = append(rest, ci)
 			}
 		}
-		if len(rest) == len(cl.infos) {
+		if len(rest) == n {
 			left = append(left, cl)
 		} else {
 			left = append(left, clustersOf(rest, region)...)

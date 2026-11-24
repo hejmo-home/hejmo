@@ -2480,6 +2480,145 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /recipes:
+    get:
+      operationId: listRecipes
+      summary: The household's own recipes, from A to Z (scope meals:read)
+      description: |
+        Everyone reads recipes, children included. `q` searches the name, the
+        ingredients and the tags (case and umlauts ignored); `category`
+        keeps one of the six categories. The answer holds no health data: the
+        warnings of the family's allergies are at `/recipes/{id}/warnings`.
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string } }
+        - { name: category, in: query, required: false, schema: { $ref: "#/components/schemas/RecipeCategory" } }
+      responses:
+        "200":
+          description: The recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Recipe" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createRecipe
+      summary: Write a recipe (scope meals:write, parents only)
+      description: |
+        Only the name is required. Steps are an ordered list of their own, never
+        part of `tips`; empty steps and empty ingredient lines are not saved.
+        The name must be free in the household, ignoring case (else 422, field
+        `name`). An ingredient is an article of the library (`article_id`, or the
+        exact name, or a name followed by a variety such as "Mehl Type 405") or
+        free text, which Hejmo does not check for allergens. A unit without a
+        quantity means one. The units are those of `GET /recipe-units`.
+        Warnings never block saving.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewRecipe" }
+      responses:
+        "201":
+          description: The recipe as stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Recipe" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /recipes/{id}:
+    get:
+      operationId: getRecipe
+      summary: One recipe (scope meals:read)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The recipe
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Recipe" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: updateRecipe
+      summary: Replace a recipe (scope meals:write, parents only)
+      description: Give all fields; the ingredients, steps and tags are replaced. Who wrote the recipe stays.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewRecipe" }
+      responses:
+        "200":
+          description: The recipe as stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Recipe" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteRecipe
+      summary: Delete a recipe with its ingredients, steps and tips (scope meals:delete, parents only)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /recipes/{id}/warnings:
+    get:
+      operationId: getRecipeWarnings
+      summary: Who has to look out for what in a recipe (scope health:read)
+      description: |
+        Health data, so only the scope `health` reaches it. One entry per
+        allergen of the 14 main EU allergens, naming every person it concerns.
+        Free-text ingredients (`not_checked_ingredients`) and the people's
+        free-text allergies (`not_checked_allergies`) are not checked
+        automatically (`note`). The answer is experimental and without
+        guarantee. Warnings never block anything.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The warnings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecipeWarnings" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /recipe-units:
+    get:
+      operationId: listRecipeUnits
+      summary: The units an ingredient can have (scope meals:read)
+      description: |
+        The household's units (`GET /units`), then the kitchen measures (`tbsp`,
+        `tsp`, `pinch`, `knifetip`, `dash`, `splash`, `handful`, `cup`), which never
+        convert into or add up with g and ml, then the containers and piece
+        measures (`can`, `packet`, `tub`, `bunch`, `jar`, `bottle`, `stick`, `clove`,
+        `slice`, `cube`, `sprig`, `stalk`, `ball`, `leaf`, `punnet`), whose
+        quantities add up only within the same unit.
+      responses:
+        "200":
+          description: The unit keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
   /people/{id}/stars:
     get:
       operationId: getStars
@@ -5909,6 +6048,104 @@ components:
               mealtime: { $ref: "#/components/schemas/Mealtime" }
               weekdays: { type: array, items: { type: integer, minimum: 1, maximum: 7 } }
               first_week: { type: string, format: date, description: "Monday of the first week both fill the meal, from today on" }
+    RecipeCategory: { type: string, enum: [main, side, dessert, baking, breakfast, snack] }
+    RecipeIngredient:
+      type: object
+      description: |
+        One line of a recipe: an article of the library (with an optional
+        variety) or free text (`article_id` null), which is not checked for
+        allergens. No `quantity` means "as needed" (salt).
+      required: [name]
+      properties:
+        quantity: { type: number, nullable: true, minimum: 0, exclusiveMinimum: true, maximum: 9999, description: For the recipe's portions }
+        unit: { type: string, nullable: true, description: "A key of GET /recipe-units; none for a plain number" }
+        name: { type: string, maxLength: 200 }
+        article_id: { type: string, nullable: true, description: The key of a shipped article or the id of an own one }
+        variety: { type: string, nullable: true, maxLength: 60, description: 'The more exact kind, such as "Type 405"; only an article has one' }
+    NewRecipe:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, maxLength: 120 }
+        category: { $ref: "#/components/schemas/RecipeCategory" }
+        portions: { type: integer, minimum: 1, maximum: 99, description: The number of people in the household when missing }
+        minutes: { type: integer, nullable: true, minimum: 0, maximum: 9999, description: From start to table; none when unknown }
+        mealtimes:
+          type: array
+          description: Which mealtimes it suits; empty means every mealtime
+          items: { $ref: "#/components/schemas/Mealtime" }
+        tags:
+          type: array
+          maxItems: 30
+          items: { type: string, maxLength: 30 }
+        tips: { type: string, maxLength: 2000 }
+        source: { type: string, maxLength: 300, description: "A book, a person or a web address" }
+        ingredients:
+          type: array
+          maxItems: 100
+          items: { $ref: "#/components/schemas/RecipeIngredient" }
+        steps:
+          type: array
+          maxItems: 100
+          description: The steps in order; each at most 2000 characters
+          items: { type: string }
+    Recipe:
+      type: object
+      required: [id, name, category, portions, minutes, mealtimes, tags, tips, source, source_url, ingredients, steps, diet, created_by, created_at, updated_by, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        category: { $ref: "#/components/schemas/RecipeCategory" }
+        portions: { type: integer }
+        minutes: { type: integer, nullable: true }
+        mealtimes:
+          type: array
+          items: { $ref: "#/components/schemas/Mealtime" }
+        tags:
+          type: array
+          items: { type: string }
+        tips: { type: string }
+        source: { type: string }
+        source_url: { type: string, nullable: true, description: The source when it is a web address }
+        ingredients:
+          type: array
+          items: { $ref: "#/components/schemas/RecipeIngredient" }
+        steps:
+          type: array
+          items: { type: string }
+        diet: { type: string, nullable: true, enum: [vegan, vegetarian, null], description: Set only when every library article fits; free text does not stop it }
+        created_by: { type: string, nullable: true, format: uuid }
+        created_at: { type: string, format: date-time }
+        updated_by: { type: string, nullable: true, format: uuid }
+        updated_at: { type: string, format: date-time }
+    RecipeWarnings:
+      type: object
+      required: [recipe_id, warnings, not_checked_ingredients, not_checked_allergies, diet, note]
+      properties:
+        recipe_id: { type: string, format: uuid }
+        warnings:
+          type: array
+          items:
+            type: object
+            required: [allergen, people]
+            properties:
+              allergen: { type: string }
+              people:
+                type: array
+                items: { type: string, format: uuid }
+        not_checked_ingredients:
+          type: array
+          items: { type: string }
+        not_checked_allergies:
+          type: array
+          items:
+            type: object
+            required: [person_id, text]
+            properties:
+              person_id: { type: string, format: uuid }
+              text: { type: string }
+        diet: { type: string, nullable: true, enum: [vegan, vegetarian, null] }
+        note: { type: string }
     Event:
       type: object
       description: An event or series master. Times are RFC 3339 in the household's time zone; all-day events use dates with an exclusive end.

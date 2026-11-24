@@ -448,3 +448,7 @@ func Matches(r Recipe, q string) bool {
 func SortByName(list []Recipe) {
 	slices.SortStableFunc(list, func(a, b Recipe) int { return strings.Compare(library.Fold(a.Name), library.Fold(b.Name)) })
 }
+
+// FormatAmountNumber rounds a quantity to the two decimals pages show, as the
+// number a JSON client reads.
+func FormatAmountNumber(v float64) float64 { return math.Floor(v*100+0.5+1e-9) / 100 }

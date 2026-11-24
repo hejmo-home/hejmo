@@ -39,10 +39,13 @@ func (q Quantity) shown(show Show) Quantity {
 	return Quantity{Base: q.Base, Unit: show(q.Base, q.Kind())}
 }
 
-// Same reports whether an open entry is the same thing as the article (or, for
-// free text, the text, ignoring case and umlauts).
-func (e Entry) Same(articleID, text string) bool {
-	return !e.Done && ((articleID != "" && e.ArticleID == articleID) || key(e.Text) == key(text))
+// Same reports whether an open entry is the same thing as the article with
+// this variety (or, for free text, the text, ignoring case and umlauts). The
+// merge key is article, folded variety and, where it matters, kind of unit:
+// "Mehl" and "Mehl · Type 405" are never the same.
+func (e Entry) Same(articleID, variety, text string) bool {
+	return !e.Done && VarietyKey(e.Variety) == VarietyKey(variety) &&
+		((articleID != "" && e.ArticleID == articleID) || key(e.Text) == key(text))
 }
 
 // AddAction says what adding did.
@@ -72,10 +75,10 @@ type AddPlan struct {
 // the entries of a list. Only open entries merge. The same kind of unit adds
 // up, an entry without quantity takes the quantity, adding without quantity
 // never makes a second entry, and another kind stands under the old entry.
-func PlanAdd(entries []Entry, articleID, text string, add Quantity, show Show) AddPlan {
+func PlanAdd(entries []Entry, articleID, variety, text string, add Quantity, show Show) AddPlan {
 	var same []Entry
 	for _, e := range entries {
-		if e.Same(articleID, text) {
+		if e.Same(articleID, variety, text) {
 			same = append(same, e)
 		}
 	}
@@ -115,8 +118,10 @@ const (
 // SetPlan is what changing the quantity of one entry comes to.
 type SetPlan struct {
 	Action SetAction
-	// Entry is the entry that was changed.
+	// Entry is the entry that was changed, as it was.
 	Entry Entry
+	// Variety is the variety the entry has afterwards (it may be the old one).
+	Variety string
 	// Into is the other entry that took this one in (SetMerged).
 	Into Entry
 	// Before is the quantity of Entry before; Result the quantity that stands
@@ -131,9 +136,10 @@ var ErrNotOpen = errors.New("list: the entry is not open")
 // Quantity for none) comes to. It replaces and never adds. The amount typed is
 // the amount: a change of unit within one kind converts the number before it
 // gets here. When another open entry of the article has the same kind (or, for
-// "none", any other entry), this entry goes into it: one article, one kind, one
-// entry.
-func PlanSet(entries []Entry, id string, to Quantity, show Show) (SetPlan, error) {
+// "none", any other entry) and variety, this entry goes into it: one article,
+// one variety, one kind, one entry. The variety is the one the entry has
+// afterwards; the caller passes the old one to keep it.
+func PlanSet(entries []Entry, id string, to Quantity, variety string, show Show) (SetPlan, error) {
 	var cur *Entry
 	for i := range entries {
 		if entries[i].ID == id && !entries[i].Done {
@@ -143,10 +149,13 @@ func PlanSet(entries []Entry, id string, to Quantity, show Show) (SetPlan, error
 	if cur == nil {
 		return SetPlan{}, ErrNotOpen
 	}
-	p := SetPlan{Entry: *cur, Before: cur.Qty}
+	if cur.ArticleID == "" {
+		variety = "" // free text has no variety
+	}
+	p := SetPlan{Entry: *cur, Before: cur.Qty, Variety: NormalizeVariety(variety)}
 	var bare *Entry // another entry of the article without a quantity
 	for i, e := range entries {
-		if e.ID == id || e.Done || !e.Same(cur.ArticleID, cur.Text) {
+		if e.ID == id || e.Done || !e.Same(cur.ArticleID, variety, cur.Text) {
 			continue
 		}
 		if e.Qty.None() {

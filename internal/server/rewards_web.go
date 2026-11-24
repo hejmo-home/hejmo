@@ -255,7 +255,8 @@ type childCard struct {
 	// instead of offering a second request.
 	Asked bool
 	Wait  string
-	// CanAsk: the goal card offers "Ask parents" (enough free stars, no request open).
+	// CanAsk: the goal card offers "Ask parents" (enough free stars, limit not
+	// used up, no request open).
 	CanAsk bool
 }
 
@@ -338,8 +339,7 @@ func (s *server) renderChildRewards(w http.ResponseWriter, r *http.Request, p pr
 				key = "rwd.child.missing.one"
 			}
 			c.Missing = s.i18n.Format(lang, i18n.Msg(key, "n", strconv.Itoa(st.Missing)))
-			c.Pct = max(0, min(100, free*100/rw.Price))
-			c.Label = s.i18n.Format(lang, i18n.Msg("rwd.child.progress", "have", strconv.Itoa(free), "price", strconv.Itoa(rw.Price)))
+			c.Pct, c.Label = s.progressOf(lang, free, rw.Price)
 			c.Have, c.Left = free, st.Missing
 		}
 		c.Cost = rw.Price
@@ -350,8 +350,7 @@ func (s *server) renderChildRewards(w http.ResponseWriter, r *http.Request, p pr
 			c.Missing, c.Pct, c.Label, c.Have, c.Left = "", 0, "", 0, 0
 			if !c.Affordable {
 				have := max(balance, 0)
-				c.Pct = max(0, min(100, have*100/rw.Price))
-				c.Label = s.i18n.Format(lang, i18n.Msg("rwd.child.progress", "have", strconv.Itoa(have), "price", strconv.Itoa(rw.Price)))
+				c.Pct, c.Label = s.progressOf(lang, have, rw.Price)
 				c.Have, c.Left = have, rw.Price-have
 			}
 		}
@@ -372,9 +371,9 @@ func (s *server) renderChildRewards(w http.ResponseWriter, r *http.Request, p pr
 		case isGoal:
 			cc := c
 			cc.CanSave, cc.Asked = false, asked[rw.ID]
-			cc.CanAsk = cc.Affordable && !cc.Asked && st.Affordable
+			cc.CanAsk = cc.Affordable && !cc.Asked && st.Affordable && !st.LimitReached
 			if cc.Asked {
-				cc.Wait = s.i18n.Format(lang, i18n.Msg("rwd.child.wait", "parents", s.joinNames(lang, "rwd.or", s.parentNames(people))))
+				cc.Wait = s.waitWords(lang, people)
 			}
 			goalCard = &cc
 		case st.LimitReached:
@@ -401,7 +400,7 @@ func (s *server) renderChildRewards(w http.ResponseWriter, r *http.Request, p pr
 		switch d.Status {
 		case store.RedemptionOpen:
 			c.Open, c.Kind = true, "wait"
-			c.Wait = s.i18n.Format(lang, i18n.Msg("rwd.child.wait", "parents", s.joinNames(lang, "rwd.or", parents)))
+			c.Wait = s.waitWords(lang, people)
 			c.When = s.i18n.Format(lang, i18n.Msg("rwd.child.asked", "when", s.rwdWhen(p, lang, d.AskedAt, false)))
 			rw := byID[d.RewardID]
 			switch chk := reward.CanRedeem(d.Price, balance, rw.Limit, times[d.RewardID][p.person.ID], s.now(), p.location()); chk.Reason {
@@ -1097,4 +1096,15 @@ func (s *server) handleRewardPicture(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "private, max-age=31536000, immutable") // the address changes with the picture
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	_, _ = w.Write(b)
+}
+
+// progressOf is the bar of a reward card: the percentage and the words for
+// "have of price stars".
+func (s *server) progressOf(lang string, have, price int) (int, string) {
+	return max(0, min(100, have*100/price)), s.i18n.Format(lang, i18n.Msg("rwd.child.progress", "have", strconv.Itoa(have), "price", strconv.Itoa(price)))
+}
+
+// waitWords is "Waiting for <parents>" for a request that is open.
+func (s *server) waitWords(lang string, people []store.Person) string {
+	return s.i18n.Format(lang, i18n.Msg("rwd.child.wait", "parents", s.joinNames(lang, "rwd.or", s.parentNames(people))))
 }

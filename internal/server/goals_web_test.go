@@ -133,6 +133,13 @@ func TestAnAffordableGoalSaysEnoughStarsAndALimitSaysWhenItIsBackWhileSavingGoes
 	g.rewardWeb.stars(t, g.mia, -30) // 2
 	page = g.miaScreen.get("/tasks/rewards", "de").body
 	hasAll(t, "limited goal", page, `class="rwd-state later"`, "<b>Diesen Monat schon eingelöst.</b> Wieder ab ", "Du kannst trotzdem weiter sparen.", "<b>2 von 30 Sternen</b> · noch 28")
+	// Enough stars but the limit is used up: the card says so and offers no
+	// request (POST /ask would answer 409).
+	g.rewardWeb.stars(t, g.mia, 78) // 80
+	page = g.miaScreen.get("/tasks/rewards", "de").body
+	card := goalCard(t, page)
+	hasAll(t, "limited goal with enough stars", card, "<b>Genug Sterne</b>", "<b>Diesen Monat schon eingelöst.</b>")
+	hasNone(t, "limited goal with enough stars", card, `class="rwd-ask"`, "Eltern fragen")
 }
 
 func TestARedemptionAnArchivedRewardAndAChangedAudienceEndTheGoalWithAKindLine(t *testing.T) {
@@ -364,4 +371,16 @@ func TestTheGoalCardCountsTheWholeBalanceAndOffersNoAskWhileOtherRequestsSetStar
 	g.rewardWeb.stars(t, g.mia, -10) // 20, still 8 set aside
 	card = goalCard(t, g.miaScreen.get("/tasks/rewards", "de").body)
 	hasAll(t, "goal card below the price", card, `aria-label="20 von 30 Sternen"`, `style="--pct:66"`, "<b>20 von 30 Sternen</b> · noch 10")
+}
+
+func TestTheGoalCardKeepsSayingItWaitsWhenTheBalanceFallsBelowThePrice(t *testing.T) {
+	t.Parallel()
+	g := newGoalWeb(t)
+	g.rewardWeb.stars(t, g.mia, 18) // 30 = the price of the goal
+	g.choose(t, g.kino)
+	g.ask(t, g.kino)
+	g.rewardWeb.stars(t, g.mia, -10) // 20
+	card := goalCard(t, g.miaScreen.get("/tasks/rewards", "de").body)
+	hasAll(t, "asked goal card below the price", card, "von 30 Sternen", "Wartet auf")
+	hasNone(t, "asked goal card below the price", card, `class="rwd-ask"`)
 }

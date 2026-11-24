@@ -1,0 +1,111 @@
+{
+  "n": 46,
+  "slug": "gebratener-reis-ei",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 20,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/egg-fried-rice",
+    "site": "BBC Good Food",
+    "ratings": 154
+  },
+  "ingredients": [
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Langkornreis",
+      "article_en": "Long-grain rice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Pflanzenöl",
+      "article_en": "Vegetable oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": "fein gehackt",
+      "note_en": "finely chopped"
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": "verquirlt",
+      "note_en": "beaten"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Frühlingszwiebeln",
+      "article_en": "Spring onions",
+      "note_de": "in Scheiben, zum Servieren",
+      "note_en": "sliced, to serve"
+    }
+  ],
+  "de": {
+    "title": "Gebratener Reis mit Ei",
+    "steps": [
+      "Reis nach Packungsanleitung kochen und abgießen. Dann im Sieb oder auf einem Blech ausdampfen und trocknen lassen. Trockener Reis brät später locker, feuchter klebt.",
+      "Zwiebel fein hacken, Frühlingszwiebeln in Scheiben schneiden, Eier verquirlen.",
+      "Den großen Wok oder die große Pfanne auf hoher Hitze heiß werden lassen. 2 EL Öl hineingeben und die Zwiebel etwa 5 Minuten braten, bis sie leicht gebräunt ist.",
+      "Den Reis dazugeben und etwa 3 Minuten mitbraten, dabei oft wenden.",
+      "Reis und Zwiebel an den Rand schieben. In die freie Mitte das restliche Öl geben und die Eier hineingießen. Stocken lassen, bis sie so fest sind, wie du sie magst.",
+      "Eier und Reis vermischen. Mit den Frühlingszwiebeln bestreut servieren."
+    ]
+  },
+  "en": {
+    "title": "Egg fried rice",
+    "steps": [
+      "Cook the rice according to the packet, then drain. Let it steam dry in a sieve or on a tray. Dry rice fries up loose, damp rice turns sticky.",
+      "Finely chop the onion, slice the spring onions and beat the eggs.",
+      "Heat the large wok or pan over high heat. Add 2 tbsp oil and fry the onion for about 5 minutes until lightly browned.",
+      "Add the rice and fry for about 3 minutes, turning often.",
+      "Push the rice and onion to the side. Add the remaining oil to the free space in the middle and pour in the eggs. Let them set until as firm as you like.",
+      "Mix the eggs and rice together. Serve sprinkled with the spring onions."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "piece"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

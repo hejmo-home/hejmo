@@ -1,0 +1,193 @@
+{
+  "n": 1,
+  "slug": "spaghetti-bolognese",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 65,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Sellerie",
+      "en": "Celery"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/393031127655461/Spaghetti-Bolognese.html",
+    "site": "Chefkoch",
+    "ratings": 638
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Möhre",
+      "article_en": "Carrot",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stange",
+      "article_de": "Staudensellerie",
+      "article_en": "Celery stalk",
+      "note_de": "optional",
+      "note_en": "optional"
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Rinderhackfleisch",
+      "article_en": "Ground beef",
+      "note_de": "oder Tartar",
+      "note_en": "or beef tartare"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "ml",
+      "article_de": "Gemüsebrühe",
+      "article_en": "Vegetable stock",
+      "note_de": "Instant",
+      "note_en": "instant"
+    },
+    {
+      "amount": 70,
+      "unit": "g",
+      "article_de": "Tomatenmark",
+      "article_en": "Tomato paste",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Oregano",
+      "article_en": "Oregano",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Tomaten, stückige",
+      "article_en": "Chopped tomatoes",
+      "note_de": "mit Kräutern, z. B. aus dem Tetrapack",
+      "note_en": "with herbs, e.g. from a carton"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Tomatenketchup",
+      "article_en": "Tomato ketchup",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Vollmilch",
+      "article_en": "Whole milk",
+      "note_de": "optional, für eine sämigere Sauce",
+      "note_en": "optional, for a creamier sauce"
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Spaghetti",
+      "article_en": "Spaghetti",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Spaghetti Bolognese",
+    "steps": [
+      "Vorbereiten: Zwiebel, Knoblauch und Möhre ganz fein würfeln. Wenn du Staudensellerie magst, kommt er klein gewürfelt dazu. Die Brühe anrühren und bereitstellen.",
+      "Das Hack in eine große Pfanne geben, bevor sie heiß ist. Dann bei mittlerer Hitze langsam erwärmen, sodass es im eigenen Fett anbrät. Mit dem Pfannenwender in kleine Krümel zerdrücken und rühren, bis es rundum Farbe hat. Gleich jetzt mit Salz und Pfeffer würzen.",
+      "Zwiebel, Knoblauch, Möhre (und Sellerie) zum Hack geben und mitbraten, bis alles weich ist. Dann mit der Brühe ablöschen und den Bratensatz vom Boden lösen.",
+      "Tomatenmark, Oregano, die stückigen Tomaten und das Ketchup unterrühren. Wer eine sämigere Sauce mag, gibt 100 ml Milch dazu.",
+      "Die Sauce bei milder Hitze etwa 40 Minuten simmern lassen, ab und zu umrühren. Ist sie zu dick, gib einen Schluck Wasser dazu. Zum Schluss abschmecken.",
+      "Etwa 15 Minuten vor Ende Spaghetti in reichlich Salzwasser nach Packungsangabe bissfest kochen und abgießen. Mit der Sauce servieren."
+    ]
+  },
+  "en": {
+    "title": "Spaghetti Bolognese",
+    "steps": [
+      "Prep: Dice the onion, garlic and carrot very finely. If you like celery, dice it small and add it too. Mix up the stock and set it aside.",
+      "Put the mince into a large pan before it gets hot. Warm it slowly over medium heat so it fries in its own fat. Break it into small crumbs with a spatula and stir until it has colour all over. Season with salt and pepper right away.",
+      "Add onion, garlic, carrot (and celery) to the mince and fry until everything is soft. Then deglaze with the stock and scrape the browned bits off the bottom.",
+      "Stir in the tomato paste, oregano, chunky tomatoes and ketchup. If you like a creamier sauce, add 100 ml milk.",
+      "Let the sauce simmer on mild heat for about 40 minutes, stirring now and then. If it gets too thick, add a splash of water. Taste and adjust the seasoning at the end.",
+      "About 15 minutes before the end, cook the spaghetti in plenty of salted water until al dente, following the packet, and drain. Serve with the sauce."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "stalk"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 10,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

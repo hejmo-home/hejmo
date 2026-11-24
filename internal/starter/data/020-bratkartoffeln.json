@@ -1,0 +1,96 @@
+{
+  "n": 20,
+  "slug": "bratkartoffeln",
+  "category": "Hauptgerichte",
+  "servings": 2,
+  "time_minutes": 55,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/1338991238751459/Knusprige-Bratkartoffeln-nach-Muttis-Rezept.html",
+    "site": "Chefkoch",
+    "ratings": 1779
+  },
+  "ingredients": [
+    {
+      "amount": 600,
+      "unit": "g",
+      "article_de": "Kartoffeln, festkochend",
+      "article_en": "Waxy potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": "ca. 100 g",
+      "note_en": "about 100 g"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": "Raps- oder Sonnenblumenöl",
+      "note_en": "rapeseed or sunflower oil"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Bratkartoffeln",
+    "steps": [
+      "Kartoffeln schälen und in gleichmäßige Stücke schneiden, damit alle gleichzeitig gar werden.",
+      "Die Stücke kurz in kaltem Wasser einweichen. Dabei geht Stärke raus, und die Kartoffeln werden knuspriger.",
+      "Das Öl in einer Pfanne mit Deckel auf höchster Stufe heiß werden lassen.",
+      "Kartoffeln abgießen, gut abtropfen lassen und in die heiße Pfanne geben. Sofort den Deckel auflegen.",
+      "Nach etwa 5 Minuten zum ersten Mal wenden.",
+      "Danach immer wieder wenden und jedes Mal gleich den Deckel wieder drauf. Der Dampf gart die Kartoffeln durch. Wird es zu dunkel, Hitze reduzieren. Insgesamt dauert es etwa 35 Minuten.",
+      "Etwa 10 Minuten vor Schluss die gewürfelte Zwiebel obenauf legen, nicht untermischen.",
+      "Mit Deckel etwa 5 Minuten dünsten lassen.",
+      "Dann die Zwiebel unterrühren und ohne Deckel noch etwa 5 Minuten braten, bis die Kartoffeln knusprig, aber nicht matschig sind.",
+      "Erst ganz zum Schluss mit Salz und Pfeffer würzen."
+    ]
+  },
+  "en": {
+    "title": "Fried potatoes",
+    "steps": [
+      "Peel the potatoes and cut them into even pieces so they all cook at the same time.",
+      "Soak the pieces briefly in cold water. This draws out starch and makes the potatoes crispier.",
+      "Heat the oil on the highest setting in a pan with a lid.",
+      "Drain the potatoes well and add them to the hot pan. Put the lid on immediately.",
+      "Turn them for the first time after about 5 minutes.",
+      "After that keep turning them, and each time put the lid straight back on. The steam cooks the potatoes through. If it gets too dark, reduce the heat. It takes about 35 minutes in total.",
+      "About 10 minutes before the end, lay the diced onion on top, without mixing it in.",
+      "Let it steam with the lid on for about 5 minutes.",
+      "Then stir in the onion and fry for another 5 minutes or so without the lid, until the potatoes are crisp but not mushy.",
+      "Only season with salt and pepper right at the end."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

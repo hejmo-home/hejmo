@@ -1,0 +1,119 @@
+{
+  "n": 180,
+  "slug": "panna-cotta",
+  "category": "Desserts",
+  "servings": 4,
+  "time_minutes": 15,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/panna-cotta",
+    "site": "BBC Good Food",
+    "ratings": 68
+  },
+  "ingredients": [
+    {
+      "amount": 2.5,
+      "unit": "Blatt",
+      "article_de": "Gelatine",
+      "article_en": "Gelatine",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 150,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 400,
+      "unit": "ml",
+      "article_de": "Schlagsahne",
+      "article_en": "Double cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 60,
+      "unit": "g",
+      "article_de": "Feiner Zucker (Caster Sugar)",
+      "article_en": "Caster sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Vanilleschote",
+      "article_en": "Vanilla pod",
+      "note_de": "der Länge nach aufgeschlitzt",
+      "note_en": "split lengthways"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Frische Erdbeeren",
+      "article_en": "Fresh strawberries",
+      "note_de": "zum Servieren",
+      "note_en": "to serve"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Erdbeerkompott",
+      "article_en": "Strawberry compote",
+      "note_de": "zum Servieren",
+      "note_en": "to serve"
+    }
+  ],
+  "de": {
+    "title": "Vanille-Panna-Cotta",
+    "steps": [
+      "Weiche 2,5 Blatt Gelatine in reichlich kaltem Wasser 5 Minuten ein.",
+      "Gib in einen Topf 150 ml Milch, 400 ml Sahne und 60 g feinen Zucker. Schlitze die Vanilleschote der Länge nach auf, kratze das Mark heraus und gib Mark und Schote dazu.",
+      "Erhitze alles und lass es nur aufkochen, es soll nicht lange sprudeln. Dann den Topf vom Herd nehmen.",
+      "Drücke die Gelatine gut aus. Rühre sie erst jetzt, weg von der Hitze, in die warme Sahnemischung, bis sie sich ganz aufgelöst hat. Nimm die Vanilleschote heraus.",
+      "Verteile die Masse auf 4 Förmchen und stelle sie kalt. Sie muss mindestens ein paar Stunden fest werden.",
+      "Zum Stürzen: Wenn sich die Panna cotta nicht löst, tauche das Förmchen kurz in warmes Wasser. Dann auf einen Teller stürzen.",
+      "Serviere sie mit frischen Erdbeeren und Erdbeerkompott."
+    ]
+  },
+  "en": {
+    "title": "Vanilla panna cotta",
+    "steps": [
+      "Soak 2.5 sheets of gelatine in plenty of cold water for 5 minutes.",
+      "Put 150 ml milk, 400 ml cream and 60 g caster sugar in a saucepan. Split the vanilla pod lengthways, scrape out the seeds and add seeds and pod.",
+      "Heat everything and only bring it up to a simmer; it should not bubble for long. Then take the pan off the heat.",
+      "Squeeze the gelatine out well. Only now, off the heat, stir it into the warm cream mixture until it has dissolved completely. Remove the vanilla pod.",
+      "Divide the mixture between 4 ramekins and chill. It needs at least a couple of hours to set firm.",
+      "To unmould: if the panna cotta sticks, dip the ramekin briefly in warm water. Then turn it out onto a plate.",
+      "Serve with fresh strawberries and strawberry compote."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2.5,
+        "unit": "sheet"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Source is English; German article names translated. Source says \"2 1/2 sheets gelatine\". Gelatine is animal-derived, hence not vegetarian. Ratings: 68 from the list; page JSON-LD has no rating data. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

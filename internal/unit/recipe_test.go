@@ -15,7 +15,7 @@ func TestRecipesHaveKitchenMeasuresAndContainers(t *testing.T) {
 	if !reflect.DeepEqual(unit.Kitchen, wantKitchen) {
 		t.Errorf("kitchen measures = %v", unit.Kitchen)
 	}
-	wantContainers := []string{"can", "packet", "tub", "bunch", "jar", "bottle", "stick", "clove", "slice", "cube", "sprig", "stalk", "ball", "leaf", "punnet"}
+	wantContainers := []string{"can", "packet", "tub", "bunch", "jar", "bottle", "stick", "clove", "slice", "cube", "sprig", "stalk", "ball", "leaf", "punnet", "pot"}
 	if !reflect.DeepEqual(unit.Containers, wantContainers) {
 		t.Errorf("containers = %v", unit.Containers)
 	}
@@ -66,7 +66,7 @@ func TestRecipeUnitsAreTheHouseholdsPlusBothGroups(t *testing.T) {
 	got := unit.ForRecipe([]string{"piece", "g", "kg", "ml", "l", "pack", "bunch", "dozen"})
 	want := []string{"piece", "dozen", "pack", "bunch", "g", "kg", "ml", "l",
 		"tbsp", "tsp", "pinch", "knifetip", "dash", "splash", "handful", "cup",
-		"can", "packet", "tub", "jar", "bottle", "stick", "clove", "slice", "cube", "sprig", "stalk", "ball", "leaf", "punnet"}
+		"can", "packet", "tub", "jar", "bottle", "stick", "clove", "slice", "cube", "sprig", "stalk", "ball", "leaf", "punnet", "pot"}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("units for a recipe = %v", got)
 	}

@@ -1,0 +1,188 @@
+{
+  "n": 52,
+  "slug": "gemueselasagne",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 65,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.essen-und-trinken.de/rezepte/59848-rzpt-gemueselasagne",
+    "site": "Essen & Trinken",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Zucchini",
+      "article_en": "Zucchini",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Lauch",
+      "article_en": "Leek",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 6,
+      "unit": "Stiel",
+      "article_de": "Oregano",
+      "article_en": "Oregano",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Muskatnuss",
+      "article_en": "Nutmeg",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Packung",
+      "article_de": "Béchamelsauce (Fertigprodukt)",
+      "article_en": "Béchamel sauce (ready-made mix)",
+      "note_de": "insgesamt, davon 1,5 Packungen unter das Gemüse",
+      "note_en": "in total, 1.5 packs of it go into the vegetables"
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Kirschtomaten",
+      "article_en": "Cherry tomatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Gouda, mittelalt",
+      "article_en": "Gouda, medium-aged",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 9,
+      "unit": "Stk",
+      "article_de": "Lasagneblätter",
+      "article_en": "Lasagne sheets",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stiel",
+      "article_de": "Basilikum",
+      "article_en": "Basil",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Gemüselasagne",
+    "steps": [
+      "Gemüse vorbereiten: Möhren und Zucchini in Scheiben oder Würfel schneiden. Lauch längs halbieren, gut unter Wasser waschen, weil sich zwischen den Schichten Erde versteckt, und in Streifen schneiden. Oregano von den Stielen zupfen.",
+      "Butter in einer großen beschichteten Pfanne erhitzen. Das Gemüse darin 4 bis 5 Minuten unter Rühren anschwitzen.",
+      "Mit Salz, Pfeffer und Muskat würzen. Den Oregano dazugeben. Anderthalb Packungen Béchamelsauce (nach Packungsanleitung zubereitet) untermischen. Die restliche halbe Packung kommt später auf die Lasagne.",
+      "Ofen auf 200 °C Ober-/Unterhitze (180 °C Umluft) vorheizen. Kirschtomaten halbieren, Gouda reiben. Eine Form (etwa 30 x 18 cm) einfetten.",
+      "Schichten: Zuerst Lasagneblätter in die Form legen, dann Gemüsesoße, Tomaten und Käse verteilen. Insgesamt gibt es drei Lagen Nudelblätter (9 Blätter).",
+      "Auf die oberste Lage Blätter die restliche Béchamel streichen und mit Tomaten und Käse bestreuen.",
+      "Auf der untersten Schiene etwa 35 Minuten backen.",
+      "Die Lasagne etwa 5 Minuten ruhen lassen, dann lässt sie sich besser schneiden. Basilikum hacken und erst jetzt darüberstreuen."
+    ]
+  },
+  "en": {
+    "title": "Vegetable lasagne",
+    "steps": [
+      "Prepare the vegetables: cut the carrots and courgettes into slices or cubes. Halve the leek lengthways, wash it well under running water because soil hides between the layers, and cut it into strips. Pick the oregano leaves from the stalks.",
+      "Heat the butter in a large non-stick pan. Sweat the vegetables in it for 4 to 5 minutes, stirring.",
+      "Season with salt, pepper and nutmeg. Add the oregano. Stir in one and a half packs of béchamel sauce (made according to the packet). The remaining half pack goes on top of the lasagne later.",
+      "Preheat the oven to 200 C (180 C fan). Halve the cherry tomatoes and grate the Gouda. Grease a baking dish (about 30 x 18 cm).",
+      "Layering: first put lasagne sheets in the dish, then spread over some vegetable sauce, tomatoes and cheese. There are three layers of pasta sheets in total (9 sheets).",
+      "Spread the remaining béchamel over the top layer of sheets and sprinkle with tomatoes and cheese.",
+      "Bake on the lowest shelf for about 35 minutes.",
+      "Let the lasagne rest for about 5 minutes, it cuts better then. Chop the basil and only now scatter it over the top."
+    ],
+    "amounts_converted": [
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 6,
+        "unit": "sprig"
+      },
+      {
+        "index": 8,
+        "amount": 2,
+        "unit": "pack"
+      },
+      {
+        "index": 11,
+        "amount": 9,
+        "unit": "piece"
+      },
+      {
+        "index": 12,
+        "amount": 4,
+        "unit": "sprig"
+      }
+    ]
+  },
+  "review_note": "Béchamel is a packet product in the source (2 packs; 1.5 packs go into the vegetables, the rest on top). Source gives no preparation instruction for the packs. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

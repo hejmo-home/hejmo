@@ -1,0 +1,244 @@
+{
+  "n": 35,
+  "slug": "chili-sin-carne",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 60,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [
+    {
+      "de": "Sellerie",
+      "en": "Celery"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/vegan-chilli",
+    "site": "BBC Good Food",
+    "ratings": 270
+  },
+  "ingredients": [
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Süßkartoffeln",
+      "article_en": "Sweet potatoes",
+      "note_de": "geschält, in mittelgroße Stücke geschnitten",
+      "note_en": "peeled, cut into medium chunks"
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Paprikapulver, geräuchert",
+      "article_en": "Smoked paprika",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Kreuzkümmel, gemahlen",
+      "article_en": "Ground cumin",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": "gehackt",
+      "note_en": "chopped"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": "gehackt",
+      "note_en": "chopped"
+    },
+    {
+      "amount": 2,
+      "unit": "Stange",
+      "article_de": "Staudensellerie",
+      "article_en": "Celery sticks",
+      "note_de": "gehackt",
+      "note_en": "chopped"
+    },
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": "zerdrückt",
+      "note_en": "crushed"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Chilipulver",
+      "article_en": "Chilli powder",
+      "note_de": "Quelle: 1-2 TL, je nach gewünschter Schärfe (hier der untere Wert)",
+      "note_en": "source: 1-2 tsp depending on heat (lower value used)"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Oregano, getrocknet",
+      "article_en": "Dried oregano",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Tomatenmark",
+      "article_en": "Tomato purée",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Paprika, rot",
+      "article_en": "Red pepper",
+      "note_de": "in Stücke geschnitten",
+      "note_en": "cut into chunks"
+    },
+    {
+      "amount": 2,
+      "unit": "Dose",
+      "article_de": "Tomaten, gehackt",
+      "article_en": "Chopped tomatoes",
+      "note_de": "à 400 g",
+      "note_en": "400 g each"
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Schwarze Bohnen (Dose)",
+      "article_en": "Black beans (can)",
+      "note_de": "abgetropft",
+      "note_en": "drained"
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Kidneybohnen (Dose)",
+      "article_en": "Kidney beans (can)",
+      "note_de": "abgetropft",
+      "note_en": "drained"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Limettenspalten, Guacamole, Reis und Koriander",
+      "article_en": "Lime wedges, guacamole, rice and coriander",
+      "note_de": "zum Servieren",
+      "note_en": "to serve"
+    }
+  ],
+  "de": {
+    "title": "Chili sin Carne",
+    "steps": [
+      "Heize den Backofen auf 200 °C Ober-/Unterhitze (180 °C Umluft, Gasstufe 6) vor. Wälze die Süßkartoffelstücke in einem Bräter mit 1 EL Öl und je der Hälfte von geräuchertem Paprikapulver und Kreuzkümmel. Röste sie 25 Minuten, bis sie gar sind.",
+      "Erhitze in einem großen Topf das restliche Öl bei mittlerer Hitze. Dünste Zwiebel, Möhren und Staudensellerie 8 bis 10 Minuten an, bis das Gemüse weich ist.",
+      "Gib den Knoblauch dazu und brate ihn 1 Minute mit. Rühre dann Chilipulver, Oregano, das restliche Paprikapulver und den Kreuzkümmel sowie das Tomatenmark ein und röste alles 1 Minute.",
+      "Gib die Paprika, die gehackten Tomaten und 200 ml Wasser dazu. Lass alles 20 Minuten köcheln.",
+      "Gib die abgetropften schwarzen Bohnen und Kidneybohnen dazu und koche weitere 10 Minuten. Hebe die gerösteten Süßkartoffeln erst ganz zum Schluss unter, damit sie nicht zerfallen.",
+      "Schmecke ab und serviere mit Limettenspalten, Guacamole, Reis und Koriander. Das Chili hält sich bis zu 3 Monate im Gefrierfach. Im Slow Cooker gart es 5 Stunden auf niedriger Stufe, die Bohnen kommen für die letzte halbe bis ganze Stunde dazu. Die Süßkartoffeln gibst du dann gleich mit dem Gemüse dazu."
+    ]
+  },
+  "en": {
+    "title": "Veggie chilli",
+    "steps": [
+      "Preheat the oven to 200 °C top/bottom (180 °C fan, gas 6). In a roasting tin, coat the sweet potato pieces with 1 tbsp of oil and half each of the smoked paprika and cumin. Roast them for 25 minutes, until cooked.",
+      "Heat the remaining oil in a large saucepan over medium heat. Soften the onion, carrots and celery for 8 to 10 minutes, until the vegetables are soft.",
+      "Add the garlic and cook it for 1 minute. Then stir in the chilli powder, oregano, the remaining paprika and cumin and the tomato purée, and toast everything for 1 minute.",
+      "Add the pepper, the chopped tomatoes and 200 ml of water. Let everything simmer for 20 minutes.",
+      "Add the drained black beans and kidney beans and cook for another 10 minutes. Fold in the roasted sweet potatoes only at the very end, so they do not fall apart.",
+      "Season and serve with lime wedges, guacamole, rice and coriander. The chilli keeps for up to 3 months in the freezer. In a slow cooker it cooks for 5 hours on low, with the beans added for the last half hour to hour. Then the sweet potatoes go in with the vegetables from the start."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "tsp"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "tsp"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "stalk"
+      },
+      {
+        "index": 7,
+        "amount": 2,
+        "unit": "clove"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 10,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 11,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 12,
+        "amount": 2,
+        "unit": "can"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

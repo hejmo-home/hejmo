@@ -1,0 +1,159 @@
+{
+  "n": 156,
+  "slug": "bananenbrot",
+  "category": "Backen",
+  "servings": 8,
+  "time_minutes": 65,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/banana-bread",
+    "site": "BBC Good Food",
+    "ratings": 2363
+  },
+  "ingredients": [
+    {
+      "amount": 140,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "weich, plus etwas für die Form",
+      "note_en": "softened, plus extra for the tin"
+    },
+    {
+      "amount": 140,
+      "unit": "g",
+      "article_de": "Zucker, fein (Caster Sugar)",
+      "article_en": "Caster sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eier, Größe L",
+      "article_en": "Eggs, large",
+      "note_de": "verquirlt",
+      "note_en": "beaten"
+    },
+    {
+      "amount": 140,
+      "unit": "g",
+      "article_de": "Mehl mit Backpulver (Self-raising flour)",
+      "article_en": "Self-raising flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Backpulver",
+      "article_en": "Baking powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Bananen",
+      "article_en": "Bananas",
+      "note_de": "sehr reif, zerdrückt",
+      "note_en": "very ripe, mashed"
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Puderzucker",
+      "article_en": "Icing sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Handvoll",
+      "article_de": "Bananenchips, getrocknet",
+      "article_en": "Dried banana chips",
+      "note_de": "zum Dekorieren",
+      "note_en": "for decoration"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Wasser",
+      "article_en": "Water",
+      "note_de": "2 bis 3 TL für den Guss",
+      "note_en": "2 to 3 tsp for the icing"
+    }
+  ],
+  "de": {
+    "title": "Bananenbrot",
+    "steps": [
+      "Den Backofen auf 180 °C Ober-/Unterhitze (160 °C Umluft) vorheizen. Eine 2-lb-Kastenform (ca. 900 g) mit etwas Butter einfetten und mit Backpapier auslegen.",
+      "Weiche Butter und Zucker in einer Schüssel schaumig rühren, bis die Masse hell und luftig ist.",
+      "Die verquirlten Eier nach und nach unterrühren, zwischendurch immer wieder einen Löffel Mehl dazugeben. So gerinnt der Teig nicht.",
+      "Restliches Mehl mit dem Backpulver mischen und vorsichtig unterheben. Zum Schluss die zerdrückten Bananen unterziehen.",
+      "Den Teig in die Form füllen, glatt streichen und ca. 50 Minuten backen. Die Zeit hängt von der Form ab: Schau schon nach 30 bis 40 Minuten nach, dann alle 5 Minuten.",
+      "Stäbchenprobe: Ein Holzstäbchen in die Mitte stechen. Kommt es sauber heraus, ist das Brot fertig.",
+      "Das Brot 10 Minuten in der Form abkühlen lassen, dann herausheben und auf einem Kuchengitter ganz auskühlen lassen.",
+      "Puderzucker mit 2 bis 3 TL Wasser zu einem dickflüssigen Guss verrühren. Über das kalte Brot träufeln und mit den Bananenchips bestreuen."
+    ]
+  },
+  "en": {
+    "title": "Banana bread",
+    "steps": [
+      "Preheat the oven to 180 °C top and bottom heat (160 °C fan). Grease a 2 lb loaf tin (about 900 g) with a little butter and line it with baking parchment.",
+      "Beat the soft butter and sugar in a bowl until the mixture is pale and fluffy.",
+      "Stir in the beaten eggs bit by bit, adding a spoonful of flour in between each time. That keeps the batter from splitting.",
+      "Mix the rest of the flour with the baking powder and fold it in gently. Fold in the mashed bananas last.",
+      "Fill the batter into the tin, smooth the top and bake about 50 minutes. The time depends on the tin, so start checking after 30 to 40 minutes, then every 5 minutes.",
+      "Skewer test: push a wooden skewer into the middle. If it comes out clean, the loaf is done.",
+      "Leave the loaf in the tin for 10 minutes, then lift it out and let it cool completely on a wire rack.",
+      "Stir the icing sugar with 2 to 3 tsp water into a thick glaze. Drizzle it over the cooled loaf and scatter the banana chips on top."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "handful"
+      }
+    ]
+  },
+  "review_note": "Rating count from the list. Servings: source says 8-10 slices, 8 used (rounded down). Source steps not copied. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

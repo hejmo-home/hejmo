@@ -1,0 +1,207 @@
+{
+  "n": 194,
+  "slug": "wraps-mit-avocado-und-feta",
+  "category": "Snacks und Brotdose",
+  "servings": 4,
+  "time_minutes": 30,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/salat-avocado-wraps-mit-feta-8727",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Tomaten",
+      "article_en": "Tomatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Frühlingszwiebeln",
+      "article_en": "Spring onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Avocados",
+      "article_en": "Avocados",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 5,
+      "unit": "EL",
+      "article_de": "Limettensaft",
+      "article_en": "Lime juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Sambal oelek oder Harissa",
+      "article_en": "Sambal oelek or harissa",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Koriander, gemahlen",
+      "article_en": "Ground coriander",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 8,
+      "unit": "Stk",
+      "article_de": "Kopfsalatblätter",
+      "article_en": "Lettuce leaves",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Feta (Schafskäse)",
+      "article_en": "Feta (sheep milk cheese)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Joghurt",
+      "article_en": "Yoghurt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Salatgurke",
+      "article_en": "Cucumber",
+      "note_de": "klein",
+      "note_en": "small"
+    },
+    {
+      "amount": 8,
+      "unit": "Stk",
+      "article_de": "Tortillas",
+      "article_en": "Tortilla wraps",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Salat-Avocado-Wraps mit Feta",
+    "steps": [
+      "Die Tomaten halbieren, Stielansätze und Kerne entfernen und das Fruchtfleisch winzig würfeln. Frühlingszwiebeln samt zartem Grün in feine Ringe schneiden. Die Gurke längs halbieren, die Kerne mit einem Löffel herauskratzen und das Fruchtfleisch fein würfeln.",
+      "Die Avocados halbieren, entsteinen, das Fruchtfleisch aus der Schale lösen und fein zerdrücken. Mit Limettensaft, Olivenöl und Sambal oelek (oder Harissa) verrühren, Tomatenwürfel und Zwiebelringe unterziehen und mit Koriander und Salz würzen.",
+      "Den Feta fein zerbröseln, mit dem Joghurt vermischen und die Gurkenwürfel unterheben.",
+      "Die Salatblätter waschen, trocken schleudern und dicke Mittelrippen flach schneiden. Eine Pfanne erhitzen und die Tortillas nacheinander je eine halbe Minute pro Seite bei mittlerer Temperatur braten.",
+      "Jede Tortilla mit Avocadocreme bestreichen, ein Salatblatt darauflegen und etwas Feta-Joghurt darauf geben. Das untere Ende etwa 3 cm hochklappen, die Seiten leicht einschlagen und straff aufrollen. Die Wraps am unteren Ende in Backpapier hüllen, komplett in Frischhaltefolie wickeln und bis zum Essen durchziehen lassen."
+    ]
+  },
+  "en": {
+    "title": "Lettuce and avocado wraps with feta",
+    "steps": [
+      "Halve the tomatoes, remove the stem ends and seeds and dice the flesh very small. Slice the spring onions, including the tender green, into fine rings. Halve the cucumber lengthways, scrape out the seeds with a spoon and dice the flesh finely.",
+      "Halve the avocados, remove the stones, scoop the flesh from the skins and mash finely. Stir in the lime juice, olive oil and sambal oelek (or harissa), fold in the diced tomatoes and onion rings and season with salt and coriander.",
+      "Crumble the feta finely, mix with the yoghurt and fold in the diced cucumber.",
+      "Wash the lettuce leaves, spin them dry and trim the thick midribs flat. Heat a pan and fry the tortillas one after another over medium heat for half a minute per side.",
+      "Spread each tortilla with avocado cream, lay a lettuce leaf on it and add some feta yoghurt. Fold the bottom edge up about 3 cm, tuck in the sides slightly and roll up tightly. Wrap each wrap at the bottom end in baking paper, then wrap completely in cling film and let it rest until eating."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 5,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "tsp"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 8,
+        "amount": 8,
+        "unit": "piece"
+      },
+      {
+        "index": 11,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 12,
+        "amount": 8,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Page shows 82 ratings; list says Redaktionsküche. Spice (sambal/harissa) may be too hot for small children; adjust. Steps restructured (own step division and order of work) after paraphrase spot-check 23/11/2026.",
+  "originality": {
+    "overlap_5gram": 0.0,
+    "checked": "23/11/2026"
+  }
+}

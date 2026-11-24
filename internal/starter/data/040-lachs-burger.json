@@ -1,0 +1,193 @@
+{
+  "n": 40,
+  "slug": "lachs-burger",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 30,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Fisch",
+      "en": "Fish"
+    },
+    {
+      "de": "Soja",
+      "en": "Soy"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/superhealthy-salmon-burgers",
+    "site": "BBC Good Food",
+    "ratings": 413
+  },
+  "ingredients": [
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Lachsfilets",
+      "article_en": "Salmon fillets",
+      "note_de": "in Stücke geschnitten",
+      "note_en": "cut into chunks"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Thai-Currypaste, rot",
+      "article_en": "Thai red curry paste",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Ingwer, frisch",
+      "article_en": "Fresh root ginger",
+      "note_de": "daumengroßes Stück, gerieben",
+      "note_en": "thumb-sized piece, grated"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Sojasoße",
+      "article_en": "Soy sauce",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Koriander",
+      "article_en": "Coriander",
+      "note_de": "Hälfte gehackt, Hälfte Blättchen gezupft",
+      "note_en": "half chopped, half leaves picked"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Pflanzenöl",
+      "article_en": "Vegetable oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zitronenspalten",
+      "article_en": "Lemon wedges",
+      "note_de": "zum Servieren",
+      "note_en": "to serve"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Stk",
+      "article_de": "Salatgurke, groß",
+      "article_en": "Cucumber",
+      "note_de": "halbe große oder 1 kleine",
+      "note_en": "half a large or 1 small"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Weißweinessig",
+      "article_en": "White wine vinegar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Zucker, fein (Golden Caster)",
+      "article_en": "Golden caster sugar",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Lachs-Burger mit Möhren-Gurken-Salat",
+    "steps": [
+      "Möhren und die Gurke mit dem Sparschäler zu langen Bändern hobeln, in einer Schüssel mit Essig und Zucker vermengen, bis sich der Zucker gelöst hat, und beiseitestellen.",
+      "Lachs, Currypaste, Ingwer, Sojasoße und die gehackte Hälfte des Korianders in der Küchenmaschine stoßweise grob zerkleinern; er soll gehackt, nicht püriert sein.",
+      "Aus der Masse 4 Burger formen. Das Öl in einer beschichteten Pfanne erhitzen und die Burger pro Seite 4 bis 5 Minuten braten, bis sie außen knusprig und durchgegart sind.",
+      "Die Korianderblätter unter den Salat heben, auf 4 Teller verteilen und die Burger danebenlegen. Mit Zitronenspalten und nach Wunsch gekochtem Reis servieren."
+    ]
+  },
+  "en": {
+    "title": "Salmon burgers with carrot and cucumber salad",
+    "steps": [
+      "With a peeler, shave the carrots and cucumber into long ribbons. Dress them in a bowl with the vinegar and sugar, tossing until the sugar grains disappear, and set aside.",
+      "Pulse the salmon, curry paste, ginger, soy sauce and the chopped half of the coriander in a food processor until coarsely chopped; it should be minced, not puréed.",
+      "Form 4 burgers from the mixture. Warm the oil in a coated pan, then cook the burgers for 4 to 5 minutes a side, until they are crisp on the outside and cooked all the way through.",
+      "Fold the coriander leaves into the salad, divide between 4 plates and place the burgers alongside. Serve with lemon wedges and, if you like, boiled rice."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "bunch"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 7,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 8,
+        "amount": 0.5,
+        "unit": "piece"
+      },
+      {
+        "index": 9,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 10,
+        "amount": 1,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "List title is Hamburger / beef burgers, but the linked source recipe is salmon burgers (no buns, served with carrot-cucumber salad and rice). Title, slug and ingredients follow the source; Confirmed by Lena 23/11/2026: title follows the filling. Curry paste is spicy; use less for children. Steps restructured (own step division and order of work) after paraphrase spot-check 23/11/2026.",
+  "originality": {
+    "overlap_5gram": 0.009,
+    "checked": "23/11/2026"
+  }
+}

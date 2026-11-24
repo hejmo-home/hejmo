@@ -389,7 +389,7 @@ func TestTheNewFormHasOnePageThreeIngredientLinesTwoStepsAndPreselectsMainDish(t
 		t.Errorf("%d categories", n)
 	}
 	opts := rcpBetween(t, r.body, `<select class="iu"`, "</select>")
-	rcpHas(t, "units", opts, `<option value="" selected>no unit</option>`, `value="g"`, `value="tbsp">tbsp</option>`, `value="tsp"`, `value="pinch"`, `value="can">can</option>`, `value="clove"`, `value="punnet"`, `value="bunch"`)
+	rcpHas(t, "units", opts, `<option value="" selected>no unit</option>`, `value="g"`, `value="tbsp">tbsp</option>`, `value="tsp"`, `value="pinch"`, `value="can">can</option>`, `value="clove"`, `value="punnet"`, `value="pot">pot</option>`, `value="bunch"`)
 	if strings.Count(opts, `value="bunch"`) != 1 {
 		t.Errorf("bunch is offered twice")
 	}

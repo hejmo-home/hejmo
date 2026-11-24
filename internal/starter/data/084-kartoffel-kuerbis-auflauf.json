@@ -1,0 +1,182 @@
+{
+  "n": 84,
+  "slug": "kartoffel-kuerbis-auflauf",
+  "category": "Hauptgerichte",
+  "servings": 6,
+  "time_minutes": 85,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/kartoffel-kuerbis-auflauf-45556",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Kartoffeln, mehligkochend",
+      "article_en": "Floury potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Risottoreis",
+      "article_en": "Risotto rice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "ml",
+      "article_de": "Gemüsebrühe oder Fleischbrühe",
+      "article_en": "Vegetable or meat stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 600,
+      "unit": "g",
+      "article_de": "Kürbis",
+      "article_en": "Pumpkin",
+      "note_de": "ein Stück, etwa 600 g",
+      "note_en": "one piece, about 600 g"
+    },
+    {
+      "amount": 2,
+      "unit": "Stange",
+      "article_de": "Lauch",
+      "article_en": "Leek",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Handvoll",
+      "article_de": "Löwenzahnblätter, zart",
+      "article_en": "Dandelion leaves, tender",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Zweig",
+      "article_de": "Oregano",
+      "article_en": "Oregano",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 80,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Sahne oder Milch",
+      "article_en": "Cream or milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Muskatnuss",
+      "article_en": "Nutmeg",
+      "note_de": "gerieben",
+      "note_en": "grated"
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Hartkäse",
+      "article_en": "Hard cheese",
+      "note_de": "gerieben, z. B. Castelmagno, Casera oder Montasio",
+      "note_en": "grated, e.g. Castelmagno, Casera or Montasio"
+    }
+  ],
+  "de": {
+    "title": "Kartoffel-Kürbis-Auflauf",
+    "steps": [
+      "Heize den Ofen auf 180 °C Ober-/Unterhitze (160 °C Umluft) vor, Rost in der Mitte. Fette die Auflaufform ein.",
+      "Schäle die Kartoffeln (500 g) und koche sie in Salzwasser, bis sie weich sind.",
+      "Reis: Bringe 300 ml Brühe in einem zweiten Topf zum Kochen. Gib 100 g Risottoreis dazu, lege den Deckel auf und lass ihn bei niedriger Hitze 15 Minuten quellen.",
+      "Schneide den Kürbis (600 g) in kleine Würfel. Schneide 2 Stangen Lauch in Ringe. Zupfe den Oregano ab und hacke ihn mit den Löwenzahnblättern.",
+      "Erhitze 40 g Butter in einer Pfanne. Dünste die Kürbiswürfel darin bei niedriger Hitze 8 Minuten.",
+      "Schmelze in einer weiteren Pfanne 20 g Butter. Dünste den Lauch bei niedriger Hitze 10 Minuten. Gib dann Oregano und Löwenzahn dazu.",
+      "Gieße die Kartoffeln ab und lass sie im Topf ausdampfen. Drücke sie dann durch die Presse. Mische sie mit dem Lauch und der Hälfte der Sahne. Würze mit Salz, Pfeffer und Muskat.",
+      "Mische den Reis mit dem Kürbis und der übrigen Sahne.",
+      "Schichte in der Form abwechselnd Reis-Kürbis-Masse und Kartoffelmasse. Streue zwischen die Schichten jeweils geriebenen Käse (100 g insgesamt, einen Rest hebst du für oben auf).",
+      "Verteile die restliche Butter (20 g) in Würfeln obenauf. Backe den Auflauf etwa 40 Minuten."
+    ]
+  },
+  "en": {
+    "title": "Potato and pumpkin bake",
+    "steps": [
+      "Preheat the oven to 180 °C top/bottom heat (160 °C fan), rack in the middle. Grease the baking dish.",
+      "Peel the potatoes (500 g) and boil them in salted water until soft.",
+      "Rice: Bring 300 ml stock to the boil in a second pot. Add 100 g risotto rice, put the lid on and let it swell over low heat for 15 minutes.",
+      "Cut the pumpkin (600 g) into small cubes. Cut 2 leeks into rings. Pick the oregano and chop it with the dandelion leaves.",
+      "Heat 40 g butter in a pan. Steam the pumpkin cubes in it over low heat for 8 minutes.",
+      "Melt 20 g butter in another pan. Steam the leek over low heat for 10 minutes. Then add the oregano and dandelion.",
+      "Drain the potatoes and let them steam dry in the pot. Then press them through the ricer. Mix them with the leek and half of the cream. Season with salt, pepper and nutmeg.",
+      "Mix the rice with the pumpkin and the remaining cream.",
+      "In the dish, layer rice-pumpkin mixture and potato mixture alternately. Sprinkle grated cheese between the layers each time (100 g in total, keep some for the top).",
+      "Dot the remaining butter (20 g) in cubes on top. Bake the casserole for about 40 minutes."
+    ],
+    "amounts_converted": [
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "stalk"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "handful"
+      },
+      {
+        "index": 7,
+        "amount": 2,
+        "unit": "sprig"
+      }
+    ]
+  },
+  "review_note": "Time from source: 45 min prep + 40 min baking = 85 min (Aufwand shown on the page). Source shows 3 ratings; list says Redaktionsküche. Diet left null (list says contains meat, via optional meat stock). Steps rewritten in own words on 23/11/2026 from the source steps (times, temperatures and order per source). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

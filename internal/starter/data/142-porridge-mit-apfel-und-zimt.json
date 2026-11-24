@@ -1,0 +1,80 @@
+{
+  "n": 142,
+  "slug": "porridge-mit-apfel-und-zimt",
+  "category": "Frühstück",
+  "servings": 2,
+  "time_minutes": 15,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/perfect-porridge",
+    "site": "BBC Good Food",
+    "ratings": "112"
+  },
+  "ingredients": [
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Haferflocken",
+      "article_en": "Porridge oats",
+      "note_de": "Porridge-Haferflocken",
+      "note_en": "porridge oats"
+    },
+    {
+      "amount": 350,
+      "unit": "ml",
+      "article_de": "Milch oder Wasser",
+      "article_en": "Milk or water",
+      "note_de": "oder eine Mischung aus beidem",
+      "note_en": "or a mixture of the two"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Joghurt, mit etwas Milch verdünnt",
+      "article_en": "Yogurt, thinned with a little milk",
+      "note_de": "zum Servieren",
+      "note_en": "to serve"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Honig, flüssig",
+      "article_en": "Clear honey",
+      "note_de": "zum Servieren",
+      "note_en": "to serve"
+    }
+  ],
+  "de": {
+    "title": "Porridge",
+    "steps": [
+      "Haferflocken, Milch oder Wasser und eine Prise Salz in einen Topf geben. Unter Rühren aufkochen und 4–5 Min. köcheln lassen. Oft rühren, denn Porridge brennt leicht an.",
+      "Alternativ in der Mikrowelle: Alles in eine große, mikrowellengeeignete Schüssel geben, 5 Min. auf höchster Stufe erhitzen und nach der Hälfte der Zeit umrühren. Danach 2 Min. stehen lassen.",
+      "Den Joghurt mit etwas Milch verdünnen. Den Porridge in Schalen füllen und mit Joghurt und flüssigem Honig servieren."
+    ]
+  },
+  "en": {
+    "title": "Porridge",
+    "steps": [
+      "Put the oats, milk or water and a pinch of salt in a saucepan. Bring to the boil, stirring, and simmer for 4-5 min. Stir often, because porridge sticks easily.",
+      "Alternatively in the microwave: put everything in a large microwave-safe bowl, heat on high for 5 min and stir halfway through. Then let it stand for 2 min.",
+      "Thin the yogurt with a little milk. Spoon the porridge into bowls and serve with yogurt and runny honey."
+    ],
+    "amounts_converted": []
+  },
+  "review_note": "List title is Porridge mit Apfel und Zimt; the linked source recipe (Perfect porridge) contains no apple or cinnamon, so the title and ingredients follow the source. Apple and cinnamon can be added as serving suggestions. Rating count from the list. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

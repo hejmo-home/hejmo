@@ -1,0 +1,168 @@
+{
+  "n": 193,
+  "slug": "pizzaschnecken",
+  "category": "Snacks und Brotdose",
+  "servings": 12,
+  "time_minutes": 110,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide and sulphites"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/pizzaschnecken-97439",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 550,
+      "unit": "g",
+      "article_de": "Weizenmehl Type 550",
+      "article_en": "Wheat flour (Type 550)",
+      "note_de": "plus Mehl zum Arbeiten",
+      "note_en": "plus flour for the work surface"
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "article_de": "Trockenhefe",
+      "article_en": "Dried yeast",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "ml",
+      "article_de": "Wasser",
+      "article_en": "Water",
+      "note_de": "lauwarm; Menge aus der Zubereitung",
+      "note_en": "lukewarm; amount from the method"
+    },
+    {
+      "amount": 0.5,
+      "unit": "Stk",
+      "article_de": "Zucchini",
+      "article_en": "Courgette",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Passierte Tomaten",
+      "article_en": "Passata",
+      "note_de": "Tetrapak",
+      "note_en": "carton"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Feta (Schafskäse)",
+      "article_en": "Feta (sheep milk cheese)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 8,
+      "unit": "Stk",
+      "article_de": "Getrocknete Tomaten",
+      "article_en": "Sun-dried tomatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Basilikum",
+      "article_en": "Basil",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Pizzaschnecken",
+    "steps": [
+      "Teig: Vermische 550 g Mehl, 1 Pck. Trockenhefe und 1 TL Salz. Gib 300 ml lauwarmes Wasser dazu und knete mit den Knethaken des Mixers einen glatten Teig.",
+      "Decke den Teig ab und lass ihn etwa 1 Stunde gehen.",
+      "Belag: Reibe 1/2 Zucchini. Würze 250 g passierte Tomaten mit Pfeffer. Zerbrösele 100 g Feta, hacke 8 getrocknete Tomaten und schneide 1 Bund Basilikum in Streifen.",
+      "Heize den Ofen auf 190 °C vor und lege ein Blech mit Backpapier aus.",
+      "Rolle den Teig auf bemehlter Fläche etwa 40 x 30 cm groß aus. Streiche die Tomatensauce darauf und verteile Zucchini, Feta, getrocknete Tomaten und Basilikum.",
+      "Rolle den Teig von der langen Seite auf. Schneide mit einem scharfen Messer 12 Scheiben von 3 bis 4 cm ab. Ein stumpfes Messer drückt sie platt.",
+      "Lege die Schnecken mit der Schnittfläche nach oben aufs Blech und backe sie in der Mitte des Ofens etwa 25 Minuten goldbraun.",
+      "Sie schmecken lauwarm oder kalt."
+    ]
+  },
+  "en": {
+    "title": "Pizza swirls",
+    "steps": [
+      "Dough: mix 550 g flour, 1 packet dried yeast and 1 tsp salt. Add 300 ml lukewarm water and knead a smooth dough with the dough hooks of the mixer.",
+      "Cover the dough and let it rise for about 1 hour.",
+      "Topping: grate 1/2 zucchini. Season 250 g passata with pepper. Crumble 100 g feta, chop 8 dried tomatoes and slice 1 bunch of basil.",
+      "Preheat the oven to 190 C and line a tray with baking paper.",
+      "Roll the dough out on a floured surface to about 40 x 30 cm. Spread the tomato sauce on it and scatter over zucchini, feta, dried tomatoes and basil.",
+      "Roll the dough up from the long side. Cut 12 slices of 3 to 4 cm with a sharp knife. A blunt knife squashes them flat.",
+      "Place the swirls cut side up on the tray and bake on the middle rack for about 25 minutes until golden brown.",
+      "They taste good lukewarm or cold."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "packet"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 4,
+        "amount": 0.5,
+        "unit": "piece"
+      },
+      {
+        "index": 8,
+        "amount": 8,
+        "unit": "piece"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "bunch"
+      }
+    ]
+  },
+  "review_note": "Page has no rating data; list says Redaktionsküche. time_minutes = prep 25 + 85 from source. Water 300 ml and salt 1 TL are taken from the method (source ingredient list says only \"Salz\"). Fresh yeast vs dried: source states Trockenhefe, pack size not given. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

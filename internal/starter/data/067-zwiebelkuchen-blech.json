@@ -1,0 +1,213 @@
+{
+  "n": 67,
+  "slug": "zwiebelkuchen-blech",
+  "category": "Hauptgerichte",
+  "servings": 20,
+  "time_minutes": 75,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.essen-und-trinken.de/rezepte/zwiebelkuchen-vom-blech-12091696.html",
+    "site": "Essen & Trinken",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "Teig",
+      "note_en": "dough"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": "Teig",
+      "note_en": "dough"
+    },
+    {
+      "amount": 25,
+      "unit": "g",
+      "article_de": "Hefe, frisch",
+      "article_en": "Fresh yeast",
+      "note_de": "Teig",
+      "note_en": "dough"
+    },
+    {
+      "amount": 250,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": "Teig",
+      "note_en": "dough"
+    },
+    {
+      "amount": 60,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "Teig",
+      "note_en": "dough"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Bio-Ei",
+      "article_en": "Organic egg",
+      "note_de": "Teig",
+      "note_en": "dough"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Öl, neutral",
+      "article_en": "Neutral oil",
+      "note_de": "zum Fetten des Blechs",
+      "note_en": "to grease the tray"
+    },
+    {
+      "amount": 1.5,
+      "unit": "kg",
+      "article_de": "Gemüsezwiebeln",
+      "article_en": "Large onions",
+      "note_de": "Belag",
+      "note_en": "topping"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Speck, durchwachsen",
+      "article_en": "Streaky bacon",
+      "note_de": "Belag",
+      "note_en": "topping"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Öl, neutral",
+      "article_en": "Neutral oil",
+      "note_de": "Belag",
+      "note_en": "topping"
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Kümmelsaat",
+      "article_en": "Caraway seeds",
+      "note_de": "Belag",
+      "note_en": "topping"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": "Belag",
+      "note_en": "topping"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": "Belag",
+      "note_en": "topping"
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Bio-Eier",
+      "article_en": "Organic eggs",
+      "note_de": "Belag",
+      "note_en": "topping"
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Schmand",
+      "article_en": "Schmand (sour cream)",
+      "note_de": "Belag",
+      "note_en": "topping"
+    }
+  ],
+  "de": {
+    "title": "Zwiebelkuchen vom Blech",
+    "steps": [
+      "Teig: Gib 500 g Mehl und 1 TL Salz in eine Schüssel. Drücke eine Mulde hinein und bröckle 25 g frische Hefe hinein. Erwärme 250 ml Milch mit 60 g Butter, bis die Butter schmilzt (die Milch soll nur lauwarm sein). Gieße sie zusammen mit 1 Ei dazu.",
+      "Knete alles mit den Knethaken des Handrührgeräts oder in der Küchenmaschine zu einem glatten Teig. Decke ihn ab und lass ihn 1 Stunde an einem warmen Ort gehen. Die Schüssel muss abgedeckt sein, sonst bildet der Teig eine Haut.",
+      "In der Wartezeit machst du den Belag. Schäle 1,5 kg Zwiebeln und schneide sie in dünne Streifen oder Ringe. Würfle 200 g durchwachsenen Speck.",
+      "Erhitze 2 EL Öl in einer großen Pfanne bei mittlerer bis starker Hitze. Brate den Speck, bis er knusprig ist. Gib die Zwiebeln und 2 TL Kümmel dazu und brate alles etwa 5 Minuten.",
+      "Schalte auf niedrige Hitze, lege den Deckel auf und lass die Zwiebeln 20 Minuten dämpfen. Salze und pfeffere sie und lass sie etwas abkühlen. Verrühre 4 Eier mit 300 g Schmand und mische die Masse unter die Zwiebeln.",
+      "Heize den Ofen auf 200 °C Ober-/Unterhitze vor, ohne Umluft. Das ist bei diesem Kuchen wichtig. Der Rost kommt in die unterste Schiene. Fette ein tiefes Blech (ca. 42 x 32 cm) mit 2 EL Öl ein und bestäube es mit Mehl.",
+      "Rolle den aufgegangenen Teig auf dem Blech aus. Drücke den Rand fest an das Blech, damit er hochsteht und der Belag nicht ausläuft. Lass den Teig 10 Minuten ruhen.",
+      "Verteile den Belag auf dem Teig und backe den Kuchen auf der untersten Schiene 35 bis 40 Minuten."
+    ]
+  },
+  "en": {
+    "title": "Onion tart (sheet pan)",
+    "steps": [
+      "Dough: Put 500 g flour and 1 tsp salt in a bowl. Make a well and crumble 25 g fresh yeast into it. Warm 250 ml milk with 60 g butter until the butter melts (the milk should only be lukewarm). Pour it in together with 1 egg.",
+      "Knead everything with the dough hooks of a hand mixer or in a food processor into a smooth dough. Cover it and let it rise for 1 hour in a warm place. The bowl must be covered, otherwise the dough forms a skin.",
+      "While you wait, make the topping. Peel 1.5 kg onions and cut them into thin strips or rings. Dice 200 g streaky bacon.",
+      "Heat 2 tbsp oil in a large pan over medium to high heat. Fry the bacon until crisp. Add the onions and 2 tsp caraway seeds and fry everything for about 5 minutes.",
+      "Turn to low heat, put the lid on and let the onions steam for 20 minutes. Season with salt and pepper and let them cool a little. Whisk 4 eggs with 300 g Schmand (sour cream) and mix it into the onions.",
+      "Preheat the oven to 200 °C top/bottom heat, no fan. That matters for this tart. Put the rack on the lowest shelf. Grease a deep baking tray (about 42 x 32 cm) with 2 tbsp oil and dust it with flour.",
+      "Roll out the risen dough on the tray. Press the edge firmly onto the tray so it stands up and the topping does not run out. Let the dough rest for 10 minutes.",
+      "Spread the topping over the dough and bake the tart on the lowest shelf for 35 to 40 minutes."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 9,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 10,
+        "amount": 2,
+        "unit": "tsp"
+      },
+      {
+        "index": 13,
+        "amount": 4,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Source states 20 servings (pieces) and lists neutral oil twice (tray, topping). Source notes that fan baking is not recommended. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

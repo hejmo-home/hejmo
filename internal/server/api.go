@@ -204,6 +204,7 @@ var apiRoutes = []APIRoute{
 	{"PUT", "/recipes/{id}", auth.Perm("meals", auth.Write), (*server).apiSaveRecipe},
 	{"DELETE", "/recipes/{id}", auth.Perm("meals", auth.Delete), (*server).apiDeleteRecipe},
 	{"GET", "/recipes/{id}/warnings", auth.Perm("health", auth.Read), (*server).apiRecipeWarnings},
+	{"GET", "/starter-recipes", auth.Perm("meals", auth.Read), (*server).apiListStarterRecipes},
 	{"GET", "/recipe-units", auth.Perm("meals", auth.Read), (*server).apiRecipeUnits},
 	{"GET", "/meal-templates", auth.Perm("meals", auth.Read), (*server).apiListMealTemplates},
 	{"POST", "/meal-templates", auth.Perm("meals", auth.Write), (*server).apiCreateMealTemplate},

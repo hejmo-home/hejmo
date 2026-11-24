@@ -1,0 +1,101 @@
+{
+  "n": 167,
+  "slug": "schnelles-dinkelbrot",
+  "category": "Backen",
+  "servings": 16,
+  "time_minutes": 50,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/schnelles-dinkelbrot-45474",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 650,
+      "unit": "g",
+      "article_de": "Dinkelvollkornmehl",
+      "article_en": "Wholemeal spelt flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Würfel",
+      "article_de": "Frische Hefe",
+      "article_en": "Fresh yeast",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "ml",
+      "article_de": "Wasser",
+      "article_en": "Water",
+      "note_de": "handwarm (1/2 l, nur in der Zubereitung der Quelle genannt)",
+      "note_en": "lukewarm (1/2 l, listed only in the source method)"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Fett",
+      "article_en": "Fat",
+      "note_de": "für die Form",
+      "note_en": "for the tin"
+    }
+  ],
+  "de": {
+    "title": "Schnelles Dinkelbrot",
+    "steps": [
+      "Eine Kastenform gut fetten. Den Ofen noch nicht vorheizen, das Brot startet im kalten Ofen.",
+      "Mehl und Salz in einer großen Schüssel mischen.",
+      "Die Hefe darüberbröckeln.",
+      "Das handwarme Wasser nach und nach zugeben und mit den Knethaken des Handmixers einarbeiten, bis ein glatter Teig entsteht. Nicht alles Wasser auf einmal hineingießen.",
+      "Den Teig in die Form gießen.",
+      "Die Form auf den Rost in der Mitte des kalten Ofens stellen. Dann auf 200 °C Ober-/Unterhitze (180 °C Umluft) einschalten und etwa 50 Minuten backen."
+    ]
+  },
+  "en": {
+    "title": "Quick spelt bread",
+    "steps": [
+      "Grease a loaf tin well. Do not preheat the oven: the bread starts in a cold oven.",
+      "Mix the flour and salt in a large bowl.",
+      "Crumble the yeast over the top.",
+      "Add the hand-warm water gradually and work it in with the dough hooks of a hand mixer until you have a smooth dough. Do not pour in all the water at once.",
+      "Pour the dough into the tin.",
+      "Put the tin on the middle shelf of the cold oven. Then switch on to 200 °C top and bottom heat (180 °C fan) and bake about 50 minutes."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "cube"
+      }
+    ]
+  },
+  "review_note": "Rating count from the list. Water (1/2 l) appears only in the source method, not its ingredient list. Yeast cube size not given in the source. Servings: about 16 slices. Time is the stated baking time. Source steps not copied. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

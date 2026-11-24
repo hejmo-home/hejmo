@@ -1,0 +1,150 @@
+{
+  "n": 43,
+  "slug": "falafel",
+  "category": "Hauptgerichte",
+  "servings": 6,
+  "time_minutes": 20,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/falafel",
+    "site": "BBC Good Food",
+    "ratings": 165
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Sonnenblumenöl oder Pflanzenöl",
+      "article_en": "Sunflower or vegetable oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel, klein",
+      "article_en": "Small onion",
+      "note_de": "fein gehackt",
+      "note_en": "finely chopped"
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": "zerdrückt",
+      "note_en": "crushed"
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Kichererbsen (Dose)",
+      "article_en": "Canned chickpeas",
+      "note_de": "abgespült und abgetropft",
+      "note_en": "washed and drained"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Kreuzkümmel, gemahlen",
+      "article_en": "Ground cumin",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Koriander, gemahlen",
+      "article_en": "Ground coriander",
+      "note_de": "oder mehr Kreuzkümmel",
+      "note_en": "or use more cumin"
+    },
+    {
+      "amount": 1,
+      "unit": "Handvoll",
+      "article_de": "Petersilie",
+      "article_en": "Parsley",
+      "note_de": "gehackt; oder 1 TL gemischte getrocknete Kräuter",
+      "note_en": "chopped; or 1 tsp dried mixed herbs"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Ei",
+      "article_en": "Egg",
+      "note_de": "verquirlt",
+      "note_en": "beaten"
+    }
+  ],
+  "de": {
+    "title": "Falafel",
+    "steps": [
+      "Erhitze 1 EL Öl in einer großen Pfanne bei niedriger Hitze. Brate Zwiebel und Knoblauch 5 Minuten, bis sie weich sind.",
+      "Gib die Kichererbsen in eine Schüssel und füge Zwiebel, Knoblauch, Kreuzkümmel und Koriander dazu. Zerdrücke alles mit einer Gabel oder dem Stampfer vollständig, bis keine ganzen Kichererbsen mehr übrig sind.",
+      "Rühre die Petersilie ein und würze die Masse mit Salz und Pfeffer. Gib das Ei dazu und knete alles mit den Händen zu einer festen Masse.",
+      "Forme daraus 6 Frikadellen.",
+      "Erhitze das restliche Öl in der Pfanne bei mittlerer Hitze. Brate die Falafel auf jeder Seite 3 Minuten, bis sie goldbraun und fest sind.",
+      "Serviere sie heiß oder kalt mit Couscous, Pitabrot oder Salat."
+    ]
+  },
+  "en": {
+    "title": "Falafel",
+    "steps": [
+      "Heat 1 tbsp of oil in a large pan over low heat. Fry the onion and garlic for 5 minutes, until soft.",
+      "Put the chickpeas in a bowl and add the onion, garlic, cumin and coriander. Mash everything completely with a fork or masher until no whole chickpeas are left.",
+      "Stir in the parsley and season the mixture with salt and pepper. Add the egg and knead everything by hand into a firm mixture.",
+      "Shape it into 6 patties.",
+      "Heat the remaining oil in the pan over medium heat. Fry the falafel for 3 minutes on each side, until golden and firm.",
+      "Serve them hot or cold with couscous, pitta bread or salad."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "handful"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "piece"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

@@ -1,0 +1,159 @@
+{
+  "n": 119,
+  "slug": "coleslaw",
+  "category": "Beilagen",
+  "servings": 10,
+  "time_minutes": 20,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Senf",
+      "en": "Mustard"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/classic-coleslaw",
+    "site": "BBC Good Food",
+    "ratings": 28
+  },
+  "ingredients": [
+    {
+      "amount": 6,
+      "unit": "Stk",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": "geschält",
+      "note_en": "peeled"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Weißkohl, klein",
+      "article_en": "White cabbage, small",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Zucker, Golden Caster",
+      "article_en": "Golden caster sugar",
+      "note_de": "große Prise",
+      "note_en": "large pinch"
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Apfelessig",
+      "article_en": "Cider vinegar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Senf",
+      "article_en": "Mustard",
+      "note_de": "beliebige Sorte",
+      "note_en": "any kind"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Mayonnaise",
+      "article_en": "Mayonnaise",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Apfel, rot",
+      "article_en": "Red apple",
+      "note_de": "optional, in Stifte geschnitten",
+      "note_en": "optional, cut into matchsticks"
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Cheddar",
+      "article_en": "Cheddar",
+      "note_de": "optional, gerieben",
+      "note_en": "optional, grated"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Coleslaw",
+    "steps": [
+      "6 geschälte Möhren raspeln. Den kleinen Weißkohl fein hobeln (Küchenmaschine oder Reibe). Beides in eine große Schüssel geben.",
+      "Mit Salz und einer großen Prise Zucker bestreuen, 3 EL Apfelessig dazugeben und gut durchmischen.",
+      "20 Minuten ziehen lassen, das Gemüse wird dabei leicht mariniert.",
+      "Erst danach 1 EL Senf und 200 g Mayonnaise unterrühren. Wer mag, gibt einen rot gestifteten Apfel und 100 g geriebenen Cheddar dazu.",
+      "Gleich servieren oder kalt stellen. Gekühlt hält sich der Salat bis zum nächsten Tag."
+    ]
+  },
+  "en": {
+    "title": "Coleslaw",
+    "steps": [
+      "Grate 6 peeled carrots. Shred the small white cabbage finely (food processor or grater). Put both in a large bowl.",
+      "Sprinkle with salt and a large pinch of sugar, add 3 tbsp cider vinegar and toss well.",
+      "Let it stand for 20 minutes; the vegetables lightly pickle as they sit.",
+      "Only then stir in 1 tbsp mustard and 200 g mayonnaise. If you like, add a red apple cut into matchsticks and 100 g grated Cheddar.",
+      "Serve right away or chill. Chilled, the salad keeps until the next day."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 6,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 3,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Source lists salt only in the method (season); added as an unmeasured line. Ratings from the list (page JSON-LD has none). Servings: 10 as stated. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

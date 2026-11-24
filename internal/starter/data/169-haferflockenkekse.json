@@ -1,0 +1,151 @@
+{
+  "n": 169,
+  "slug": "haferflockenkekse",
+  "category": "Backen",
+  "servings": 24,
+  "time_minutes": 30,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Nüsse",
+      "en": "Tree nuts"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/haferflockenkekse-69357.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 75,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Haferflocken, kernig",
+      "article_en": "Rolled oats, coarse",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 75,
+      "unit": "g",
+      "article_de": "Haselnüsse, gemahlen",
+      "article_en": "Ground hazelnuts",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Zimt",
+      "article_en": "Cinnamon",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Rohrzucker",
+      "article_en": "Raw cane sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Ei, Größe M",
+      "article_en": "Egg, size M",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Haferflockenkekse",
+    "steps": [
+      "Die Butter in einer beschichteten Pfanne schmelzen.",
+      "Haferflocken, gemahlene Haselnüsse, Zimt und Rohrzucker dazugeben. Etwa 5 Minuten rösten und dabei ständig rühren, bis es duftet.",
+      "Die geröstete Mischung in eine Schüssel geben und abkühlen lassen.",
+      "Den Ofen auf 180 °C Ober-/Unterhitze (160 °C Umluft) vorheizen. Ein Backblech mit Backpapier auslegen.",
+      "Ei und 4 EL Zucker mit dem Schneebesen oder Mixer dick und schaumig aufschlagen.",
+      "Das Mehl unterrühren, dann die abgekühlte Haferflockenmischung. Sie muss kalt sein, bevor sie in den Teig kommt.",
+      "Mit 2 Teelöffeln kleine Häufchen mit etwas Abstand aufs Blech setzen. Wer mag, drückt sie flach.",
+      "Etwa 10 Minuten backen."
+    ]
+  },
+  "en": {
+    "title": "Oat cookies",
+    "steps": [
+      "Melt the butter in a non-stick pan.",
+      "Add the oats, ground hazelnuts, cinnamon and cane sugar. Toast for about 5 minutes, stirring constantly, until fragrant.",
+      "Tip the toasted mixture into a bowl and let it cool.",
+      "Preheat the oven to 180 °C top and bottom heat (160 °C fan). Line a baking tray with parchment.",
+      "Whisk the egg and 4 tbsp sugar with a whisk or mixer until thick and foamy.",
+      "Stir in the flour, then the cooled oat mixture. It must be cold before it goes into the dough.",
+      "Using 2 teaspoons, place small mounds on the tray with a little space between them. Flatten them if you like.",
+      "Bake about 10 minutes."
+    ],
+    "amounts_converted": [
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 4,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Rating count from the list. Source page shows no rating; list says Redaktionsküche. Source steps not copied. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

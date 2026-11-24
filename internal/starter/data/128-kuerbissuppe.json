@@ -1,0 +1,153 @@
+{
+  "n": 128,
+  "slug": "kuerbissuppe",
+  "category": "Suppen",
+  "servings": 4,
+  "time_minutes": 35,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/klassische-kuerbissuppe-mit-hokkaido-79938.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Hokkaido-Kürbis",
+      "article_en": "Hokkaido pumpkin",
+      "note_de": "ca. 800 g",
+      "note_en": "about 800 g"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Liter",
+      "article_de": "Gemüsebrühe",
+      "article_en": "Vegetable stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Schlagsahne",
+      "article_en": "Whipping cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Petersilie",
+      "article_en": "Parsley",
+      "note_de": "etwas, zum Garnieren",
+      "note_en": "a little, to garnish"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Chiliflocken",
+      "article_en": "Chili flakes",
+      "note_de": "zum Garnieren",
+      "note_en": "to garnish"
+    }
+  ],
+  "de": {
+    "title": "Kürbissuppe mit Hokkaido",
+    "steps": [
+      "Den Hokkaido waschen, entkernen und in Stücke schneiden (die Schale kann dranbleiben). Zwiebel und Knoblauch schälen und hacken.",
+      "Butter im Topf zerlassen und Zwiebel, Knoblauch und Kürbis darin einige Minuten anbraten.",
+      "Brühe angießen, aufkochen und etwa 15 Minuten garen, bis der Kürbis weich ist.",
+      "Die Suppe fein pürieren, die Sahne einrühren und mit Salz und Pfeffer würzen.",
+      "Mit Petersilie und einer Prise Chiliflocken bestreuen (für Kinder die Flocken weglassen)."
+    ]
+  },
+  "en": {
+    "title": "Hokkaido pumpkin soup",
+    "steps": [
+      "Wash and deseed the Hokkaido pumpkin and cut it into chunks (the skin can stay on). Peel and chop the onion and garlic.",
+      "Melt the butter in a pot and fry the onion, garlic and pumpkin for a few minutes.",
+      "Pour in the stock, bring to the boil and cook for about 15 minutes until the pumpkin is soft.",
+      "Blend the soup until smooth, stir in the cream and season with salt and pepper.",
+      "Sprinkle with parsley and a pinch of chili flakes (leave the flakes out for children)."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 1000,
+        "unit": "ml"
+      }
+    ]
+  },
+  "originality": {
+    "overlap_5gram": 0.046,
+    "checked": "23/11/2026"
+  }
+}

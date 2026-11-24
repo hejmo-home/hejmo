@@ -1,0 +1,252 @@
+{
+  "n": 28,
+  "slug": "hackbaellchen-tomatensosse",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 25,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/1572861264772844/Hackbaellchen-mit-Tomatensauce-und-Mozzarella.html",
+    "site": "Chefkoch",
+    "ratings": 272
+  },
+  "ingredients": [
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Hackfleisch",
+      "article_en": "Minced meat",
+      "note_de": "oder vegetarische Gemüsebällchen",
+      "note_en": "or vegetarian veggie balls"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Ei",
+      "article_en": "Egg",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch (für die Bällchen)",
+      "article_en": "Garlic (for the meatballs)",
+      "note_de": "fein gewürfelt, nach Geschmack mehr",
+      "note_en": "finely diced, more to taste"
+    },
+    {
+      "amount": 0.5,
+      "unit": "Stk",
+      "article_de": "Zwiebel (für die Bällchen)",
+      "article_en": "Onion (for the meatballs)",
+      "note_de": "fein gewürfelt",
+      "note_en": "finely diced"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Paniermehl",
+      "article_en": "Breadcrumbs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer (für die Bällchen)",
+      "article_en": "Salt and pepper (for the meatballs)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Paprikapulver, rosenscharf (für die Bällchen)",
+      "article_en": "Hot rose paprika (for the meatballs)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Basilikum, getrocknet",
+      "article_en": "Dried basil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Dose",
+      "article_de": "Tomaten, stückig",
+      "article_en": "Chopped tomatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Stk",
+      "article_de": "Zwiebel (für die Soße)",
+      "article_en": "Onion (for the sauce)",
+      "note_de": "fein gewürfelt",
+      "note_en": "finely diced"
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch (für die Soße)",
+      "article_en": "Garlic (for the sauce)",
+      "note_de": "fein gewürfelt, oder mehr",
+      "note_en": "finely diced, or more"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Apfelsaft",
+      "article_en": "Apple juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 150,
+      "unit": "ml",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer (für die Soße)",
+      "article_en": "Salt and pepper (for the sauce)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Paprikapulver, rosenscharf (für die Soße)",
+      "article_en": "Hot rose paprika (for the sauce)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Kräuter der Provence",
+      "article_en": "Herbes de Provence",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 125,
+      "unit": "g",
+      "article_de": "Mozzarella",
+      "article_en": "Mozzarella",
+      "note_de": "zum Überbacken",
+      "note_en": "for topping"
+    }
+  ],
+  "de": {
+    "title": "Hackbällchen in Tomatensoße",
+    "steps": [
+      "Ofen auf 180 °C Ober-/Unterhitze (160 °C Umluft) stellen. Eine Auflaufform von etwa 30 × 22 cm bereithalten.",
+      "Für die Bällchen Zwiebel und Knoblauch fein hacken. Mit Hack, Ei, 2–3 EL Paniermehl, Salz, Pfeffer, Rosenpaprika und etwa 1½ TL getrocknetem Basilikum zu einem festen Fleischteig verkneten.",
+      "Aus dem Teig rund 25 kleine Kugeln drehen und in die Form setzen.",
+      "Soße: Die Zwiebel in etwas Öl im Topf glasig werden lassen, den Knoblauch kurz mitgaren und den Apfelsaft angießen. Fast vollständig einkochen. Dann die Tomaten einrühren und aufkochen, anschließend die Sahne zugeben und noch einmal aufwallen lassen. Mit Salz, Pfeffer, Rosenpaprika, Kräutern der Provence und Zucker abschmecken.",
+      "Die Soße so in die Form gießen, dass sie die Bällchen umgibt und bedeckt. Den Mozzarella in kleine Stücke teilen und auf jede Kugel eins legen, Reste in die Lücken verteilen.",
+      "20 bis 30 Minuten backen, bis das Hack durchgegart und der Käse zerlaufen und goldfarben ist. Dazu passen Nudeln, Kartoffeln oder Reis."
+    ]
+  },
+  "en": {
+    "title": "Meatballs in tomato sauce",
+    "steps": [
+      "Set the oven to 180 °C top/bottom heat (160 °C fan). Have a baking dish of about 30 × 22 cm ready.",
+      "For the balls, finely chop the onion and garlic. Work them into a firm meat mixture with the mince, egg, 2-3 tbsp breadcrumbs, salt, pepper, hot paprika and about 1½ tsp dried basil.",
+      "Roll the mixture into about 25 small balls and set them in the dish.",
+      "Sauce: Let the onion turn translucent in a little oil in a pot, cook the garlic briefly with it and pour in the apple juice. Reduce almost completely. Stir in the tomatoes and bring to the boil, then add the cream and let it bubble up once more. Season with salt, pepper, hot paprika, herbs de Provence and sugar.",
+      "Pour the sauce into the dish so that it surrounds and covers the balls. Break the mozzarella into small pieces and put one on each ball, then tuck any leftovers into the gaps.",
+      "Bake for 20 to 30 minutes, until the mince is cooked through and the cheese is melted and golden. Pasta, potatoes or rice go well with it."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 3,
+        "amount": 0.5,
+        "unit": "piece"
+      },
+      {
+        "index": 8,
+        "amount": 2,
+        "unit": "can"
+      },
+      {
+        "index": 9,
+        "amount": 0.5,
+        "unit": "piece"
+      },
+      {
+        "index": 10,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 16,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 17,
+        "amount": 1,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.019
+  },
+  "review_note": "The source ingredient list gives no quantities for breadcrumbs, seasoning, oil and basil, so they have no amounts here. The source method mentions 2-3 tbsp breadcrumbs and about 1.5 tsp dried basil. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026."
+}

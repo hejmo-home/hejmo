@@ -1,0 +1,176 @@
+{
+  "n": 42,
+  "slug": "quesadillas",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 30,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/refried-bean-quesadillas",
+    "site": "BBC Good Food",
+    "ratings": 85
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Sonnenblumenöl",
+      "article_en": "Sunflower oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": "fein gehackt",
+      "note_en": "finely chopped"
+    },
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": "fein gehackt",
+      "note_en": "finely chopped"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Kreuzkümmelsamen",
+      "article_en": "Cumin seeds",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Pintobohnen oder Kidneybohnen (Dose)",
+      "article_en": "Pinto or kidney beans (can)",
+      "note_de": "abgespült und abgetropft",
+      "note_en": "rinsed and drained"
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Paprikapulver, geräuchert",
+      "article_en": "Smoked paprika",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 8,
+      "unit": "Stk",
+      "article_de": "Weizentortillas",
+      "article_en": "Flour tortillas",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Cheddar oder Gruyère",
+      "article_en": "Cheddar or gruyère",
+      "note_de": "grob gerieben",
+      "note_en": "coarsely grated"
+    },
+    {
+      "amount": 1,
+      "unit": "Handvoll",
+      "article_de": "Korianderblätter",
+      "article_en": "Coriander leaves",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Tomatensalsa, frisch (Becher)",
+      "article_en": "Fresh tomato salsa (tub)",
+      "note_de": "plus extra zum Servieren",
+      "note_en": "plus extra to serve"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Saure Sahne",
+      "article_en": "Soured cream",
+      "note_de": "zum Servieren",
+      "note_en": "to serve"
+    }
+  ],
+  "de": {
+    "title": "Quesadillas mit Bohnenpüree",
+    "steps": [
+      "Erhitze das Öl in einer großen Pfanne. Brate Zwiebel und Knoblauch 2 Minuten. Gib den Kreuzkümmel dazu und rühre 1 Minute.",
+      "Gib die Bohnen, das Paprikapulver und ein paar Esslöffel Wasser dazu. Zerdrücke alles mit dem Kartoffelstampfer grob. Würze kräftig, die Bohnen sollen richtig Geschmack haben.",
+      "Streiche das Bohnenpüree auf 4 Tortillas. Verteile Käse, Koriander und Salsa darauf. Lege je eine zweite Tortilla obenauf, so entstehen 4 Sandwiches.",
+      "Wische die Pfanne mit Küchenpapier aus und erhitze sie. Brate die Quesadillas nacheinander von jeder Seite 1 bis 2 Minuten, bis die Tortillas knusprig und goldbraun sind und der Käse schmilzt.",
+      "Schneide sie in Spalten und serviere sie mit extra Salsa und saurer Sahne."
+    ]
+  },
+  "en": {
+    "title": "Refried bean quesadillas",
+    "steps": [
+      "Heat the oil in a large frying pan. Cook the onion and garlic for 2 minutes. Add the cumin and stir for 1 minute.",
+      "Add the beans, paprika and a few tablespoons of water. Roughly mash everything with the potato masher. Season generously, the beans should taste properly of something.",
+      "Spread the bean purée over 4 tortillas. Top with cheese, coriander and salsa. Put a second tortilla on each, so you get 4 sandwiches.",
+      "Wipe the pan out with kitchen paper and heat it up. Fry the quesadillas one after another for 1 to 2 minutes per side, until the tortillas are crisp and golden and the cheese melts.",
+      "Cut them into wedges and serve with extra salsa and soured cream."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "clove"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "tsp"
+      },
+      {
+        "index": 6,
+        "amount": 8,
+        "unit": "piece"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "handful"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

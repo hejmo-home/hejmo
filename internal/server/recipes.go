@@ -13,6 +13,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/food"
 	"github.com/hejmo-home/hejmo/internal/library"
 	"github.com/hejmo-home/hejmo/internal/recipe"
+	"github.com/hejmo-home/hejmo/internal/starter"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/unit"
 )
@@ -176,16 +177,22 @@ type recipeJSON struct {
 	Ingredients []recipeIngredientJSON `json:"ingredients"`
 	Steps       []string               `json:"steps"`
 	Diet        *string                `json:"diet"`
+	Starter     bool                   `json:"starter"`
+	SourceName  *string                `json:"source_name"`
 	CreatedBy   *string                `json:"created_by"`
-	CreatedAt   string                 `json:"created_at"`
+	CreatedAt   *string                `json:"created_at"`
 	UpdatedBy   *string                `json:"updated_by"`
-	UpdatedAt   string                 `json:"updated_at"`
+	UpdatedAt   *string                `json:"updated_at"`
 }
 
 func (c *itemCtx) recipeToJSON(r store.Recipe) recipeJSON {
 	out := recipeJSON{ID: r.ID, Name: r.Name, Category: string(r.Category), Portions: r.Portions, Mealtimes: nonNil(r.Mealtimes), Tags: nonNil(r.Tags),
 		Tips: r.Tips, Source: r.Source, SourceURL: strPtr(recipe.SourceLink(r.Source)), Ingredients: []recipeIngredientJSON{}, Steps: nonNil(r.Steps),
-		CreatedBy: strPtr(r.CreatedBy), CreatedAt: r.CreatedAt.UTC().Format(time.RFC3339), UpdatedBy: strPtr(r.UpdatedBy), UpdatedAt: r.UpdatedAt.UTC().Format(time.RFC3339)}
+		CreatedBy: strPtr(r.CreatedBy), UpdatedBy: strPtr(r.UpdatedBy)}
+	if !r.CreatedAt.IsZero() { // a starter recipe was written by nobody in the household
+		created, updated := r.CreatedAt.UTC().Format(time.RFC3339), r.UpdatedAt.UTC().Format(time.RFC3339)
+		out.CreatedAt, out.UpdatedAt = &created, &updated
+	}
 	if r.Minutes > 0 {
 		out.Minutes = &r.Minutes
 	}
@@ -319,11 +326,15 @@ func (s *server) apiGetRecipe(w http.ResponseWriter, r *http.Request, p principa
 	if !ok {
 		return
 	}
-	got, err := s.db.Recipe(p.household.ID, r.PathValue("id"))
+	got, entry, err := c.recipeOrStarter(p.household.ID, r.PathValue("id"))
 	if s.storeError(w, "get recipe", err) {
 		return
 	}
-	writeJSON(w, http.StatusOK, c.recipeToJSON(got))
+	out := c.recipeToJSON(got)
+	if entry != nil {
+		out = c.markStarter(out, *entry)
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 // apiSaveRecipe creates (POST) or replaces (PUT) a recipe.
@@ -331,6 +342,10 @@ func (s *server) apiSaveRecipe(w http.ResponseWriter, r *http.Request, p princip
 	var in recipeInput
 	if !readJSON(r, &in) {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	if starter.IsID(r.PathValue("id")) {
+		writeError(w, http.StatusForbidden, starterReadOnly)
 		return
 	}
 	c, ok := s.apiRecipeContext(w, r, p)
@@ -362,6 +377,10 @@ func (s *server) apiSaveRecipe(w http.ResponseWriter, r *http.Request, p princip
 }
 
 func (s *server) apiDeleteRecipe(w http.ResponseWriter, r *http.Request, p principal) {
+	if starter.IsID(r.PathValue("id")) {
+		writeError(w, http.StatusForbidden, starterReadOnly)
+		return
+	}
 	if s.storeError(w, "delete recipe", s.db.DeleteRecipe(p.household.ID, r.PathValue("id"))) {
 		return
 	}
@@ -389,7 +408,7 @@ func (s *server) apiRecipeWarnings(w http.ResponseWriter, r *http.Request, p pri
 	if !ok {
 		return
 	}
-	got, err := s.db.Recipe(p.household.ID, r.PathValue("id"))
+	got, _, err := c.recipeOrStarter(p.household.ID, r.PathValue("id"))
 	if s.storeError(w, "get recipe", err) {
 		return
 	}

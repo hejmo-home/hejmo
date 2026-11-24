@@ -1,0 +1,169 @@
+{
+  "n": 137,
+  "slug": "karottensuppe",
+  "category": "Suppen",
+  "servings": 4,
+  "time_minutes": 30,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.essen-und-trinken.de/rezepte/karottensuppe-12253224.html",
+    "site": "Essen & Trinken",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 600,
+      "unit": "g",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Kartoffeln, mehligkochend",
+      "article_en": "Floury potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zwiebeln, weiß",
+      "article_en": "White onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 30,
+      "unit": "g",
+      "article_de": "Ingwer",
+      "article_en": "Ginger",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Liter",
+      "article_de": "Gemüsebrühe",
+      "article_en": "Vegetable stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Petersilie, krause",
+      "article_en": "Curly parsley",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Karottensuppe mit Ingwer",
+    "steps": [
+      "Ingwer, Knoblauch, Zwiebeln und Kartoffeln schälen und in kleine Würfel schneiden. Die geschälten Möhren in etwa 2 cm lange Stücke teilen.",
+      "Das Öl im Topf erhitzen und das gesamte Gemüse unter Rühren kurz andünsten.",
+      "Mit dem Zucker bestreuen, die Brühe angießen und zugedeckt aufkochen. Bei mittlerer Hitze etwa 20 Minuten garen, bis Möhren und Kartoffeln weich sind.",
+      "Die Suppe mit dem Stabmixer fein pürieren. Erst jetzt Zitronensaft, Salz und Pfeffer zum Abschmecken zugeben und mit gehackter Petersilie servieren."
+    ]
+  },
+  "en": {
+    "title": "Carrot soup with ginger",
+    "steps": [
+      "Peel the carrots and cut them into pieces of about 2 cm. Peel the potatoes, onions, garlic and ginger and dice finely.",
+      "Heat the oil in a pot and briefly sweat all the vegetables, stirring.",
+      "Sprinkle with the sugar, pour in the stock and bring to the boil covered. Cook over medium heat for about 20 minutes, until carrots and potatoes are soft.",
+      "Purée the soup finely with a hand blender. Only now season with salt, pepper and lemon juice, and serve with chopped parsley."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 7,
+        "amount": 1000,
+        "unit": "ml"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.0
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026."
+}

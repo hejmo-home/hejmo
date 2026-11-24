@@ -1,0 +1,299 @@
+{
+  "n": 70,
+  "slug": "maultaschen",
+  "category": "Hauptgerichte",
+  "servings": 8,
+  "time_minutes": 120,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/maultaschen-37360",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "Teig",
+      "note_en": "dough"
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Eier, Größe M",
+      "article_en": "Eggs, size M",
+      "note_de": "Teig",
+      "note_en": "dough"
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Pflanzenöl, neutral",
+      "article_en": "Neutral vegetable oil",
+      "note_de": "Teig",
+      "note_en": "dough"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Brötchen vom Vortag",
+      "article_en": "Day-old bread rolls",
+      "note_de": "Füllung",
+      "note_en": "filling"
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Speck, durchwachsen",
+      "article_en": "Streaky bacon",
+      "note_de": "Füllung",
+      "note_en": "filling"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zwiebeln",
+      "article_en": "Onions",
+      "note_de": "Füllung",
+      "note_en": "filling"
+    },
+    {
+      "amount": 1,
+      "unit": "Stange",
+      "article_de": "Lauch, dünn",
+      "article_en": "Leek, thin",
+      "note_de": "Füllung",
+      "note_en": "filling"
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Petersilie",
+      "article_en": "Parsley",
+      "note_de": "Füllung",
+      "note_en": "filling"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "Füllung",
+      "note_en": "filling"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Hackfleisch, gemischt",
+      "article_en": "Mixed mince (beef and pork)",
+      "note_de": "Füllung",
+      "note_en": "filling"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Kalbsbrät",
+      "article_en": "Veal sausage meat",
+      "note_de": "oder feine Bratwürste, evtl. beim Metzger vorbestellen",
+      "note_en": "or fine bratwurst, order from the butcher if needed"
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Blattspinat, gehackt, tiefgekühlt",
+      "article_en": "Chopped spinach, frozen",
+      "note_de": "aufgetaut, Füllung",
+      "note_en": "thawed, filling"
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Eier, Größe M",
+      "article_en": "Eggs, size M",
+      "note_de": "Füllung",
+      "note_en": "filling"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Semmelbrösel",
+      "article_en": "Breadcrumbs",
+      "note_de": "Füllung",
+      "note_en": "filling"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Majoran, getrocknet",
+      "article_en": "Dried marjoram",
+      "note_de": "Füllung",
+      "note_en": "filling"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Muskatnuss",
+      "article_en": "Nutmeg",
+      "note_de": "frisch gerieben",
+      "note_en": "freshly grated"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "zum Verarbeiten",
+      "note_en": "for working the dough"
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Zwiebeln, klein",
+      "article_en": "Small onions",
+      "note_de": "zum Anrichten",
+      "note_en": "to serve"
+    },
+    {
+      "amount": 80,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "zum Anrichten",
+      "note_en": "to serve"
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Schnittlauch",
+      "article_en": "Chives",
+      "note_de": "zum Anrichten",
+      "note_en": "to serve"
+    }
+  ],
+  "de": {
+    "title": "Maultaschen mit gemischtem Hack",
+    "steps": [
+      "Teig: Eier, Mehl, Öl und 1 TL Salz mit 5 bis 6 EL lauwarmem Wasser erst mit den Knethaken des Handmixers, danach von Hand zu einem geschmeidigen, glatten Teig kneten. Fällt er auseinander, etwas mehr Wasser zugeben, klebt er, etwas Mehl einarbeiten. In Folie gewickelt etwa 30 Minuten bei Zimmertemperatur ruhen lassen.",
+      "Während der Ruhezeit die Brötchen etwa 10 Minuten in warmem Wasser einweichen. Speck ohne Schwarte, 2 Zwiebeln und Petersilienblätter fein hacken bzw. würfeln, den Lauch längs aufschneiden, waschen und in feine Streifen schneiden. Außerdem die 4 kleinen Zwiebeln in dünne Ringe schneiden und den Schnittlauch in Röllchen.",
+      "2 EL Butter in einer Pfanne zerlassen. Speck, gewürfelte Zwiebeln und Lauch darin bei mittlerer Hitze rund 5 Minuten anschwitzen, die Petersilie einrühren und alles auskühlen lassen.",
+      "Die Brötchen kräftig auspressen und zerpflücken. Mit Hackfleisch, Brät, der abgekühlten Speckmischung, Spinat, Eiern, Semmelbröseln, Majoran, Salz, Pfeffer und Muskat zu einer fest haftenden, kräftig gewürzten Füllung verkneten.",
+      "Den Teig in 2 bis 3 Portionen mit der Nudelmaschine dünn ausrollen. Eine Teigbahn auf der bemehlten Fläche mit Wasser einpinseln und die Füllung hauchdünn darauf verstreichen; an beiden Längsseiten bleibt ein Rand von etwa 2 cm frei. Diese Ränder von links und rechts leicht übereinander über die Füllung klappen und andrücken. Mit einem Kochlöffelstiel alle 6 cm quer eine Rille eindrücken und dort mit einem scharfen Messer teilen. Die Taschen auf einem bemehlten Brett sammeln, aus dem restlichen Teig ebenso weitere Bahnen formen.",
+      "Die Maultaschen in reichlich siedendem Salzwasser bei geringer Hitze etwa 10 Minuten gar ziehen lassen, mit der Schaumkelle herausheben und gut abtropfen lassen. Parallel die Zwiebelringe in der halben Butter bei mittlerer Hitze 6 bis 8 Minuten hellbraun und knusprig braten. In einer weiten Pfanne die restliche Butter heiß werden lassen, die Maultaschen portionsweise 2 bis 3 Minuten je Seite darin anbraten und mit den Zwiebeln und dem Schnittlauch servieren."
+    ]
+  },
+  "en": {
+    "title": "Swabian Maultaschen",
+    "steps": [
+      "Dough: using the dough hooks of a hand mixer and then your hands, work the flour, eggs, oil, 1 tsp salt and 5 to 6 tbsp lukewarm water into a smooth, supple dough. If it falls apart, add a little more water; if it sticks, work in a little flour. Wrap in film and rest for about 30 minutes at room temperature.",
+      "While the dough rests, soak the bread rolls in warm water for about 10 minutes. Finely dice the rindless bacon, 2 onions and the parsley leaves, slit the leek lengthways, wash it and slice it thinly. Also cut the 4 small onions into thin rings and the chives into little rolls.",
+      "Melt 2 tbsp butter in a pan. Sweat the bacon, diced onions and leek in it over medium heat for around 5 minutes, stir in the parsley and let everything cool.",
+      "Squeeze the rolls out well and tear them apart. Knead them with the minced meat, sausage meat, cooled bacon mixture, spinach, eggs, breadcrumbs, marjoram, salt, pepper and nutmeg into a cohesive, boldly seasoned filling.",
+      "Roll the dough out thinly with the pasta machine in 2 to 3 portions. Brush one sheet with water on the floured surface and spread the filling over it in a very thin layer, leaving a border of about 2 cm free along both long sides. Fold these borders over the filling from left and right so they overlap slightly, and press down. Press a groove across with a wooden spoon handle every 6 cm and cut there with a sharp knife. Collect the pockets on a floured board and make more sheets from the remaining dough in the same way.",
+      "Let the Maultaschen steep in plenty of simmering salted water over low heat for about 10 minutes, lift them out with a skimmer and drain well. Meanwhile, fry the onion rings in half of the butter over medium heat for 6 to 8 minutes until light brown and crisp. Heat the remaining butter in a wide pan, fry the Maultaschen in batches for 2 to 3 minutes per side, and serve with the onions and chives."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "stalk"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "bunch"
+      },
+      {
+        "index": 9,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 13,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 14,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 15,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 19,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 21,
+        "amount": 1,
+        "unit": "bunch"
+      }
+    ]
+  },
+  "review_note": "Time from source: 120 min, stated as Aufwand (the only time figure on the page). Source gives 8 servings. Source lists eggs and flour twice (dough and filling or working). Steps restructured (own step division and order of work) after paraphrase spot-check 23/11/2026. Confirmed by Lena 24/11/2026: title follows the recipe, not the list.",
+  "originality": {
+    "overlap_5gram": 0.0,
+    "checked": "23/11/2026"
+  }
+}

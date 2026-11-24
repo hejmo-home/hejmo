@@ -1,0 +1,148 @@
+{
+  "n": 72,
+  "slug": "aelplermagronen",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 35,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://fooby.ch/de/rezepte/amp.id-13040.html",
+    "site": "Fooby",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Rohessspeck",
+      "article_en": "Raw-cured bacon (Rohessspeck)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zwiebeln",
+      "article_en": "Onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "ml",
+      "article_de": "Vollmilch",
+      "article_en": "Whole milk",
+      "note_de": "5 dl",
+      "note_en": "5 dl"
+    },
+    {
+      "amount": 200,
+      "unit": "ml",
+      "article_de": "Rahm",
+      "article_en": "Cream",
+      "note_de": "2 dl",
+      "note_en": "2 dl"
+    },
+    {
+      "amount": 3,
+      "unit": "TL",
+      "article_de": "Kräutersalz",
+      "article_en": "Herb salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Kartoffeln, festkochend",
+      "article_en": "Waxy potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Magronen (Makkaroni)",
+      "article_en": "Magronen (macaroni)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Bergkäse im Kräutermantel",
+      "article_en": "Mountain cheese with herb coating",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Kräutersalz",
+      "article_en": "Herb salt",
+      "note_de": "wenig, zum Abschmecken",
+      "note_en": "a little, to season"
+    }
+  ],
+  "de": {
+    "title": "Älplermagronen",
+    "steps": [
+      "Würfle 100 g Rohessspeck und die 2 Zwiebeln, hacke 2 Knoblauchzehen. Brate Speck, Zwiebeln und Knoblauch in einer beschichteten Pfanne goldbraun und stelle alles beiseite. Das wird später das Topping.",
+      "Schäle die Kartoffeln (400 g) und schneide sie in kleine Würfel.",
+      "Erhitze 500 ml Vollmilch, 200 ml Rahm und 3 TL Kräutersalz in einer breiten Pfanne mit Deckel.",
+      "Gib die Kartoffelwürfel und 250 g Magronen (Makkaroni) hinein und bringe alles zum Kochen. Schalte dann auf kleine Hitze, lege den Deckel auf und koche alles etwa 10 Minuten. Rühre zwischendurch gelegentlich um, damit nichts am Boden hängt.",
+      "Die Magronen sind fertig, wenn sie al dente sind und nur noch wenig Flüssigkeit übrig ist.",
+      "Rühre erst zum Schluss 100 g Bergkäse mit Kräutermantel ein, bis er geschmolzen ist. Schmecke mit wenig Kräutersalz ab.",
+      "Verteile die Älplermagronen auf Teller und gib die Speck-Zwiebel-Mischung obendrauf."
+    ]
+  },
+  "en": {
+    "title": "Älplermagronen (Swiss alpine macaroni)",
+    "steps": [
+      "Dice 100 g raw-cured bacon and the 2 onions, and chop 2 garlic cloves. Fry the bacon, onions and garlic in a non-stick pan until golden and set aside. This is the topping later.",
+      "Peel the potatoes (400 g) and cut them into small cubes.",
+      "Heat 500 ml whole milk, 200 ml cream and 3 tsp herb salt in a wide pan with a lid.",
+      "Add the potato cubes and 250 g Magronen (macaroni) and bring everything to the boil. Then turn to low heat, put the lid on and cook for about 10 minutes. Stir occasionally in between so nothing sticks to the bottom.",
+      "The Magronen are done when they are al dente and only a little liquid is left.",
+      "Only at the end stir in 100 g mountain cheese with herb coating until melted. Season with a little herb salt.",
+      "Divide the Älplermagronen among plates and put the bacon and onion mix on top."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "clove"
+      },
+      {
+        "index": 5,
+        "amount": 3,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "Source uses brand products (Pro Montagna); generic article names are used. The source gives no preparation for the potatoes (peel and dice small is assumed from the 10-minute cooking time, not stated). Source gives dl; converted exactly to ml. Source shows no rating on the page; list says Redaktionsküche. Magronen are the small macaroni used in Swiss cooking. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

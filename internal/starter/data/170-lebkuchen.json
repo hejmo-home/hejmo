@@ -1,0 +1,186 @@
+{
+  "n": 170,
+  "slug": "lebkuchen",
+  "category": "Backen",
+  "servings": 40,
+  "time_minutes": 50,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Nüsse",
+      "en": "Tree nuts"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.essen-und-trinken.de/rezepte/lebkuchen-rezept-zum-selbermachen-13887670.html",
+    "site": "Essen & Trinken",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Zucker, braun",
+      "article_en": "Brown sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Honig",
+      "article_en": "Honey",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 120,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": "1 Prise",
+      "note_en": "1 pinch"
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Natron",
+      "article_en": "Bicarbonate of soda",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "article_de": "Lebkuchengewürz",
+      "article_en": "Gingerbread spice mix (Lebkuchengewürz)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Zimt",
+      "article_en": "Cinnamon",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Kakaopulver",
+      "article_en": "Cocoa powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Eiweiß",
+      "article_en": "Egg white",
+      "note_de": "Bio",
+      "note_en": "organic"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Puderzucker",
+      "article_en": "Icing sugar",
+      "note_de": "gesiebt, für die Glasur",
+      "note_en": "sifted, for the icing"
+    }
+  ],
+  "de": {
+    "title": "Lebkuchen",
+    "steps": [
+      "Zucker, Honig, Butter und Salz in einem Topf unter Rühren erhitzen, bis alles geschmolzen ist.",
+      "Die Honigmasse in die Schüssel der Küchenmaschine geben und auf lauwarm abkühlen lassen. Zu heiß darf sie nicht in den Teig.",
+      "Mehl, Natron, Lebkuchengewürz, Zimt und Kakao in einer Schüssel mischen.",
+      "Die Mehlmischung zur lauwarmen Honigmasse geben und kneten, bis ein glatter Teig entsteht.",
+      "Den Teig einpacken und über Nacht im Kühlschrank ruhen lassen.",
+      "Am nächsten Tag den Ofen auf 200 °C Ober-/Unterhitze (190 °C Umluft) vorheizen, Rost auf die zweite Schiene von unten. Bleche mit Backpapier auslegen.",
+      "Den Teig 5 mm dick ausrollen und Formen ausstechen.",
+      "Die Lebkuchen auf die Bleche legen und 30 Minuten kalt stellen, dann behalten sie ihre Form.",
+      "8 bis 10 Minuten backen und auf dem Blech auskühlen lassen.",
+      "Für die Glasur das Eiweiß mit dem gesiebten Puderzucker glatt rühren.",
+      "Die Glasur in einen Spritzbeutel füllen, auf die kalten Lebkuchen spritzen und trocknen lassen."
+    ]
+  },
+  "en": {
+    "title": "Lebkuchen (gingerbread)",
+    "steps": [
+      "Heat the sugar, honey, butter and salt in a saucepan, stirring, until everything has melted.",
+      "Pour the honey mixture into the bowl of the stand mixer and let it cool until lukewarm. It must not go into the dough too hot.",
+      "Mix the flour, bicarbonate of soda, gingerbread spice, cinnamon and cocoa in a bowl.",
+      "Add the flour mixture to the lukewarm honey mixture and knead until you have a smooth dough.",
+      "Wrap the dough and let it rest in the fridge overnight.",
+      "The next day, preheat the oven to 200 °C top and bottom heat (190 °C fan), shelf second from the bottom. Line baking sheets with parchment.",
+      "Roll the dough out 5 mm thick and cut out shapes.",
+      "Place the gingerbread on the sheets and chill for 30 minutes, then they keep their shape.",
+      "Bake 8 to 10 minutes and let cool on the sheet.",
+      "For the glaze, stir the egg white with the sifted icing sugar until smooth.",
+      "Fill the glaze into a piping bag, pipe it onto the cooled gingerbread and let it dry."
+    ],
+    "amounts_converted": [
+      {
+        "index": 5,
+        "amount": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "packet"
+      },
+      {
+        "index": 7,
+        "amount": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Rating count from the list. Source page shows 14 ratings; list says Redaktionsküche. Source steps not copied. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

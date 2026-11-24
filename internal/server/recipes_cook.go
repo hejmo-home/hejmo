@@ -51,9 +51,7 @@ type cookStep struct {
 	BackLabel, FwdLabel, ContLbl string
 }
 
-var (
-	cookDigits = regexp.MustCompile(`^\+?\d+$`)
-)
+var cookDigits = regexp.MustCompile(`^\d+$`)
 
 // clampPortions keeps a stepper value within 1 and 99.
 func clampPortions(n int) int { return min(max(n, 1), recipe.MaxPortions) }
@@ -185,9 +183,7 @@ func (s *server) handleRecipeCook(w http.ResponseWriter, r *http.Request) {
 	if n > 0 {
 		tabSteps = c.t("cook.step", "k", strconv.Itoa(k), "n", strconv.Itoa(n))
 	}
-	ones := func(key string) string { // the sentence with its number, and the one for 1 portion
-		return c.s.i18n.T(lang, key)
-	}
+	tpl := func(key string) string { return c.s.i18n.T(lang, key) } // the raw template, {k}/{n} left for cook.js to fill
 	data := map[string]any{
 		"R": rec, "Title": rec.Name, "Parent": parent, "ID": rec.ID, "RecipeHref": recipesPath + "/" + rec.ID, "EditHref": recipesPath + "/" + rec.ID + "/edit",
 		"View": view, "Step": k, "Steps": steps, "HasSteps": n > 0, "Ings": ings, "Typed": typed, "Invalid": invalid, "Base": base,
@@ -195,8 +191,8 @@ func (s *server) handleRecipeCook(w http.ResponseWriter, r *http.Request) {
 		"TabIngs": tabIngs, "TabSteps": tabSteps,
 		"TickedText": c.t("cook.ticked", "k", strconv.Itoa(len(ticked)), "n", strconv.Itoa(len(ings))), "AllReady": len(ings) > 0 && len(ticked) == len(ings),
 		"AllReadyText": c.t("cook.allready", "n", strconv.Itoa(len(ings))),
-		"TickedTpl":    ones("cook.ticked"), "AllReadyTpl": ones("cook.allready"),
-		"ErrTpl": ones("cook.portions.err"), "ErrOne": ones("cook.portions.err.one"), "OfflineTpl": ones("cook.portions.offline"), "OfflineOne": ones("cook.portions.offline.one"),
+		"TickedTpl":    tpl("cook.ticked"), "AllReadyTpl": tpl("cook.allready"),
+		"ErrTpl": tpl("cook.portions.err"), "ErrOne": tpl("cook.portions.err.one"), "OfflineTpl": tpl("cook.portions.offline"), "OfflineOne": tpl("cook.portions.offline.one"),
 	}
 	if n > 0 {
 		data["Current"] = steps[k-1]

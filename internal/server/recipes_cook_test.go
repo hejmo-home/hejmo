@@ -317,6 +317,7 @@ func TestWithoutScriptThePortionButtonsAndTheTypedNumberAreToldApart(t *testing.
 		{"minus at 1", []string{"portions=1", "nudge=1"}, "value=\"1\" autocomplete"},
 		{"plus at 99", []string{"portions=99", "nudge=99"}, "value=\"99\" autocomplete"},
 		{"nudge that is no number is ignored", []string{"portions=6", "nudge=x"}, "value=\"6\" autocomplete"},
+		{"nudge with a plus sign is ignored", []string{"portions=6", "nudge=%2B5"}, "value=\"6\" autocomplete"},
 	} {
 		page := rb.b.do(http.MethodGet, cookPath(id, c.q...), nil, enHeader).body
 		if !strings.Contains(page, c.want) {

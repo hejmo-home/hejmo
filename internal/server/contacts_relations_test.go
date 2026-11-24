@@ -80,9 +80,9 @@ func TestTheContactFormHasARelationsCardAfterNameWithOneBlankLineForTheWholeFami
 		`name="rel1_whole" value="1" data-whole checked`, `<label class="pchip" data-person="1"><input type="checkbox" name="rel1_person"`,
 		"Weitere Beziehung", "Kinder sehen den Kontakt dadurch nicht. Was Kinder sehen, legt ihr extra fest.",
 		`<datalist id="rel-words">`, `<option value="Oma">`, `<option value="Kinderärztin">`, `<template data-line="rel">`, `name="more" value="rel"`)
-	name, rels, numbers := strings.Index(page, `id="name"`), strings.Index(page, `id="rels"`), strings.Index(page, `id="numbers"`)
-	if !(name > 0 && name < rels && rels < numbers) {
-		t.Errorf("the card is not after Name and before the numbers: %d %d %d", name, rels, numbers)
+	name, photo, rels, numbers := strings.Index(page, `id="name"`), strings.Index(page, `id="photo"`), strings.Index(page, `id="rels"`), strings.Index(page, `id="numbers"`)
+	if !(name > 0 && name < photo && photo < rels && rels < numbers) {
+		t.Errorf("the order is not Name, photo card, relations, numbers: %d %d %d %d", name, photo, rels, numbers)
 	}
 	if line := section(page, `<li class="rel-line blank"`, `</li>`); strings.Contains(line, `rm"`) || !strings.Contains(line, "rel-say") {
 		t.Errorf("the blank line has an Entfernen button or no sentence element: %s", line)
@@ -116,8 +116,8 @@ func TestRelationsRoundTripThroughTheFormWithTwoLinesAndShowOnTheContactAndItsRo
 	page := c.page("/contacts/"+id, "de").body
 	head := section(page, `<div class="ct-head">`, `</div>`)
 	ctHas(t, "contact head", head, `<h1>Oma Gerda</h1>`, `<p class="ct-full">Gerda Müller</p>`, `<ul class="ct-rels" aria-label="Beziehungen">`, `<li><b>Oma</b> von <span class="who"><span class="marker"`, `Sebastian</span> und <span class="who"><span class="marker"`, `Mia</span></li>`, `<li><b>Mutter</b> von <span class="who">`)
-	if strings.Index(head, "ct-full") > strings.Index(head, "ct-rels") {
-		t.Errorf("the relations are not after the full name: %s", head)
+	if !(strings.Index(head, "ct-full") < strings.Index(head, "ct-rels") && strings.Index(head, "ct-rels") < strings.Index(head, "ph-link")) {
+		t.Errorf("the head is not full name, relations, photo link: %s", head)
 	}
 	row := rowOf(c.page("/contacts", "de").body, "Oma Gerda")
 	ctHas(t, "row", row, `<span class="meta rel">Oma von Sebastian und Mia</span><span class="meta rel">Mutter von Papa</span><span class="meta">Gerda Müller</span>`)

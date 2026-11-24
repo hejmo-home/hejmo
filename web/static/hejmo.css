@@ -3735,8 +3735,9 @@ p.why.fam b { display: inline; }
 .ct-head .ph-link .icon { stroke: currentColor; }
 .ct-head .ph-link { margin: 4px 0 0; }
 @media (max-width: 479px) {
-  .ct-head { grid-template-columns: minmax(0, 1fr); grid-template-areas: "ph" "name" "full" "act"; row-gap: 10px; }
-  .ct-head > h1 { margin: 0; }
+  .ct-head { grid-template-columns: minmax(0, 1fr); grid-template-areas: "ph" "name" "full" "act"; }
+  .ct-head > h1 { margin: 10px 0 0; }
+  .ct-head > .ct-full { margin: 10px 0 0; }
 }
 /* Rows: the relation is the first line under the name, in text colour, so it reads as "who is that". */
 .list-rows .t > .rel { color: var(--text); font-size: var(--fs-label-large); overflow-wrap: break-word; hyphens: manual; }
@@ -3748,7 +3749,7 @@ p.why.fam b { display: inline; }
 .ct-rels .who { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .ct-rels .who .marker { width: 12px; height: 12px; }
 .ct-rels .icon { width: 18px; height: 18px; stroke: currentColor; vertical-align: -3px; margin-right: 4px; }
-@media (max-width: 479px) { .ct-head { grid-template-areas: "ph" "name" "full" "rels" "act"; } .ct-rels { margin: 0; } }
+@media (max-width: 479px) { .ct-head { grid-template-areas: "ph" "name" "full" "rels" "act"; } .ct-rels { margin: 10px 0 0; } .ct-head .ph-link { margin: 10px 0 0; } }
 /* Form card "Beziehungen": one line per relation (word plus person chips), like the number lines. */
 .ct-form .rels-card { display: grid; gap: 12px; }
 .ct-form .rel-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }

@@ -292,6 +292,7 @@ type layoutBlockRow struct {
 	Sub                     string // "tomorrow" or "list": the sub-setting that follows
 	SubTitle, SubOn, SubOff string
 	SubChecked              bool
+	Sos                     *layoutSos // the words under the row of the emergency numbers
 }
 
 type layoutListOption struct {
@@ -316,6 +317,7 @@ type layoutMini struct {
 	Columns                                        []miniColumn
 	Visible                                        int
 	List                                           string
+	Sos                                            []int // one entry per contact of the emergency numbers
 	HeaderOrder, ColumnOrder, FooterOrder          []string
 	TomorrowLabel, MealsLabel                      string
 	Zones                                          map[string]bool
@@ -437,6 +439,13 @@ func (s *server) fillLayout(r *http.Request, p principal, v *displayPage, d stor
 				row.Sub, row.SubTitle = "tomorrow", say("layout.b.tomorrow_events")
 				row.SubOn, row.SubOff = say("layout.b.tomorrow_events.on"), say("layout.b.tomorrow_events.off")
 				row.SubChecked = v.ShowTomorrow
+			case layout.Emergency:
+				row.Sub = "emergency"
+				sos, err := s.layoutSosFor(h, lang, d.Name, d.Portrait)
+				if err != nil {
+					s.logger.Error("emergency numbers", "err", err)
+				}
+				row.Sos = &sos
 			case layout.List:
 				row.Sub = "list"
 				row.Disabled = pg.NoList
@@ -567,6 +576,9 @@ func (s *server) fillMini(r *http.Request, p principal, pg *layoutPage, l layout
 	m.Columns = cols
 	for _, z := range pg.Zones {
 		for _, b := range z.Rows {
+			if b.Sos != nil {
+				m.Sos = make([]int, b.Sos.Count)
+			}
 			switch z.ID {
 			case "header":
 				m.HeaderOrder = append(m.HeaderOrder, b.ID)

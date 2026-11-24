@@ -258,7 +258,13 @@ func (s *server) familyView(h store.Household, lang string, d *store.Display) (f
 	if err != nil {
 		return familyview.View{}, err
 	}
-	return familyview.Build(familyview.Input{Stars: stars, Layout: &lay, Everyone: everyone, Routines: routines, List: tileList, HasLists: len(lists) > 0, Meals: meals, MealCutoffs: cutoffs, Now: data.now, Lang: lang, Region: h.Region, People: data.people, Groups: data.groups, I18n: s.i18n,
+	var emergency []familyview.EmergencyInput
+	if lay.Enabled(layout.Emergency) {
+		if emergency, err = s.emergencyInputs(h, lang); err != nil {
+			return familyview.View{}, err
+		}
+	}
+	return familyview.Build(familyview.Input{Stars: stars, Emergency: emergency, Layout: &lay, Everyone: everyone, Routines: routines, List: tileList, HasLists: len(lists) > 0, Meals: meals, MealCutoffs: cutoffs, Now: data.now, Lang: lang, Region: h.Region, People: data.people, Groups: data.groups, I18n: s.i18n,
 		Waste: data.waste, DayNotes: byDay, TomorrowLabel: s.i18n.T(lang, "family.tomorrow"), TodayLabel: s.i18n.T(lang, "family.today"),
 		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID), TaskProgress: progress,
 		TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, Weather: s.homeWeather(h)}), nil

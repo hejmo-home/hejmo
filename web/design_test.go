@@ -201,10 +201,14 @@ func TestSpecDimensionsAndTypographyExistAsTokens(t *testing.T) {
 	// is monospace so that l, 1, O and 0 differ.
 	for _, c := range []struct{ name, size, family, weight string }{
 		{"title-phone", "28px", "Figtree", "700"},
+		{"emergency-number", "28px", "Figtree", "700"}, // phone numbers read across the room (ticket 303)
 		{"secret", "19px", "ui-monospace", "600"},
 	} {
 		if got := root["--fs-"+c.name]; got != c.size {
 			t.Errorf("css --fs-%s = %q, want %s", c.name, got, c.size)
+		}
+		if c.name == "emergency-number" && root["--fw-emergency-number"] != c.weight {
+			t.Errorf("css --fw-emergency-number = %q, want %s", root["--fw-emergency-number"], c.weight)
 		}
 		e := d.Typography[c.name]
 		if e["fontFamily"] != c.family || e["fontSize"] != c.size || e["fontWeight"] != c.weight {

@@ -5358,12 +5358,12 @@ components:
         rotate_daily: { type: boolean, description: "Every day at 03:00 each person moves one column to the right, the rightmost goes to the left (round-robin), the same on every display with this switched on. Default false" }
         blocks:
           type: array
-          description: "Every block with its zone and switch, in the order shown inside each zone"
+          description: "Every block with its zone and switch, in the order shown inside each zone. The block `emergency` (emergency numbers, ticket 303) is the last of the footer and off by default: it shows the contacts of the shipped group `notfall` that have at least one phone number, in the order of the contacts overview, in a footer row of its own; it stays away while there is none, and in a personal view"
           items:
             type: object
             required: [id, zone, enabled]
             properties:
-              id: { type: string, enum: [clock, weather, events, routines, tasks, stars, meals, tomorrow, list] }
+              id: { type: string, enum: [clock, weather, events, routines, tasks, stars, meals, tomorrow, list, emergency] }
               zone: { type: string, enum: [header, columns, footer] }
               enabled: { type: boolean }
         list_id: { type: string, format: uuid, nullable: true, description: "The list of the block `list` (\"one list\"); at most 8 open entries show. Null: none chosen. A list that was deleted meanwhile stays here and the display shows no list until another is chosen" }
@@ -5385,7 +5385,7 @@ components:
             type: object
             required: [id]
             properties:
-              id: { type: string, enum: [clock, weather, events, routines, tasks, stars, meals, tomorrow, list] }
+              id: { type: string, enum: [clock, weather, events, routines, tasks, stars, meals, tomorrow, list, emergency] }
               enabled: { type: boolean }
         list_id: { type: string, description: "The ID of the list of the block `list`; an empty string removes the choice" }
     Brightness:

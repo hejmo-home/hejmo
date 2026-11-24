@@ -4818,6 +4818,7 @@
   "recipes.err.ing.article": "This article does not exist any more. Type the name of the ingredient again.",
   "recipes.err.step.long": "A step can be at most 2000 characters long.",
   "recipes.err.tips": "The tips can be at most 2000 characters long.",
+  "recipes.err.mealtimes": "Choose the mealtimes from the list.",
   "recipes.err.source": "The source can be at most 300 characters long.",
   "recipes.err.tags": "A tag can be at most 30 characters long, and a recipe can have at most 30 tags.",
   "recipes.err.ings.many": "A recipe has at most 100 ingredients.",

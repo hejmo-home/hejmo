@@ -1,6 +1,7 @@
 package contact
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/nyaruka/phonenumbers"
@@ -57,3 +58,16 @@ func NumberKey(v, region string) string {
 // EmailKey is what two e-mail addresses are compared by: the address without surrounding spaces, in lower
 // case. An empty value has no key: empty values never match.
 func EmailKey(v string) string { return strings.ToLower(strings.TrimSpace(v)) }
+
+// CallingCode is the country code of a number as "+49", read with the region; empty when it cannot be read.
+func CallingCode(v, region string) string {
+	e := E164(v, region)
+	if e == "" {
+		return ""
+	}
+	n, err := phonenumbers.Parse(e, "")
+	if err != nil {
+		return ""
+	}
+	return "+" + strconv.Itoa(int(n.GetCountryCode()))
+}

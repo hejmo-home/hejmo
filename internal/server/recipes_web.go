@@ -6,14 +6,17 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/library"
 	"github.com/hejmo-home/hejmo/internal/recipe"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/task"
 )
 
 // The recipe pages (ticket 279, ADR 0015: HTML routes with API parity):
@@ -173,6 +176,21 @@ type rcpIngView struct {
 	Warns              []template.HTML
 }
 
+// qtyScaled is the quantity of an ingredient for n portions of a recipe written for base: as written for
+// the recipe's own portions, else rounded to one decimal (never to a whole number, at least 0.1). The
+// unit stays the one written: kitchen and container measures scale but are never converted.
+func (c *itemCtx) qtyScaled(in recipe.Ingredient, base, n int) string {
+	if in.Amount <= 0 || n == base {
+		return c.qtyText(in)
+	}
+	v := recipe.Scale(in.Amount, base, n)
+	out := recipe.FormatScaled(v, c.lang)
+	if in.Unit == "" {
+		return out
+	}
+	return out + " " + c.unitWord(in.Unit, v != 1)
+}
+
 // qtyText is "600 g", "1 Stück" or "3 EL"; nothing for an ingredient without a quantity.
 func (c *itemCtx) qtyText(in recipe.Ingredient) string {
 	if in.Amount <= 0 {
@@ -206,15 +224,22 @@ func (s *server) handleRecipePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	parent := auth.RoleAllows(p.person.Role, auth.Perm("meals", auth.Write))
+	n, plan := rec.Portions, ""
+	if v, ok := parsePortions(r.URL.Query().Get("portions")); ok {
+		n = v
+	}
+	var planDay, planMeal string
+	if m := planPattern.FindStringSubmatch(r.URL.Query().Get("plan")); m != nil {
+		if _, err := time.Parse(task.DateLayout, m[1]); err == nil {
+			planDay, planMeal, plan = m[1], m[2], m[1]+"/"+m[2]
+		}
+	}
 	data := map[string]any{
 		"R": rec, "Symbol": rec.Category.Symbol(), "Title": rec.Name, "Parent": parent, "CategoryName": c.categoryName(rec.Category),
-		"PortionsText": strconv.Itoa(rec.Portions), "IngsFor": c.t("recipes.ings.for.other", "n", strconv.Itoa(rec.Portions)),
+		"PortionsText": c.t("recipes.facts.portions_written", "n", strconv.Itoa(rec.Portions)), "PV": s.portionsView(c, p, rec, n, planDay, planMeal, plan),
 		"Tags": rec.Tags, "Tips": rec.Tips, "Source": rec.Source, "SourceLink": recipe.SourceLink(rec.Source),
 		"Steps": rec.Steps, "Warns": c.warnLines(c.warnings(rec.Recipe)), "HasWarn": len(c.warnings(rec.Recipe)) > 0,
 		"FreeText": s.freeText(c.st), "EditHref": recipesPath + "/" + rec.ID + "/edit",
-	}
-	if rec.Portions == 1 {
-		data["IngsFor"] = c.t("recipes.ings.for.one")
 	}
 	if rec.Minutes > 0 {
 		data["Time"] = c.minutesLong(rec.Minutes)
@@ -239,7 +264,7 @@ func (s *server) handleRecipePage(w http.ResponseWriter, r *http.Request) {
 	}
 	var ings []rcpIngView
 	for _, in := range rec.Ingredients {
-		v := rcpIngView{Qty: c.qtyText(in), Name: in.Text, Variety: in.Variety}
+		v := rcpIngView{Qty: c.qtyScaled(in, rec.Portions, n), Name: in.Text, Variety: in.Variety}
 		if a, ok := c.lookup(in.ArticleID); in.ArticleID != "" && ok {
 			v.Warns = c.warnLines(library.Warnings(a, c.st.persons))
 		} else {
@@ -252,8 +277,77 @@ func (s *server) handleRecipePage(w http.ResponseWriter, r *http.Request) {
 		data["Who"] = c.whoText(rec)
 		data["DeleteExplain"] = c.t("recipes.delete.explain", "name", rec.Name)
 		data["DeleteConfirm"] = c.t("recipes.delete.confirm", "name", rec.Name)
+		planned, err := s.plannedText(c, p, lang, rec)
+		if err != nil {
+			s.fail(w, "planned meals", err)
+			return
+		}
+		data["DeletePlanned"] = planned
 	}
 	s.render(w, r, http.StatusOK, "recipe.html", data)
+}
+
+// planPattern is the origin of the portions of a recipe page: a day and a mealtime of the meal plan.
+var planPattern = regexp.MustCompile(`^(\d{4}-\d{2}-\d{2})/(breakfast|lunch|snack|dinner)$`)
+
+// portionsView is the "For - 6 + portions" line of the recipe page and the sentence under it: where the
+// number comes from, what the recipe was written for, that quantities are rounded to one decimal, and
+// the way back to the recipe as written. The steps are links, the server does the sums.
+type portionsView struct {
+	N                    int
+	Less, More           string
+	LessOff, MoreOff     bool
+	Hint, AsWritten      string
+	AsWrittenHref        string
+	LessLabel, MoreLabel string
+}
+
+func (s *server) portionsView(c *itemCtx, p principal, rec store.Recipe, n int, planDay, planMeal, plan string) portionsView {
+	href := func(to int) string {
+		v := url.Values{}
+		if to != rec.Portions || plan != "" {
+			v.Set("portions", strconv.Itoa(to))
+		}
+		out := recipesPath + "/" + rec.ID
+		if len(v) > 0 {
+			out += "?portions=" + v.Get("portions")
+		}
+		if plan != "" {
+			if len(v) == 0 {
+				out += "?plan=" + plan
+			} else {
+				out += "&plan=" + plan
+			}
+		}
+		return out
+	}
+	pv := portionsView{N: n, LessOff: n <= 1, MoreOff: n >= recipe.MaxPortions, LessLabel: c.t("meals.rcp.portions.less"), MoreLabel: c.t("meals.rcp.portions.more")}
+	pv.Less, pv.More = href(max(n-1, 1)), href(min(n+1, recipe.MaxPortions))
+	hint := c.t("recipes.portions.hint", "portions", c.portionsText(rec.Portions))
+	if planDay != "" {
+		hint = c.t("recipes.portions.from_plan."+planMeal, "when", s.whenText(p, c.lang, planDay)) + " " + hint
+	}
+	pv.Hint = hint
+	if n != rec.Portions || plan != "" {
+		pv.AsWritten = c.t("recipes.portions.as_written", "portions", c.portionsText(rec.Portions))
+		pv.AsWrittenHref = recipesPath + "/" + rec.ID
+	}
+	return pv
+}
+
+// plannedText is the sentence of the delete box that lists the coming meal plan entries of a recipe
+// ("on <b>Tuesday, 24.11., Dinner</b> and on ..."), HTML with the names escaped; empty when none.
+func (s *server) plannedText(c *itemCtx, p principal, lang string, rec store.Recipe) (template.HTML, error) {
+	planned, err := s.db.PlannedMealsOfRecipe(p.household.ID, rec.ID, s.today(p))
+	if err != nil || len(planned) == 0 {
+		return "", err
+	}
+	var items []string
+	for _, m := range planned {
+		when := s.whenText(p, lang, m.Day) + ", " + s.i18n.T(lang, "meals.mealtime."+string(m.Mealtime))
+		items = append(items, repl(html.EscapeString(c.t("recipes.delete.planned.item", "when", "\x00")), "\x00", "<b>"+html.EscapeString(when)+"</b>"))
+	}
+	return template.HTML(repl(html.EscapeString(c.t("recipes.delete.planned", "list", "\x00")), "\x00", s.joinWords(lang, items))), nil // #nosec G203 -- names escaped, the text is ours
 }
 
 // dietWhy says why a recipe has its diet mark, or none, and what Hejmo does not check.

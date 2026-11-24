@@ -4856,6 +4856,6 @@
   "recipes.portions.from_plan.dinner": "As in the meal plan on {when}, for dinner.",
   "recipes.portions.as_written": "As written: {portions}",
   "recipes.facts.portions_written": "written for {n}",
-  "recipes.delete.planned": "It is still in the meal plan on {list}. There the name stays as free text, without servings and without warnings.",
-  "recipes.delete.planned.item": "{when}"
+  "recipes.delete.planned": "It is still in the meal plan {list}. There the name stays as free text, without servings and without warnings.",
+  "recipes.delete.planned.item": "on {when}"
 }

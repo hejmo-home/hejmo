@@ -81,7 +81,8 @@
      content between dangerOpen and dangerClose. */}}
 {{define "dangerOpen"}}<details class="danger">
   <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>{{.Label}}</summary>{{if .Confirm}}
-  <p>{{.Explain}}</p>{{with .Names}}
+  <p>{{.Explain}}</p>{{with .Also}}
+  <p>{{.}}</p>{{end}}{{with .Names}}
   <ul>{{range .}}<li><strong>{{.}}</strong></li>{{end}}</ul>{{end}}
   <div class="confirm">
     <form method="post" action="{{.Action}}"><button class="button danger" type="submit">{{.Confirm}}</button></form>

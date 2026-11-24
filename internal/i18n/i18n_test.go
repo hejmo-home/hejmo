@@ -177,6 +177,13 @@ var wholeFamilyTexts = map[string]bool{
 	"cimp.keep.locked.name":                    true, // "aus eurer Familie": the people of the household (ticket 300)
 	"cimp.keep.locked.birthday":                true, // "aus eurer Familie": the people of the household (ticket 300)
 	"cimp.keep.locked.emails":                  true, // "aus eurer Familie": the people of the household (ticket 300)
+	"meals.recipes.hint":                       true, // "Eure Gerichte": the recipes belong to the whole family (ticket 279)
+	"meals.recipes.hint.child":                 true,
+	"recipes.lead":                             true,
+	"recipes.empty":                            true,
+	"recipes.units.group.household":            true, // "Eure Einheiten": the household's units
+	"recipes.check.title":                      true, // "Allergien in eurer Familie": the card names the family, not the reader
+	"recipes.check.none":                       true,
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

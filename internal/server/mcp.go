@@ -23,7 +23,7 @@ import (
 // every scope check of the REST API applies unchanged. Nothing that manages
 // tokens, settings, people, displays or personal devices is a tool.
 
-const mcpInstructions = "These tools read and change the family's shared Hejmo box: calendar events, lists, tasks with routines and stars, and the meal plan. " +
+const mcpInstructions = "These tools read and change the family's shared Hejmo box: calendar events, lists, tasks with routines and stars, the meal plan and the recipes. " +
 	"You act as the parent who created your token. Tools you cannot see are not allowed for your token."
 
 // mcpParam is one argument of a tool. Arguments named in the path of the
@@ -70,9 +70,21 @@ var (
 		opt("limit_period", "string", "none, day, week or month"), opt("limit_count", "integer", "How often one person may redeem it per period, 1 to 99"),
 		opt("whole_family", "boolean", "Meant for the whole family"), opt("person_ids", "strings", "Person ids it is meant for"),
 	}
-	taskTitle   = "The task title"
-	mealtime    = req("mealtime", "string", "breakfast, lunch, snack or dinner")
-	mealDate    = req("date", "string", "The day, YYYY-MM-DD")
+	taskTitle  = "The task title"
+	mealtime   = req("mealtime", "string", "breakfast, lunch, snack or dinner")
+	mealDate   = req("date", "string", "The day, YYYY-MM-DD")
+	recipeBody = []mcpParam{
+		req("name", "string", "Recipe name (at most 120 characters), unique ignoring case"),
+		opt("category", "string", "main (default), side, dessert, baking, breakfast or snack"),
+		opt("portions", "integer", "1 to 99; the number of people in the household when missing"),
+		opt("minutes", "integer", "From start to table, 0 to 9999"),
+		opt("mealtimes", "strings", "breakfast, lunch, snack or dinner; none means every mealtime"),
+		opt("tags", "strings", "Free tags, at most 30 characters each"),
+		opt("tips", "string", "Tips, at most 2000 characters"),
+		opt("source", "string", "A book, a person or a web address"),
+		opt("ingredients", "array", "A list of {quantity (number, none for as needed), unit (see list_recipe_units), name (an article of the library by name, or free text that is not checked for allergens), article_id, variety}"),
+		opt("steps", "strings", "The steps in order, one text each (at most 2000 characters)"),
+	}
 	mealTplBody = []mcpParam{
 		req("name", "string", "Template name (at most 60 characters)"),
 		req("mealtimes", "string", "all (fills every mealtime of the day) or one"),
@@ -194,6 +206,14 @@ var mcpTools = []mcpTool{
 	{name: "restore_meal", desc: "Back to the template: drop this week's change of a meal.", method: "POST", path: "/meals/{date}/{mealtime}/restore", params: []mcpParam{mealDate, mealtime}},
 	{name: "list_diets_and_allergies", desc: "List every person's diet (omnivore, vegetarian, pescatarian, vegan) and allergies: the 14 main EU allergens by key, plus free text that is not checked automatically and cannot be filtered by. Health data, read only.", method: "GET", path: "/food"},
 	{name: "get_diet_and_allergies", desc: "Get one person's diet and allergies. Free-text allergies (other) are not checked automatically and cannot be filtered by. Health data, read only.", method: "GET", path: "/people/{id}/food", params: []mcpParam{idOf("person")}},
+	{name: "list_recipes", desc: "List the household's own recipes from A to Z; q searches name, ingredients and tags.", method: "GET", path: "/recipes", params: []mcpParam{
+		opt("q", "string", "Search text"), opt("category", "string", "main, side, dessert, baking, breakfast or snack")}},
+	{name: "get_recipe", desc: "Get one recipe with its ingredients and its steps in order.", method: "GET", path: "/recipes/{id}", params: []mcpParam{idOf("recipe")}},
+	{name: "create_recipe", desc: "Write a recipe. Only the name is required. Warnings about allergies never block it.", method: "POST", path: "/recipes", params: recipeBody},
+	{name: "update_recipe", desc: "Replace a recipe (give all fields): its ingredients, steps and tags are replaced.", method: "PUT", path: "/recipes/{id}", params: append([]mcpParam{idOf("recipe")}, recipeBody...)},
+	{name: "delete_recipe", desc: "Delete a recipe with its ingredients, steps and tips.", method: "DELETE", path: "/recipes/{id}", params: []mcpParam{idOf("recipe")}},
+	{name: "list_recipe_units", desc: "List the units an ingredient can have: the household's, kitchen measures and containers.", method: "GET", path: "/recipe-units"},
+	{name: "get_recipe_warnings", desc: "Who in the family has to look out for what in a recipe. Health data, read only. Free-text ingredients and free-text allergies are not checked automatically.", method: "GET", path: "/recipes/{id}/warnings", params: []mcpParam{idOf("recipe")}},
 	{name: "list_meal_templates", desc: "List the meal plan templates, by name.", method: "GET", path: "/meal-templates"},
 	{name: "get_meal_template", desc: "Get one meal plan template.", method: "GET", path: "/meal-templates/{id}", params: []mcpParam{idOf("template")}},
 	{name: "create_meal_template", desc: "Create a meal plan template.", method: "POST", path: "/meal-templates", params: mealTplBody},

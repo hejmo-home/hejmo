@@ -352,7 +352,7 @@ func (s *server) apiSaveRecipe(w http.ResponseWriter, r *http.Request, p princip
 	status := http.StatusCreated
 	if id := r.PathValue("id"); id != "" {
 		rec.ID, status = id, http.StatusOK
-		saved, err = s.db.UpdateRecipe(p.household.ID, p.person.ID, rec)
+		saved, err = s.db.UpdateRecipe(p.household.ID, p.person.ID, rec, s.mealOptions(s.langOf(r), p))
 	} else {
 		saved, err = s.db.CreateRecipe(p.household.ID, p.person.ID, rec)
 	}

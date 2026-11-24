@@ -610,7 +610,7 @@ func (s *server) saveRecipePage(w http.ResponseWriter, r *http.Request, id strin
 		saved, err = s.db.CreateRecipe(p.household.ID, p.person.ID, rec)
 	} else {
 		rec.ID = id
-		saved, err = s.db.UpdateRecipe(p.household.ID, p.person.ID, rec)
+		saved, err = s.db.UpdateRecipe(p.household.ID, p.person.ID, rec, s.mealOptions(s.langOf(r), p))
 	}
 	var taken *store.RecipeNameTakenError
 	var fe *store.FieldError

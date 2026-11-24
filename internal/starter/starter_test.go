@@ -156,7 +156,7 @@ func TestIngredientsAreLibraryArticlesOrFreeText(t *testing.T) {
 		t.Errorf("only %d article lines", articles)
 	}
 	e, _ := starter.ByID("starter-rahmspinat")
-	if got := e.Recipe("de").Ingredients[0]; got.ArticleID != "" || got.Text != "Blattspinat" {
+	if got := e.Recipe("de").Ingredients[0]; got.ArticleID != "spinach" || got.Text != "Blattspinat" {
 		t.Errorf("spinach line = %+v", got)
 	}
 	got := e.Recipe("en").Ingredients
@@ -345,5 +345,25 @@ func TestALengthStaysInTheText(t *testing.T) {
 		if strings.Contains(in.Text, "Ingwer") && strings.Count(in.Text, "cm") != 1 {
 			t.Errorf("length doubled: %q", in.Text)
 		}
+	}
+}
+
+// Review of #329: the spinach of the files is the spinach of the library.
+func TestSpinachUnderAnotherNameResolvesToSpinach(t *testing.T) {
+	seen := map[string]int{}
+	for _, e := range starter.All() {
+		for _, in := range e.Recipe("de").Ingredients {
+			for _, name := range []string{"Blattspinat", "Babyspinat"} {
+				if in.Text == name {
+					seen[name]++
+					if in.ArticleID != "spinach" {
+						t.Errorf("%s: %q is %q", e.Slug, in.Text, in.ArticleID)
+					}
+				}
+			}
+		}
+	}
+	if seen["Blattspinat"] == 0 || seen["Babyspinat"] == 0 {
+		t.Errorf("no recipe has the names any more: %v", seen)
 	}
 }

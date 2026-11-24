@@ -57,32 +57,49 @@ var spellings = map[string]string{
 	"langkornreis": "rice", "risottoreis": "rice", "jasminreis": "rice", "vollkornreis": "rice",
 	"staubzucker": "icing-sugar", "vanillinzucker": "vanilla-sugar", "bourbon-vanillezucker": "vanilla-sugar",
 	"zimtpulver": "cinnamon", "muskat": "nutmeg", "edelsusspaprika": "paprika-powder", "rosenpaprika": "paprika-powder",
-	"maisstarke": "cornflour", "maizena": "cornflour", "trockenhefe": "yeast", "frische hefe": "yeast",
+	"blattspinat": "spinach", "babyspinat": "spinach", "maisstarke": "cornflour", "maizena": "cornflour", "trockenhefe": "yeast", "frische hefe": "yeast",
 	"meersalz": "salt", "grobes salz": "salt", "schwarzer pfeffer": "pepper", "gemusebruhepulver": "vegetable-stock",
 }
 
-// spelled finds the article a German name stands for in spellings: the whole
-// name, else the part before the first comma ("Eigelb, Größe M"). A name with
-// an alternative ("Eigelb oder Ei") is never mapped.
+// spelled finds the article a German name stands for in spellings.
 func spelled(name string, arts []library.Article) (library.Article, bool) {
-	if hasAlternative(name) {
-		return library.Article{}, false
-	}
-	key := library.Fold(strings.Join(strings.Fields(name), " "))
-	id, ok := spellings[key]
-	if !ok {
-		head, _, _ := strings.Cut(key, ",")
-		id, ok = spellings[strings.TrimSpace(head)]
-	}
+	key, ok := spellKey(name)
 	if !ok {
 		return library.Article{}, false
 	}
+	id := spellings[key]
 	for _, a := range arts {
 		if a.ID == id {
 			return a, true
 		}
 	}
 	panic("starter: spellings names an article the library does not ship: " + id)
+}
+
+// spellKey is the key of spellings a name stands for: the whole name, the name
+// without a trailing bracket ("Mehl mit Backpulver (Self-raising flour)"), or
+// the part before the first comma ("Eigelb, Größe M"). A name with an
+// alternative anywhere, bracket included ("Eigelb oder Ei"), is never mapped.
+func spellKey(name string) (string, bool) {
+	if hasAlternative(name) {
+		return "", false
+	}
+	key := library.Fold(strings.Join(strings.Fields(name), " "))
+	if _, ok := spellings[key]; ok {
+		return key, true
+	}
+	if strings.HasSuffix(key, ")") {
+		if open := strings.LastIndex(key, " ("); open > 0 {
+			key = key[:open]
+			if _, ok := spellings[key]; ok {
+				return key, true
+			}
+		}
+	}
+	head, _, _ := strings.Cut(key, ",")
+	head = strings.TrimSpace(head)
+	_, ok := spellings[head]
+	return head, ok
 }
 
 func hasAlternative(s string) bool {

@@ -332,7 +332,7 @@ A unit of a recipe's ingredient that is no weight or volume Hejmo can convert: E
 _Avoid_: spoon unit, small measure
 
 **Container and piece measure**:
-A unit of a recipe's ingredient that counts things: Dose, Päckchen, Becher, Bund, Glas, Flasche, Stange, Zehe, Scheibe, Würfel, Zweig, Stiel, Kugel, Blatt and Beet (can, packet, tub, bunch, jar, bottle, stick, clove, slice, cube, sprig, stalk, ball, leaf, punnet). On a shopping list it keeps its quantity ("2 Dosen Tomaten"), and quantities add up only within the same unit.
+A unit of a recipe's ingredient that counts things: Dose, Päckchen, Becher, Bund, Glas, Flasche, Stange, Zehe, Scheibe, Würfel, Zweig, Stiel, Kugel, Blatt, Beet and Topf (can, packet, tub, bunch, jar, bottle, stick, clove, slice, cube, sprig, stalk, ball, leaf, punnet, pot). On a shopping list it keeps its quantity ("2 Dosen Tomaten"), and quantities add up only within the same unit.
 _Avoid_: pack unit, count word
 
 **Variety**:

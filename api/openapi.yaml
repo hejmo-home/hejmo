@@ -2607,7 +2607,7 @@ paths:
         `tsp`, `pinch`, `knifetip`, `dash`, `splash`, `handful`, `cup`), which never
         convert into or add up with g and ml, then the containers and piece
         measures (`can`, `packet`, `tub`, `bunch`, `jar`, `bottle`, `stick`, `clove`,
-        `slice`, `cube`, `sprig`, `stalk`, `ball`, `leaf`, `punnet`), whose
+        `slice`, `cube`, `sprig`, `stalk`, `ball`, `leaf`, `punnet`, `pot`), whose
         quantities add up only within the same unit.
       responses:
         "200":

@@ -4248,7 +4248,8 @@ body.web.cook-page { padding: 0; }
 .cook-title { margin: 0; font-size: var(--fs-title-phone); line-height: 1.2; overflow-wrap: break-word; hyphens: manual; }
 .cook .notice { max-width: none; display: flex; gap: 8px; align-items: flex-start; margin: 0; }
 .cook .notice .icon { flex: none; stroke: currentColor; margin-top: 2px; }
-form.cook-form { display: grid; gap: var(--gap); margin: 0; }
+/* The form reaches into the page margin, so the bottom bar can run edge to edge inside it. */
+form.cook-form { display: grid; gap: var(--gap); margin: 0 calc(-1 * var(--margin)); padding: 0 var(--margin); }
 .cook-cols { display: grid; gap: var(--gap); align-items: start; }
 .cook-card { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; min-width: 0; display: grid; gap: 12px; align-content: start; }
 [data-theme="bw"] .cook-card { border: 2px solid var(--text); }
@@ -4330,6 +4331,7 @@ ul.cook-ings { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px;
 }
 @media (max-width: 699px) {
   .cook { padding: 10px var(--gap) 0; gap: 12px; }
+  form.cook-form { margin: 0 calc(-1 * var(--gap)); padding: 0 var(--gap); }
   .cook-nav { margin: 0 calc(-1 * var(--gap)); padding-left: var(--gap); padding-right: var(--gap); }
   .cook-title { font-size: 24px; }
   .cook-tabs { display: flex; }

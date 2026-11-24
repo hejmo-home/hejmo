@@ -165,7 +165,7 @@ func TestStepsAdvanceOneByOneAndTheStepIsClamped(t *testing.T) {
 	rcpHas(t, "step 1", card, `<h2 id="h-step">Step 1 of 3</h2>`, `<ol class="cook-dots" aria-label="Steps">`, `<button type="submit" name="step" value="1" aria-current="step" aria-label="Step 1">1</button>`,
 		`<button type="submit" name="step" value="2" aria-label="Step 2">2</button>`, `<p class="cook-text">Süßkartoffeln schälen.</p>`, `<p class="cook-next"><b>Next:</b> Currypaste anrösten.</p>`)
 	nav := rcpBetween(t, one, `<div class="cook-nav">`, "</div>")
-	rcpHas(t, "step 1 buttons", nav, `<button class="button secondary back for-steps phone-only" type="submit" name="view" value="ings">`, "To the ingredients",
+	rcpHas(t, "step 1 buttons", nav, `<button class="button secondary back for-steps narrow-only" type="submit" name="view" value="ings">`, "To the ingredients",
 		`<button class="button for-steps" type="submit" name="step" value="2">Next: step 2`, `<button class="button for-ings" type="submit" name="view" value="steps">Go: step 1`)
 	rcpLacks(t, "step 1 buttons", nav, `name="done"`)
 
@@ -175,7 +175,7 @@ func TestStepsAdvanceOneByOneAndTheStepIsClamped(t *testing.T) {
 		`name="step" value="2" aria-current="step" aria-label="Step 2">2</button>`, `<p class="cook-text">Currypaste anrösten.</p>`, `<b>Next:</b> Köcheln lassen.`)
 	nav = rcpBetween(t, two, `<div class="cook-nav">`, "</div>")
 	rcpHas(t, "step 2 buttons", nav, `<button class="button secondary back for-steps" type="submit" name="step" value="1">`, "Back", `name="step" value="3">Next: step 3`, `<button class="button for-ings" type="submit" name="view" value="steps">Continue with step 2`)
-	rcpLacks(t, "step 2 buttons", nav, "phone-only")
+	rcpLacks(t, "step 2 buttons", nav, "narrow-only")
 	if cookView(two) != "steps" {
 		t.Errorf("view = %q: a step in the address means the steps part", cookView(two))
 	}

@@ -24,12 +24,25 @@
     {{template "rewardRedeemed" .}}
     <dt>{{t "rwd.detail.created"}}</dt><dd>{{.CreatedText}}</dd>
   </dl>
+  {{if .RedeemChips}}<details class="more redeem"{{if .RedeemOpen}} open{{end}}>
+    <summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>{{t "rwd.redeem.title"}}<span class="sum">{{t "rwd.redeem.sum"}}</span></summary>
+    <div>
+      <form class="redeem-body" method="post" action="/tasks/rewards/{{.ID}}/redeem">
+        <fieldset class="chips"{{if .RedeemErr}} aria-invalid="true" aria-describedby="err-person"{{end}}><legend>{{t "rwd.redeem.who"}}</legend>
+          {{range .RedeemChips}}<label class="pchip" data-person="{{.Slot}}"><input type="radio" name="person" value="{{.ID}}"{{if .Disabled}} disabled{{end}}><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span><span class="nm"><span>{{.Name}}</span><small>{{.Small}}</small></span><svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+          {{end}}{{template "aferr" (dict "Name" "person" "Text" .RedeemErr)}}
+        </fieldset>
+        <p class="hint">{{tf "rwd.redeem.hint" "name" .Name}}</p>
+        <button class="button secondary" type="submit">{{t "rwd.redeem.go"}}</button>
+      </form>
+    </div>
+  </details>{{end}}
   {{template "rewardForm" .}}
   {{if .Redeemed}}
   <details class="repair archive" open>
     <summary><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11h14V8M10 12h4"/></svg><span class="t"><b>{{t "rwd.archive.title"}}</b><span class="hint">{{t "rwd.archive.hint"}}</span></span></summary>
     <form method="post" action="/tasks/rewards/{{.ID}}/archive">
-      <div class="notice"><p>{{.ArchiveExplain}}</p><p>{{.ArchiveStays}}</p></div>
+      <div class="notice"><p>{{.ArchiveExplain}}</p><p>{{.ArchiveStays}}</p>{{with .AskGone}}<p>{{.}}</p>{{end}}</div>
       <div class="confirm"><button class="button" type="submit">{{.ArchiveConfirm}}</button><a href="/tasks/rewards/{{.ID}}">{{t "rwd.archive.cancel"}}</a></div>
     </form>
   </details>

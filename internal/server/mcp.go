@@ -178,6 +178,14 @@ var mcpTools = []mcpTool{
 		idOf("reward"), opt("whole_family", "boolean", "Meant for the whole family"), opt("person_ids", "strings", "Person ids it is meant for")}},
 	{name: "delete_reward", desc: "Delete a reward that was never redeemed; a redeemed one must be archived.", method: "DELETE", path: "/rewards/{id}", params: []mcpParam{idOf("reward")}},
 
+	// Redeeming rewards (ticket 292)
+	{name: "list_reward_requests", desc: "List the open requests to redeem rewards, oldest first. (Children ask and withdraw in the app; MCP is for parents.)", method: "GET", path: "/rewards/requests"},
+	{name: "confirm_reward_request", desc: "As a parent: say yes. Balance and limit are checked again and the price is booked; a second decision books nothing.", method: "POST", path: "/rewards/requests/{id}/confirm", params: []mcpParam{idOf("request")}},
+	{name: "decline_reward_request", desc: "As a parent: say no. The child keeps the stars and sees the optional note.", method: "POST", path: "/rewards/requests/{id}/decline", params: []mcpParam{
+		idOf("request"), opt("note", "string", "Why not (at most 120 characters); the child sees it")}},
+	{name: "redeem_reward", desc: "As a parent: redeem a reward for a person now, without a request. An open request of that person for the reward is confirmed instead of a second booking.", method: "POST", path: "/rewards/{id}/redeem", params: []mcpParam{
+		idOf("reward"), req("person_id", "string", "The person who redeems")}},
+
 	// Meal plan
 	{name: "list_meals", desc: "List the meal plan from one day to another (default: the coming seven days).", method: "GET", path: "/meals", params: []mcpParam{
 		opt("from", "string", "First day, YYYY-MM-DD (give both from and to, or neither)"), opt("to", "string", "Last day, YYYY-MM-DD, at most 62 days after from")}},

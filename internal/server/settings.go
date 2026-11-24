@@ -39,11 +39,13 @@ type settingsJSON struct {
 	FirstStepsHidden bool `json:"first_steps_hidden"`
 	// FirstStepsSkipped lists the steps of that card a parent skipped, in the order of the card.
 	FirstStepsSkipped []string `json:"first_steps_skipped"`
+	// BelowZero is whether unticking a task may take a star balance below zero (ticket 292).
+	BelowZero bool `json:"below_zero"`
 }
 
 func settingsOf(h store.Household) settingsJSON {
 	out := settingsJSON{DateFormat: h.DateFormat, TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, AutoUpdate: h.AutoUpdate, HomeName: h.HomeName,
-		MealCutoffs: cutoffsToJSON(h.MealCutoffs), FirstStepsHidden: h.FirstStepsHidden, FirstStepsSkipped: skippedOrEmpty(h.FirstStepsSkipped)}
+		MealCutoffs: cutoffsToJSON(h.MealCutoffs), FirstStepsHidden: h.FirstStepsHidden, FirstStepsSkipped: skippedOrEmpty(h.FirstStepsSkipped), BelowZero: h.BelowZero}
 	if h.Latitude != 0 || h.Longitude != 0 {
 		out.Latitude, out.Longitude = &h.Latitude, &h.Longitude
 	}
@@ -93,6 +95,8 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		FirstStepsHidden *bool `json:"first_steps_hidden"`
 		// FirstStepsSkipped replaces the list of skipped steps.
 		FirstStepsSkipped *[]string `json:"first_steps_skipped"`
+		// BelowZero allows or forbids a star balance below zero after unticking a task.
+		BelowZero *bool `json:"below_zero"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
@@ -149,6 +153,12 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		}
 		s.fail(w, "update settings", err)
 		return
+	}
+	if in.BelowZero != nil {
+		if err := s.db.SetBelowZero(p.household.ID, *in.BelowZero); err != nil {
+			s.fail(w, "update settings", err)
+			return
+		}
 	}
 	saved, err := s.db.Household(p.household.ID)
 	if err != nil {

@@ -133,6 +133,13 @@ func TestAnAffordableGoalSaysEnoughStarsAndALimitSaysWhenItIsBackWhileSavingGoes
 	g.rewardWeb.stars(t, g.mia, -30) // 2
 	page = g.miaScreen.get("/tasks/rewards", "de").body
 	hasAll(t, "limited goal", page, `class="rwd-state later"`, "<b>Diesen Monat schon eingelöst.</b> Wieder ab ", "Du kannst trotzdem weiter sparen.", "<b>2 von 30 Sternen</b> · noch 28")
+	// Enough stars but the limit is used up: the card says so and offers no
+	// request (POST /ask would answer 409).
+	g.rewardWeb.stars(t, g.mia, 78) // 80
+	page = g.miaScreen.get("/tasks/rewards", "de").body
+	card := goalCard(t, page)
+	hasAll(t, "limited goal with enough stars", card, "<b>Genug Sterne</b>", "<b>Diesen Monat schon eingelöst.</b>")
+	hasNone(t, "limited goal with enough stars", card, `class="rwd-ask"`, "Eltern fragen")
 }
 
 func TestARedemptionAnArchivedRewardAndAChangedAudienceEndTheGoalWithAKindLine(t *testing.T) {
@@ -307,3 +314,73 @@ func TestTheGoalPageMentionsTheOwnDeviceOnlyForSomeoneWithOne(t *testing.T) {
 }
 
 var _ = store.RoleChild
+
+// goalCard is the savings goal section of the child's page.
+func goalCard(t *testing.T, page string) string {
+	t.Helper()
+	i := strings.Index(page, `<section class="rwd-goal"`)
+	if i < 0 {
+		t.Fatalf("no goal card:\n%s", page)
+	}
+	j := strings.Index(page[i:], "</section>")
+	return page[i : i+j]
+}
+
+func (g goalWeb) ask(t *testing.T, reward string) {
+	t.Helper()
+	if r := g.miaScreen.post("/tasks/rewards/"+reward+"/ask", url.Values{}); r.status != http.StatusSeeOther || r.location != "/tasks/rewards" {
+		t.Fatalf("ask = %d %q\n%s", r.status, r.location, r.body)
+	}
+}
+
+func TestAnAffordableGoalCardOffersTheAskButton(t *testing.T) {
+	t.Parallel()
+	g := newGoalWeb(t)
+	g.rewardWeb.stars(t, g.mia, 18) // 30
+	card := goalCard(t, g.choose(t, g.kino).body)
+	hasAll(t, "goal card", card, `<form class="rwd-ask" method="post" action="/tasks/rewards/`+g.kino+`/ask">`, "Eltern fragen", "<b>Genug Sterne</b>")
+}
+
+func TestAskingForTheGoalKeepsTheCardOnEnoughStarsAndSaysItWaits(t *testing.T) {
+	t.Parallel()
+	g := newGoalWeb(t)
+	g.rewardWeb.stars(t, g.mia, 18) // 30 = the price of the goal
+	g.choose(t, g.kino)
+	g.ask(t, g.kino)
+	page := g.miaScreen.get("/tasks/rewards", "de").body
+	card := goalCard(t, page)
+	hasAll(t, "asked goal card", card, `class="rwd goal ok"`, "<b>Genug Sterne</b>", `class="rwd-state wait"`, "Wartet auf Mama")
+	hasNone(t, "asked goal card", card, "von 30 Sternen", "· noch", `class="rwd-ask"`, "Eltern fragen")
+	// The request stands under "Deine Anfragen" as well.
+	hasAll(t, "requests", page, `class="rwd-group asks"`, "Deine Anfragen", `class="rwd asked"`)
+	if n := count(page, "<h3>Kino mit Popcorn</h3>"); n != 2 {
+		t.Errorf("Kino is on the page %d times, want 2 (goal card and request)", n)
+	}
+}
+
+func TestTheGoalCardCountsTheWholeBalanceAndOffersNoAskWhileOtherRequestsSetStarsAside(t *testing.T) {
+	t.Parallel()
+	g := newGoalWeb(t)
+	g.rewardWeb.stars(t, g.mia, 18) // 30
+	g.choose(t, g.kino)
+	g.ask(t, g.eis) // 8 stars set aside, 22 free
+	card := goalCard(t, g.miaScreen.get("/tasks/rewards", "de").body)
+	hasAll(t, "goal card", card, `class="rwd goal ok"`, "<b>Genug Sterne</b>")
+	hasNone(t, "goal card", card, "von 30 Sternen", `class="rwd-ask"`)
+	// Below the price the progress is the plain balance, not the free stars.
+	g.rewardWeb.stars(t, g.mia, -10) // 20, still 8 set aside
+	card = goalCard(t, g.miaScreen.get("/tasks/rewards", "de").body)
+	hasAll(t, "goal card below the price", card, `aria-label="20 von 30 Sternen"`, `style="--pct:66"`, "<b>20 von 30 Sternen</b> · noch 10")
+}
+
+func TestTheGoalCardKeepsSayingItWaitsWhenTheBalanceFallsBelowThePrice(t *testing.T) {
+	t.Parallel()
+	g := newGoalWeb(t)
+	g.rewardWeb.stars(t, g.mia, 18) // 30 = the price of the goal
+	g.choose(t, g.kino)
+	g.ask(t, g.kino)
+	g.rewardWeb.stars(t, g.mia, -10) // 20
+	card := goalCard(t, g.miaScreen.get("/tasks/rewards", "de").body)
+	hasAll(t, "asked goal card below the price", card, "von 30 Sternen", "Wartet auf")
+	hasNone(t, "asked goal card below the price", card, `class="rwd-ask"`)
+}

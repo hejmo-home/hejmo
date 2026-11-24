@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"html"
 	"html/template"
 	"net/http"
 	"slices"
@@ -47,6 +48,13 @@ func (s *server) routeRewards() http.Handler {
 	mux.HandleFunc("POST /tasks/rewards/{id}/restore", s.handleRewardRestore)
 	mux.HandleFunc("POST /tasks/rewards/{id}/delete", s.handleRewardDelete)
 	mux.HandleFunc("GET /tasks/rewards/{id}/picture", s.handleRewardPicture)
+	mux.HandleFunc("POST /tasks/rewards/settings", s.handleRewardSettings)
+	mux.HandleFunc("POST /tasks/rewards/{id}/ask", s.handleRewardAsk)
+	mux.HandleFunc("POST /tasks/rewards/{id}/redeem", s.handleRewardRedeem)
+	mux.HandleFunc("GET /tasks/rewards/requests/{id}/picture", s.handleRequestPicture)
+	mux.HandleFunc("POST /tasks/rewards/requests/{id}/withdraw", s.handleRequestWithdraw)
+	mux.HandleFunc("POST /tasks/rewards/requests/{id}/confirm", s.handleRequestConfirm)
+	mux.HandleFunc("POST /tasks/rewards/requests/{id}/decline", s.handleRequestDecline)
 	mux.HandleFunc("POST /tasks/rewards/{id}/goal", s.handleGoalSet)
 	return s.withGoalPages(mux)
 }
@@ -184,10 +192,13 @@ func chipMap(people []store.Person) map[string]personChip {
 
 // handleRewards is /tasks/rewards: the catalogue for a parent, the child's own view for a child.
 func (s *server) handleRewards(w http.ResponseWriter, r *http.Request) {
-	p, ok := s.memberPage(w, r)
-	if !ok {
-		return
+	if p, ok := s.memberPage(w, r); ok {
+		s.renderRewards(w, r, p, http.StatusOK)
 	}
+}
+
+// renderRewards is the page after a request was decided or asked, too: with a notice when something was too late.
+func (s *server) renderRewards(w http.ResponseWriter, r *http.Request, p principal, status int) {
 	lang := s.langOf(r)
 	people, err := s.db.People(p.household.ID)
 	if err != nil {
@@ -195,7 +206,7 @@ func (s *server) handleRewards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if isChild(p) {
-		s.renderChildRewards(w, r, p, lang, people)
+		s.renderChildRewards(w, r, p, status, lang, people)
 		return
 	}
 	all, err := s.db.Rewards(p.household.ID)
@@ -213,10 +224,20 @@ func (s *server) handleRewards(w http.ResponseWriter, r *http.Request) {
 	}
 	slices.SortStableFunc(archived, func(a, b store.Reward) int { return b.ArchivedAt.Compare(a.ArchivedAt) })
 	chips := chipMap(people)
-	s.render(w, r, http.StatusOK, "rewards.html", map[string]any{
+	data := map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Parent": true,
 		"Rows": s.rewardRows(p, lang, offered, chips), "Archived": s.rewardRows(p, lang, archived, chips), "HasAny": len(all) > 0,
-	})
+		"BelowZero": p.household.BelowZero, "BackRewards": true,
+	}
+	if err := s.asksData(r, p, "rewards", data); err != nil {
+		s.fail(w, "requests", err)
+		return
+	}
+	data["BelowSum"] = s.i18n.T(lang, "rwd.below.sum.on")
+	if !p.household.BelowZero {
+		data["BelowSum"] = s.i18n.T(lang, "rwd.below.sum.off")
+	}
+	s.render(w, r, status, "rewards.html", data)
 }
 
 type childCard struct {
@@ -230,6 +251,22 @@ type childCard struct {
 	Have, Left, Cost int
 	// CanSave: the card offers "Save for this".
 	CanSave bool
+	// Asked: a request for it is open. The goal card then says it waits (Wait)
+	// instead of offering a second request.
+	Asked bool
+	Wait  string
+	// CanAsk: the goal card offers "Ask parents" (enough free stars, limit not
+	// used up, no request open).
+	CanAsk bool
+}
+
+// askCard is one request of the child, open or answered in the last 7 days.
+type askCard struct {
+	ID, Name, Symbol, Picture, Price, Limit string
+	// Kind is wait, yes or no; Title is the state in words, Said who answered and what.
+	Kind, Title, Wait, When, Warn string
+	Said                          template.HTML // the names in it escaped
+	Open                          bool
 }
 
 // childGoal is what the child's page shows of the savings goal (ticket 293).
@@ -241,9 +278,10 @@ type childGoal struct {
 	Redeemed bool
 }
 
-// renderChildRewards is the child's view: their balance, their savings goal and
-// the rewards meant for them in three groups (enough stars, still saving, not right now).
-func (s *server) renderChildRewards(w http.ResponseWriter, r *http.Request, p principal, lang string, people []store.Person) {
+// renderChildRewards is the child's view: their balance, their requests, their
+// savings goal and the rewards meant for them in three groups (enough free
+// stars, still saving, not right now).
+func (s *server) renderChildRewards(w http.ResponseWriter, r *http.Request, p principal, status int, lang string, people []store.Person) {
 	list, err := s.db.RewardsFor(p.household.ID, p.person.ID)
 	if err != nil {
 		s.fail(w, "rewards", err)
@@ -254,14 +292,42 @@ func (s *server) renderChildRewards(w http.ResponseWriter, r *http.Request, p pr
 		s.fail(w, "reward states", err)
 		return
 	}
+	reserved, err := s.db.ReservedStars(p.person.ID)
+	if err != nil {
+		s.fail(w, "reserved stars", err)
+		return
+	}
+	free := reward.Free(balance, reserved)
+	reqs, err := s.db.RedemptionsOf(p.household.ID, p.person.ID, s.now().AddDate(0, 0, -answerDays))
+	if err != nil {
+		s.fail(w, "requests", err)
+		return
+	}
+	asked := map[string]bool{}
+	for _, d := range reqs {
+		if d.Status == store.RedemptionOpen {
+			asked[d.RewardID] = true
+		}
+	}
+	times, err := s.db.ConfirmedRedemptions(p.household.ID)
+	if err != nil {
+		s.fail(w, "redemptions", err)
+		return
+	}
 	goal, err := s.db.Goal(p.household.ID, p.person.ID)
 	if err != nil {
 		s.fail(w, "savings goal", err)
 		return
 	}
+	byID := map[string]store.Reward{}
 	var ok, save, later []childCard
 	var goalCard *childCard
 	for _, rw := range list {
+		byID[rw.ID] = rw
+		isGoal := goal.Active() && goal.Reward.ID == rw.ID
+		if asked[rw.ID] && !isGoal {
+			continue // it stands under "Your requests"
+		}
 		st := states[rw.ID]
 		c := childCard{ID: rw.ID, Name: rw.Name, Symbol: rw.Symbol, Picture: pictureOf(rw), Price: s.starsWords(lang, rw.Price), Affordable: st.Affordable}
 		if rw.Limit.Period != reward.NoLimit {
@@ -273,11 +339,21 @@ func (s *server) renderChildRewards(w http.ResponseWriter, r *http.Request, p pr
 				key = "rwd.child.missing.one"
 			}
 			c.Missing = s.i18n.Format(lang, i18n.Msg(key, "n", strconv.Itoa(st.Missing)))
-			c.Pct = max(0, min(100, balance*100/rw.Price))
-			c.Label = s.i18n.Format(lang, i18n.Msg("rwd.child.progress", "have", strconv.Itoa(balance), "price", strconv.Itoa(rw.Price)))
-			c.Have, c.Left = balance, st.Missing
+			c.Pct, c.Label = s.progressOf(lang, free, rw.Price)
+			c.Have, c.Left = free, st.Missing
 		}
 		c.Cost = rw.Price
+		if isGoal {
+			// The goal's progress is the plain balance (GLOSSARY "Savings goal"),
+			// as on every other screen; its own open request must not empty the card.
+			c.Affordable = balance >= rw.Price
+			c.Missing, c.Pct, c.Label, c.Have, c.Left = "", 0, "", 0, 0
+			if !c.Affordable {
+				have := max(balance, 0)
+				c.Pct, c.Label = s.progressOf(lang, have, rw.Price)
+				c.Have, c.Left = have, rw.Price-have
+			}
+		}
 		if st.LimitReached {
 			key := "rwd.child.later." + string(rw.Limit.Period) + ".one"
 			if rw.Limit.Count > 1 {
@@ -292,9 +368,13 @@ func (s *server) renderChildRewards(w http.ResponseWriter, r *http.Request, p pr
 		}
 		c.CanSave = !st.Affordable
 		switch {
-		case goal.Active() && goal.Reward.ID == rw.ID:
+		case isGoal:
 			cc := c
-			cc.CanSave = false
+			cc.CanSave, cc.Asked = false, asked[rw.ID]
+			cc.CanAsk = cc.Affordable && !cc.Asked && st.Affordable && !st.LimitReached
+			if cc.Asked {
+				cc.Wait = s.waitWords(lang, people)
+			}
 			goalCard = &cc
 		case st.LimitReached:
 			later = append(later, c)
@@ -304,12 +384,58 @@ func (s *server) renderChildRewards(w http.ResponseWriter, r *http.Request, p pr
 			save = append(save, c)
 		}
 	}
-	var parents []string
-	for _, x := range people {
-		if x.Role == store.RoleParent {
-			parents = append(parents, x.Name)
+
+	// The requests: open ones first, oldest first; then the answers, newest first.
+	parents := s.parentNames(people)
+	var open, answers []askCard
+	for _, d := range reqs {
+		c := askCard{ID: d.ID, Name: d.Name, Symbol: d.Symbol, Picture: requestPictureURL(d), Price: s.starsWords(lang, d.Price)}
+		if rw, found := byID[d.RewardID]; found && rw.Limit.Period != reward.NoLimit {
+			c.Limit = s.limitWords(lang, rw.Limit)
+		}
+		by := d.DecidedByName
+		if by == "" {
+			by = s.i18n.T(lang, "rwd.someone")
+		}
+		switch d.Status {
+		case store.RedemptionOpen:
+			c.Open, c.Kind = true, "wait"
+			c.Wait = s.waitWords(lang, people)
+			c.When = s.i18n.Format(lang, i18n.Msg("rwd.child.asked", "when", s.rwdWhen(p, lang, d.AskedAt, false)))
+			rw := byID[d.RewardID]
+			switch chk := reward.CanRedeem(d.Price, balance, rw.Limit, times[d.RewardID][p.person.ID], s.now(), p.location()); chk.Reason {
+			case reward.NotEnoughStars:
+				c.Warn = s.i18n.Format(lang, i18n.Msg("rwd.child.warn.stars", "have", strconv.Itoa(max(balance, 0)), "price", strconv.Itoa(d.Price)))
+			case reward.LimitReached:
+				c.Warn = s.i18n.Format(lang, i18n.Msg("rwd.child.warn.limit", "again", s.limitAgain(p, lang, rw.Limit.Period, chk.AvailableAgain)))
+			}
+			open = append(open, c)
+		case store.RedemptionConfirmed:
+			c.Kind, c.Title = "yes", s.i18n.T(lang, "rwd.child.yes")
+			key := "rwd.child.yes.said"
+			if d.Direct {
+				key = "rwd.child.yes.direct"
+			}
+			c.Said = template.HTML(s.i18n.Format(lang, i18n.Msg(key, "name", html.EscapeString(by), "stars", s.starsWords(lang, d.Price))))
+			c.When = s.rwdWhen(p, lang, d.DecidedAt, true)
+			answers = append(answers, c)
+		case store.RedemptionDeclined:
+			c.Kind, c.Title = "no", s.i18n.T(lang, "rwd.child.no")
+			switch {
+			case d.DeclineReason == store.DeclinedRewardGone:
+				c.Said = template.HTML(s.i18n.T(lang, "rwd.child.no.gone"))
+			case d.Note != "":
+				c.Said = template.HTML(s.i18n.Format(lang, i18n.Msg("rwd.child.no.note", "name", html.EscapeString(by), "note", html.EscapeString(d.Note))))
+			default:
+				c.Said = template.HTML(s.i18n.Format(lang, i18n.Msg("rwd.child.no.said", "name", html.EscapeString(by))))
+			}
+			c.When = s.rwdWhen(p, lang, d.DecidedAt, true)
+			answers = append(answers, c)
 		}
 	}
+	slices.Reverse(answers) // RedemptionsOf lists the oldest first
+	cards := append(open, answers...)
+
 	chips := chipsOf(people)
 	slot := 0
 	for _, c := range chips {
@@ -317,13 +443,38 @@ func (s *server) renderChildRewards(w http.ResponseWriter, r *http.Request, p pr
 			slot = c.Slot
 		}
 	}
-	bal := template.HTML(s.i18n.Format(lang, i18n.Msg("rwd.child.bal", "stars", s.starsWords(lang, balance))))
-	if balance <= 0 {
+	bal := template.HTML(s.i18n.Format(lang, i18n.Msg("rwd.child.bal", "stars", s.starsText(lang, balance))))
+	var small template.HTML
+	below := balance < 0
+	switch {
+	case below:
+		task, rewardName, err := s.db.BelowZeroCause(p.person.ID)
+		if err != nil {
+			s.fail(w, "below zero", err)
+			return
+		}
+		if task != "" && rewardName != "" {
+			small = template.HTML(s.i18n.Format(lang, i18n.Msg("rwd.child.below", "task", html.EscapeString(task), "reward", html.EscapeString(rewardName), "n", strconv.Itoa(-balance))))
+		} else {
+			small = template.HTML(s.i18n.Format(lang, i18n.Msg("rwd.child.below.short", "n", strconv.Itoa(-balance))))
+		}
+	case reserved > balance:
+		small = template.HTML(s.i18n.Format(lang, i18n.Msg("rwd.child.bal.missing", "n", strconv.Itoa(reserved-balance))))
+	case reserved > 0:
+		key := "rwd.child.bal.reserved.one"
+		if len(open) > 1 {
+			key = "rwd.child.bal.reserved.other"
+		}
+		small = template.HTML(s.i18n.Format(lang, i18n.Msg(key, "reserved", strconv.Itoa(reserved), "free", s.starsText(lang, free))))
+	case balance == 0 && len(reqs) == 0:
 		bal = template.HTML(s.i18n.T(lang, "rwd.child.bal.none"))
+		small = template.HTML(s.i18n.T(lang, "rwd.child.bal.hint"))
 	}
+	o := outcomeOf(r)
 	data := map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Parent": false, "ChildSlot": slot,
-		"Balance": bal, "NoStars": balance <= 0, "Ok": ok, "Save": save, "Later": later, "Any": len(list) > 0 || goalCard != nil,
+		"Balance": bal, "BalSmall": small, "Below": below, "Ok": ok, "Save": save, "Later": later, "Cards": cards, "AskNotice": o.Notice,
+		"Any":   len(list) > 0 || len(cards) > 0 || goalCard != nil,
 		"Empty": s.i18n.Format(lang, i18n.Msg("rwd.child.empty", "parents", s.joinNames(lang, "rwd.or", parents))),
 		"Goal":  goalCard, "NoGoal": goalCard == nil,
 	}
@@ -336,7 +487,7 @@ func (s *server) renderChildRewards(w http.ResponseWriter, r *http.Request, p pr
 			data["EndedNotice"] = formatHTML(s.i18n, lang, key, "name", goal.EndedName)
 		}
 	}
-	s.render(w, r, http.StatusOK, "rewards.html", data)
+	s.render(w, r, status, "rewards.html", data)
 }
 
 // The form.
@@ -566,7 +717,26 @@ func (s *server) renderRewardForm(w http.ResponseWriter, r *http.Request, p prin
 			data["ArchiveStays"] = s.i18n.Format(lang, i18n.Msg(key, "n", strconv.Itoa(facts.Count), "people", s.joinNames(lang, "rwd.and", names)))
 			data["ArchiveConfirm"] = s.i18n.Format(lang, i18n.Msg("rwd.archive.confirm", "name", name))
 		}
-		data["DeleteExplain"] = s.i18n.Format(lang, i18n.Msg("rwd.delete.explain", "name", name))
+		o := outcomeOf(r)
+		if !rw.Archived() {
+			chips, err := s.redeemChips(p, lang, rw, people)
+			if err != nil {
+				s.fail(w, "redeem chips", err)
+				return
+			}
+			data["RedeemChips"], data["RedeemOpen"], data["RedeemErr"] = chips, o.Redeem, o.RedeemErr
+			gone, err := s.askGone(p, lang, rw)
+			if err != nil {
+				s.fail(w, "open requests", err)
+				return
+			}
+			data["AskGone"] = gone
+		}
+		deleteExplain := s.i18n.Format(lang, i18n.Msg("rwd.delete.explain", "name", name))
+		if gone, ok := data["AskGone"].(template.HTML); ok && gone != "" {
+			deleteExplain += " " + strings.NewReplacer("<b>", "", "</b>", "").Replace(string(gone))
+		}
+		data["DeleteExplain"] = deleteExplain
 		data["DeleteConfirm"] = s.i18n.Format(lang, i18n.Msg("rwd.delete.confirm", "name", name))
 		s.render(w, r, status, "reward.html", data)
 		return
@@ -891,7 +1061,7 @@ func (s *server) handleRewardDelete(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	switch err := s.db.DeleteReward(p.household.ID, rw.ID); {
+	switch err := s.db.DeleteReward(p.household.ID, rw.ID, s.now()); {
 	case errors.Is(err, store.ErrNotFound):
 		http.NotFound(w, r)
 	case errors.Is(err, store.ErrRedeemed):
@@ -926,4 +1096,15 @@ func (s *server) handleRewardPicture(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "private, max-age=31536000, immutable") // the address changes with the picture
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	_, _ = w.Write(b)
+}
+
+// progressOf is the bar of a reward card: the percentage and the words for
+// "have of price stars".
+func (s *server) progressOf(lang string, have, price int) (int, string) {
+	return max(0, min(100, have*100/price)), s.i18n.Format(lang, i18n.Msg("rwd.child.progress", "have", strconv.Itoa(have), "price", strconv.Itoa(price)))
+}
+
+// waitWords is "Waiting for <parents>" for a request that is open.
+func (s *server) waitWords(lang string, people []store.Person) string {
+	return s.i18n.Format(lang, i18n.Msg("rwd.child.wait", "parents", s.joinNames(lang, "rwd.or", s.parentNames(people))))
 }

@@ -21,7 +21,11 @@ type StarEntry struct {
 	BookedBy        string // person id; empty when a display booked it
 	BookedByName    string // current name; the last name once the booker is removed
 	BookedByRemoved bool   // the booker has been removed
-	At              time.Time
+	// A confirmed redemption (ticket 292): what it was at the time, and whether
+	// a parent redeemed it directly (else BookedBy confirmed a request).
+	RedemptionID, RewardName, RewardSymbol string
+	Direct                                 bool
+	At                                     time.Time
 }
 
 // StarAccount is a person's balance and their latest log entries, newest first.
@@ -68,8 +72,9 @@ func (db *DB) StarAccount(householdID, personID string, limit int) (StarAccount,
 		return StarAccount{}, err
 	}
 	acc.Shown = sums[personID].Shown
-	rows, err := db.sql.Query(`SELECT l.id, l.delta, l.note, COALESCE(l.task_id, ''), l.task_title, l.day, COALESCE(l.booked_by, ''), COALESCE(b.name, NULLIF(l.booked_by_name, ''), ''), l.booked_by IS NULL AND l.booked_by_name <> '', l.created_at
-		FROM star_log l LEFT JOIN people b ON b.id = l.booked_by
+	rows, err := db.sql.Query(`SELECT l.id, l.delta, l.note, COALESCE(l.task_id, ''), l.task_title, l.day, COALESCE(l.booked_by, ''), COALESCE(b.name, NULLIF(l.booked_by_name, ''), ''), l.booked_by IS NULL AND l.booked_by_name <> '', l.created_at,
+		COALESCE(l.redemption_id, ''), COALESCE(d.name, ''), COALESCE(d.symbol, ''), COALESCE(d.direct, 0)
+		FROM star_log l LEFT JOIN people b ON b.id = l.booked_by LEFT JOIN reward_redemptions d ON d.id = l.redemption_id
 		WHERE l.person_id = ? ORDER BY l.created_at DESC, l.rowid DESC LIMIT ?`, personID, limit)
 	if err != nil {
 		return StarAccount{}, err
@@ -78,7 +83,7 @@ func (db *DB) StarAccount(householdID, personID string, limit int) (StarAccount,
 	for rows.Next() {
 		e := StarEntry{PersonID: personID}
 		var at string
-		if err := rows.Scan(&e.ID, &e.Delta, &e.Note, &e.TaskID, &e.TaskTitle, &e.Day, &e.BookedBy, &e.BookedByName, &e.BookedByRemoved, &at); err != nil {
+		if err := rows.Scan(&e.ID, &e.Delta, &e.Note, &e.TaskID, &e.TaskTitle, &e.Day, &e.BookedBy, &e.BookedByName, &e.BookedByRemoved, &at, &e.RedemptionID, &e.RewardName, &e.RewardSymbol, &e.Direct); err != nil {
 			return StarAccount{}, err
 		}
 		if e.At, err = time.Parse(time.RFC3339, at); err != nil {

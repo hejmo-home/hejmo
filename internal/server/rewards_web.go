@@ -251,8 +251,12 @@ type childCard struct {
 	Have, Left, Cost int
 	// CanSave: the card offers "Save for this".
 	CanSave bool
-	// Asked: a request for it is open, so the goal card offers no second one.
+	// Asked: a request for it is open. The goal card then says it waits (Wait)
+	// instead of offering a second request.
 	Asked bool
+	Wait  string
+	// CanAsk: the goal card offers "Ask parents" (enough free stars, no request open).
+	CanAsk bool
 }
 
 // askCard is one request of the child, open or answered in the last 7 days.
@@ -339,6 +343,18 @@ func (s *server) renderChildRewards(w http.ResponseWriter, r *http.Request, p pr
 			c.Have, c.Left = free, st.Missing
 		}
 		c.Cost = rw.Price
+		if isGoal {
+			// The goal's progress is the plain balance (GLOSSARY "Savings goal"),
+			// as on every other screen; its own open request must not empty the card.
+			c.Affordable = balance >= rw.Price
+			c.Missing, c.Pct, c.Label, c.Have, c.Left = "", 0, "", 0, 0
+			if !c.Affordable {
+				have := max(balance, 0)
+				c.Pct = max(0, min(100, have*100/rw.Price))
+				c.Label = s.i18n.Format(lang, i18n.Msg("rwd.child.progress", "have", strconv.Itoa(have), "price", strconv.Itoa(rw.Price)))
+				c.Have, c.Left = have, rw.Price-have
+			}
+		}
 		if st.LimitReached {
 			key := "rwd.child.later." + string(rw.Limit.Period) + ".one"
 			if rw.Limit.Count > 1 {
@@ -356,6 +372,10 @@ func (s *server) renderChildRewards(w http.ResponseWriter, r *http.Request, p pr
 		case isGoal:
 			cc := c
 			cc.CanSave, cc.Asked = false, asked[rw.ID]
+			cc.CanAsk = cc.Affordable && !cc.Asked && st.Affordable
+			if cc.Asked {
+				cc.Wait = s.i18n.Format(lang, i18n.Msg("rwd.child.wait", "parents", s.joinNames(lang, "rwd.or", s.parentNames(people))))
+			}
 			goalCard = &cc
 		case st.LimitReached:
 			later = append(later, c)

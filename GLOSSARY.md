@@ -399,7 +399,7 @@ _Avoid_: available points
 A household switch (on by default). When on, unticking a task whose stars were already redeemed may take the balance below zero; when off, unticking deducts at most down to zero. Redeeming itself never goes below zero.
 
 **Savings goal**:
-The one reward a person has chosen to save for, by the person on their own device or by a parent; their personal view and the family view show the progress towards its star price. It sets no stars aside, and it ends by itself when that reward is redeemed for the person, archived or no longer meant for them.
+The one reward a person has chosen to save for, by the person on their own device or by a parent; their personal view and the family view show the progress towards its star price. Progress is the plain star balance on every screen, also while open requests set stars aside; only asking for the goal needs the price in free stars. The child's goal card then says "enough stars" and, once asked, that it waits for the parents. It sets no stars aside itself, and it ends by itself when that reward is redeemed for the person, archived or no longer meant for them.
 _Avoid_: wish, target
 
 **Streak**:

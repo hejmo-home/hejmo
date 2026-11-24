@@ -47,8 +47,9 @@ const (
 
 // recipeIngredient reads an ingredient line: an article (named by its id, by
 // the exact name typed, or by an article's name followed by a variety such as
-// "Mehl Type 405"), else free text. An explicit variety wins over the one in
-// the name. The error is a *recipe.FieldError, ErrBlank for an empty line.
+// "Mehl Type 405"), else free text. A variety written in the name wins over a
+// given one, because the text is what the person sees. The error is a
+// *recipe.FieldError, ErrBlank for an empty line.
 func (c *itemCtx) recipeIngredient(in recipe.IngredientInput) (recipe.Ingredient, *articleItem, error) {
 	name := strings.Join(strings.Fields(in.Name), " ")
 	var art *articleItem
@@ -60,8 +61,8 @@ func (c *itemCtx) recipeIngredient(in recipe.IngredientInput) (recipe.Ingredient
 			return recipe.Ingredient{}, nil, &recipe.FieldError{Field: "article_id", Msg: "unknown article"}
 		}
 		art = &it
-		// A name that ends in a variety ("Erdnussbutter · cremig") keeps it, unless one was given.
-		if a, rest, ok := library.LeadingName(name, c.visibleArticles()); ok && a.ID == it.ID && strings.TrimSpace(variety) == "" {
+		// A name that ends in a variety ("Erdnussbutter · cremig") keeps it.
+		if a, rest, ok := library.LeadingName(name, c.visibleArticles()); ok && a.ID == it.ID && strings.TrimSpace(rest) != "" {
 			variety = rest
 		}
 	case name != "":
@@ -71,7 +72,7 @@ func (c *itemCtx) recipeIngredient(in recipe.IngredientInput) (recipe.Ingredient
 			if it, ok := c.article(a.ID); ok {
 				art = &it
 				name = strings.TrimRight(strings.TrimSuffix(name, rest), " \t,·-:") // the name as typed, without the variety
-				if strings.TrimSpace(variety) == "" {
+				if strings.TrimSpace(rest) != "" {
 					variety = rest
 				}
 			}

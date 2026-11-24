@@ -212,9 +212,12 @@ func (c *itemCtx) resolveLines(f *rcpForm, keep bool) []recipe.Ingredient {
 			l.AriaRemove = fmt.Sprintf(c.s.i18n.T(c.lang, "recipes.f.ing.remove.aria"), l.N, l.Name)
 		}
 		in := recipe.IngredientInput{Amount: l.Amount, Unit: l.Unit, Name: l.Name, Variety: l.Variety}
-		if id := strings.TrimSpace(l.Article); id != "" && keep {
-			if it, ok := c.article(id); ok && namesArticle(l.Name, it) {
+		if id := strings.TrimSpace(l.Article); id != "" {
+			if it, ok := c.article(id); keep && ok && namesArticle(l.Name, it) {
 				in.ArticleID = id
+			} else {
+				// The text no longer names that article, so its variety does not belong to the line either.
+				in.Variety, l.Variety = "", ""
 			}
 		}
 		ing, art, err := c.recipeIngredient(in)

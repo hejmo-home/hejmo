@@ -65,6 +65,7 @@ function rcpFocusAfter(count, removed) { return Math.min(removed, count - 1); }
   var MAX = { ing: 100, step: 100 };
 
   var named = form.querySelectorAll("input.in");
+  // Only lines on the page at load (and chosen options) carry data-was; a line added later has none, which rcpKeepsVariety reads as "no name before".
   for (var q = 0; q < named.length; q++) named[q].setAttribute("data-was", named[q].value);
 
   function list(kind) { return form.querySelector('[data-lines="' + kind + '"]'); }

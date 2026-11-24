@@ -515,6 +515,40 @@ func TestAChosenSuggestionKeepsItsVarietyWhenTheScriptFillsNameAndArticle(t *tes
 	}
 }
 
+func TestARetypedNameDoesNotKeepTheVarietyOfTheOldArticleWithoutTheScript(t *testing.T) {
+	t.Parallel()
+	rb := newRecipeBox(t)
+	// What the form sends without script: the line was "Mehl · Type 405", the name was retyped, the hidden fields kept the old article and variety.
+	l := lines([]string{"200"}, []string{"g"}, []string{"Zucker"})
+	l["ing_article"] = []string{"flour"}
+	l["ing_variety"] = []string{"Type 405"}
+	if r := rb.save(t, "/meals/recipes", rcpFormOf("Kuchen", l)); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d\n%s", r.status, r.body)
+	}
+	for _, in := range rb.onlyRecipe(t).Ingredients {
+		if in.Variety != "" {
+			t.Errorf("a retyped name kept the old variety: %+v", in)
+		}
+	}
+}
+
+func TestAVarietyTypedAfterTheDotWinsOverTheOneTheLineHadBefore(t *testing.T) {
+	t.Parallel()
+	rb := newRecipeBox(t)
+	// The script clears the article id when the text is edited and keeps the variety field of the chosen option.
+	l := lines([]string{"3", "3"}, []string{"tbsp", "tbsp"}, []string{"Erdnussbutter · stückig", "Erdnussbutter · stückig"})
+	l["ing_article"] = []string{"", "peanut-butter"}
+	l["ing_variety"] = []string{"cremig", "cremig"}
+	if r := rb.save(t, "/meals/recipes", rcpFormOf("Curry", l)); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d\n%s", r.status, r.body)
+	}
+	for i, in := range rb.onlyRecipe(t).Ingredients {
+		if in.ArticleID != "peanut-butter" || in.Variety != "stückig" {
+			t.Errorf("line %d = %+v, want peanut butter, variety stückig", i, in)
+		}
+	}
+}
+
 func TestACraftedCategoryIsRefusedInWordsNotWithTheStoresMessage(t *testing.T) {
 	t.Parallel()
 	rb := newRecipeBox(t)

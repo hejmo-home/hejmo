@@ -108,7 +108,7 @@ func kidsFlash(before *store.Contact, after store.Contact, newPhoto bool) string
 		code = "on"
 	case after.ForChildren && len(after.Numbers) == 0 && (before == nil || !before.ForChildren || len(before.Numbers) > 0):
 		code = "wait"
-	case !after.ForChildren && before != nil && before.ForChildren:
+	case !after.ForChildren && wasShown:
 		code = "off"
 	default:
 		return ""

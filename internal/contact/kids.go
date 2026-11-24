@@ -16,6 +16,18 @@ type KidCandidate struct {
 // KidSectionIDs are the contact ids of the three sections, in the order they are shown.
 type KidSectionIDs struct{ Emergency, Family, Other []string }
 
+// KidSection is one section with its key ("emergency", "family" or "other") and its contact ids.
+type KidSection struct {
+	Key string
+	IDs []string
+}
+
+// Sections lists the three sections in the order they are shown, the empty ones included: the one list both the web
+// page and REST walk.
+func (k KidSectionIDs) Sections() []KidSection {
+	return []KidSection{{"emergency", k.Emergency}, {"family", k.Family}, {"other", k.Other}}
+}
+
 // Empty reports whether no section holds a contact.
 func (k KidSectionIDs) Empty() bool {
 	return len(k.Emergency)+len(k.Family)+len(k.Other) == 0

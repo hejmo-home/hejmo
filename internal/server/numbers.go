@@ -40,6 +40,11 @@ type knCard struct {
 	Calls      []knCall
 }
 
+// knSectionIDs are the anchor and the text key of the title of each section, by section key.
+var knSectionIDs = map[string]struct{ anchor, title string }{
+	"emergency": {"s-sos", "numbers.sec.sos"}, "family": {"s-fam", "numbers.sec.family"}, "other": {"s-other", "numbers.sec.other"},
+}
+
 // knSection is "Im Notfall", "Familie" or "Weitere Nummern".
 type knSection struct {
 	Key, ID, Title string
@@ -97,15 +102,12 @@ func (s *server) kidsPageFor(w http.ResponseWriter, r *http.Request, p principal
 	}
 	byID, ids := kidSectionIDs(all, e.groups, p.person, e.lang)
 	kp := kidsPage{e: e, all: all, ids: ids}
-	for _, sec := range []struct {
-		key, id string
-		ids     []string
-	}{{"emergency", "s-sos", ids.Emergency}, {"family", "s-fam", ids.Family}, {"other", "s-other", ids.Other}} {
-		if len(sec.ids) == 0 {
+	for _, sec := range ids.Sections() {
+		if len(sec.IDs) == 0 {
 			continue
 		}
-		out := knSection{Key: sec.key, ID: sec.id, Title: e.t("numbers.sec." + map[string]string{"emergency": "sos", "family": "family", "other": "other"}[sec.key])}
-		for _, id := range sec.ids {
+		out := knSection{Key: sec.Key, ID: knSectionIDs[sec.Key].anchor, Title: e.t(knSectionIDs[sec.Key].title)}
+		for _, id := range sec.IDs {
 			out.Cards = append(out.Cards, e.knCard(byID[id], photoBase, link))
 		}
 		kp.sections = append(kp.sections, out)
@@ -298,15 +300,12 @@ func (s *server) apiNumbers(w http.ResponseWriter, r *http.Request, p principal)
 	out := struct {
 		Sections []numberSectionJSON `json:"sections"`
 	}{Sections: []numberSectionJSON{}}
-	for _, sec := range []struct {
-		key string
-		ids []string
-	}{{"emergency", ids.Emergency}, {"family", ids.Family}, {"other", ids.Other}} {
-		if len(sec.ids) == 0 {
+	for _, sec := range ids.Sections() {
+		if len(sec.IDs) == 0 {
 			continue
 		}
-		js := numberSectionJSON{Key: sec.key, Contacts: []kidContactJSON{}}
-		for _, id := range sec.ids {
+		js := numberSectionJSON{Key: sec.Key, Contacts: []kidContactJSON{}}
+		for _, id := range sec.IDs {
 			c := byID[id]
 			kc := kidContactJSON{ID: c.ID, PersonID: strPtr(c.PersonID), Name: c.HejmoName, HasPhoto: c.HasPhoto, Numbers: []numberJSON{}}
 			for _, l := range c.Numbers {

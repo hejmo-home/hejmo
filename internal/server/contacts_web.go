@@ -133,6 +133,7 @@ type ctRow struct {
 	Groups           []string
 	Rels             []string // how the contact is related to the family, one sentence each (ticket 298)
 	Photo            ctPhotoView
+	Fresh            string // "Gerade übernommen" or "Gerade ergänzt" right after an import (ticket 300), for one page load
 }
 
 func (e ctEnv) row(c store.Contact, withGroups bool) ctRow {
@@ -257,11 +258,23 @@ func (s *server) handleContacts(w http.ResponseWriter, r *http.Request) {
 	coll := collate.New(textlang.Make(e.lang))
 	slices.SortStableFunc(shownOthers, func(a, b store.Contact) int { return coll.CompareString(a.HejmoName, b.HejmoName) })
 	var otherRows, familyRows []ctRow
+	fresh := s.takeFresh(w, r)
 	for _, c := range shownOthers {
-		otherRows = append(otherRows, e.row(c, true))
+		row := e.row(c, true)
+		switch fresh[c.ID] {
+		case "new":
+			row.Fresh = e.t("cimp.tag.new")
+		case "completed":
+			row.Fresh = e.t("cimp.tag.completed")
+		}
+		otherRows = append(otherRows, row)
 	}
 	for _, c := range shownFamily { // in the order of people
-		familyRows = append(familyRows, e.row(c, false))
+		row := e.row(c, false)
+		if fresh[c.ID] == "completed" {
+			row.Fresh = e.t("cimp.tag.completed")
+		}
+		familyRows = append(familyRows, row)
 	}
 	data["Others"], data["Family"] = otherRows, familyRows
 	filtering := q != "" || hasGroup
@@ -285,6 +298,7 @@ func (s *server) handleContacts(w http.ResponseWriter, r *http.Request) {
 	}
 	data["Filtering"] = filtering
 	data["OthersEmpty"] = len(others) == 0
+	s.importSweep()
 	s.render(w, r, http.StatusOK, "contacts.html", data)
 }
 
@@ -378,17 +392,31 @@ func (s *server) handleContact(w http.ResponseWriter, r *http.Request) {
 	s.render(w, r, http.StatusOK, "contact.html", data)
 }
 
-// createdHint says who made a contact and who changed it last, with the time of the change to the second.
+// createdHint says who made a contact and who changed it last, with the time of the change to the second. A
+// contact taken over from a contact file, or completed from one, names the file (ticket 300).
 func (e ctEnv) createdHint(c store.Contact) string {
 	day := func(t time.Time) string { return e.p.day(t) }
 	out := e.t("contact.hint.created", "name", c.CreatedByName, "date", day(c.CreatedAt))
-	if c.CreatedByName == "" {
+	switch {
+	case c.CreatedFile != "" && c.CreatedByName != "":
+		out = e.t("contact.hint.created_file", "file", c.CreatedFile, "name", c.CreatedByName, "date", day(c.CreatedAt))
+	case c.CreatedFile != "":
+		out = e.t("contact.hint.created_file.anon", "file", c.CreatedFile, "date", day(c.CreatedAt))
+	case c.CreatedByName == "":
 		out = e.t("contact.hint.created.anon", "date", day(c.CreatedAt))
 	}
-	if c.UpdatedAt.After(c.CreatedAt) {
-		changed := e.t("contact.hint.changed", "name", c.UpdatedByName, "when", e.p.dateTimeSeconds(c.UpdatedAt))
-		if c.UpdatedByName == "" {
-			changed = e.t("contact.hint.changed.anon", "when", e.p.dateTimeSeconds(c.UpdatedAt))
+	if c.UpdatedAt.After(c.CreatedAt) || c.UpdatedFile != "" {
+		when := e.p.dateTimeSeconds(c.UpdatedAt)
+		var changed string
+		switch {
+		case c.UpdatedFile != "" && c.UpdatedByName != "":
+			changed = e.t("contact.hint.changed_file", "file", c.UpdatedFile, "name", c.UpdatedByName, "when", when)
+		case c.UpdatedFile != "":
+			changed = e.t("contact.hint.changed_file.anon", "file", c.UpdatedFile, "when", when)
+		case c.UpdatedByName == "":
+			changed = e.t("contact.hint.changed.anon", "when", when)
+		default:
+			changed = e.t("contact.hint.changed", "name", c.UpdatedByName, "when", when)
 		}
 		out += " · " + changed
 	}

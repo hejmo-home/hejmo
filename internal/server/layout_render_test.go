@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	_ "embed"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -541,6 +542,7 @@ var notRendered = map[string]string{
 	"/display/articles/{id}/picture":          "an image",
 	"/display/rewards/{id}/picture":           "an image",
 	"/settings/lists/library/picture/{token}": "an image",
+	"/contacts/import/{id}/photo/{n}":         "the photo of a card of an uploaded contact file, an image",
 	"/settings/lists/library/suggest":         "JSON for the live list under the name field",
 	"/settings/lists/library/plan/{id}":       "fragment: the sentence under the card of an article, rendered inside it",
 	"/settings/lists/always/plan":             "fragment: the sentence under the holiday, rendered inside its page",
@@ -625,6 +627,9 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 		add(parent, p)
 	}
 	pages = append(pages, contactPages(t, f)...)
+	// Contacts from a vCard file (ticket 300): the upload page, its errors and the review in its states.
+	add(parent, "/contacts/import")
+	pages = append(pages, contactImportPages(t, f)...)
 
 	// The card of recovery codes (#176) is reached only by POST: rendered with
 	// the box's answer, in the wizard, the invitation and My account, and in
@@ -1436,6 +1441,79 @@ func contactPages(t *testing.T, f *layoutFixture) []layoutPage {
 			t.Fatalf("contact form with errors = %d\n%s", refused.status, refused.body)
 		}
 		pages = append(pages, layoutPage{site: site, path: "/contacts/new#refused", html: map[string]string{lang: refused.body}})
+	}
+	return mergeCardPages(pages)
+}
+
+// contactImportPages are the pages of the contact import that an upload or a confirm reaches (ticket 300): the
+// upload refused, the review with duplicates of the fixture's contacts and long texts, the review with a
+// missing choice, a file with nothing new, a single card and an expired review, in both languages.
+func contactImportPages(t *testing.T, f *layoutFixture) []layoutPage {
+	t.Helper()
+	var pages []layoutPage
+	site := siteOf("contact import", f.box, f.client)
+	by := f.ids[0]
+	pic := base64.StdEncoding.EncodeToString(testJPEG(t, 640, 480))
+	file := func(cards ...string) []byte {
+		return []byte(strings.ReplaceAll(strings.Join(cards, ""), "\n", "\r\n"))
+	}
+	long := "Sehr-langer-Nachname-der-Familie-Müller-Schulze-Hohenstein-Wöllenstein"
+	cards := file(
+		"BEGIN:VCARD\nVERSION:3.0\nFN:Gerda "+long+"\nTEL;TYPE=CELL:+49 171 3456789\nTEL;TYPE=WORK:08031 40 12 77\nEMAIL:gerda.mueller-schulze@gartenfreunde-am-erlenbach-rosenheim.example\nPHOTO;ENCODING=b;TYPE=JPEG:"+pic+"\nEND:VCARD\n",
+		"BEGIN:VCARD\nVERSION:3.0\nFN:Kinderarztpraxis Dr. Elif Yılmaz-Hoffmann und Kollegen\nTEL;TYPE=WORK:089 1234 5670\nTEL;TYPE=FAX:089 1234 5679\nEND:VCARD\n",
+		"BEGIN:VCARD\nVERSION:3.0\nFN:Ärztlicher Bereitschaftsdienst\nTEL:116117\nTEL:0171 9988 7766\nEND:VCARD\n",
+		"BEGIN:VCARD\nVERSION:3.0\nFN:Herr Brandl\nTEL:0160 5544 3322\nPHOTO;ENCODING=b;TYPE=JPEG:"+pic+"\nEND:VCARD\nBEGIN:VCARD\nVERSION:3.0\nFN:Sepp Brandl\nTEL:0160 5544 3322\nTEL:089 700 12 34\nEND:VCARD\n",
+		"BEGIN:VCARD\nVERSION:3.0\nFN:Zahnarztpraxis Dr. Römer & Partner, Kieferorthopädie und Prophylaxe\nNICKNAME:"+layoutNames[3]+"\nTEL:089 3322 1100\nBDAY:1948-09-02\nADR:;;Lindwurmstraße 30;München;;80337;\nPHOTO;VALUE=uri:https://example.com/x.jpg\nEND:VCARD\n",
+		"BEGIN:VCARD\nVERSION:3.0\nNOTE:nichts\nEND:VCARD\n",
+		"BEGIN:VCARD\nVERSION:3.0\nFN:Rudi Wagn\nTEL:0171",
+	)
+	photos := map[int][]byte{1: testJPEG(t, 512, 512), 4: testJPEG(t, 512, 512)}
+	review, err := f.db.AddContactImport(f.householdID, by, "Kontakte "+long+".vcf", cards, photos, f.box.now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	single, err := f.db.AddContactImport(f.householdID, by, "Susanne Maier.vcf", file("BEGIN:VCARD\nVERSION:3.0\nFN:Tante Susanne\nTEL:0172 4455 6600\nEND:VCARD\n"), nil, f.box.now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	old, err := f.db.AddContactImport(f.householdID, by, "Kontakte Papa.vcf", cards, nil, f.box.now.Add(-2*time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	upload := func(lang, name string, data []byte) resp {
+		var buf bytes.Buffer
+		mw := multipart.NewWriter(&buf)
+		part, _ := mw.CreateFormFile("file", name)
+		_, _ = part.Write(data)
+		_ = mw.Close()
+		req, _ := http.NewRequest(http.MethodPost, f.srv.URL+"/contacts/import", &buf)
+		req.Header.Set("Content-Type", mw.FormDataContentType())
+		req.Header.Set("Origin", f.srv.URL)
+		req.Header.Set("Accept-Language", lang)
+		res, err := f.client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		var out bytes.Buffer
+		_, _ = out.ReadFrom(res.Body)
+		return resp{res.StatusCode, res.Header.Get("Location"), out.String()}
+	}
+	same := file("BEGIN:VCARD\nVERSION:3.0\nFN:Kinderarztpraxis Dr. Elif Yılmaz-Hoffmann und Kollegen\nTEL:089 1234 5670\nEND:VCARD\nBEGIN:VCARD\nVERSION:3.0\nNOTE:x\nEND:VCARD\n")
+	for _, lang := range []string{"de", "en"} {
+		hdr := map[string]string{"Accept-Language": lang}
+		capture := func(name string, r resp, want int) {
+			if r.status != want {
+				t.Fatalf("%s = %d, want %d\n%s", name, r.status, want, r.body)
+			}
+			pages = append(pages, layoutPage{site: site, path: "/contacts/import#" + name, html: map[string]string{lang: r.body}})
+		}
+		capture("refused", upload(lang, "Urlaub Gardasee mit sehr langem Dateinamen.jpg", testJPEG(t, 40, 30)), http.StatusUnprocessableEntity)
+		capture("nothing-new", upload(lang, "Kontakte Papa.vcf", same), http.StatusOK)
+		capture("review", f.do(http.MethodGet, "/contacts/import/"+review.ID, nil, hdr), http.StatusOK)
+		capture("missing", f.do(http.MethodPost, "/contacts/import/"+review.ID, url.Values{"take": {"1"}}, hdr), http.StatusUnprocessableEntity)
+		capture("single", f.do(http.MethodGet, "/contacts/import/"+single.ID, nil, hdr), http.StatusOK)
+		capture("expired", f.do(http.MethodGet, "/contacts/import/"+old.ID, nil, hdr), http.StatusOK)
 	}
 	return mergeCardPages(pages)
 }

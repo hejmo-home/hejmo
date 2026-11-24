@@ -130,7 +130,7 @@ func TestSuggestionsComeFromTwoLettersWithSymbolNameDepartmentAndWhatIsOnTheList
 		t.Errorf("one letter suggests nothing: %q", body)
 	}
 	body := s.en(s.path("/suggest?q=Egg&mode=quick")).body
-	for _, want := range []string{`role="listbox"`, "Eggs", "Already on the list: 6 pieces", `data-article="eggs"`, "A tap puts it on the list at once.", "Add “Egg” as text", "Hejmo does not know it then and does not warn about allergens."} {
+	for _, want := range []string{`role="listbox"`, "Eggs", "Already on the list: 6 pieces", `data-article="eggs"`, "A tap puts the entry on the list at once.", "Add “Egg” as text", "Hejmo does not know it then and does not warn about allergens."} {
 		if !strings.Contains(body, want) {
 			t.Errorf("suggestions lack %q:\n%s", want, body)
 		}
@@ -323,7 +323,7 @@ func TestAnEntryShowsItsQuantityAsAButtonAndNothingIsTickedOffByIt(t *testing.T)
 	s := newShop(t)
 	id := s.seed("eggs", "Eggs", 6, "piece")
 	body := s.en(s.path("")).body
-	re := regexp.MustCompile(`<a class="qty-open" href="\?qty=` + id + `#e-` + id + `"[^>]*aria-label="Change quantity: Eggs, 6 pieces">6 pieces`)
+	re := regexp.MustCompile(`<a class="qty-open" href="\?qty=` + id + `#e-` + id + `"[^>]*aria-label="Change quantity or variety: Eggs, 6 pieces">6 pieces`)
 	if !re.MatchString(body) {
 		t.Errorf("the quantity button:\n%s", body)
 	}

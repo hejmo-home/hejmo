@@ -17,6 +17,7 @@ const (
 	MaxFullName = 120
 	MaxNote     = 1000
 	MaxOwnLabel = 30
+	MaxRelation = 40 // the word of a relation (ticket 298)
 	MaxLines    = 10 // numbers, and e-mail addresses, per contact
 	MinYear     = 1900
 )

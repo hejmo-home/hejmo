@@ -83,11 +83,11 @@ func (db *DB) DeleteList(householdID, id string) error {
 	return expectOne(res, err)
 }
 
-const entryColumns = `id, text, done, position, article_id, qty_base, qty_unit, auto, auto_part, auto_prior`
+const entryColumns = `id, text, done, position, article_id, COALESCE(variety, ''), qty_base, qty_unit, auto, auto_part, auto_prior`
 
 func scanEntry(row interface{ Scan(...any) error }) (list.Entry, error) {
 	var e list.Entry
-	err := row.Scan(&e.ID, &e.Text, &e.Done, &e.Position, &e.ArticleID, &e.Qty.Base, &e.Qty.Unit, &e.Origin.Auto, &e.Origin.Part, &e.Origin.Prior)
+	err := row.Scan(&e.ID, &e.Text, &e.Done, &e.Position, &e.ArticleID, &e.Variety, &e.Qty.Base, &e.Qty.Unit, &e.Origin.Auto, &e.Origin.Part, &e.Origin.Prior)
 	return e, err
 }
 

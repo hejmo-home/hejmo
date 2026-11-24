@@ -113,7 +113,7 @@ func (s *server) listsView(h store.Household, d store.Display, lang, listID stri
 		base := "/display/lists/" + cur.ID
 		v.Suggest, v.Base = true, base
 		v.Open, v.Ticked = ic.entryViews(es, entryOpts{Base: base, Display: true, Added: o.Added, Edit: o.Edit, Out: o.Out, Post: o.Post, ErrField: o.ErrField, ErrKey: o.ErrKey})
-		v.A = ic.adder(es, adderOpts{Base: base, Form: o.Form, Out: o.Out, ErrField: o.ErrField, Editing: editingOpen(v.Open), Display: true})
+		v.A = ic.adder(es, adderOpts{Base: base, Form: o.Form, Out: o.Out, ErrField: o.ErrField, ErrKey: o.ErrKey, Editing: editingOpen(v.Open), Display: true})
 		if o.Gone {
 			v.Gone = s.i18n.T(lang, "lq.err.gone")
 		}
@@ -139,14 +139,14 @@ func (s *server) listsView(h store.Household, d store.Display, lang, listID stri
 		return v, nil
 	}
 	for _, e := range es {
-		ev := entryView{ID: e.ID, Text: e.Text, ArticleID: e.ArticleID, Done: e.Done}
+		ev := entryView{ID: e.ID, Text: e.Text, Variety: e.Variety, ArticleID: e.ArticleID, Done: e.Done}
 		switch {
 		case e.Done:
 			v.Ticked = append(v.Ticked, ev)
 		case e.ID == o.Added:
 			ev.Added = true
 			v.Open = append(v.Open, ev)
-			v.Success = e.Text
+			v.Success = entryLabel(e.Text, e.Variety)
 		default:
 			v.Open = append(v.Open, ev)
 		}
@@ -388,8 +388,9 @@ func (s *server) displayAddItem(w http.ResponseWriter, r *http.Request, d store.
 	in := formItem(r, c)
 	rs, err := c.resolve(in)
 	if ie, bad := asItemError(err); bad {
-		o := listsViewOptions{Form: map[string]any{"Text": text, "Mode": r.PostFormValue("mode"), "Amount": in.Amount, "Unit": in.Unit, "Article": in.ArticleID},
-			ErrField: string(ie.Field), ErrKey: itemErrorKey(ie.Field, true)}
+		o := listsViewOptions{Form: map[string]any{"Text": text, "Mode": r.PostFormValue("mode"), "Amount": in.Amount, "Unit": in.Unit, "Article": in.ArticleID,
+			"VarietyPick": r.PostFormValue("variety_pick"), "Variety": r.PostFormValue("variety")},
+			ErrField: string(ie.Field), ErrKey: ie.key(true)}
 		if partial {
 			s.writeView(w, r, h, d, l.ID, http.StatusUnprocessableEntity, o, "", "")
 			return
@@ -450,7 +451,7 @@ func (s *server) handleDisplayEntryQuantity(w http.ResponseWriter, r *http.Reque
 	}
 	c.listID = l.ID
 	id := r.PathValue("entry")
-	post := &editPost{EntryID: id, Mode: r.PostFormValue("qmode"), Amount: r.PostFormValue("amount"), Unit: r.PostFormValue("qunit"), Converted: r.PostFormValue("converted") == "1"}
+	post := editPostFrom(r, id)
 	_, out, err := c.changeQuantity(l.ID, id, post)
 	respond := func(status int, o listsViewOptions, added, token string) {
 		if partial {
@@ -461,7 +462,7 @@ func (s *server) handleDisplayEntryQuantity(w http.ResponseWriter, r *http.Reque
 	}
 	switch ie, bad := asItemError(err); {
 	case bad:
-		respond(http.StatusUnprocessableEntity, listsViewOptions{Edit: id, Post: post, ErrField: "edit-" + string(ie.Field), ErrKey: itemErrorKey(ie.Field, true)}, "", "")
+		respond(http.StatusUnprocessableEntity, listsViewOptions{Edit: id, Post: post, ErrField: "edit-" + string(ie.Field), ErrKey: ie.key(true)}, "", "")
 	case errors.Is(err, list.ErrNotOpen):
 		respond(http.StatusConflict, listsViewOptions{Gone: true}, "", "")
 	case err != nil:
@@ -579,6 +580,25 @@ func (s *server) handleDisplayListViewChoice(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	http.Redirect(w, r, listsURL(l.ID)+"?view=saved", http.StatusSeeOther)
+}
+
+// handleDisplayRewardPicture serves the picture of a reward to a paired
+// display: the goal in a column and in the personal view shows it.
+func (s *server) handleDisplayRewardPicture(w http.ResponseWriter, r *http.Request) {
+	_, h, ok := s.pairedDisplay(w, r)
+	if !ok {
+		return
+	}
+	b, err := s.db.RewardPicture(h.ID, r.PathValue("id"))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "image/jpeg")
+	w.Header().Set("Content-Length", strconv.Itoa(len(b)))
+	w.Header().Set("Cache-Control", "private, max-age=31536000, immutable") // the address changes with the picture
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	_, _ = w.Write(b)
 }
 
 // handleDisplayArticlePicture serves the picture of an own article to a paired

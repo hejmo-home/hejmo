@@ -29,3 +29,4 @@ Each ADR records one decision: context, decision, consequences. ADRs take preced
 | [0023](0023-home-location-from-a-list-on-the-box.md) | Home location from a list on the box | Accepted |
 | [0024](0024-offline-mode-and-the-one-door-to-the-outside.md) | Offline mode and the one door to the outside | Accepted, amended by 0025 |
 | [0025](0025-update-file-upload.md) | Uploading an update file in offline mode | Accepted |
+| [0026](0026-phone-numbers-with-nyaruka-phonenumbers.md) | Phone numbers with nyaruka/phonenumbers | Accepted |

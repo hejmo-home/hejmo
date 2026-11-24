@@ -14,12 +14,12 @@
   </fieldset>{{end}}
 
 {{/* The chosen article in words. Argument: pickedView. */}}
-{{define "picked"}}<div class="picked" role="status"><span class="art-sym" aria-hidden="true">{{if .Picture}}<img src="{{.Picture}}" alt="">{{else}}{{.Symbol}}{{end}}</span><div><b><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>{{.Name}}</b><small>{{.Sub}}</small></div><button class="button secondary" type="button" data-change>{{t "lq.picked.change"}}</button></div>{{end}}
+{{define "picked"}}<div class="picked" role="status"><span class="art-sym" aria-hidden="true">{{if .Picture}}<img src="{{.Picture}}" alt="">{{else}}{{.Symbol}}{{end}}</span><div><b><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>{{.Name}}{{with .Variety}}<span class="variety"> · {{.}}</span>{{end}}</span></b><small>{{.Sub}}</small></div><button class="button secondary" type="button" data-change>{{t "lq.picked.change"}}</button></div>{{end}}
 
 {{/* The suggestions under the text field: up to four articles and the typed text as the last row, the articles that are hidden because of an allergy, and the free-text allergies. Argument: suggView. */}}
 {{define "sugg"}}{{if .Any}}<div class="sugg"><p class="sugg-q" id="sugg-q">{{.Intro}}</p>
   <ul class="place-list art-sugg" id="sugg" role="listbox" aria-labelledby="sugg-q">{{range .Rows}}
-    <li role="option" id="o-{{.Idx}}" data-article="{{.ID}}"><span class="art-sym" aria-hidden="true">{{if .Picture}}<img src="{{.Picture}}" alt="">{{else}}{{.Symbol}}{{end}}</span><b>{{.Name}}</b><small>{{.Sub}}</small>{{with .OnList}}<span class="on-list">{{.}}</span>{{end}}{{range .Warns}}{{.}}{{end}}</li>{{end}}
+    <li role="option" id="o-{{.Idx}}" data-article="{{.ID}}" data-name="{{.Name}}"{{with .Variety}} data-variety="{{.}}"{{end}}><span class="art-sym" aria-hidden="true">{{if .Picture}}<img src="{{.Picture}}" alt="">{{else}}{{.Symbol}}{{end}}</span><b>{{.Name}}{{with .Variety}}<span class="variety"> · {{.}}</span>{{end}}</b><small>{{.Sub}}</small>{{with .OnList}}<span class="on-list">{{.}}</span>{{end}}{{range .Warns}}{{.}}{{end}}</li>{{end}}
     <li role="option" id="o-free" class="free" data-free><span class="art-sym" aria-hidden="true"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h8"/></svg></span><b>{{.FreeName}}</b><small>{{.FreeSub}}</small></li>
   </ul></div>
   {{with .Hidden}}<p class="sugg-hidden">{{.}}</p>{{end}}
@@ -39,10 +39,21 @@
       {{if $a.TextError}}<p class="ferr" id="err-text" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{$a.TextError}}</p>{{end}}</div>
     {{$a.Sugg}}
     {{with $a.Picked}}{{template "picked" .}}{{end}}
+    {{with $a.Variety}}{{template "variety" .}}{{end}}
     {{template "qtyFields" $a.Qty}}
     <button class="button{{if $a.Secondary}} secondary{{end}} adder-go" type="submit">{{t "lq.add"}}</button>
     {{with $a.Result}}{{template "result" .}}{{end}}
   </form>{{end}}
+
+{{/* The "Sorte:" row (ticket 277): closed it says the state in words, open it offers "no variety", the varieties used before and "new variety" with its field (shown through :has, no script). Argument: varietyView. */}}
+{{define "variety"}}{{$v := .}}<details class="more variety-more"{{if .Open}} open{{end}} data-none="{{t "lq.var.none"}}" data-empty="{{t "lq.var.empty"}}"><summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><span>{{t "lq.var.summary"}}</span><span class="v-state{{if .Chosen}} chosen{{end}}">{{.State}}</span></summary>
+      <div><fieldset class="units variety-pick"><legend>{{t "lq.var.legend"}}</legend>
+        <label><input type="radio" name="{{.PickName}}" value=""{{if eq .Picked ""}} checked{{end}}><span>{{t "lq.var.no"}}</span></label>{{range .Options}}
+        <label><input type="radio" name="{{$v.PickName}}" value="{{.}}"{{if eq . $v.Picked}} checked{{end}}><span>{{.}}</span></label>{{end}}
+        <label><input type="radio" name="{{.PickName}}" value="new"{{if eq .Picked "new"}} checked{{end}}><span>{{t "lq.var.new"}}</span></label></fieldset>
+      <div class="f variety-new{{if .Error}} invalid{{end}}"><label for="{{.TextID}}">{{t "lq.var.new"}}</label><input id="{{.TextID}}" name="{{.TextName}}" type="text" maxlength="60" autocomplete="off" placeholder="{{t "lq.var.placeholder"}}" value="{{.Text}}"{{if .Error}} aria-invalid="true" aria-describedby="err-{{.TextID}}"{{end}}>
+        {{if .Error}}<p class="ferr" id="err-{{.TextID}}" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{.Error}}</span></p>{{end}}</div>
+      <p class="hint">{{.Hint}}</p></div></details>{{end}}
 
 {{/* The pencil of the quantity button. */}}
 {{define "pen"}}<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>{{end}}
@@ -51,10 +62,11 @@
 {{define "qtyEditor"}}<form class="qty-edit" id="qe-{{.Anchor}}" method="post" action="{{.Action}}" data-mode="{{.Mode}}" aria-labelledby="qt-{{.Anchor}}" data-editor>
       {{if .Hide}}<input type="hidden" name="ticked" value="hide">{{end}}
       <input type="hidden" name="converted" value="">
-      <div class="qe-top"><h3 class="qe-title" id="qt-{{.Anchor}}">{{t "lq.edit.title"}}</h3>
+      <div class="qe-top"><h3 class="qe-title" id="qt-{{.Anchor}}">{{if .Variety}}{{t "lq.edit.title"}}{{else}}{{t "lq.edit.title.free"}}{{end}}</h3>
         <fieldset class="seg mode"><legend class="vh">{{t "lq.edit.mode.legend"}}</legend>
           <label><input type="radio" name="qmode" value="none"{{if eq .Mode "none"}} checked{{end}}>{{t "lq.mode.quick"}}</label>
           <label><input type="radio" name="qmode" value="qty"{{if ne .Mode "none"}} checked{{end}}>{{t "lq.mode.qty"}}</label></fieldset></div>
+      {{with .Variety}}{{template "variety" .}}{{end}}
       {{template "qtyFields" .Qty}}
       <p class="merge" aria-live="polite" data-merge>{{.Merge}}</p>
       <div class="qe-go"><button class="button" type="submit">{{t "lq.edit.save"}}</button>{{if .Display}}<button class="button secondary" type="button" data-qty-close>{{t "lq.edit.cancel"}}</button>{{else}}<a class="button secondary" href="{{.Cancel}}">{{t "lq.edit.cancel"}}</a>{{end}}</div>

@@ -61,6 +61,8 @@ const (
 	// MaxIngredient is the longest ingredient name and MaxVariety the longest variety.
 	MaxIngredient = 200
 	MaxVariety    = 60
+	// MinAmount is the smallest quantity of an ingredient: pages show two decimals.
+	MinAmount = 0.01
 	// MaxAmount is the largest quantity of an ingredient.
 	MaxAmount = 9999
 )
@@ -99,8 +101,8 @@ type FieldError struct{ Field, Msg string }
 
 func (e *FieldError) Error() string { return e.Field + ": " + e.Msg }
 
-// ErrAmount means the text is no quantity between 0 and 9999.
-var ErrAmount = errors.New("recipe: not a quantity above 0 up to 9999")
+// ErrAmount means the text is no quantity between 0.01 and 9999.
+var ErrAmount = errors.New("recipe: not a quantity from 0.01 up to 9999")
 
 // ErrBlank means an ingredient line is empty: it is not saved.
 var ErrBlank = errors.New("recipe: empty line")
@@ -112,11 +114,11 @@ var (
 )
 
 // ParseAmount reads a quantity as people write it: 2, 0,5, 0.5, ½, 1 1/2,
-// 1½ or 3/4. It must be above 0 and at most 9999.
+// 1½ or 3/4. It must be at least 0.01 (pages show two decimals) and at most 9999.
 func ParseAmount(s string) (float64, error) {
 	s = strings.TrimSpace(s)
 	v, ok := parseAmount(s)
-	if !ok || v <= 0 || v > MaxAmount || math.IsNaN(v) || math.IsInf(v, 0) {
+	if !ok || v < MinAmount || v > MaxAmount || math.IsNaN(v) || math.IsInf(v, 0) {
 		return 0, ErrAmount
 	}
 	return v, nil
@@ -285,7 +287,8 @@ func Check(r Recipe) (Recipe, error) {
 // around and between words do not make a second name.
 func NameKey(name string) string { return strings.ToLower(strings.Join(strings.Fields(name), " ")) }
 
-func tagKey(tag string) string { return strings.ToLower(strings.Join(strings.Fields(tag), " ")) }
+// tagKey is what two tags are compared by: case, umlauts and spaces do not make a second tag (as the form's chips do).
+func tagKey(tag string) string { return library.Fold(strings.Join(strings.Fields(tag), " ")) }
 
 // SplitTags splits what was typed for new tags at commas: trimmed, empty ones dropped.
 func SplitTags(s string) []string {

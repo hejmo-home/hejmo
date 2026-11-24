@@ -137,6 +137,15 @@ func TestAnIngredientIsAnArticleWithAVarietyOrFreeText(t *testing.T) {
 	}
 }
 
+func TestAnArticleIdWithANameEndingInAVarietyKeepsTheVariety(t *testing.T) {
+	t.Parallel()
+	c := signedInAPI(t)
+	_, r := createRecipe(t, c, map[string]any{"name": "Mit Sorte im Namen", "ingredients": []any{map[string]any{"name": "Erdnussbutter cremig", "article_id": "peanut-butter"}}})
+	if a := r["ingredients"].([]any)[0].(map[string]any); a["article_id"] != "peanut-butter" || a["variety"] != "cremig" {
+		t.Errorf("the variety of the name is kept: %v", a)
+	}
+}
+
 func TestRecipeUnitsAreTheHouseholdsPlusKitchenMeasuresAndContainers(t *testing.T) {
 	t.Parallel()
 	c := signedInAPI(t)
@@ -176,6 +185,15 @@ func TestARecipeThatBreaksTheRulesIsRefusedWithItsField(t *testing.T) {
 	}
 	if _, _, list := c.call(http.MethodGet, "/recipes", nil); len(list) != 0 {
 		t.Errorf("a refused recipe was stored: %v", list)
+	}
+}
+
+func TestAQuantityTooSmallToShowIsRefused(t *testing.T) {
+	t.Parallel()
+	c := signedInAPI(t)
+	status, body := createRecipe(t, c, map[string]any{"name": "Winzig", "ingredients": []any{ingredient(0.001, "g", "Salz")}})
+	if status != http.StatusUnprocessableEntity || body["field"] != "ingredients[0].amount" {
+		t.Errorf("0.001 = %d %v, want 422 naming the quantity", status, body)
 	}
 }
 

@@ -115,6 +115,31 @@ func TestANameIsTakenIgnoringCaseAndSpacesAndTheErrorNamesTheExistingRecipe(t *t
 	}
 }
 
+func TestTwoParentsSavingTheSameNewNameAtOnceGetTheNameTakenError(t *testing.T) {
+	f := newRewardFixture(t)
+	const n = 8
+	errs := make(chan error, n)
+	for i := 0; i < n; i++ {
+		go func() {
+			_, err := f.db.CreateRecipe(f.h.ID, f.mama.ID, recipe.Recipe{Name: "Gleichzeitig", Category: recipe.Main, Portions: 4})
+			errs <- err
+		}()
+	}
+	made := 0
+	for i := 0; i < n; i++ {
+		var taken *store.RecipeNameTakenError
+		switch err := <-errs; {
+		case err == nil:
+			made++
+		case !errors.As(err, &taken) || taken.ExistingID == "":
+			t.Errorf("a second save = %v, want the name-taken error naming the recipe", err)
+		}
+	}
+	if made != 1 {
+		t.Errorf("%d recipes made, want 1", made)
+	}
+}
+
 func TestEachHouseholdHasItsOwnRecipes(t *testing.T) {
 	f := newRewardFixture(t)
 	h2, err := f.db.CreateHousehold(store.Household{Name: "Zweites Haus"})

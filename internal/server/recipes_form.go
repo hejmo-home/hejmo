@@ -25,21 +25,21 @@ import (
 
 // rcpIngLine is an ingredient line of the form as it was typed, with what Hejmo made of it.
 type rcpIngLine struct {
-	N                                   int // 1, 2, 3 ... in the order of the form
-	Amount, Unit, Name, Variety, Artcle string
-	Blank                               bool
-	State                               ingredientState
-	ArtName                             string // the library's name of the article
-	ShownVariety                        string
-	Warns                               []template.HTML
-	Err                                 string // the text of the error at the line
-	Bad                                 string // which part: amount, unit, name or variety
-	KnownVarieties                      []string
-	VarietyOpen                         bool
-	AriaRemove                          string
-	VarLabel                            string        // "Variety of Flour"
-	StateHTML                           template.HTML // "From the library: Flour · Type 405", with the name in bold
-	FreeState                           string        // "Free text: Hejmo does not know ..."
+	N                                    int // 1, 2, 3 ... in the order of the form
+	Amount, Unit, Name, Variety, Article string
+	Blank                                bool
+	State                                ingredientState
+	ArtName                              string // the library's name of the article
+	ShownVariety                         string
+	Warns                                []template.HTML
+	Err                                  string // the text of the error at the line
+	Bad                                  string // which part: amount, unit, name or variety
+	KnownVarieties                       []string
+	VarietyOpen                          bool
+	AriaRemove                           string
+	VarLabel                             string        // "Variety of Flour"
+	StateHTML                            template.HTML // "From the library: Flour · Type 405", with the name in bold
+	FreeState                            string        // "Free text: Hejmo does not know ..."
 }
 
 // Num is the number of the line as the page writes it; a line made for the script's template says {n}.
@@ -99,7 +99,7 @@ func (c *itemCtx) formOfRecipe(r recipe.Recipe) rcpForm {
 		f.Minutes = strconv.Itoa(r.Minutes)
 	}
 	for _, in := range r.Ingredients {
-		line := rcpIngLine{Unit: in.Unit, Name: in.Text, Variety: in.Variety, Artcle: in.ArticleID}
+		line := rcpIngLine{Unit: in.Unit, Name: in.Text, Variety: in.Variety, Article: in.ArticleID}
 		if in.Amount > 0 {
 			line.Amount = recipe.FormatAmount(in.Amount, c.lang)
 		}
@@ -130,7 +130,7 @@ func readRcpForm(r *http.Request) rcpForm {
 		return ""
 	}
 	for i := range v["ing_name"] {
-		f.Ings = append(f.Ings, rcpIngLine{Amount: at("ing_amount", i), Unit: at("ing_unit", i), Name: at("ing_name", i), Variety: at("ing_variety", i), Artcle: at("ing_article", i)})
+		f.Ings = append(f.Ings, rcpIngLine{Amount: at("ing_amount", i), Unit: at("ing_unit", i), Name: at("ing_name", i), Variety: at("ing_variety", i), Article: at("ing_article", i)})
 	}
 	for _, st := range v["step"] {
 		f.Steps = append(f.Steps, rcpStepLine{Text: st})
@@ -212,7 +212,7 @@ func (c *itemCtx) resolveLines(f *rcpForm, keep bool) []recipe.Ingredient {
 			l.AriaRemove = fmt.Sprintf(c.s.i18n.T(c.lang, "recipes.f.ing.remove.aria"), l.N, l.Name)
 		}
 		in := recipe.IngredientInput{Amount: l.Amount, Unit: l.Unit, Name: l.Name, Variety: l.Variety}
-		if id := strings.TrimSpace(l.Artcle); id != "" && keep {
+		if id := strings.TrimSpace(l.Article); id != "" && keep {
 			if it, ok := c.article(id); ok && namesArticle(l.Name, it) {
 				in.ArticleID = id
 			}
@@ -223,9 +223,9 @@ func (c *itemCtx) resolveLines(f *rcpForm, keep bool) []recipe.Ingredient {
 		case err == nil:
 			out = append(out, ing)
 			l.State = ingFree
-			l.Artcle = ""
+			l.Article = ""
 			if art != nil {
-				l.State, l.Artcle, l.ArtName, l.ShownVariety = ingArticle, art.ID, art.Name(c.lang), ing.Variety
+				l.State, l.Article, l.ArtName, l.ShownVariety = ingArticle, art.ID, art.Name(c.lang), ing.Variety
 				l.Warns = c.warnLines(library.Warnings(art.Article, c.st.persons))
 				l.KnownVarieties = c.varieties(art.ID)
 				l.Variety = ing.Variety
@@ -241,7 +241,7 @@ func (c *itemCtx) resolveLines(f *rcpForm, keep bool) []recipe.Ingredient {
 			l.Bad = fe.Field
 			l.Err = c.ingError(fe, *l)
 			if art != nil {
-				l.State, l.Artcle, l.ArtName = ingArticle, art.ID, art.Name(c.lang)
+				l.State, l.Article, l.ArtName = ingArticle, art.ID, art.Name(c.lang)
 				l.StateHTML = c.stateHTML(l.ArtName, l.Variety)
 				l.VarLabel = c.t("recipes.ing.variety.label", "name", l.ArtName)
 				l.ShownVariety = l.Variety
@@ -328,6 +328,9 @@ func (c *itemCtx) buildRecipe(f *rcpForm, known []string, existing []store.Recip
 	}
 	if is.Name != "" {
 		is.add("rcp", c.t("recipes.err.link.name"))
+	}
+	if !recipe.ValidCategory(string(r.Category)) {
+		is.add("rcp", c.t("recipes.err.link.category")) // only a crafted request: the form offers the categories
 	}
 	if r.Portions < 1 || r.Portions > recipe.MaxPortions {
 		is.Portions = c.t("recipes.err.portions")
@@ -611,8 +614,7 @@ func (s *server) saveRecipePage(w http.ResponseWriter, r *http.Request, id strin
 		return
 	case errors.As(err, &fe):
 		is := &rcpIssues{More: map[string]string{}}
-		is.add("rcp", fe.Field)
-		is.Name = template.HTML(template.HTMLEscapeString(fe.Msg))
+		is.add("rcp", c.t("recipes.err.link.save")) // the store's words are English: say it in the family's
 		c.formPage(w, r, id, name, f, is, http.StatusUnprocessableEntity, known)
 		return
 	case errors.Is(err, store.ErrNotFound):

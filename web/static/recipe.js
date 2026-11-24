@@ -23,6 +23,15 @@ function rcpOptionText(name, variety) {
   return variety ? name + " · " + variety : name;
 }
 
+// rcpOptionFields is what choosing a suggestion writes into the line: the text of the name field, the article and
+// the variety (cleared when the option has none, so one left from another article does not stay). Free text has
+// no article and no variety; its text stays as typed.
+function rcpOptionFields(opt) {
+  if (opt.free) return { article: "", variety: "" };
+  var variety = String(opt.variety || "").trim();
+  return { text: rcpOptionText(opt.name, variety), article: opt.article || "", variety: variety };
+}
+
 // rcpStep moves a number one step up or down within 1 and 99 (portions).
 function rcpStep(value, dir) {
   var n = parseInt(String(value).trim(), 10);
@@ -182,12 +191,10 @@ function rcpFocusAfter(count, removed) { return Math.min(removed, count - 1); }
     if (!li) return;
     e.preventDefault();
     var name = li.querySelector("input.in");
-    if (opt.hasAttribute("data-free")) {
-      li.querySelector('input[name="ing_article"]').value = "";
-    } else {
-      name.value = rcpOptionText(opt.getAttribute("data-name"), opt.getAttribute("data-variety"));
-      li.querySelector('input[name="ing_article"]').value = opt.getAttribute("data-article") || "";
-    }
+    var f = rcpOptionFields({ free: opt.hasAttribute("data-free"), name: opt.getAttribute("data-name"), variety: opt.getAttribute("data-variety"), article: opt.getAttribute("data-article") });
+    if (f.text !== undefined) name.value = f.text;
+    li.querySelector('input[name="ing_article"]').value = f.article;
+    li.querySelector('input[name="ing_variety"]').value = f.variety;
     serial++;
     close(li);
     name.focus();

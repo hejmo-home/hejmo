@@ -34,14 +34,14 @@ func TestSixCategoriesWithASymbolEach(t *testing.T) {
 
 func TestAmountsAsPeopleTypeThem(t *testing.T) {
 	for in, want := range map[string]float64{
-		"2": 2, "0,5": 0.5, "0.5": 0.5, "½": 0.5, "1 1/2": 1.5, "1/2": 0.5, "1½": 1.5, "1 ½": 1.5, "¼": 0.25, "¾": 0.75, "⅓": 1.0 / 3, " 3 ": 3, "2 3/4": 2.75, "9999": 9999, "1,25": 1.25,
+		"2": 2, "0,5": 0.5, "0.5": 0.5, "½": 0.5, "1 1/2": 1.5, "1/2": 0.5, "1½": 1.5, "1 ½": 1.5, "¼": 0.25, "¾": 0.75, "⅓": 1.0 / 3, " 3 ": 3, "2 3/4": 2.75, "9999": 9999, "1,25": 1.25, "0,01": 0.01,
 	} {
 		got, err := recipe.ParseAmount(in)
 		if err != nil || got < want-1e-9 || got > want+1e-9 {
 			t.Errorf("ParseAmount(%q) = %v, %v; want %v", in, got, err, want)
 		}
 	}
-	for _, in := range []string{"zwei", "0", "-1", "1/0", "10000", "1,,5", "1 1", "abc½", "1/", "/2"} {
+	for _, in := range []string{"zwei", "0", "-1", "1/0", "10000", "1,,5", "1 1", "abc½", "1/", "/2", "0.001", "0,009"} {
 		if _, err := recipe.ParseAmount(in); !errors.Is(err, recipe.ErrAmount) {
 			t.Errorf("ParseAmount(%q) err = %v, want ErrAmount", in, err)
 		}
@@ -172,6 +172,19 @@ func TestNamesAreTheSameIgnoringCaseAndSpaces(t *testing.T) {
 	}
 	if recipe.NameKey("Käsespätzle") == recipe.NameKey("Kasespatzle") {
 		t.Error("umlauts are letters: Käse is not Kase")
+	}
+}
+
+func TestTagsThatDifferOnlyInCaseOrUmlautAreOneTag(t *testing.T) {
+	if got := recipe.CanonTags([]string{"Müsli", "Musli", "MÜSLI"}, nil); !reflect.DeepEqual(got, []string{"Müsli"}) {
+		t.Errorf("CanonTags = %q: one tag", got)
+	}
+	if got := recipe.CanonTags([]string{"Musli"}, []string{"Müsli"}); !reflect.DeepEqual(got, []string{"Müsli"}) {
+		t.Errorf("CanonTags = %q: the spelling already used", got)
+	}
+	r, err := recipe.Check(recipe.Recipe{Name: "Frühstück", Category: recipe.Breakfast, Portions: 2, Tags: []string{"Müsli", "Musli"}})
+	if err != nil || !reflect.DeepEqual(r.Tags, []string{"Müsli"}) {
+		t.Errorf("Check tags = %q, %v", r.Tags, err)
 	}
 }
 

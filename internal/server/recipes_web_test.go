@@ -498,6 +498,46 @@ func TestWithoutScriptAnIngredientIsMatchedWithTheLibraryOnSave(t *testing.T) {
 	rcpHas(t, "page", page, "Contains peanuts: ", "3 tbsp", "1 can")
 }
 
+func TestAChosenSuggestionKeepsItsVarietyWhenTheScriptFillsNameAndArticle(t *testing.T) {
+	t.Parallel()
+	rb := newRecipeBox(t)
+	// What the script posts for a chosen option: the name with the variety after a middle dot, the article id, and the variety it also sets.
+	l := lines([]string{"3", "2"}, []string{"tbsp", ""}, []string{"Erdnussbutter · cremig", "Erdnussbutter · cremig"})
+	l["ing_article"] = []string{"peanut-butter", "peanut-butter"}
+	l["ing_variety"] = []string{"", "cremig"}
+	if r := rb.save(t, "/meals/recipes", rcpFormOf("Curry", l)); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d\n%s", r.status, r.body)
+	}
+	for i, in := range rb.onlyRecipe(t).Ingredients {
+		if in.ArticleID != "peanut-butter" || in.Variety != "cremig" || in.Text != "Peanut butter" {
+			t.Errorf("line %d = %+v, want peanut butter, variety cremig", i, in)
+		}
+	}
+}
+
+func TestACraftedCategoryIsRefusedInWordsNotWithTheStoresMessage(t *testing.T) {
+	t.Parallel()
+	rb := newRecipeBox(t)
+	for _, extra := range []url.Values{{"category": {"bogus"}}} {
+		f := rcpFormOf("Crafted", lines(nil, nil, nil))
+		for k, v := range extra {
+			f[k] = v
+		}
+		r := rb.save(t, "/meals/recipes", f)
+		if r.status != http.StatusUnprocessableEntity {
+			t.Fatalf("%v = %d", extra, r.status)
+		}
+		for _, raw := range []string{"unknown category", ">category<"} {
+			if strings.Contains(r.body, raw) {
+				t.Errorf("%v shows the raw %q", extra, raw)
+			}
+		}
+	}
+	if list, _ := rb.b.db.Recipes(rb.hid); len(list) != 0 {
+		t.Errorf("a refused recipe was stored: %v", list)
+	}
+}
+
 func TestTheEditFormTellsInWordsWhatHejmoMadeOfEachIngredient(t *testing.T) {
 	t.Parallel()
 	rb := newRecipeBox(t)

@@ -4692,6 +4692,8 @@
   "recipes.err.link.name": "den Namen",
   "recipes.err.link.portions": "die Portionen",
   "recipes.err.link.minutes": "die Zeit",
+  "recipes.err.link.category": "die Kategorie",
+  "recipes.err.link.save": "das Rezept",
   "recipes.err.link.ing": "Zutat {n}",
   "recipes.err.link.step": "Schritt {n}",
   "recipes.err.link.tips": "die Tipps",

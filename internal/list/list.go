@@ -22,6 +22,8 @@ const (
 const (
 	MaxName = 60
 	MaxText = 200
+	// MaxVariety is the longest variety, in characters.
+	MaxVariety = 60
 )
 
 // Colors are the list colours, in the order of the person colour slots of
@@ -55,6 +57,9 @@ type Entry struct {
 	Position int
 	// ArticleID is the article of the library the entry was made from, "" for free text.
 	ArticleID string
+	// Variety is the more exact kind of the article ("Type 405" for flour),
+	// "" for none; only an entry with an article has one (ticket 277).
+	Variety string
 	// Qty is how much of it; none for an entry without quantity.
 	Qty Quantity
 	// Origin says a rule of "always on the list" put the entry on the list.
@@ -102,9 +107,30 @@ func ValidateText(text string) error {
 	return nil
 }
 
+// NormalizeVariety trims a variety and collapses the spaces inside it.
+func NormalizeVariety(s string) string { return strings.Join(strings.Fields(s), " ") }
+
+// ValidateVariety checks a variety that was asked for: it must not be empty
+// ("required": "Neue Sorte" was chosen and left empty) nor longer than 60
+// characters ("too long").
+func ValidateVariety(v string) error {
+	v = NormalizeVariety(v)
+	switch {
+	case v == "":
+		return &InvalidError{"variety", "required"}
+	case utf8.RuneCountInString(v) > MaxVariety:
+		return &InvalidError{"variety", "too long"}
+	}
+	return nil
+}
+
 var fold = strings.NewReplacer("ä", "a", "ö", "o", "ü", "u", "ß", "ss")
 
 func key(s string) string { return fold.Replace(strings.ToLower(strings.TrimSpace(s))) }
+
+// VarietyKey is what two varieties are compared by: lower case, ä ö ü ß
+// folded, trimmed, inner spaces collapsed.
+func VarietyKey(s string) string { return key(NormalizeVariety(s)) }
 
 // Order returns the entries in the order a list with this sorting shows them.
 // Alphabetical ignores case and treats ä, ö, ü like a, o, u; manual follows
@@ -115,6 +141,9 @@ func Order(entries []Entry, s Sort) []Entry {
 		if s == Alphabetical {
 			if c := strings.Compare(key(a.Text), key(b.Text)); c != 0 {
 				return c
+			}
+			if c := strings.Compare(VarietyKey(a.Variety), VarietyKey(b.Variety)); c != 0 {
+				return c // no variety first
 			}
 		}
 		return a.Position - b.Position

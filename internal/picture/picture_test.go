@@ -354,3 +354,112 @@ func TestTheSameLargePhotoIsScaledToEachCallersOwnMaximum(t *testing.T) {
 		t.Errorf("Process result %d x %d, want 512 x 341", w, h)
 	}
 }
+
+// Ticket 297: a contact photo is cut to a square before it is scaled to
+// ContactMaxSide: landscape from the centre, portrait with a quarter of the
+// excess taken from the top (heads stay whole).
+
+// bands is a picture whose colour changes with the long axis: every 10 px a
+// new grey step, so the crop can be read from the result.
+func bands(w, h int) *image.RGBA {
+	img := image.NewRGBA(image.Rect(0, 0, w, h))
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			v := uint8(0)
+			if w > h {
+				v = uint8(x * 255 / w)
+			} else {
+				v = uint8(y * 255 / h)
+			}
+			img.Set(x, y, color.RGBA{v, v, v, 255})
+		}
+	}
+	return img
+}
+
+func greyAt(t *testing.T, jpg []byte, fx, fy float64) int {
+	t.Helper()
+	img, err := jpeg.Decode(bytes.NewReader(jpg))
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := img.Bounds()
+	r, _, _, _ := img.At(b.Min.X+int(fx*float64(b.Dx()-1)), b.Min.Y+int(fy*float64(b.Dy()-1))).RGBA()
+	return int(r >> 8)
+}
+
+func TestContactPhotoIsSquareAtMost512(t *testing.T) {
+	t.Parallel()
+	for name, c := range map[string]struct{ w, h, want int }{
+		"portrait":        {600, 1200, 512},
+		"landscape":       {1600, 900, 512},
+		"square":          {700, 700, 512},
+		"small portrait":  {100, 300, 100},
+		"small landscape": {300, 120, 120},
+	} {
+		res, err := picture.ProcessSquare(context.Background(), bytes.NewReader(encodeJPEG(t, bands(c.w, c.h))), picture.ContactMaxSide)
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		w, h := size(t, res.JPEG)
+		if w != c.want || h != c.want || res.ToW != c.want || res.ToH != c.want {
+			t.Errorf("%s: result %d x %d (%d x %d), want %d x %d", name, w, h, res.ToW, res.ToH, c.want, c.want)
+		}
+		if res.FromW != c.w || res.FromH != c.h {
+			t.Errorf("%s: from %d x %d, want %d x %d", name, res.FromW, res.FromH, c.w, c.h)
+		}
+	}
+	if picture.ContactMaxSide != 512 {
+		t.Errorf("ContactMaxSide = %d", picture.ContactMaxSide)
+	}
+}
+
+func TestContactPhotoCropPortraitKeepsMoreAtTheTopLandscapeIsCentred(t *testing.T) {
+	t.Parallel()
+	// 400 x 800: the square is 400 tall and starts at excess/4 = 100, so it covers
+	// rows 100 to 500 of 800: grey 31 at its top, 62 at its bottom (about).
+	res, err := picture.ProcessSquare(context.Background(), bytes.NewReader(encodeJPEG(t, bands(400, 800))), picture.ContactMaxSide)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if top, bottom := greyAt(t, res.JPEG, 0.5, 0), greyAt(t, res.JPEG, 0.5, 1); abs(top-100*255/800) > 6 || abs(bottom-500*255/800) > 6 {
+		t.Errorf("portrait crop: top grey %d (want about %d), bottom %d (want about %d)", top, 100*255/800, bottom, 500*255/800)
+	}
+	// 800 x 400: the square covers columns 200 to 600.
+	res, err = picture.ProcessSquare(context.Background(), bytes.NewReader(encodeJPEG(t, bands(800, 400))), picture.ContactMaxSide)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if left, right := greyAt(t, res.JPEG, 0, 0.5), greyAt(t, res.JPEG, 1, 0.5); abs(left-200*255/800) > 6 || abs(right-600*255/800) > 6 {
+		t.Errorf("landscape crop: left grey %d (want about %d), right %d (want about %d)", left, 200*255/800, right, 600*255/800)
+	}
+}
+
+func abs(n int) int {
+	if n < 0 {
+		return -n
+	}
+	return n
+}
+
+func TestContactPhotoKeepsTheRulesOfEveryPicture(t *testing.T) {
+	t.Parallel()
+	// An upright portrait taken sideways (orientation 6) is turned first, then cropped; no metadata survives.
+	res, err := picture.ProcessSquare(context.Background(), bytes.NewReader(withEXIF(encodeJPEG(t, bands(800, 400)), 6)), picture.ContactMaxSide)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !res.Rotated || !res.FromMetadata || bytes.Contains(res.JPEG, []byte("Exif")) {
+		t.Errorf("rotated=%v fromMetadata=%v exifLeft=%v", res.Rotated, res.FromMetadata, bytes.Contains(res.JPEG, []byte("Exif")))
+	}
+	if _, err := picture.ProcessSquare(context.Background(), strings.NewReader("<html>"), picture.ContactMaxSide); !errors.Is(err, picture.ErrWebPage) {
+		t.Errorf("web page = %v", err)
+	}
+	if _, err := picture.ProcessSquare(context.Background(), strings.NewReader("hello"), picture.ContactMaxSide); !errors.Is(err, picture.ErrNotAnImage) {
+		t.Errorf("text = %v", err)
+	}
+	var big *picture.TooLargeError
+	if _, err := picture.ProcessSquare(context.Background(), bytes.NewReader(make([]byte, picture.MaxBytes+1)), picture.ContactMaxSide); !errors.As(err, &big) {
+		t.Errorf("15 MB + 1 = %v", err)
+	}
+}

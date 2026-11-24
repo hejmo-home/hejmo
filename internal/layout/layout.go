@@ -34,6 +34,7 @@ const (
 	Events   BlockID = "events"
 	Routines BlockID = "routines"
 	Tasks    BlockID = "tasks"
+	Stars    BlockID = "stars" // stars and savings goal (ticket 293)
 	Meals    BlockID = "meals"
 	Tomorrow BlockID = "tomorrow"
 	List     BlockID = "list"
@@ -49,7 +50,7 @@ type spec struct {
 // one list, start off so a new display looks like today (Q89, Q128).
 var catalogue = []spec{
 	{Clock, Header, true}, {Weather, Header, true},
-	{Events, Columns, true}, {Routines, Columns, false}, {Tasks, Columns, true},
+	{Events, Columns, true}, {Routines, Columns, false}, {Tasks, Columns, true}, {Stars, Columns, true},
 	{Meals, Footer, true}, {Tomorrow, Footer, true}, {List, Footer, false},
 }
 

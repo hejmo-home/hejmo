@@ -1,6 +1,7 @@
 package contactimport
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
@@ -434,6 +435,8 @@ func TestACardTiedToAnotherNewCardOnlyByNameIsNotPulledIntoTheQuestionOfAContact
 	a := card(1, "Gerda", []string{"0171 3456789", "0160 111 222"}, nil)
 	b := card(2, "Frau Müller", []string{"0160 111 222"}, nil)
 	c := card(3, "Frau Müller", nil, []string{"fm@example.de"})
+	a.Numbers = append(a.Numbers, num(contact.Cell, "0160 333 444"))
+	b.Numbers = append(b.Numbers, num(contact.Cell, "0160 333 444")) // only card 1 has it: a card-to-card match
 	p := Build([]vcard.Card{a, b, c}, hejmo(), "DE")
 	if len(p.Dups) != 1 || len(p.Dups[0].Cards) != 2 || len(p.News) != 1 || p.News[0].Card.Number != 3 {
 		t.Fatalf("plan = %+v", p)
@@ -443,6 +446,26 @@ func TestACardTiedToAnotherNewCardOnlyByNameIsNotPulledIntoTheQuestionOfAContact
 		if m.Hejmo.Value != oma.Numbers[0].Value && m.Hejmo.Value != oma.Numbers[1].Value {
 			t.Errorf("reason %+v names a value Hejmo does not have", m)
 		}
+	}
+}
+
+// A cluster that is tied to two different contacts is not moved whole into one of them: every card goes to the
+// contact it shares a number with, and cards tied only by name join nothing.
+func TestACardTiedToTwoContactsDoesNotCarryItsClusterIntoTheLastOne(t *testing.T) {
+	t.Parallel()
+	c1 := card(1, "Gerda", []string{"0171 3456789", "0160 111 111"}, nil)
+	c2 := card(2, "Praxis", []string{"089 1234 5670", "0160 222 222"}, nil)
+	c3 := card(3, "Anna Berg", []string{"0160 111 111"}, nil)
+	c4 := card(4, "Anna Berg", []string{"0160 222 222"}, nil)
+	p := Build([]vcard.Card{c1, c2, c3, c4}, hejmo(), "DE")
+	var got = map[string][]int{}
+	for _, d := range p.Dups {
+		for _, c := range d.Cards {
+			got[d.Existing.ID] = append(got[d.Existing.ID], c.Number)
+		}
+	}
+	if len(p.News) != 0 || !slices.Equal(got["oma"], []int{1, 3}) || !slices.Equal(got["arzt"], []int{2, 4}) {
+		t.Fatalf("dups = %v, news = %+v", got, p.News)
 	}
 }
 

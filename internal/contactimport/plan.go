@@ -510,13 +510,27 @@ func Build(cards []vcard.Card, existing []store.Contact, region string) Plan {
 	}
 	// A new card that shares a number or an e-mail address with a card that matched a contact is in that question
 	// too, whichever of the two comes first in the file, and so are the cards of its cluster that share a number or
-	// an e-mail address with it. A card tied to them by name alone stays a card of its own. The matches between
-	// cards are not reasons (they are no value of the contact), so they are not kept.
+	// an e-mail address with it. Every card goes to the question it is tied to itself: a card tied to two different
+	// contacts, or to cards that belong to different ones, goes into no question (it stays a card of its own), and a
+	// card tied to them by name alone does too. The matches between cards are not reasons (they are no value of the
+	// contact), so they are not kept.
+	const (
+		unset    = -1
+		conflict = -2
+	)
+	setTarget := func(t *int, i int) {
+		switch {
+		case *t == unset:
+			*t = i
+		case *t != i:
+			*t = conflict
+		}
+	}
 	var left []*cluster
 	for _, cl := range clusters {
-		linked := make([]bool, len(cl.infos))
-		joinedTo := -1
+		target := make([]int, len(cl.infos))
 		for k, ci := range cl.infos {
+			target[k] = unset
 			for i := range p.Dups {
 				d := &p.Dups[i]
 				if d.Matches[0].Kind == MatchName {
@@ -524,34 +538,42 @@ func Build(cards []vcard.Card, existing []store.Contact, region string) Plan {
 				}
 				for _, dc := range d.Cards {
 					if len(ci.matchOf(dc.Numbers, dc.Emails, nil, region)) > 0 { // a name alone does not join
-						linked[k], joinedTo = true, i
+						setTarget(&target[k], i)
 					}
 				}
 			}
 		}
-		if joinedTo < 0 {
-			left = append(left, cl)
-			continue
-		}
+		direct := slices.Clone(target)
 		for changed := true; changed; {
 			changed = false
 			for k, ci := range cl.infos {
+				if target[k] != unset {
+					continue
+				}
+				t := unset
 				for j, other := range cl.infos {
-					if linked[j] && !linked[k] && len(ci.matchOf(other.card.Numbers, other.card.Emails, nil, region)) > 0 {
-						linked[k], changed = true, true
+					if direct[j] >= 0 && len(ci.matchOf(other.card.Numbers, other.card.Emails, nil, region)) > 0 {
+						setTarget(&t, direct[j])
 					}
+				}
+				if t != unset {
+					target[k], direct[k], changed = t, t, true
 				}
 			}
 		}
 		var rest []cardInfo
 		for k, ci := range cl.infos {
-			if linked[k] {
-				p.Dups[joinedTo].join(ci.card, nil)
+			if target[k] >= 0 {
+				p.Dups[target[k]].join(ci.card, nil)
 			} else {
 				rest = append(rest, ci)
 			}
 		}
-		left = append(left, clustersOf(rest, region)...)
+		if len(rest) == len(cl.infos) {
+			left = append(left, cl)
+		} else {
+			left = append(left, clustersOf(rest, region)...)
+		}
 	}
 	clusters = left
 	for i := range p.Dups {
@@ -870,7 +892,7 @@ func (p Plan) Ops(dec Decisions, file string) ([]store.ImportOp, Result) {
 			}
 			photoCards := d.Cards
 			if !d.InFile {
-				photoCards = filePhoto[d.Existing.ID]
+				photoCards = slices.Clone(filePhoto[d.Existing.ID])
 				slices.SortStableFunc(photoCards, func(a, b vcard.Card) int { return a.Number - b.Number })
 			}
 			op, name := d.apply(file, photoCards)

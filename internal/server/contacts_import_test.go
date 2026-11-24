@@ -761,7 +761,7 @@ END:VCARD
 `)
 	path := c.startImport("praxis.vcf", data)
 	body := c.page(path, "de").body
-	ctHas(t, "several", body, "Als zwei Kontakte anlegen", "Praxis Eins", "Praxis Zwei", "Hauptstr 1")
+	ctHas(t, "several", body, "Als zwei Kontakte anlegen", "Heißen dann “Praxis Eins” und “Praxis Zwei”", "Hauptstr 1")
 	ctHasNot(t, "several", body, "Als eigenen Kontakt anlegen")
 	before := c.contactCount()
 	c.confirm(path, url.Values{"d-1": {"new"}})

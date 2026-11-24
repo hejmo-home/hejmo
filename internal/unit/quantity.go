@@ -55,6 +55,9 @@ func KindOf(key string) Kind {
 	case "ml", "l", "floz_us", "floz_uk", "cup_us", "pint_us", "pint_uk", "quart_us", "gallon_us", "gallon_uk":
 		return Volume
 	}
+	if IsKitchen(key) || IsContainer(key) { // recipes (ticket 279): each of them counts only itself
+		return Kind(key)
+	}
 	return ""
 }
 

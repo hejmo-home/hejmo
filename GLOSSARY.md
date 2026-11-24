@@ -327,6 +327,14 @@ _Avoid_: dish (alone), cooking instructions
 One line of a recipe: an article, optionally with a variety, or free text, with a quantity for the recipe's portions.
 _Avoid_: component, item
 
+**Kitchen measure**:
+A unit of a recipe's ingredient that is no weight or volume Hejmo can convert: EL, TL, Prise, Messerspitze, Schuss, Spritzer, Handvoll and Tasse (tbsp, tsp, pinch, knife tip, dash, splash, handful, cup). It never converts into or adds up with g and ml, not even with another kitchen measure; on a shopping list the article goes on without a quantity.
+_Avoid_: spoon unit, small measure
+
+**Container and piece measure**:
+A unit of a recipe's ingredient that counts things: Dose, Päckchen, Becher, Bund, Glas, Flasche, Stange, Zehe, Scheibe, Würfel, Zweig, Stiel, Kugel, Blatt and Beet (can, packet, tub, bunch, jar, bottle, stick, clove, slice, cube, sprig, stalk, ball, leaf, punnet). On a shopping list it keeps its quantity ("2 Dosen Tomaten"), and quantities add up only within the same unit.
+_Avoid_: pack unit, count word
+
 **Variety**:
 The more exact kind of an article, such as "Type 405" for flour, kept with an ingredient or list entry and written "Mehl · Type 405". Quantities add up only for the same article and variety (case, spaces and umlauts ignored); allergens and diets come from the article. Free text has no variety.
 _Avoid_: variant, subtype

@@ -4055,3 +4055,176 @@ fieldset.choice.goals { max-width: 640px; }
 .cards.stars .st-head .stars-balance { font-variant-numeric: tabular-nums; }
 .cards.stars .st-head .stars-balance::before { content: "\2605\00a0" / ""; color: var(--pc); }
 [data-theme="bw"] .cards.stars .st-head .stars-balance::before { color: var(--text); }
+
+/* ===== ticket 279: write and view own recipes (no new tokens) ===== */
+/* Meals page: the way to the recipes. */
+.meal-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; max-width: 560px; margin: 0 0 var(--gap-section); }
+.meal-tools .button { display: inline-flex; align-items: center; gap: 8px; }
+.meal-tools .button .icon { stroke: currentColor; }
+.meal-tools .hint { margin: 0; flex: 1 1 220px; }
+/* Recipe names: never cut; words of 12+ letters hyphenate, longer words break at the edge. */
+.list-rows.recipes b, h1.rcp-title > span:last-child, .rcp-ings .n, .rcp-steps p, .rcp-tips p { overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; }
+@supports (hyphenate-limit-chars: 12 5 5) { .list-rows.recipes b, h1.rcp-title > span:last-child, .rcp-ings .n, .rcp-steps p, .rcp-tips p { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }
+/* Recipe list rows */
+.list-rows.recipes a { align-items: flex-start; }
+.list-rows.recipes .art-sym { margin-top: 2px; }
+.list-rows.recipes .chev { align-self: center; }
+.list-rows.recipes .t { gap: 6px; }
+.list-rows.recipes .meta .k { font-weight: 600; color: var(--text); }
+.list-rows.recipes .allergen-warn, .list-rows.recipes .unchecked { justify-self: start; }
+/* Diet mark: a word tag with a leaf, never colour alone. */
+.tag.diet { gap: 4px; }
+.tag.diet .icon { stroke: currentColor; flex: none; }
+.tags .tag.grp, .rcp-facts .tag.grp { font-weight: 600; }
+/* Filter of categories with their symbol */
+.lib-filter.rcp-filter a { gap: 6px; }
+.lib-filter.rcp-filter .e { font-size: 18px; line-height: 1; }
+/* Recipe page */
+h1.rcp-title { display: flex; align-items: center; gap: 14px; }
+h1.rcp-title > span:last-child { min-width: 0; }
+.rcp-facts { max-width: 880px; }
+.rcp-facts dd .mt { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.rcp-facts dd .mt .icon { stroke: var(--accent); }
+.rcp-facts .diet-why { flex-basis: 100%; margin: 0; color: var(--text-secondary); font-size: var(--fs-label); }
+.rcp-facts a.ext { overflow-wrap: anywhere; }
+/* Allergy check card: everything about allergies in one place, above the ingredients. */
+.rcp-check { max-width: 880px; box-sizing: border-box; display: grid; gap: 8px; justify-items: start; padding: 14px 16px; margin: 0 0 var(--gap-section); background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-tile); }
+.rcp-check.has-warn { border: 2px solid var(--notice-text); }
+.rcp-check h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: var(--fs-event-title); }
+.rcp-check h2 .icon { flex: none; stroke: currentColor; }
+.rcp-check .allergen-warn, .rcp-check .unchecked { font-size: var(--fs-label-large); }
+.rcp-check .none { display: flex; gap: 8px; align-items: flex-start; margin: 0; }
+.rcp-check .none .icon { flex: none; stroke: var(--accent); margin-top: 2px; }
+.rcp-check .ppl { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.rcp-check .ppl li { overflow-wrap: break-word; }
+.rcp-check .ppl .who { display: inline; font-weight: 700; }
+.rcp-check .ppl .who .marker { display: inline-block; vertical-align: -0.1em; margin-right: 6px; }
+.rcp-check .hint { margin: 0; }
+.rcp-check .rcp-sub { margin: 4px 0 0; font-size: var(--fs-label); font-weight: 700; color: var(--text-secondary); }
+[data-theme="bw"] .rcp-check { border: 2px solid var(--text); }
+[data-theme="bw"] .rcp-check.has-warn { border-width: 3px; }
+/* Ingredients and steps: one column, two side by side when the page is wide enough. */
+.rcp-body { container-type: inline-size; max-width: 880px; margin: 0 0 var(--gap-section); }
+.rcp-cols { display: grid; gap: var(--gap); }
+@container (min-width: 700px) { .rcp-cols { grid-template-columns: minmax(260px, 2fr) minmax(0, 3fr); align-items: start; } }
+.rcp-part { background: var(--surface); border-radius: var(--radius-tile); padding: 14px 16px 16px; min-width: 0; }
+.rcp-part h2 { margin: 0 0 2px; font-size: var(--fs-person-name); }
+.rcp-part > .hint { margin: 0 0 8px; }
+[data-theme="bw"] .rcp-part { border: 2px solid var(--text); }
+.rcp-ings { list-style: none; margin: 0; padding: 0; }
+.rcp-ings li { display: grid; grid-template-columns: minmax(4.2em, max-content) minmax(0, 1fr); gap: 2px 12px; padding: 9px 0; border-top: 1px solid var(--border); align-items: baseline; }
+.rcp-ings li:first-child { border-top: 0; padding-top: 2px; }
+.rcp-ings .q { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+.rcp-ings .n { min-width: 0; }
+.rcp-ings .variety { font-weight: 400; }
+.rcp-ings .allergen-warn, .rcp-ings .tag { grid-column: 2; justify-self: start; margin-top: 4px; }
+.rcp-ings .tag.unchk { border: 1.5px dashed var(--notice-text); color: var(--notice-text); background: var(--notice-bg); font-weight: 600; height: auto; }
+[data-theme="bw"] .rcp-ings li { border-top: 1px solid var(--text); }
+[data-theme="bw"] .rcp-ings li:first-child { border-top: 0; }
+[data-theme="bw"] .rcp-ings .tag.unchk { background: none; color: var(--text); border: 2px dashed var(--text); }
+.rcp-steps { list-style: none; counter-reset: st; margin: 0; padding: 0; display: grid; }
+.rcp-steps li { counter-increment: st; display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 14px; padding: 12px 0; border-top: 1px solid var(--border); }
+.rcp-steps li:first-child { border-top: 0; padding-top: 4px; }
+.rcp-steps li::before { content: counter(st); width: 36px; height: 36px; box-sizing: border-box; border-radius: 50%; border: 2px solid var(--accent); color: var(--accent); font-weight: 700; font-size: var(--fs-event-title); display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+.rcp-steps p { margin: 6px 0 0; line-height: 1.5; white-space: pre-line; }
+[data-theme="bw"] .rcp-steps li { border-top: 1px solid var(--text); }
+[data-theme="bw"] .rcp-steps li:first-child { border-top: 0; }
+[data-theme="bw"] .rcp-steps li::before { border-color: var(--text); color: var(--text); }
+.rcp-empty { margin: 0; padding: 10px 12px; border: 1.5px dashed var(--border); border-radius: var(--radius-card); color: var(--text-secondary); }
+.rcp-tips { max-width: 880px; box-sizing: border-box; margin: 0 0 var(--gap-section); padding: 14px 16px; background: var(--surface); border-radius: var(--radius-tile); }
+.rcp-tips h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-size: var(--fs-event-title); }
+.rcp-tips h2 .icon { stroke: var(--accent); }
+.rcp-tips p { margin: 0; white-space: pre-line; line-height: 1.5; }
+[data-theme="bw"] .rcp-tips { border: 2px solid var(--text); }
+[data-theme="bw"] .rcp-tips h2 .icon { stroke: var(--text); }
+.rcp-who { max-width: 880px; }
+.rcp-act { margin: 0 0 var(--gap); }
+.rcp-act .button { display: inline-flex; align-items: center; gap: 8px; }
+.rcp-act .button .icon { stroke: currentColor; }
+/* Recipe form */
+form.rcp-form { max-width: 640px; }
+.rcp-form fieldset > legend { margin-bottom: 4px; }
+.rcp-form fieldset > .hint { margin: 0; }
+.rcp-form .pair .f.amount { flex: 0 1 auto; }
+.rcp-form .f.mins input { width: 7em; }
+.rcp-form .f.mins .with-unit { display: flex; align-items: center; gap: 8px; }
+fieldset.units.cat-pick label { grid-auto-flow: column; gap: 6px; padding: 4px 14px 4px 10px; }
+fieldset.units.cat-pick .e { font-size: 20px; line-height: 1; }
+.ing-head { display: grid; grid-template-columns: 5.5em 8.5em minmax(0, 1fr); gap: 8px; font-size: var(--fs-label); color: var(--text-secondary); padding: 0 2px; }
+ol.ing-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+li.ing { display: grid; grid-template-columns: 5.5em 8.5em minmax(0, 1fr) auto; grid-template-areas: "q u n rm" "s s s s" "w w w w" "e e e e"; gap: 6px 8px; align-items: start; padding: 10px 0; border-top: 1px solid var(--border); }
+li.ing:first-child { border-top: 0; padding-top: 4px; }
+li.ing > .iq { grid-area: q; width: 100%; box-sizing: border-box; text-align: right; font-variant-numeric: tabular-nums; }
+li.ing > .iu { grid-area: u; width: 100%; min-width: 0; }
+li.ing > .in { grid-area: n; width: 100%; box-sizing: border-box; min-width: 0; }
+li.ing > .rm { grid-area: rm; }
+li.ing > .ing-state { grid-area: s; }
+li.ing > .allergen-warn { grid-area: w; justify-self: start; }
+li.ing > .ferr { grid-area: e; margin: 0; }
+li.ing > .sugg { grid-area: s; }
+li.ing.blank { grid-template-columns: 5.5em 8.5em minmax(0, 1fr); grid-template-areas: "q u n" "s s s" "w w w" "e e e"; }
+li.ing.invalid > .iq.bad, li.ing.invalid > .in.bad, li.ing.invalid > .iu.bad { border: 2px solid var(--error-text); }
+.ing-state { display: flex; align-items: flex-start; gap: 6px; margin: 0; font-size: var(--fs-label); overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; }
+.ing-state .icon { flex: none; margin-top: 1px; }
+.ing-state.ok { color: var(--text); }
+.ing-state.ok .icon { stroke: var(--accent); }
+.ing-state.ok b { font-weight: 700; }
+.ing-state.ok .variety { font-weight: 400; }
+.ing-state.free { padding: 3px 8px; border-radius: var(--radius-field); background: var(--notice-bg); color: var(--notice-text); font-weight: 600; }
+.ing-state.free .icon { stroke: currentColor; }
+li.ing details.variety-more { border-top: 0; }
+li.ing details.variety-more > summary { min-height: 36px; font-size: var(--fs-label); }
+[data-theme="bw"] li.ing { border-top: 1px solid var(--text); }
+[data-theme="bw"] li.ing:first-child { border-top: 0; }
+[data-theme="bw"] .ing-state.free { background: none; color: var(--text); border: 2px dashed var(--text); }
+[data-theme="bw"] li.ing details.variety-more { border-top: 0; }
+li.ing .sugg { display: grid; gap: 6px; }
+li.ing .sugg .sugg-q { margin: 0; font-size: var(--fs-label); font-weight: 700; }
+ol.step-lines { list-style: none; counter-reset: sl; margin: 0; padding: 0; display: grid; gap: 0; }
+li.step { counter-increment: sl; display: grid; grid-template-columns: 32px minmax(0, 1fr); grid-template-areas: "num txt" ". act" ". err"; gap: 6px 12px; padding: 10px 0; border-top: 1px solid var(--border); }
+li.step:first-child { border-top: 0; padding-top: 4px; }
+li.step::before { grid-area: num; content: counter(sl); width: 32px; height: 32px; box-sizing: border-box; border-radius: 50%; border: 2px solid var(--accent); color: var(--accent); font-weight: 700; display: grid; place-items: center; font-variant-numeric: tabular-nums; margin-top: 6px; }
+li.step > textarea { grid-area: txt; min-height: 4.5em; box-sizing: border-box; field-sizing: content; }
+li.step > .acts { grid-area: act; display: flex; flex-wrap: wrap; gap: 8px; }
+li.step > .ferr { grid-area: err; margin: 0; }
+li.step.blank > .acts { display: none; }
+li.step.invalid > textarea { border: 2px solid var(--error-text); }
+[data-theme="bw"] li.step { border-top: 1px solid var(--text); }
+[data-theme="bw"] li.step:first-child { border-top: 0; }
+[data-theme="bw"] li.step::before { border-color: var(--text); color: var(--text); }
+.rcp-form .button.add { justify-self: start; }
+.rcp-form fieldset.tag-pick { background: none; border-radius: 0; padding: 0; }
+.rcp-form .tag-pick { display: flex; flex-wrap: wrap; gap: 8px; border: 0; margin: 0; padding: 0; min-width: 0; }
+.rcp-form .tag-pick > legend { font-size: var(--fs-label-large); font-weight: 600; margin-bottom: 6px; float: none; padding: 0; }
+.rcp-form .tag-pick .pchip .icon:not(.tick) { stroke: var(--accent); }
+.rcp-form .more-rcp > summary { flex-wrap: wrap; row-gap: 0; padding: 6px 0; }
+.rcp-form .more-rcp > summary .sum { flex-basis: 100%; margin-left: 24px; text-align: left; font-size: var(--fs-label); font-weight: 400; }
+.rcp-form fieldset.more-card { padding: 4px 16px; }
+.rcp-form fieldset.more-card details.more { border-top: 0; }
+.rcp-form .more-rcp > summary { font-size: var(--fs-person-name); font-weight: 700; color: var(--text); }
+.rcp-form .more-rcp > summary .chev { stroke: var(--accent); }
+.rcp-form .more-rcp > div { gap: 16px; }
+.rcp-form .counter { font-size: var(--fs-meta); color: var(--text-secondary); margin: 0; }
+.rcp-form .savebar .cancel { font-weight: 600; }
+/* The form's list items are rows, not the cards ".steps li" draws; spans keep their own colour. */
+.rcp-form li.ing, .rcp-form li.step, .rcp-form .place-list li { background: none; border-radius: 0; }
+.rcp-form fieldset.units label span, .rcp-form .ing-state span, .rcp-form .allergen-warn span, .rcp-form .unchecked span, .rcp-form .place-list span:not(.art-sym) { color: inherit; font-size: inherit; }
+li.ing > .ing-meta { grid-area: s; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 16px; min-width: 0; }
+li.ing > .ing-meta > .ing-state { flex: 0 1 auto; }
+li.ing > .ing-meta > details.variety-more { flex: 1 1 auto; }
+li.ing > .ing-meta > details.variety-more[open] { flex-basis: 100%; }
+/* Suggestions in an ingredient row: the adder's rules (#165), for li.ing too. */
+li.ing .place-list.art-sugg li { grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 2px; padding: 6px 8px; }
+li.ing .place-list.art-sugg li > .art-sym { grid-row: 1 / span 2; align-self: start; }
+li.ing .place-list.art-sugg li > :not(.art-sym) { grid-column: 2; justify-self: start; }
+li.ing .place-list.art-sugg li + li { border-top: 1px solid var(--border); }
+[data-theme="bw"] li.ing .place-list.art-sugg li + li { border-top-color: var(--text); }
+@media (max-width: 479px) {
+  .ing-head { display: none; }
+  li.ing { grid-template-columns: 5.5em minmax(0, 1fr) auto; grid-template-areas: "q u u" "n n rm" "s s s" "w w w" "e e e"; }
+  li.ing.blank { grid-template-columns: 5.5em minmax(0, 1fr); grid-template-areas: "q u" "n n" "s s" "w w" "e e"; }
+  li.step { grid-template-columns: 28px minmax(0, 1fr); gap: 6px 10px; }
+  li.step::before { width: 28px; height: 28px; }
+  .rcp-steps li { grid-template-columns: 30px minmax(0, 1fr); gap: 10px; }
+  .rcp-steps li::before { width: 30px; height: 30px; }
+}

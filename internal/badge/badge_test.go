@@ -248,3 +248,19 @@ func TestNewMeansEarnedTodayOrYesterdayWhileTheSwitchWasOn(t *testing.T) {
 		}
 	}
 }
+
+func TestWholeWeekCountsOnlyWeeksFromTheRoutinesFirstMonday(t *testing.T) {
+	t.Parallel()
+	// Created and done on Sunday 29/11/2026: the days before it are not
+	// a week the routine could have been done in.
+	r := daily("a", "2026-11-29", []string{"2026-11-29"})
+	if has(badge.Earned(badge.Input{Today: "2026-11-29", Routines: []streak.Routine{r}}), badge.WholeWeek) {
+		t.Fatal("created Sunday, done Sunday is not a whole week")
+	}
+	// Created Wednesday: the first week is skipped, the next Mon-Sun counts.
+	week := daysFrom("2026-11-16", 7)
+	r = daily("a", "2026-11-11", week)
+	if !has(badge.Earned(badge.Input{Today: "2026-11-22", Routines: []streak.Routine{r}}), badge.WholeWeek) {
+		t.Fatal("the first full week after creation is whole")
+	}
+}

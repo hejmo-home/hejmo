@@ -4871,7 +4871,7 @@
   "badge.streak_30.name": "30 days in a row",
   "badge.streak_30.how": "One routine done 30 days in a row. Days off and pause days do not break it.",
   "badge.first_star.name": "First star",
-  "badge.first_star.how": "The first star for a task.",
+  "badge.first_star.how": "The first star, for a task or from a parent.",
   "badge.stars_100.name": "100 stars collected",
   "badge.stars_100.how": "100 stars earned in all. Stars already redeemed count too.",
   "badge.stars_500.name": "500 stars collected",

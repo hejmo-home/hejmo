@@ -177,11 +177,8 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 			}
 			card := s.starCardOf(r, p, person, acc)
 			card.ID, card.Poss = person.ID, possessive(s.langOf(r), person.Name)
-			for _, c := range choices {
-				if c.ID == person.ID {
-					card.Slot, card.Shape = c.Slot, c.Shape
-				}
-			}
+			chip := chipOf(choices, person.ID)
+			card.Slot, card.Shape = chip.Slot, chip.Shape
 			for _, rw := range offered {
 				if !rw.Archived() && rw.MeantFor(person.ID) {
 					card.HasRewards = true
@@ -195,11 +192,7 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 			cards = append(cards, card)
 		}
 		g := personTasks{ID: person.ID, Name: person.Name, Color: person.Color}
-		for _, c := range choices {
-			if c.ID == person.ID {
-				g.Slot = c.Slot
-			}
-		}
+		g.Slot = chipOf(choices, person.ID).Slot
 		if !child && person.StreaksShown {
 			lang := s.langOf(r)
 			line := &badgeLine{Href: "/tasks/badges/" + person.ID, More: s.i18n.Format(lang, i18n.Msg("badge.line.more", "name", person.Name, "possessive", possessive(lang, person.Name)))}
@@ -259,12 +252,7 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 			return
 		}
 		parts, progress := childParts(due, routines, p.person.ID, weeks)
-		data["ChildParts"], data["ChildProgress"], data["ChildSlot"] = parts, progress, 0
-		for _, c := range choices {
-			if c.ID == p.person.ID {
-				data["ChildSlot"] = c.Slot
-			}
-		}
+		data["ChildParts"], data["ChildProgress"], data["ChildSlot"] = parts, progress, chipOf(choices, p.person.ID).Slot
 		data["StarsShown"], data["StarsBalance"] = sums[p.person.ID].Shown, sums[p.person.ID].Balance
 		// The way to the rewards appears only when something is meant for the child (ticket 291).
 		offered, err := s.db.HasRewards(p.household.ID, p.person.ID)

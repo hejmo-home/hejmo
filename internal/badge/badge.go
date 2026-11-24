@@ -151,8 +151,9 @@ func days(in Input) (wholeDay, anyDone bool) {
 }
 
 // weeks looks for a routine done on all its counting days of one week, Monday
-// to Sunday. Days off, days before the routine and pause days that were not
+// to Sunday. Days off and pause days that were not
 // done do not count; days still to come do, so a week is never whole early.
+// Only weeks starting on or after the routine's first Monday are looked at.
 func weeks(in Input) bool {
 	last, err := time.Parse(task.DateLayout, in.Today)
 	if err != nil {
@@ -163,7 +164,9 @@ func weeks(in Input) bool {
 		if err != nil {
 			continue
 		}
-		monday := from.AddDate(0, 0, -((int(from.Weekday()) + 6) % 7))
+		// The first week that counts starts on the routine's first Monday on
+		// or after its creation: a week it was not there for is not whole.
+		monday := from.AddDate(0, 0, (8-int(from.Weekday()))%7)
 		for ; !monday.After(last); monday = monday.AddDate(0, 0, 7) {
 			done, open := 0, 0
 			for i := range 7 {

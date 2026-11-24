@@ -75,7 +75,7 @@ func (db *DB) HouseholdBadges(householdID string) (map[string][]Badge, error) {
 	return out, nil
 }
 
-// HouseholdLocation is the household's time zone; UTC when it cannot be loaded.
+// householdLocation is the household's time zone; UTC when it cannot be loaded.
 func (db *DB) householdLocation(householdID string) (*time.Location, error) {
 	h, err := db.Household(householdID)
 	if err != nil {

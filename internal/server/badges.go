@@ -147,12 +147,7 @@ func (s *server) renderBadges(w http.ResponseWriter, r *http.Request, p principa
 		s.fail(w, "people", err)
 		return
 	}
-	var chip personChip
-	for _, c := range chipsOf(people) {
-		if c.ID == person.ID {
-			chip = c
-		}
-	}
+	chip := chipOf(chipsOf(people), person.ID)
 	title := s.i18n.T(lang, "badge.title")
 	if parent {
 		title = s.i18n.Format(lang, i18n.Msg("badge.page.parent", "name", person.Name, "possessive", possessive(lang, person.Name)))

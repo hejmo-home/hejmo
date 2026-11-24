@@ -54,6 +54,9 @@ func visibleColumns(t *testing.T, css string, w, h float64, n int) (int, float64
 		}
 	}
 	margin, gap, min := px(t, root["--margin"]), px(t, root["--gap"]), px(t, root["--col-min"])
+	if w < 600 || h <= 500 { // ticket 208: a phone's page padding (also in landscape) is --gap, not --margin
+		margin = gap
+	}
 	avail := w - 2*margin
 	share := math.Min(float64(n), float64(limit))
 	colw := math.Max(min, (avail-(share-1)*gap)/share)
@@ -338,5 +341,17 @@ func TestIssueNamesFitWithEightPeople(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+// Ticket 208: with the 14 px phone padding the third column shows about 31 px
+// at the edge of a 375 px phone, which says without a symbol that there is more.
+func TestPhonePaddingLeavesAPeekOfTheThirdColumn(t *testing.T) {
+	css := stylesheet(t)
+	vis, colw := visibleColumns(t, css, 375, 812, 3)
+	gap := px(t, cssTokens(t, css, "light")["--gap"])
+	peek := 375 - 2*gap - float64(vis)*colw - float64(vis)*gap
+	if vis != 2 || colw != 144 || math.Round(peek) != 31 {
+		t.Errorf("375 px: %d columns of %.0f px, %.0f px of the next; want 2, 144, 31", vis, colw, peek)
 	}
 }

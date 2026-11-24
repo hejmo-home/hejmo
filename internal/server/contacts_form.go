@@ -24,8 +24,9 @@ type ctForm struct {
 	Groups                          []string
 	NewGroup, Note                  string
 	// Token is the prepared photo that waits for the save (ticket 297); Gone marks the saved photo for removal.
-	Token string
-	Gone  bool
+	Token        string
+	Gone         bool
+	HideBirthday bool // "keep out of the Birthdays calendar"
 }
 
 const ownKind = "own"        // the select option "Eigene Bezeichnung …"
@@ -60,6 +61,7 @@ func parseContactForm(r *http.Request) ctForm {
 		Day: r.PostFormValue("bday_day"), Month: r.PostFormValue("bday_month"), Year: r.PostFormValue("bday_year"),
 		Groups: r.PostForm["group"], NewGroup: r.PostFormValue("new_group"), Note: strings.ReplaceAll(r.PostFormValue("note"), "\r\n", "\n"),
 		Token: r.PostFormValue("picture_token"), Gone: r.PostFormValue("photo_gone") != "",
+		HideBirthday: r.PostFormValue("hide_birthday") != "",
 	}
 	return f
 }
@@ -94,7 +96,7 @@ func atoiOrZero(s string) (int, bool) {
 // draft turns the form into a draft the rules can check.
 func (f ctForm) draft(isPerson bool) ctDraft {
 	d := ctDraft{Name: f.Name, Full: f.Full, Street: f.Street, Postcode: f.Postcode, City: f.City, Country: f.Country, Note: f.Note,
-		NewGroup: f.NewGroup, GroupIDs: f.Groups, IsPerson: isPerson}
+		NewGroup: f.NewGroup, GroupIDs: f.Groups, IsPerson: isPerson, HideBirthday: f.HideBirthday}
 	for _, l := range f.Numbers {
 		d.Numbers = append(d.Numbers, l.line(true))
 	}
@@ -111,7 +113,7 @@ func (f ctForm) draft(isPerson bool) ctDraft {
 
 // ctFormOf is the form of a stored contact.
 func ctFormOf(c store.Contact) ctForm {
-	f := ctForm{Name: c.HejmoName, Full: c.FullName, Street: c.Street, Postcode: c.Postcode, City: c.City, Country: c.Country, Note: c.Note, Groups: c.GroupIDs}
+	f := ctForm{Name: c.HejmoName, Full: c.FullName, Street: c.Street, Postcode: c.Postcode, City: c.City, Country: c.Country, Note: c.Note, Groups: c.GroupIDs, HideBirthday: c.HideBirthday}
 	for _, l := range c.Numbers {
 		f.Numbers = append(f.Numbers, lineFormOf(l))
 	}
@@ -557,7 +559,7 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 		s.renderContactForm(w, r, e, f, state(ctFormState{Problems: problems, Draft: d, Status: http.StatusUnprocessableEntity}))
 		return
 	}
-	in := d.input(s.householdNow(p.household))
+	in := d.input(s.householdNow(p.household), s.i18n.T(e.lang, "birthdays.calendar_name"))
 	switch {
 	case pend != nil:
 		in.PhotoChange, in.Photo = store.SetPicture, &store.ContactPhoto{JPEG: pend.JPEG}

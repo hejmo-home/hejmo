@@ -2844,6 +2844,16 @@ paths:
         first default unit. `amount` is a number above 0 up to 9999; a unit
         that is switched off (`GET /units`) is refused. A list without
         suggestions takes plain `text` only.
+
+        `variety` is the more exact kind of an article ("Mehl · Type 405"): the
+        entry stands next to the same article without a variety, and
+        quantities add up only for the same article **and** variety, ignoring
+        case, spaces and umlauts (`Type 405` and `type  405` are one). Adding
+        without a quantity says `exists` only when article and variety are both
+        equal. A variety needs an article (`article_id`, or a `text` that names
+        one) and at most 60 characters, else 422 with field `variety`; free
+        text has none. Allergens and diets come from the article, never from
+        the variety.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -2857,6 +2867,7 @@ paths:
                 article_id: { type: string, description: "Key of a shipped article or id of an own one" }
                 amount: { type: number, description: "Above 0, at most 9999; anything else is refused with 422" }
                 unit: { type: string, description: "A key of `GET /units`; one that is switched off is refused with 422" }
+                variety: { type: string, nullable: true, description: "The variety of the article, at most 60 characters (422 otherwise), for example `Type 405`; trimmed, inner spaces collapsed. Null or empty: none. Only with an article, else 422 with field `variety`" }
       responses:
         "200":
           description: Merged into an entry that was there, or already there
@@ -2876,8 +2887,16 @@ paths:
   /lists/{id}/entries/{entry}:
     patch:
       operationId: setListEntryQuantity
-      summary: Change the quantity of an open entry (scope lists:write, parents only)
+      summary: Change the quantity or the variety of an open entry (scope lists:write, parents only)
       description: |
+        Send `amount` (with `unit`), `variety` or both; what is left out stays.
+        `variety` replaces the variety (null or empty takes it away); only an
+        entry with an article has one (422 with field `variety` for free text
+        or more than 60 characters). When another open entry has the same
+        article, the same variety as it will be and the same kind of quantity,
+        this entry goes into it (`result: merged`, the answer is the entry that
+        stays).
+
         The amount **replaces** the old quantity and never adds to it. The
         caller converts a change of unit within one kind (500 g to 0.5 kg keeps
         the amount). `amount` is rounded as shown (two decimals, whole g and ml);
@@ -2898,10 +2917,11 @@ paths:
           application/json:
             schema:
               type: object
-              required: [amount]
+              description: At least one of `amount` and `variety`
               properties:
-                amount: { type: number, nullable: true, description: "Above 0, at most 9999; null takes the quantity away" }
+                amount: { type: number, nullable: true, description: "Above 0, at most 9999; null takes the quantity away. Left out: the quantity stays" }
                 unit: { type: string, description: "A key of `GET /units`; one that is switched off is refused with 422" }
+                variety: { type: string, nullable: true, description: "The new variety, at most 60 characters (422 otherwise); null or empty takes it away. Left out: the variety stays" }
       responses:
         "200":
           description: The entry now
@@ -4556,11 +4576,12 @@ components:
         emails: { type: array, description: "At most 10", items: { $ref: "#/components/schemas/ContactLine" } }
         address: { $ref: "#/components/schemas/ContactAddress" }
         birthday: { allOf: [{ $ref: "#/components/schemas/ContactBirthday" }], nullable: true }
+        show_in_birthdays: { type: boolean, default: true, description: "Whether the birthday is in the generated calendar of kind `birthdays`. Omitted means true, so a replace without it switches the birthday on again" }
         note: { type: string, description: "At most 1000 characters" }
         groups: { type: array, items: { type: string }, description: "Ids of contact groups" }
     Contact:
       type: object
-      required: [id, person_id, name, full_name, numbers, emails, address, birthday, note, groups, photo, created_by, created_at, updated_by, updated_at]
+      required: [id, person_id, name, full_name, numbers, emails, address, birthday, show_in_birthdays, note, groups, photo, created_by, created_at, updated_by, updated_at]
       properties:
         id: { type: string, format: uuid, description: "The id of the person for a person's contact" }
         person_id: { type: string, format: uuid, nullable: true }
@@ -4570,6 +4591,7 @@ components:
         emails: { type: array, items: { $ref: "#/components/schemas/ContactLine" } }
         address: { $ref: "#/components/schemas/ContactAddress" }
         birthday: { allOf: [{ $ref: "#/components/schemas/ContactBirthday" }], nullable: true }
+        show_in_birthdays: { type: boolean, description: "Whether the birthday is in the generated calendar of kind `birthdays`" }
         note: { type: string }
         groups: { type: array, items: { type: string } }
         photo: { allOf: [{ $ref: "#/components/schemas/ContactPhoto" }], nullable: true, description: "Null without a photo; the photo itself is at `/contacts/{id}/photo`" }
@@ -5064,12 +5086,13 @@ components:
       enum: [piece, dozen, pack, bunch, g, kg, ml, l, oz, lb, floz_us, floz_uk, cup_us, pint_us, pint_uk, quart_us, gallon_us, gallon_uk]
     ListEntry:
       type: object
-      required: [id, text, done, article_id, symbol, picture]
+      required: [id, text, done, article_id, variety, symbol, picture]
       properties:
         id: { type: string, format: uuid }
-        text: { type: string }
+        text: { type: string, description: "The entry's words: for an article its name, without the variety" }
         done: { type: boolean }
-        article_id: { type: string, nullable: true, description: "The library article of the entry: the one stored when it was added from the library, else (an entry without one) the article its text names exactly in German or English, ignoring case and umlauts; never an article hidden by hand. The key of a shipped article or the id of an own one. Null for free text." }
+        variety: { type: string, nullable: true, maxLength: 60, description: "The variety of the article, for example `Type 405` (shown as \"Mehl · Type 405\"); null for none and for free text. Quantities add up only for the same article and variety." }
+        article_id: { type: string, nullable: true, description: "The library article of the entry: the one stored when it was added from the library, else (an entry without one) the article its text names in German or English, ignoring case, umlauts and singular or plural (the exact name first, the endings of the name's own language only); never an article hidden by hand. The key of a shipped article or the id of an own one. Null for free text." }
         symbol: { type: string, nullable: true, description: "The emoji a tile shows for the article (its department's symbol when it has none). Null for free text and for an article that has a picture." }
         picture: { type: string, nullable: true, description: "Path of the own article's picture, `GET /articles/{id}/picture`. Null without one." }
         amount: { type: number, description: "How much, as shown (rounded: g and ml whole, else at most two decimals); missing without a quantity" }
@@ -5147,7 +5170,7 @@ components:
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
-        kind: { type: string, enum: [local, ics, caldav, google, outlook, meals], description: "meals is the meal plan, generated by the box: read-only, its events change only in the meal plan" }
+        kind: { type: string, enum: [local, ics, caldav, google, outlook, meals, birthdays], description: "meals is the meal plan, generated by the box: read-only, its events change only in the meal plan. birthdays is the calendar of the birthdays of the contacts (`birthday`, `show_in_birthdays` of a contact), generated by the box: read-only, one yearly all-day event per contact, made when the first birthday is saved. A birthday shows with the age when the year is known (`Mia (7)`); 29 February repeats on the last day of February in other years" }
         color: { type: string }
         read_only: { type: boolean, description: "The box never changes this calendar's events outside (always true for ICS; false by default for CalDAV and Google, where a parent can switch it on)" }
         waste_collection: { type: boolean, description: "A read-only calendar marked as the household's waste collection calendar: its events show only in the family view's tomorrow tile (reminder from 18:00) and on the night page, not in the strip, person columns or personal view" }

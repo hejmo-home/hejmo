@@ -57,6 +57,7 @@
       <div class="f y"><label>{{t "contact.f.year"}}<input name="bday_year" type="number" inputmode="numeric" min="1900" max="{{.MaxYear}}" value="{{.F.Year}}"{{if .BdayErr}} aria-invalid="true"{{end}}></label></div>
       {{template "ctErr" (dict "ID" "birthday" "Text" .Errs.birthday)}}
       <p class="hint">{{t "contact.f.birthday.hint"}}</p>
+      <label class="check"><input type="checkbox" name="hide_birthday" value="1"{{if .F.HideBirthday}} checked{{end}}> {{t "contact.f.birthday.hide"}}</label>
     </fieldset>
     <fieldset id="groups" class="chips grp-pick">
       <legend>{{t "contact.f.groups"}}</legend>

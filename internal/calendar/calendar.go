@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/teambition/rrule-go"
+
+	"github.com/hejmo-home/hejmo/internal/birthday"
 )
 
 // Event is a single event, a series master, or a changed occurrence of a
@@ -35,6 +37,10 @@ type Event struct {
 	// the box shows it but never changes it, since a change would send a
 	// message to every attendee.
 	Invitation *Invitation
+	// Birthday is set by the store for the events of the calendar of kind
+	// birthdays: their occurrences carry the age (see Expand). It is not stored
+	// on the event.
+	Birthday bool
 }
 
 // Invitation says who invited and what the family's account answered, with a
@@ -99,6 +105,9 @@ func Expand(events []Event, from, to time.Time) ([]Occurrence, error) {
 				continue
 			}
 			o := occurrence(e, s, s, e.ID)
+			if e.Birthday && !withAge(&o, e.Start.Year()) {
+				continue
+			}
 			if o.Start.Before(to) && o.End.After(from) {
 				out = append(out, o)
 			}
@@ -111,6 +120,21 @@ func Expand(events []Event, from, to time.Time) ([]Occurrence, error) {
 		return out[i].Title < out[j].Title
 	})
 	return out, nil
+}
+
+// withAge puts the age into the title of a birthday ("Mia (7)") when the year
+// of birth is known. It reports false for the birth year itself: being born is
+// no birthday.
+func withAge(o *Occurrence, startYear int) bool {
+	age, ok := birthday.Age(startYear, o.Start.Year())
+	if !ok {
+		return true
+	}
+	if age < 1 {
+		return false
+	}
+	o.Title = fmt.Sprintf("%s (%d)", o.Title, age)
+	return true
 }
 
 func seriesStarts(e Event, after, before time.Time) ([]time.Time, error) {

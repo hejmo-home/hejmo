@@ -128,11 +128,12 @@ type layoutFixture struct {
 
 	lists         []string // list IDs
 	omaID         string   // the contact with a photo (ticket 297)
+	longVariety   string   // the entry of an article with a very long variety, on the first list
+	contactGroups []string // the ids of the contact groups in their order
 	inviteToken   string   // the invitation of Maximilian, a parent without account
 	hint          *screen  // a display that shows the screensaver's hint
 	outlook       []string // the Outlook pages (#177) that no link leads to
 	rewards       []string // reward IDs (#291): redeemed, never redeemed, archived by hand, archived because its person left
-	contactGroups []string // the ids of the contact groups in their order
 }
 
 func newLayoutFixture(t *testing.T) *layoutFixture {
@@ -195,6 +196,22 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 		}
 		_, err := db.AddItem(h, l.ID, it, func(base float64, _ unit.Kind) string { return q.unit })
 		must(err)
+	}
+	// Varieties (ticket 277): the same article without and with varieties, one of them very long.
+	for _, q := range []struct {
+		text, art, variety string
+		amount             float64
+		unit               string
+	}{{"Weizenmehl", "wheat-flour", "", 500, "g"}, {"Weizenmehl", "wheat-flour", "Type 405", 1, "kg"}, {"Dinkelmehl", "spelt-flour", "Dinkel-Vollkorn Type 1050 aus der Mühle Schäftlarn", 0, ""}, {"Milch", "milk", "laktosefrei", 3, "l"}} {
+		it := store.Item{Text: q.text, ArticleID: q.art, Variety: q.variety}
+		if q.unit != "" {
+			it.Qty = list.NewQuantity(q.amount, q.unit)
+		}
+		r, err := db.AddItem(h, l.ID, it, func(base float64, _ unit.Kind) string { return q.unit })
+		must(err)
+		if len(q.variety) > 40 {
+			f.longVariety = r.Entry.ID
+		}
 	}
 	l2, err := db.CreateList(h, list.List{Name: "Urlaubsvorbereitungen Ostsee", Color: "green", Symbol: "circle-empty", Sort: list.Manual})
 	must(err)
@@ -579,6 +596,7 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	add(kid, "/lists")
 	add(kid, "/lists/"+f.lists[0])
 	add(kid, "/lists/"+f.lists[1])
+	add(parent, "/lists/"+f.lists[0]+"?qty="+f.longVariety) // the editor with the Sorte row and the long variety as its pill
 	// The display: the family view and the personal views of two people.
 	display := siteOf("display", f.box, f.display.client)
 	add(display, "/display")
@@ -932,6 +950,9 @@ func TestTheLayoutFixtureShowsEveryKindOfTile(t *testing.T) {
 		if !strings.Contains(page, want) {
 			t.Errorf("the child's tiles lack %q", want)
 		}
+	}
+	if tile := tileOf(t, page, "Dinkelmehl"); !strings.Contains(tile, `<span class="variety"><span class="vh">Variety: </span>Dinkel-Vollkorn Type 1050 aus der Mühle Schäftlarn</span>`) {
+		t.Errorf("the tile of an article with a long variety:\n%s", tile)
 	}
 	if toast := tileOf(t, page, "Toastbrot"); strings.Count(toast, `<span class="line">`) < 3 {
 		t.Errorf("the toast does not warn three people:\n%s", toast)

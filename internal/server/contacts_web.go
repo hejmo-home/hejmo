@@ -24,6 +24,9 @@ import (
 
 const contactsPath = "/contacts"
 
+// kidsFilter is the value of ?g= of the chip "Für Kinder sichtbar": no group id looks like it.
+const kidsFilter = "kids"
+
 // ctEnv is what the pages of the address book share: the language, the household, the people with their markers and the groups.
 type ctEnv struct {
 	s      *server
@@ -133,6 +136,8 @@ type ctRow struct {
 	Groups           []string
 	Rels             []string // how the contact is related to the family, one sentence each (ticket 298)
 	Photo            ctPhotoView
+	// Kids is "on" for a contact the children see, "wait" for one switched on that has no number yet (ticket 301).
+	Kids string
 }
 
 func (e ctEnv) row(c store.Contact, withGroups bool) ctRow {
@@ -147,6 +152,12 @@ func (e ctEnv) row(c store.Contact, withGroups bool) ctRow {
 		row.Nums = append(row.Nums, ctNum{e.kindWord(l, false), l.Value})
 	}
 	row.Rels = e.relSentences(c, "")
+	switch {
+	case c.ForChildren && len(c.Numbers) > 0:
+		row.Kids = "on"
+	case c.ForChildren:
+		row.Kids = "wait"
+	}
 	if withGroups && !c.IsPerson() {
 		for _, id := range c.GroupIDs {
 			if g, ok := e.groupByID(id); ok {
@@ -212,7 +223,8 @@ func (s *server) handleContacts(w http.ResponseWriter, r *http.Request) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	g := r.URL.Query().Get("g")
 	group, hasGroup := e.groupByID(g)
-	if !hasGroup {
+	kidsOnly := g == kidsFilter // the last chip: the contacts the children see
+	if !hasGroup && !kidsOnly {
 		g = ""
 	}
 	var others, family []store.Contact
@@ -241,12 +253,13 @@ func (s *server) handleContacts(w http.ResponseWriter, r *http.Request) {
 	for _, grp := range e.groups {
 		filters = append(filters, map[string]any{"Href": filterHref(grp.ID), "Text": e.groupName(grp), "Current": g == grp.ID})
 	}
+	filters = append(filters, map[string]any{"Href": filterHref(kidsFilter), "Text": e.t("contact.filter.kids"), "Current": kidsOnly})
 	data["Filters"] = filters
 
 	keep := func(list []store.Contact) []store.Contact {
 		var out []store.Contact
 		for _, c := range list {
-			if (hasGroup && !slices.Contains(c.GroupIDs, group.ID)) || !ctMatches(c, q) {
+			if (hasGroup && !slices.Contains(c.GroupIDs, group.ID)) || (kidsOnly && !c.ForChildren) || !ctMatches(c, q) {
 				continue
 			}
 			out = append(out, c)
@@ -264,7 +277,7 @@ func (s *server) handleContacts(w http.ResponseWriter, r *http.Request) {
 		familyRows = append(familyRows, e.row(c, false))
 	}
 	data["Others"], data["Family"] = otherRows, familyRows
-	filtering := q != "" || hasGroup
+	filtering := q != "" || hasGroup || kidsOnly
 	switch {
 	case len(otherRows)+len(familyRows) == 0 && q != "":
 		data["NoMatch"] = true
@@ -272,12 +285,18 @@ func (s *server) handleContacts(w http.ResponseWriter, r *http.Request) {
 		data["NewHref"] = contactsPath + "/new?" + url.Values{"name": {q}}.Encode()
 		data["NewText"] = e.t("contact.search.new", "q", q)
 		data["ClearHref"], data["ClearText"], data["ResultTitle"] = filterHref0(g), e.t("contact.result.clear"), e.t("contact.result.title")
+	case len(otherRows)+len(familyRows) == 0 && kidsOnly:
+		data["NoMatch"] = true
+		data["NoneText"] = e.t("contact.filter.kids.none")
+		data["ClearHref"], data["ClearText"], data["ResultTitle"] = contactsPath, e.t("contact.filter.clear"), e.t("contact.filter.kids")
 	case len(otherRows)+len(familyRows) == 0 && hasGroup:
 		data["NoMatch"] = true
 		data["NoneText"] = e.t("contact.filter.none", "group", e.groupName(group))
 		data["ClearHref"], data["ClearText"], data["ResultTitle"] = contactsPath, e.t("contact.filter.clear"), e.groupName(group)
 	}
 	switch {
+	case kidsOnly:
+		data["OthersTitle"] = e.t("contact.others.in", "group", e.t("contact.filter.kids"))
 	case hasGroup:
 		data["OthersTitle"] = e.t("contact.others.in", "group", e.groupName(group))
 	default:
@@ -364,6 +383,7 @@ func (s *server) handleContact(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	data["Groups"] = groups
+	data["KidsFact"] = e.kidsFact(c)
 	hint := e.photoHint(c)
 	if !c.IsPerson() {
 		if hint != "" {

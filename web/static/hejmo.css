@@ -3946,3 +3946,69 @@ fieldset.choice.goals { max-width: 640px; }
 .cards.stars .st-head .stars-balance { font-variant-numeric: tabular-nums; }
 .cards.stars .st-head .stars-balance::before { content: "\2605\00a0" / ""; color: var(--pc); }
 [data-theme="bw"] .cards.stars .st-head .stars-balance::before { color: var(--text); }
+
+/* ---- ticket 301: important numbers for children (preview docs/design/preview-301.html; builds on #296 contacts and #297 .ct-photo; no new tokens) ---- */
+/* Child view "Wichtige Nummern": sections, then one card per contact: big photo beside the Hejmo name, below it one full-width call button per number (so a number never has to wrap, at any column width). */
+.kn-sec { margin: 0 0 var(--gap-section); }
+.kn-sec > h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font-size: var(--fs-key-figure); }
+.kn-sec > h2 .icon { flex: none; stroke: var(--accent); }
+.kn-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: var(--gap); align-items: start; max-width: 1100px; }
+.kn { display: grid; grid-template-columns: var(--photo-kid) minmax(0, 1fr); grid-template-areas: "ph name" "calls calls"; column-gap: 16px; row-gap: 12px; align-content: start; align-items: center; padding: 14px; background: var(--surface); border-radius: var(--radius-tile); box-sizing: border-box; min-width: 0; }
+.kn > .ct-photo { grid-area: ph; }
+.kn > h3 { grid-area: name; margin: 0; display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); line-height: 1.2; overflow-wrap: break-word; hyphens: manual; }
+.kn > h3 > span:last-child { min-width: 0; }
+.kn > h3 .marker { flex: none; }
+.kn > h3 a { color: inherit; }
+.kn-calls { grid-area: calls; list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; min-width: 0; }
+/* The call button: a 64 px outlined card, the handset in a filled square (never a circle: circles are person markers), what it calls in words, the number below. */
+.kn-call { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px 14px 8px 8px; box-sizing: border-box; border: 2px solid var(--accent); border-radius: var(--radius-card); background: var(--surface); color: var(--text); text-decoration: none; }
+.kn-call .ic { flex: none; display: grid; place-items: center; width: var(--touch-target); height: var(--touch-target); border-radius: var(--radius-field); background: var(--accent); }
+.kn-call .ic .icon { stroke: var(--accent-text); }
+.kn-call .tx { display: grid; gap: 2px; min-width: 0; }
+.kn-call b { font-size: var(--fs-event-title); color: var(--accent); overflow-wrap: break-word; hyphens: manual; }
+.kn-call .no { font-size: var(--fs-person-name); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kn-call:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+/* A device that cannot call (a tablet): the numbers as large plain text to read out or type into a phone. */
+.kn-nums { grid-area: calls; margin: 0; display: grid; gap: 2px; min-width: 0; }
+.kn-nums dt { font-size: var(--fs-label-large); color: var(--text-secondary); }
+.kn-nums dd { margin: 0 0 8px; font-size: var(--fs-key-figure); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; user-select: all; }
+.kn-nums dd:last-child { margin: 0; }
+.kn-why { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 var(--gap-section); }
+.kn-why p { margin: 0; }
+.kn-why .icon { flex: none; stroke: currentColor; margin-top: 1px; }
+/* No number for the children yet. */
+.kn-empty { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: start; max-width: 560px; padding: 16px; border: 1.5px dashed var(--border); border-radius: var(--radius-tile); }
+.kn-empty .icon { stroke: var(--accent); }
+.kn-empty p { margin: 0 0 6px; }
+.kn-empty p.kid { font-size: var(--fs-key-figure); font-weight: 700; }
+/* Parents: the tag on contact rows, the fact on the contact page, the switch card in the form and the parents' look at the children's page. */
+.tag.kid { gap: 5px; }
+.tag.kid .icon { stroke: currentColor; }
+.tag.kid.wait { border-style: dashed; border-color: var(--notice-text); color: var(--notice-text); background: var(--notice-bg); }
+.kn-off.wait { background: var(--notice-bg); color: var(--notice-text); }
+.kn-off.wait a { color: inherit; font-weight: 700; }
+.facts .kid-fact { display: inline-flex; align-items: center; gap: 6px; }
+.facts .kid-fact .icon { flex: none; stroke: var(--accent); }
+.kid-card .kid-sees { margin: 4px 0 0; font-size: var(--fs-label-large); overflow-wrap: break-word; }
+.kid-card .notice { margin: 8px 0 0; display: flex; gap: 8px; align-items: flex-start; }
+.kid-card .notice .icon { flex: none; stroke: currentColor; margin-top: 2px; }
+.kn-parent { max-width: 1100px; }
+.kn-off { max-width: 560px; padding: 14px 16px; margin: 0 0 var(--gap-section); background: var(--surface); border-radius: var(--radius-tile); }
+.kn-off h2 { margin: 0 0 6px; font-size: var(--fs-event-title); }
+.kn-off p { margin: 0; overflow-wrap: break-word; }
+.kn-off .nm { white-space: nowrap; }
+.grp-link a + a { margin-left: 18px; }
+[data-theme="bw"] .kn { border: 2px solid var(--text); }
+[data-theme="bw"] .kn-call { border: 2px solid var(--text); }
+[data-theme="bw"] .kn-call:focus-visible { outline-color: var(--text); }
+[data-theme="bw"] .kn-call .ic { background: var(--text); }
+[data-theme="bw"] .kn-call .ic .icon { stroke: var(--surface); }
+[data-theme="bw"] .kn-call b, [data-theme="bw"] .kn-sec > h2 .icon, [data-theme="bw"] .kn-empty .icon, [data-theme="bw"] .facts .kid-fact .icon { color: var(--text); stroke: var(--text); }
+[data-theme="bw"] .kn-empty { border: 2px dashed var(--text); }
+[data-theme="bw"] .kn-off { border: 2px solid var(--text); }
+[data-theme="bw"] .tag.kid.wait { border: 2px dashed var(--text); color: var(--text); background: none; }
+[data-theme="bw"] .kn-off.wait { border-style: dashed; background: var(--surface); color: var(--text); }
+/* Found while designing #301: a child's personal device has no Sign out, so the narrow-bar rule of #125 never applied and "Hejmo" broke into two lines at 375 px. Under 480 px both chips drop their word on every bar. */
+@media (max-width: 479px) {
+  .frame-tools .lang-name, .frame-tools .theme-name { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+}

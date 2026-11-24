@@ -50,7 +50,12 @@
       {{if .MoreNumbers}}<button class="button secondary sq add" type="submit" name="more" value="number" formnovalidate><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>{{t "contact.f.numbers.more"}}</button>{{end}}
       <template data-line="number">{{template "ctLine" (dict "L" .NumberTpl "Base" "number" "Number" true)}}</template>
     </fieldset>
-    <fieldset id="mails" class="mails">
+    {{with .Kids}}<fieldset id="kids" class="kid-card"><legend>{{.Title}}</legend>
+      <div class="card-row"><span class="t"><b>{{.Switch}}</b><span class="state{{if .On}} is-on{{end}}"><span class="on-text">{{.OnText}}</span><span class="off-text">{{.OffText}}</span></span></span><label class="switch"><input type="checkbox" role="switch" name="for_children" value="1"{{if .On}} checked{{end}} aria-label="{{.Switch}}"></label></div>
+      <div class="when-on">{{if .Sees}}<p class="kid-sees">{{.Sees}}</p>{{else}}<p class="notice" role="status"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg><span>{{.NoNumber}}</span></p>{{end}}</div>
+      <p class="hint">{{.Hint}}</p>
+    </fieldset>
+    {{end}}<fieldset id="mails" class="mails">
       <legend>{{t "contact.f.emails"}}</legend>
       <ul class="lines" data-lines="email">{{range .Emails}}{{template "ctLine" (dict "L" . "Base" "email" "Number" false)}}{{end}}</ul>
       {{template "ctErr" (dict "ID" "emails" "Text" .Errs.emails)}}

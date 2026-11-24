@@ -305,32 +305,6 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 			t.Fatalf("meal %s = %d %v", day, status, body)
 		}
 	}
-	// Recipes in the plan (ticket 281): a long name for all eight people, one for five, and an earlier free-text dish to suggest.
-	recipes, err := db.Recipes(h)
-	must(err)
-	for _, r := range recipes {
-		if strings.HasPrefix(r.Name, "Omas") { // the long Käsespätzle first, then the Gurkensalat
-			f.recipeIDs = append([]string{r.ID}, f.recipeIDs...)
-		} else {
-			f.recipeIDs = append(f.recipeIDs, r.ID)
-		}
-	}
-	for _, m := range []struct {
-		day, mealtime string
-		recipe        int
-		portions      int
-	}{{"2026-11-16", "dinner", 0, 0}, {"2026-11-17", "lunch", 1, 5}} {
-		body := map[string]any{"recipe_id": f.recipeIDs[m.recipe]}
-		if m.portions > 0 {
-			body["portions"] = m.portions
-		}
-		if status, resp, _ := c.call(http.MethodPut, "/meals/"+m.day+"/"+m.mealtime, body); status != http.StatusOK {
-			t.Fatalf("recipe meal %s = %d %v", m.day, status, resp)
-		}
-	}
-	if status, resp, _ := c.call(http.MethodPut, "/meals/2026-11-03/dinner", map[string]any{"text": "Spätzle mit Linsen"}); status != http.StatusOK {
-		t.Fatalf("earlier dish = %d %v", status, resp)
-	}
 	// A subscribed calendar and an MCP token.
 	f.feeds.set(schoolFeed, feedOf("UID:ferien\r\nSUMMARY:Herbstferienwochenprogramm\r\nDTSTART:20261102T080000Z\r\nDTEND:20261102T120000Z"), nil)
 	c.addICS(t, map[string]any{"kind": "ics", "name": "Schulkalender der Grundschule", "url": schoolFeed})
@@ -398,6 +372,33 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	tpl := dinnerWeek("Wochenplan mit Lieblingsgerichten", "2026-11-16", 2)
 	if status, body := createTemplate(t, c, tpl); status != http.StatusCreated {
 		t.Fatalf("meal template = %d %v", status, body)
+	}
+	// Recipes in the plan (ticket 281), after the template so that the first is a week's adjustment of it: a long name for all eight people,
+	// one for five, one more for all eight, and an earlier free-text dish to suggest.
+	recipes, err := db.Recipes(h)
+	must(err)
+	for _, r := range recipes {
+		if strings.HasPrefix(r.Name, "Omas") { // the long Käsespätzle first, then the Gurkensalat
+			f.recipeIDs = append([]string{r.ID}, f.recipeIDs...)
+		} else {
+			f.recipeIDs = append(f.recipeIDs, r.ID)
+		}
+	}
+	for _, m := range []struct {
+		day, mealtime string
+		recipe        int
+		portions      int
+	}{{"2026-11-16", "dinner", 0, 0}, {"2026-11-17", "lunch", 1, 5}, {"2026-11-19", "dinner", 0, 0}} {
+		body := map[string]any{"recipe_id": f.recipeIDs[m.recipe]}
+		if m.portions > 0 {
+			body["portions"] = m.portions
+		}
+		if status, resp, _ := c.call(http.MethodPut, "/meals/"+m.day+"/"+m.mealtime, body); status != http.StatusOK {
+			t.Fatalf("recipe meal %s = %d %v", m.day, status, resp)
+		}
+	}
+	if status, resp, _ := c.call(http.MethodPut, "/meals/2026-11-03/dinner", map[string]any{"text": "Spätzle mit Linsen"}); status != http.StatusOK {
+		t.Fatalf("earlier dish = %d %v", status, resp)
 	}
 	return f
 }

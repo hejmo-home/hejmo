@@ -345,3 +345,16 @@ func TestScaledQuantitiesHaveOneDecimalAndAreNeverRoundedToWholeNumbers(t *testi
 		}
 	}
 }
+
+func TestPortionsAreAWholeNumberFrom1To99(t *testing.T) {
+	for s, want := range map[string]int{"1": 1, "4": 4, " 6 ": 6, "99": 99, "07": 7} {
+		if got, ok := recipe.ParsePortions(s); !ok || got != want {
+			t.Errorf("ParsePortions(%q) = %d %v, want %d", s, got, ok, want)
+		}
+	}
+	for _, s := range []string{"", " ", "0", "100", "-1", "+3", "1.5", "1,5", "x", "٣", "123"} {
+		if got, ok := recipe.ParsePortions(s); ok {
+			t.Errorf("ParsePortions(%q) = %d, want invalid", s, got)
+		}
+	}
+}

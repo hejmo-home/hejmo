@@ -2536,8 +2536,16 @@ paths:
     get:
       operationId: getRecipe
       summary: One recipe (scope meals:read)
+      description: |
+        With `portions` the recipe is written for that many portions, as the
+        cooking view shows it: `portions` is the number asked for, and every
+        quantity is scaled and rounded to one decimal, never up to a whole
+        number (`3` for 4 portions is `4.5` for 6). The stored recipe does not
+        change. Without `portions`, or with the recipe's own, the quantities are
+        the stored ones.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: portions, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 99 }, description: Scale the quantities to this many portions }
       responses:
         "200":
           description: The recipe
@@ -2547,6 +2555,7 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
     put:
       operationId: updateRecipe
       summary: Replace a recipe (scope meals:write, parents only)

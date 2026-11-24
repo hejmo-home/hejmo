@@ -323,7 +323,31 @@ func (s *server) apiGetRecipe(w http.ResponseWriter, r *http.Request, p principa
 	if s.storeError(w, "get recipe", err) {
 		return
 	}
+	if r.URL.Query().Has("portions") {
+		n, ok := recipe.ParsePortions(r.URL.Query().Get("portions"))
+		if !ok {
+			writeFieldError(w, http.StatusUnprocessableEntity, "portions", "portions must be a whole number from 1 to 99")
+			return
+		}
+		got = scaledRecipe(got, n)
+	}
 	writeJSON(w, http.StatusOK, c.recipeToJSON(got))
+}
+
+// scaledRecipe is the recipe as written for other portions (ADR 0021, ticket
+// 286): the quantities scaled and rounded to one decimal, the portions the
+// ones asked for. The stored recipe does not change.
+func scaledRecipe(r store.Recipe, portions int) store.Recipe {
+	if portions == r.Portions {
+		return r
+	}
+	ings := make([]recipe.Ingredient, len(r.Ingredients))
+	for i, in := range r.Ingredients {
+		in.Amount = recipe.ScaleAmount(in.Amount, r.Portions, portions)
+		ings[i] = in
+	}
+	r.Ingredients, r.Portions = ings, portions
+	return r
 }
 
 // apiSaveRecipe creates (POST) or replaces (PUT) a recipe.

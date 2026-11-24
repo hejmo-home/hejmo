@@ -467,3 +467,17 @@ func ScaleAmount(amount float64, base, portions int) float64 {
 	v := math.Floor(amount*float64(portions)/float64(base)*10+0.5+1e-9) / 10
 	return max(v, 0.1)
 }
+
+// ParsePortions reads portions as a person types them: a whole number from 1
+// to MaxPortions, no sign and no decimals; spaces around it are ignored.
+func ParsePortions(s string) (int, bool) {
+	s = strings.TrimSpace(s)
+	if s == "" || len(s) > 2 {
+		return 0, false
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil || n < 1 || n > MaxPortions || s[0] == '+' {
+		return 0, false
+	}
+	return n, true
+}

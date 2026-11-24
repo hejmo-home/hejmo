@@ -39,13 +39,13 @@
 
 {{/* Person chips: who is it for? Arguments: Root, Name (field of the people),
      Legend, People (list of person chips), Selected, Groups, SelectedGroups,
-     Whole (offer the "Whole family" chip), GroupsName (field of the groups, default "groups") and Single (choose exactly one
+     Whole (offer the "Whole family" chip), WholeName (its field, default "whole_family"), GroupsName (field of the groups, default "groups") and Single (choose exactly one
      person, as radio buttons). The Whole family chip is selected when nothing
      else is, and stores no audience: the server reads "no person" as the whole
      family, so it works without JavaScript. */}}
 {{define "personChips"}}<fieldset class="chips"{{if and .Root.ErrorField (eq .Root.ErrorField .Name)}} aria-invalid="true" aria-describedby="err-{{.Name}}"{{end}}>
   <legend>{{.Legend}}</legend>
-  {{if .Whole}}<label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole{{if not (or .Selected .SelectedGroups)}} checked{{end}}>
+  {{if .Whole}}<label class="pchip all"><input type="checkbox" name="{{or .WholeName "whole_family"}}" value="1" data-whole{{if not (or .Selected .SelectedGroups)}} checked{{end}}>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>{{t "chips.whole_family"}}<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>{{end}}
   {{range .People}}<label class="pchip" data-person="{{.Slot}}"><input type="{{if $.Single}}radio{{else}}checkbox{{end}}" name="{{$.Name}}" value="{{.ID}}"{{if has $.Selected .ID}} checked{{end}}><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span>{{.Name}}<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   {{end}}

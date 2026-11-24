@@ -582,6 +582,25 @@ func (s *server) handleDisplayListViewChoice(w http.ResponseWriter, r *http.Requ
 	http.Redirect(w, r, listsURL(l.ID)+"?view=saved", http.StatusSeeOther)
 }
 
+// handleDisplayRewardPicture serves the picture of a reward to a paired
+// display: the goal in a column and in the personal view shows it.
+func (s *server) handleDisplayRewardPicture(w http.ResponseWriter, r *http.Request) {
+	_, h, ok := s.pairedDisplay(w, r)
+	if !ok {
+		return
+	}
+	b, err := s.db.RewardPicture(h.ID, r.PathValue("id"))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "image/jpeg")
+	w.Header().Set("Content-Length", strconv.Itoa(len(b)))
+	w.Header().Set("Cache-Control", "private, max-age=31536000, immutable") // the address changes with the picture
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	_, _ = w.Write(b)
+}
+
 // handleDisplayArticlePicture serves the picture of an own article to a paired
 // display, which has no session: the tiles show it.
 func (s *server) handleDisplayArticlePicture(w http.ResponseWriter, r *http.Request) {

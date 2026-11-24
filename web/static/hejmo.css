@@ -81,6 +81,9 @@
   --journey-border: 1.5px;
   --icon-stroke: 1.8px;
   --touch-target: 44px;
+  --photo-row: 56px; /* contact photo in rows (ticket 297) */
+  --photo-kid: 96px; /* ... in the children's important numbers */
+  --photo-page: 132px; /* ... on the contact page and in the form */
   font-family: Figtree, system-ui, sans-serif;
 }
 
@@ -3169,6 +3172,9 @@ ol.porder > li.prow { margin: 0; padding: 0; background: none; border-radius: 0;
 [data-theme="bw"] .m-col .pg { background: var(--progress-track); }
 [data-theme="bw"] .m-col .pg b { background: var(--progress-fill); }
 .m-col.anchor .pg { margin-top: auto; }
+/* The stars block (ticket 293): a small bar under the tasks bar. */
+.m-col .gl { height: 3px; border-radius: 2px; background: var(--pc); opacity: .7; }
+[data-theme="bw"] .m-col .gl { background: var(--progress-fill); opacity: 1; }
 .m-foot { flex: none; display: flex; gap: var(--g); }
 .m-tile { flex: 1 1 0; min-width: 0; display: grid; gap: 2px; padding: 4px 5px; border-radius: 7px; background: var(--surface); }
 .m-tile i { display: flex; align-items: center; gap: 2px; color: var(--text-secondary); overflow-wrap: anywhere; }
@@ -3197,6 +3203,7 @@ ol.porder > li.prow { margin: 0; padding: 0; background: none; border-radius: 0;
 .layout:has(input[name="b_events"]:not(:checked)) .m-col .ev,
 .layout:has(input[name="b_routines"]:not(:checked)) .m-col .rt,
 .layout:has(input[name="b_tasks"]:not(:checked)) .m-col .pg,
+.layout:has(input[name="b_stars"]:not(:checked)) .m-col .gl,
 .layout:has(input[name="b_meals"]:not(:checked)) .m-meals,
 .layout:has(input[name="b_tomorrow"]:not(:checked)) .m-tomorrow,
 .layout:has(input[name="b_list"]:not(:checked)) .m-list { display: none; }
@@ -3698,6 +3705,111 @@ p.why.fam b { display: inline; }
 }
 .ct-form p.lab-static { margin: 0 0 -4px; font-size: var(--fs-label); color: var(--text-secondary); }
 
+/* ---- ticket 298: relations between contacts and people (preview docs/design/preview-298.html; no new tokens) ---- */
+/* ---- ticket 297: contact photos (preview docs/design/preview-297.html; size tokens photo-row, photo-kid, photo-page) ---- */
+/* One photo component everywhere a contact appears: a square with card corners (never a circle, so it is never read as a person marker). */
+.ct-photo { flex: none; box-sizing: border-box; width: var(--photo-row); height: var(--photo-row); border-radius: var(--radius-card); overflow: hidden; display: grid; place-items: center; background: var(--background); }
+.ct-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ct-photo.page { width: var(--photo-page); height: var(--photo-page); }
+.ct-photo.kid { width: var(--photo-kid); height: var(--photo-kid); }
+/* Without a photo: the initials of the Hejmo name, calm, on the page background with a thin border. */
+.ct-photo.none { border: 1px solid var(--border); color: var(--text-secondary); font-weight: 700; font-size: calc(var(--photo-row) * 0.36); letter-spacing: 0.02em; line-height: 1; user-select: none; }
+.ct-photo.page.none { font-size: calc(var(--photo-page) * 0.34); }
+.ct-photo.kid.none { font-size: calc(var(--photo-kid) * 0.34); }
+[data-theme="bw"] .ct-photo { border: 2px solid var(--text); }
+[data-theme="bw"] .ct-photo img { filter: grayscale(1); }
+[data-theme="bw"] .ct-photo.none { background: var(--surface); color: var(--text); }
+
+/* Overview rows and every other contact row: photo first, then the text. */
+.list-rows.contacts a { gap: 14px; }
+.list-rows.contacts a > .ct-photo { align-self: start; }
+/* The photo takes 70 px of the row: a long group name wraps instead of sticking out at 375 px. */
+.list-rows.contacts .t > * { min-width: 0; }
+.list-rows.contacts .tag.grp { white-space: normal; overflow-wrap: anywhere; }
+/* Under 480 px the 70 px of the photo leave too little for a long number with its kind: the pair may wrap. */
+@media (max-width: 479px) { .list-rows.contacts .nums > span { white-space: normal; } }
+
+/* Contact page head: photo beside name and full name; stacked under 480 px. */
+.ct-head { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "ph name" "ph full" "ph act"; column-gap: 20px; align-items: start; margin: 0 0 var(--gap); max-width: 560px; }
+.ct-head > .ct-photo { grid-area: ph; }
+.ct-head > h1 { grid-area: name; margin: 0 0 4px; align-self: end; }
+.ct-head > .ct-full { grid-area: full; margin: 0; }
+.ct-head > .ph-link { grid-area: act; }
+.ct-head .ph-link a { display: inline-flex; align-items: center; gap: 6px; min-height: var(--touch-target); font-weight: 600; font-size: var(--fs-label-large); }
+.ct-head .ph-link .icon { stroke: currentColor; }
+.ct-head .ph-link { margin: 4px 0 0; }
+@media (max-width: 479px) {
+  .ct-head { grid-template-columns: minmax(0, 1fr); grid-template-areas: "ph" "name" "full" "act"; row-gap: 10px; }
+  .ct-head > h1 { margin: 0; }
+}
+/* Rows: the relation is the first line under the name, in text colour, so it reads as "who is that". */
+.list-rows .t > .rel { color: var(--text); font-size: var(--fs-label-large); overflow-wrap: break-word; hyphens: manual; }
+/* Contact page head: relations under the full name, one line per relation, names with their markers. */
+.ct-head { grid-template-areas: "ph name" "ph full" "ph rels" "ph act"; }
+.ct-head > .ct-rels { grid-area: rels; }
+.ct-rels { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; font-size: var(--fs-label-large); line-height: 1.45; }
+.ct-rels li { overflow-wrap: break-word; }
+.ct-rels .who { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.ct-rels .who .marker { width: 12px; height: 12px; }
+.ct-rels .icon { width: 18px; height: 18px; stroke: currentColor; vertical-align: -3px; margin-right: 4px; }
+@media (max-width: 479px) { .ct-head { grid-template-areas: "ph" "name" "full" "rels" "act"; } .ct-rels { margin: 0; } }
+/* Form card "Beziehungen": one line per relation (word plus person chips), like the number lines. */
+.ct-form .rels-card { display: grid; gap: 12px; }
+.ct-form .rel-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.ct-form .rel-line { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "word rm" "who who" "say say" "err err"; gap: 10px 8px; align-items: end; padding: 14px 0; border-radius: 0; background: none; border-top: 1px solid var(--border); }
+.ct-form .rel-line:first-child { border-top: 0; padding-top: 4px; }
+.ct-form .rel-line > .f { grid-area: word; max-width: 22em; }
+.ct-form .rel-line > .f input { width: 100%; box-sizing: border-box; }
+.ct-form .rel-line > .rm { grid-area: rm; }
+.ct-form .rel-line > fieldset.chips { grid-area: who; }
+.ct-form .rel-line > .rel-say { grid-area: say; margin: 0; font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: break-word; }
+.ct-form .rel-line > .rel-say b { color: var(--text); font-weight: 600; }
+.ct-form .rel-line > .ferr { grid-area: err; margin: 0; }
+.ct-form .rel-line.blank { grid-template-areas: "word word" "who who" "say say" "err err"; }
+.ct-form .rel-line .f.invalid input { border: 2px solid var(--error-text); }
+.ct-form .rel-line.no-word > fieldset.chips .pchip:has(input:checked) { outline: 0; }
+[data-theme="bw"] .ct-form .rel-line { border: 0; border-top: 2px solid var(--text); }
+[data-theme="bw"] .ct-form .rel-line:first-child { border: 0; }
+[data-theme="bw"] .ct-form .rel-line > fieldset.chips { border: 0; padding: 0; }
+/* Person page: "Kontakte von Mia" with a group filter (only the groups her contacts have). */
+.rows-head + .lead-s { margin: -4px 0 12px; max-width: 560px; color: var(--text-secondary); font-size: var(--fs-label); }
+.pc-filter ul { margin-bottom: 14px; }
+.pc-actions { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 4px 0 var(--gap-section); max-width: 560px; }
+.pc-actions .button { display: inline-flex; align-items: center; gap: 8px; }
+.pc-actions .button .icon { stroke: currentColor; }
+
+/* Form card "Foto": current state, then the buttons, then the hint. */
+.ct-form .ph-card { display: grid; gap: 12px; }
+.ph-now { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+.ph-now > .st { flex: 1 1 200px; min-width: 0; display: grid; gap: 4px; font-size: var(--fs-label-large); overflow-wrap: break-word; }
+.ph-now > .st b { font-size: var(--fs-event-title); }
+.ph-now > .st small { font-size: var(--fs-label); color: var(--text-secondary); }
+.ph-card .pic-result img { border-radius: var(--radius-card); }
+.ph-card .pic-result b .icon { stroke: var(--accent); }
+.ph-pick { display: flex; flex-wrap: wrap; gap: 10px; }
+.ph-pick .button { position: relative; display: inline-flex; align-items: center; gap: 8px; }
+.ph-pick .button .icon { flex: none; stroke: currentColor; }
+.ph-pick label.button input { position: absolute; opacity: 0; width: 1px; height: 1px; min-height: 0; padding: 0; }
+.ph-pick label.button:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Camera and gallery on devices with touch, one "choose" button with a mouse. */
+.ph-pick .touch { display: none; }
+@media (any-pointer: coarse) { .ph-pick .touch { display: inline-flex; } .ph-pick .mouse { display: none; } }
+.ph-card.invalid .ph-pick .button:not(.rm) { border: 2px solid var(--error-text); }
+.ph-card > .ferr { margin: 0; }
+/* Marked for removal: the placeholder, a notice and "Keep it after all". */
+.ph-gone { display: grid; gap: 8px; padding: 12px; border: 1.5px dashed var(--notice-text); border-radius: var(--radius-card); background: var(--notice-bg); color: var(--notice-text); font-size: var(--fs-label-large); }
+.ph-gone b { color: inherit; }
+.ph-gone .button { justify-self: start; }
+[data-theme="bw"] .ph-gone { border: 2px dashed var(--text); background: var(--surface); color: var(--text); }
+[data-theme="bw"] .ph-card .pic-result { border-width: 2px; }
+
+/* Person page: the contact data row shows the photo too. */
+.list-rows.ct-row a { gap: 14px; }
+
+/* The placeholder without a name: the gallery line icon. */
+.ct-photo.none .icon { width: 40%; height: 40%; stroke: var(--text-secondary); }
+[data-theme="bw"] .ct-photo.none .icon { stroke: var(--text); }
+
 /* ticket 221: upload an update file (offline mode). Existing tokens only. */
 .upd { box-sizing: border-box; max-width: 560px; margin: 0 0 var(--gap-section); padding: 16px; display: grid; gap: 12px; background: var(--surface); border-radius: var(--radius-tile); }
 [data-theme="bw"] .upd { border: 2px solid var(--text); }
@@ -3762,3 +3874,75 @@ ol.run li[data-state="fail"] .st { justify-self: start; padding: 4px 8px; border
 .upd-entry .hint { margin: 0; }
 /* A lead-in of a notice is a sentence and may wrap (".notice b" keeps its words together elsewhere); found by the rendered layout check at 375 px. */
 .notice.lead-in > p > b, .error.lead-in > p > b { white-space: normal; }
+
+/* ---- ticket 293: savings goal ---- */
+/* Family view: the column block "stars" (stars and savings goal), under the tasks bar (ticket 293). */
+.fv .col-goal { flex: none; display: grid; grid-template-columns: 32px minmax(0, 1fr); column-gap: 8px; row-gap: 5px; align-items: center; margin-top: var(--gap-cards); padding-top: var(--gap-cards); border-top: 1px solid var(--border); min-height: var(--touch-target); color: inherit; text-decoration: none; font-size: var(--fs-label); }
+.fv .col-goal > * { grid-column: 1 / -1; }
+.fv .col-goal > .art-sym { grid-column: 1; width: 32px; height: 32px; font-size: 20px; border-radius: 8px; }
+.fv .col-goal > .k { grid-column: 2; }
+.fv .col-goal:not([data-goal]) { grid-template-columns: minmax(0, 1fr); }
+.fv .col-goal:not([data-goal]) > * { grid-column: 1; }
+.col-goal .k { font-size: var(--fs-meta); color: var(--text-secondary); line-height: 1.2; }
+.pv-goal .g-name { min-width: 0; display: grid; font-weight: 600; line-height: 1.25; overflow-wrap: break-word; hyphens: auto; margin: 0; }
+.pv-goal .g-name .k { display: flex; align-items: center; gap: 4px; font-size: var(--fs-meta); font-weight: 400; color: var(--text-secondary); }
+.pv-goal .g-name .k .icon { stroke: var(--text-secondary); }
+.col-goal .progress, .pv-goal .progress { width: 100%; }
+.g-count { margin: 0; display: flex; gap: 6px; align-items: flex-start; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: break-word; hyphens: auto; }
+.g-count b { font-weight: 700; }
+.g-count .icon.star { flex: none; margin-top: 1px; color: var(--pc); }
+.g-count.done .icon { flex: none; stroke: var(--pc); stroke-width: 2.4; }
+.g-count.g-bal { font-weight: 400; color: var(--text-secondary); }
+.col-goal[data-reached] .progress > span, .pv-goal[data-reached] .progress > span { width: 100%; }
+
+/* Personal view: the savings goal at the foot of the tasks column, always in sight. */
+.pv-goal { flex: none; display: flex; gap: 12px; align-items: center; padding: 12px var(--pad-column) var(--pad-column); border-top: 1px solid var(--border); }
+.pv-goal .g-body { flex: 1; min-width: 0; display: grid; gap: 6px; }
+.pv-goal .g-name { font-size: var(--fs-event-title); }
+.pv-goal .g-count { font-size: var(--fs-event-title); font-weight: 400; }
+.pv-goal[data-reached] { background: var(--pc-tint); color: var(--pc-text); }
+.pv-goal[data-reached] .g-name .k, .pv-goal[data-reached] .g-name .k .icon { color: var(--pc-text); stroke: var(--pc-text); }
+
+/* Child's reward page: "Your savings goal" above the groups; "Save for this" on cards. */
+.rwd-goal { display: grid; gap: 8px; max-width: 560px; }
+.rwd-goal h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: var(--fs-person-name); }
+.rwd-goal h2 .icon { flex: none; stroke: var(--pc); }
+.rwd-goal .hint { margin: 0; }
+.rwd.goal { border: 2px solid var(--pc); padding: 11px; }
+.rwd.goal .rwd-state.save p { font-weight: 400; }
+.rwd.goal .rwd-state.later { color: var(--text-secondary); }
+.rwd .g-acts, .rwd .rwd-act { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; }
+.rwd .button.sq { min-height: var(--touch-target); }
+.rwd .button.sq .icon.goal-ic { stroke: currentColor; }
+.rwd-group .g-pick { margin: -4px 0 10px; max-width: 560px; }
+.notice.g-ended { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 var(--gap); }
+.notice.g-ended .icon { flex: none; stroke: var(--notice-text); margin-top: 2px; }
+.notice.g-ended p { margin: 0; min-width: 0; overflow-wrap: break-word; }
+.reward-link .g-inline { font-size: inherit; color: var(--text); }
+
+/* Parents: the goal line in each star card, and the choice of a goal. */
+.cards.stars .goal-line { margin: 2px 0 0; display: flex; gap: 6px; align-items: flex-start; overflow-wrap: break-word; }
+.cards.stars .goal-line .icon.goal-ic { flex: none; stroke: var(--pc); margin-top: 2px; }
+.cards.stars .goal-line .k { color: var(--text-secondary); }
+.cards.stars .goal-line .art-sym.sm { display: inline-grid; vertical-align: middle; width: 24px; height: 24px; font-size: 16px; border-radius: 6px; margin: 0 4px 0 2px; }
+.cards.stars .goal-line.none { color: var(--text-secondary); }
+.cards.stars .g-link { justify-self: start; min-height: var(--touch-target); display: inline-flex; align-items: center; }
+fieldset.choice.goals { max-width: 640px; }
+.choice.goals label { grid-template-columns: auto auto minmax(0, 1fr); }
+.choice.goals label > input, .choice.goals label > .art-sym { grid-row: span 2; }
+.choice.goals b, .choice.goals small { grid-column: 3; overflow-wrap: break-word; }
+.choice.goals small { font-size: var(--fs-label); }
+.choice.goals .art-sym { font-size: 26px; }
+.choice.goals small .price { font-weight: 600; }
+.choice.goals label.none .art-sym .icon { stroke: var(--text-secondary); }
+.goal-form .button .icon.goal-ic { stroke: currentColor; }
+
+[data-theme="bw"] .col-goal .k, [data-theme="bw"] .g-count.g-bal { color: var(--text); }
+[data-theme="bw"] .g-count .icon.star { color: var(--text); }
+[data-theme="bw"] .pv-goal[data-reached] { background: var(--surface); border-top: 3px solid var(--text); }
+[data-theme="bw"] .rwd.goal { border: 4px solid var(--text); padding: 9px; }
+[data-theme="bw"] .cards.stars .goal-line .icon.goal-ic, [data-theme="bw"] .rwd-goal h2 .icon { stroke: var(--text); }
+.cards.stars .st-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: var(--fs-person-name); }
+.cards.stars .st-head .stars-balance { font-variant-numeric: tabular-nums; }
+.cards.stars .st-head .stars-balance::before { content: "\2605\00a0" / ""; color: var(--pc); }
+[data-theme="bw"] .cards.stars .st-head .stars-balance::before { color: var(--text); }

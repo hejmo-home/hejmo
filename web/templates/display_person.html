@@ -15,6 +15,14 @@
     <aside class="pv-tasks" data-tasks data-tick-error="{{t "personal.tick_error"}}">
       <div class="tasks-head"><div class="lab">{{t "personal.tasks"}}</div>{{if .Tasks}}{{if eq $p.Done $p.Total}}<p class="msg ok" role="status">{{template "tick" 20}}{{repl (t "personal.all_done") "{n}" (printf "%d" $p.Total)}}</p>{{else}}<div class="count">{{template "progressWords" $p}}</div>{{end}}<div class="progress" role="img" aria-label="{{printf "%d/%d" $p.Done $p.Total}}"><span style="--pct:{{.Percent}}"></span></div>{{end}}</div>
       <div class="list">{{$parts := .Parts}}{{if $parts}}{{template "taskParts" (dict "Parts" $parts "Prefix" "/display/tasks" "Day" (.Date.Format "2006-01-02") "StarsShown" .Stars.Shown "Labels" (gt (len $parts) 1))}}{{else}}<p class="none">{{t "personal.tasks_none"}}</p>{{end}}</div>
+      {{with .Stars.Goal}}<section class="pv-goal" aria-label="{{t "goal.label"}}"{{if .Reached}} data-reached{{end}}>
+        {{template "goalPic" (dict "Goal" . "Class" "big")}}
+        <div class="g-body">
+          <p class="g-name"><span class="k">{{template "goalIcon" 16}}{{t "goal.label"}}</span>{{.Name}}</p>
+          <span class="progress" role="img" aria-label="{{tf "rwd.child.progress" "have" (printf "%d" .Balance) "price" (printf "%d" .Price)}}"><span style="--pct:{{.Pct}}"></span></span>
+          {{if .Reached}}<p class="g-count done">{{template "tick" 20}}<span>{{tfh "goal.enough" "parents" $.Parents}}</span></p>{{else}}<p class="g-count">{{template "starIcon" 18}}<span>{{tfh "goal.progress" "have" (printf "%d" .Balance) "price" (printf "%d" .Price) "left" (printf "%d" .Left)}}</span></p>{{end}}
+        </div>
+      </section>{{end}}
     </aside>
     <main class="pv-days">
       {{range .Days}}<section class="pv-day" data-day="{{.Date.Format "2006-01-02"}}"{{if .Today}} data-today{{end}}>

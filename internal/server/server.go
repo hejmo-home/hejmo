@@ -467,6 +467,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /display/lists/{id}/entries/{entry}/quantity", s.handleDisplayEntryQuantity)
 	mux.HandleFunc("POST /display/list-view", s.handleDisplayListViewChoice)
 	mux.HandleFunc("GET /display/articles/{id}/picture", s.handleDisplayArticlePicture)
+	mux.HandleFunc("GET /display/rewards/{id}/picture", s.handleDisplayRewardPicture)
 	mux.HandleFunc("POST /display/lists/{id}/entries/{entry}/done", s.handleDisplayEntryDone)
 	mux.HandleFunc("POST /display/lists/{id}/completed/delete", s.handleDisplayTickedDelete)
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
@@ -546,6 +547,8 @@ func parseEmbeddedPages() *template.Template {
 	return template.Must(template.New("").Funcs(template.FuncMap{
 		"t":      func(string) string { return "" },
 		"tf":     func(string, ...string) string { return "" },
+		"tfh":    func(string, ...string) template.HTML { return "" },
+		"plural": func(string, int) template.HTML { return "" },
 		"dict":   dict,
 		"list":   func(v ...any) []any { return v },
 		"has":    func(list []string, v string) bool { return slices.Contains(list, v) },
@@ -661,8 +664,10 @@ func (s *server) pagesFor(lang string) (*template.Template, error) {
 	}
 	bundle := s.i18n
 	tpl = tpl.Funcs(template.FuncMap{
-		"t":  func(k string) string { return bundle.T(lang, k) },
-		"tf": func(k string, kv ...string) string { return bundle.Format(lang, i18n.Msg(k, kv...)) },
+		"t":      func(k string) string { return bundle.T(lang, k) },
+		"tf":     func(k string, kv ...string) string { return bundle.Format(lang, i18n.Msg(k, kv...)) },
+		"tfh":    func(k string, kv ...string) template.HTML { return formatHTML(bundle, lang, k, kv...) },
+		"plural": func(k string, n int) template.HTML { return pluralHTML(bundle, lang, k, n) },
 	})
 	pageSets.Lock()
 	defer pageSets.Unlock()

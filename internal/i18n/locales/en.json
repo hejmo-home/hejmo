@@ -4716,5 +4716,12 @@
   "recipes.err.source": "The source can be at most 300 characters long.",
   "recipes.err.tags": "A tag can be at most 30 characters long, and a recipe can have at most 30 tags.",
   "recipes.err.ings.many": "A recipe has at most 100 ingredients.",
-  "recipes.err.steps.many": "A recipe has at most 100 steps."
+  "recipes.err.steps.many": "A recipe has at most 100 steps.",
+  "recipes.sugg.title.none": "No article matches “{q}”. You can use the name as free text.",
+  "recipes.sugg.title.one": "1 article matches “{q}”. Tapping chooses the article for this line.",
+  "recipes.sugg.title.other": "{n} articles match “{q}”. Tapping chooses the article for this line.",
+  "recipes.sugg.novariety": "No variety",
+  "recipes.sugg.variety": "Variety of {name}, used before",
+  "recipes.sugg.free": "Use “{q}” as free text",
+  "recipes.sugg.free.hint": "Hejmo does not know it then and does not warn about allergens."
 }

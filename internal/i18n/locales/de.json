@@ -4716,5 +4716,12 @@
   "recipes.err.source": "Die Quelle darf höchstens 300 Zeichen lang sein.",
   "recipes.err.tags": "Ein Schlagwort darf höchstens 30 Zeichen lang sein, und es sind höchstens 30 Schlagwörter möglich.",
   "recipes.err.ings.many": "Ein Rezept hat höchstens 100 Zutaten.",
-  "recipes.err.steps.many": "Ein Rezept hat höchstens 100 Schritte."
+  "recipes.err.steps.many": "Ein Rezept hat höchstens 100 Schritte.",
+  "recipes.sugg.title.none": "Kein Artikel passt zu „{q}“. Du kannst den Namen als freien Text verwenden.",
+  "recipes.sugg.title.one": "1 Artikel passt zu „{q}“. Antippen wählt den Artikel für diese Zeile.",
+  "recipes.sugg.title.other": "{n} Artikel passen zu „{q}“. Antippen wählt den Artikel für diese Zeile.",
+  "recipes.sugg.novariety": "Ohne Sorte",
+  "recipes.sugg.variety": "Sorte von {name}, schon verwendet",
+  "recipes.sugg.free": "„{q}“ als freien Text verwenden",
+  "recipes.sugg.free.hint": "Hejmo kennt es dann nicht und warnt nicht vor Allergenen."
 }

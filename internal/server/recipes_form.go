@@ -42,6 +42,16 @@ type rcpIngLine struct {
 	FreeState                           string        // "Free text: Hejmo does not know ..."
 }
 
+// Num is the number of the line as the page writes it; a line made for the script's template says {n}.
+func (l rcpIngLine) Num() string { return lineNumber(l.N) }
+
+func lineNumber(n int) string {
+	if n == 0 {
+		return "{n}"
+	}
+	return strconv.Itoa(n)
+}
+
 // IsArticle says Hejmo made an article of the library of the line.
 func (l rcpIngLine) IsArticle() bool { return l.State == ingArticle }
 
@@ -55,6 +65,9 @@ type rcpStepLine struct {
 	NoUp, NoDown bool
 	Err          string
 }
+
+// Num is the number of the step as the page writes it; a step made for the script's template says {n}.
+func (l rcpStepLine) Num() string { return lineNumber(l.N) }
 
 // rcpForm is what the recipe form holds.
 type rcpForm struct {
@@ -631,4 +644,80 @@ func (c *itemCtx) nameTaken(typed, existingID string, list []store.Recipe) templ
 	text = repl(text, "{name}", template.HTMLEscapeString(typed), "{proposal}", template.HTMLEscapeString(proposal),
 		"{link}", htmlLink(recipesPath+"/"+existingID, c.t("recipes.err.name.taken.link")))
 	return template.HTML(text) // #nosec G203 -- the names are escaped, the text is ours
+}
+
+// ---- suggestions under an ingredient line
+
+type rcpSugRow struct {
+	ID, Name, Variety, Symbol, Sub string
+	Warns                          []template.HTML
+}
+
+type rcpSuggView struct {
+	N, Intro, FreeName, FreeSub string
+	Rows                        []rcpSugRow
+}
+
+// maxSuggestedArticles is how many articles are offered under an ingredient line, and
+// maxSuggestedVarieties how many varieties used before each of them has.
+const (
+	maxSuggestedArticles  = 4
+	maxSuggestedVarieties = 2
+)
+
+// handleRecipeSuggest answers the list under an ingredient line while it is typed (the script of the form asks
+// for it): articles of the library that fit, with the warning already in the row, and the typed text as free
+// text last. Without the script the name is matched when the recipe is saved.
+func (s *server) handleRecipeSuggest(w http.ResponseWriter, r *http.Request) {
+	p, ok := s.parentPage(w, r)
+	if !ok {
+		return
+	}
+	lang := s.langOf(r)
+	c, err := s.itemContext(p, lang)
+	if err != nil {
+		s.fail(w, "recipe context", err)
+		return
+	}
+	typed := strings.Join(strings.Fields(r.URL.Query().Get("q")), " ")
+	n := r.URL.Query().Get("n")
+	if _, err := strconv.Atoi(n); err != nil || utf8.RuneCountInString(typed) < 2 || utf8.RuneCountInString(typed) > recipe.MaxIngredient {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	view := rcpSuggView{N: n, FreeName: c.t("recipes.sugg.free", "q", typed), FreeSub: c.t("recipes.sugg.free.hint")}
+	articles := library.Similar(typed, c.visibleArticles(), lang, maxSuggestedArticles)
+	for _, a := range articles {
+		it, ok := c.article(a.ID)
+		if !ok {
+			continue
+		}
+		symbol := it.Symbol
+		if symbol == "" {
+			symbol = library.DeptSymbol(it.Dept)
+		}
+		dept := s.i18n.T(lang, "dept."+it.Dept)
+		warns := c.warnLines(library.Warnings(it.Article, c.st.persons))
+		view.Rows = append(view.Rows, rcpSugRow{ID: it.ID, Name: it.Name(lang), Symbol: symbol, Warns: warns, Sub: c.t("recipes.sugg.novariety") + " · " + dept})
+		varieties := c.varieties(it.ID)
+		if len(varieties) > maxSuggestedVarieties {
+			varieties = varieties[:maxSuggestedVarieties]
+		}
+		for _, v := range varieties {
+			view.Rows = append(view.Rows, rcpSugRow{ID: it.ID, Name: it.Name(lang), Variety: v, Symbol: symbol, Warns: warns, Sub: c.t("recipes.sugg.variety", "name", it.Name(lang)) + " · " + dept})
+		}
+	}
+	switch len(articles) {
+	case 0:
+		view.Intro = c.t("recipes.sugg.title.none", "q", typed)
+	case 1:
+		view.Intro = c.t("recipes.sugg.title.one", "q", typed)
+	default:
+		view.Intro = c.t("recipes.sugg.title.other", "q", typed, "n", strconv.Itoa(len(articles)))
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	if err := s.execute(w, "rcpSuggest", lang, view); err != nil {
+		s.logger.Error("render suggestions", "err", err)
+	}
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/recipe"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -673,4 +674,49 @@ func TestTheGermanPagesSpeakGerman(t *testing.T) {
 	rcpHas(t, "list", rb.b.do(http.MethodGet, "/meals/recipes", nil, rcpDE).body, "<h1>Rezepte</h1>", "Neues Rezept", "Enthält Erdnüsse: ", "ist allergisch", "Nicht automatisch geprüft: Currypaste", "45 Min.", "4 Portionen", "Hauptgericht")
 	rcpHas(t, "page", rb.b.do(http.MethodGet, "/meals/recipes/"+r.ID, nil, rcpDE).body, "Allergien in eurer Familie", "3 EL", "Zubereitung", "Rezept löschen", "freier Text, nicht geprüft", "45 Minuten")
 	rcpHas(t, "form", rb.b.do(http.MethodGet, "/meals/recipes/"+r.ID+"/edit", nil, rcpDE).body, "Rezept ändern", "ohne Einheit", "Hoch", "Runter", "Entfernen", "Weitere Zutat", "Weiterer Schritt", `label="Küchenmaße"`, `label="Packungen und Stückmaße"`)
+}
+
+// The script of the form asks for suggestions while an ingredient is typed; the warning is in the row already.
+func TestSuggestionsUnderAnIngredientLineCarryTheWarningAndEndWithFreeText(t *testing.T) {
+	t.Parallel()
+	rb := newRecipeBox(t)
+	if _, err := rb.b.db.AddItem(rb.hid, mustList(t, rb), store.Item{Text: "Erdnussbutter", ArticleID: "peanut-butter", Variety: "cremig"}, nil); err != nil {
+		t.Fatal(err)
+	}
+	r := rb.b.do(http.MethodGet, "/meals/recipes/suggest?q=Erdnuss&n=3", nil, enHeader)
+	if r.status != http.StatusOK || strings.Contains(r.body, "<main") {
+		t.Fatalf("GET = %d, a fragment without the frame:\n%s", r.status, r.body)
+	}
+	rcpHas(t, "suggestions", r.body, `id="sq3"`, "articles match “Erdnuss”", `role="listbox"`, `data-article="peanuts-salted" data-name="Salted peanuts"`, `data-article="peanut-butter" data-name="Peanut butter"`,
+		`data-variety="cremig"`, "Variety of Peanut butter, used before", "Contains peanuts: ", "</span>Mia</span> is allergic", `class="free" data-free`, "Use “Erdnuss” as free text", "does not warn about allergens")
+	if i, j := strings.Index(r.body, "data-free"), strings.LastIndex(r.body, `role="option"`); i < 0 || j > i {
+		t.Errorf("free text is the last option")
+	}
+	if short := rb.b.do(http.MethodGet, "/meals/recipes/suggest?q=E&n=3", nil, enHeader); short.status != http.StatusNoContent {
+		t.Errorf("one letter = %d, want 204", short.status)
+	}
+	none := rb.b.do(http.MethodGet, "/meals/recipes/suggest?q=Currypaste&n=1", nil, rcpDE)
+	rcpHas(t, "nothing matches", none.body, "Kein Artikel passt zu „Currypaste“.", "„Currypaste“ als freien Text verwenden")
+	if got := rb.child.do(http.MethodGet, "/meals/recipes/suggest?q=Erdnuss&n=3", nil, enHeader); got.status != http.StatusForbidden {
+		t.Errorf("child = %d, want 403", got.status)
+	}
+}
+
+func TestTheFormLoadsItsScriptAndKeepsTemplatesForNewLines(t *testing.T) {
+	t.Parallel()
+	rb := newRecipeBox(t)
+	body := rb.b.do(http.MethodGet, "/meals/recipes/new", nil, enHeader).body
+	rcpHas(t, "form", body, `<script src="/static/recipe.js" defer></script>`, `data-suggest="/meals/recipes/suggest"`, `<template data-line="ing">`, `<template data-line="step">`,
+		`id="ing{n}"`, `value="rm-step-{n}"`, `aria-label="Step {n}"`, `data-format="%d of %d characters"`)
+	live := rcpLive(body)
+	rcpLacks(t, "live form", live, "{n}")
+}
+
+func mustList(t *testing.T, rb recipeBox) string {
+	t.Helper()
+	l, err := rb.b.db.CreateList(rb.hid, list.List{Name: "Einkauf", Color: "blue", Symbol: "circle-empty", Sort: list.Manual, Suggestions: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return l.ID
 }

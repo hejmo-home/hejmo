@@ -168,6 +168,13 @@ var wholeFamilyTexts = map[string]bool{
 	"hub.contacts.state":                       true, // "aus eurer Familie"
 	"contact.f.rels.hint":                      true, // "Für wen in eurer Familie": the people of the household (ticket 298)
 	"contact.f.rels.kids":                      true, // "legt ihr extra fest": the family sets what children see (ticket 298)
+	"meals.recipes.hint":                       true, // "Eure Gerichte": the recipes belong to the whole family (ticket 279)
+	"meals.recipes.hint.child":                 true,
+	"recipes.lead":                             true,
+	"recipes.empty":                            true,
+	"recipes.units.group.household":            true, // "Eure Einheiten": the household's units
+	"recipes.check.title":                      true, // "Allergien in eurer Familie": the card names the family, not the reader
+	"recipes.check.none":                       true,
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

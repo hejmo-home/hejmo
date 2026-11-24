@@ -3875,6 +3875,115 @@ ol.run li[data-state="fail"] .st { justify-self: start; padding: 4px 8px; border
 /* A lead-in of a notice is a sentence and may wrap (".notice b" keeps its words together elsewhere); found by the rendered layout check at 375 px. */
 .notice.lead-in > p > b, .error.lead-in > p > b { white-space: normal; }
 
+/* ---- ticket 292: redeeming rewards (asking, confirming, declining, redeeming
+   directly, stars below zero). Only existing tokens. --pc is the person's colour. ---- */
+/* Child: the ask button on a card the child can afford. */
+.rwd-ask { margin: 2px 0 0; }
+.rwd-ask .button.ask { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; width: 100%; box-sizing: border-box; background: var(--surface); color: var(--pc-text); border: 2px solid var(--pc); font-size: var(--fs-label-large); }
+.rwd-ask .button.ask .icon { flex: none; stroke: var(--pc); }
+[data-theme="bw"] .rwd-ask .button.ask { color: var(--text); border: 2px solid var(--text); }
+[data-theme="bw"] .rwd-ask .button.ask .icon { stroke: var(--text); }
+/* Child: "Deine Anfragen" comes first; one card per open request and per answer of the last 7 days. */
+.rwd-group.asks h2 .icon { stroke: var(--pc); }
+.rwd.asked { border: 2px solid var(--pc); padding: 11px; }
+
+.rwd.answer { border: 1px solid var(--border); }
+.rwd-when { margin: 0; font-size: var(--fs-label); color: var(--text-secondary); }
+.rwd-state.wait, .rwd-state.yes, .rwd-state.no { align-items: center; justify-self: start; border-radius: var(--radius-chip); padding: 4px 10px 4px 6px; }
+.rwd-state.wait { background: var(--surface); color: var(--pc-text); border: 1.5px solid var(--pc); }
+.rwd-state.wait .icon { stroke: var(--pc); }
+.rwd-state.yes { background: var(--pc-tint); color: var(--pc-text); }
+.rwd-state.yes .icon { stroke: var(--pc-text); }
+.rwd-state.no { background: var(--background); color: var(--text); border: 1.5px solid var(--border); }
+.rwd-state.no .icon { stroke: var(--text-secondary); }
+.rwd-said { margin: 0; font-size: var(--fs-label-large); overflow-wrap: break-word; }
+.rwd-said q { font-style: italic; }
+.rwd .flag { font-size: var(--fs-label-large); }
+.rwd-undo { margin: 2px 0 0; }
+.rwd-undo .button { min-height: var(--touch-target); }
+.rwd-bal small b { color: var(--text); white-space: nowrap; }
+.rwd-bal.below p > b { color: var(--error-text); }
+.rwd-bal.below { border: 2px solid var(--notice-text); }
+[data-theme="bw"] .rwd.asked { background: var(--surface); border: 4px double var(--text); padding: 9px; }
+[data-theme="bw"] .rwd.answer { border: 2px solid var(--text); }
+[data-theme="bw"] .rwd-state.wait, [data-theme="bw"] .rwd-state.yes, [data-theme="bw"] .rwd-state.no { background: var(--surface); color: var(--text); border: 2px solid var(--text); }
+[data-theme="bw"] .rwd-state.wait .icon, [data-theme="bw"] .rwd-state.yes .icon, [data-theme="bw"] .rwd-state.no .icon { stroke: var(--text); }
+[data-theme="bw"] .rwd-group.asks h2 .icon { stroke: var(--text); }
+[data-theme="bw"] .rwd-bal.below { border: 3px solid var(--text); }
+[data-theme="bw"] .rwd-bal.below p > b { color: var(--text); }
+/* Child tasks page: the way to the rewards names every open request. */
+.reward-link .t .asked-line { color: var(--pc-text); font-weight: 600; overflow-wrap: break-word; }
+[data-theme="bw"] .reward-link .t .asked-line { color: var(--text); }
+
+/* Parents: open requests on Start and on the rewards page. */
+section.asks { display: grid; gap: 10px; max-width: 900px; margin: 0 0 var(--gap-section); min-width: 0; }
+section.asks > h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: var(--fs-person-name); }
+section.asks > h2 .icon { flex: none; stroke: var(--accent); }
+section.asks > .hint { margin: 0; }
+.ask-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap-cards); }
+.ask-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px 14px; padding: 12px 14px 12px 12px; background: var(--surface); border: 1px solid var(--border); border-left: 6px solid var(--pc); border-radius: var(--radius-tile); min-width: 0; }
+.ask-row .art-sym { width: 56px; height: 56px; font-size: 34px; }
+.ask-body { display: grid; gap: 4px; min-width: 0; }
+.ask-body h3 { margin: 0; font-size: var(--fs-event-title); font-weight: 400; line-height: 1.35; overflow-wrap: break-word; hyphens: manual; }
+.ask-body h3 .who { font-weight: 700; font-size: inherit; display: inline; white-space: nowrap; }
+.ask-body h3 .who .marker { display: inline-block; vertical-align: -1px; margin-right: 6px; }
+.ask-body h3 b.rn { font-weight: 700; }
+.ask-meta { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 12px; align-items: center; font-size: var(--fs-label-large); color: var(--text-secondary); }
+.ask-meta .price { color: var(--text); }
+.ask-bal { margin: 0; font-size: var(--fs-label-large); }
+.ask-bal b { white-space: nowrap; }
+.ask-body .flag { font-size: var(--fs-label-large); }
+.ask-acts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+.ask-acts > form { margin: 0; }
+.ask-acts .button { display: inline-flex; align-items: center; gap: 8px; }
+.ask-acts .button .icon { flex: none; stroke: currentColor; }
+details.ask-no { flex: 1 1 16em; min-width: 0; }
+details.ask-no > summary { list-style: none; display: inline-flex; align-items: center; gap: 8px; min-height: var(--touch-target); padding: 10px 18px; box-sizing: border-box; border-radius: var(--radius-chip); border: 1px solid var(--border); background: var(--surface); color: var(--text); font-weight: 700; cursor: pointer; }
+details.ask-no > summary::-webkit-details-marker { display: none; }
+details.ask-no > summary .icon { stroke: var(--text-secondary); }
+details.ask-no[open] > summary { border: 2px solid var(--text-secondary); padding: 9px 17px; }
+details.ask-no form { display: grid; gap: 10px; margin: 10px 0 0; padding: 12px; border-radius: var(--radius-card); background: var(--background); max-width: 520px; }
+details.ask-no form .hint { margin: 0; }
+details.ask-no textarea { width: 100%; box-sizing: border-box; }
+details.ask-no form .button { justify-self: start; }
+.ask-row .ferr { grid-column: 1 / -1; }
+.ask-row .msg { grid-column: 1 / -1; margin: 0; }
+[data-theme="bw"] .ask-row { border: 2px solid var(--text); border-left-width: 6px; }
+[data-theme="bw"] section.asks > h2 .icon { stroke: var(--text); }
+[data-theme="bw"] details.ask-no > summary { border: 2px solid var(--text); }
+[data-theme="bw"] details.ask-no form { border: 2px solid var(--text); background: var(--surface); }
+@media (max-width: 599px) {
+  .ask-row { grid-template-columns: minmax(0, 1fr); }
+  .ask-row .art-sym { display: none; }
+  .ask-acts > form, .ask-acts > form .button, details.ask-no > summary { width: 100%; justify-content: center; }
+  details.ask-no { flex-basis: 100%; }
+}
+
+/* Reward page: redeem now for someone (closed by default). */
+details.more.redeem fieldset.chips { gap: 8px; }
+details.more.redeem .pchip { flex-direction: row; white-space: normal; text-align: left; max-width: 100%; box-sizing: border-box; }
+details.more.redeem .pchip .nm { display: grid; min-width: 0; }
+details.more.redeem .pchip .nm small { font-weight: 400; font-size: var(--fs-label); color: var(--text-secondary); }
+details.more.redeem .pchip:has(input:checked) .nm small { color: var(--pc-text); }
+details.more.redeem .pchip:has(input:disabled) { cursor: default; border-style: dashed; background: transparent; color: var(--text-secondary); }
+details.more.redeem .pchip:has(input:disabled) .nm small { color: var(--text-secondary); }
+details.more.redeem .redeem-body { display: grid; gap: 14px; }
+details.more.redeem .redeem-body > .hint { margin: 0; }
+details.more.redeem .redeem-body .button { justify-self: start; }
+[data-theme="bw"] details.more.redeem .pchip:has(input:disabled) { border: 2px dashed var(--text); color: var(--text); }
+
+/* Rewards page: the household's rule for stars below zero. */
+details.more.below-zero .card-row { padding: 12px 14px; background: var(--surface); border-radius: var(--radius-card); align-items: flex-start; }
+details.more.below-zero .card-row .state { font-size: var(--fs-label-large); color: var(--text); }
+details.more.below-zero form { display: grid; gap: 12px; max-width: 640px; }
+details.more.below-zero form .hint { margin: 0; }
+details.more.below-zero form .button { justify-self: start; }
+[data-theme="bw"] details.more.below-zero .card-row { border: 2px solid var(--text); }
+
+/* Tasks page: a star balance below zero and redemption lines in the star log. */
+.stars-below { display: block; margin: 4px 0; }
+.log-line .rd { font-weight: 600; }
+
 /* ---- ticket 293: savings goal ---- */
 /* Family view: the column block "stars" (stars and savings goal), under the tasks bar (ticket 293). */
 .fv .col-goal { flex: none; display: grid; grid-template-columns: 32px minmax(0, 1fr); column-gap: 8px; row-gap: 5px; align-items: center; margin-top: var(--gap-cards); padding-top: var(--gap-cards); border-top: 1px solid var(--border); min-height: var(--touch-target); color: inherit; text-decoration: none; font-size: var(--fs-label); }

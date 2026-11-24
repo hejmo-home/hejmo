@@ -49,6 +49,8 @@ type starCard struct {
 	Slot                   int
 	Balance                int
 	Entries                []starEntryView
+	// Below says the balance is below zero and why (ticket 292).
+	Below string
 	// HasRewards: at least one reward is meant for the person, so the card has a goal line.
 	HasRewards bool
 	Goal       *starGoalLine // nil: no goal yet
@@ -65,6 +67,7 @@ type starGoalLine struct {
 type starEntryView struct {
 	Delta, Label, By, When string
 	ByRemoved              bool // the booker has been removed; By is their last name
+	Redeemed               bool // a redemption: Label is "Eingelöst: symbol name" and By says who confirmed or redeemed it
 }
 
 // starLogLines is how many star log entries per person the tasks page shows.
@@ -151,7 +154,7 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 				s.fail(w, "star log", err)
 				return
 			}
-			card := s.starCardOf(p, person, acc)
+			card := s.starCardOf(r, p, person, acc)
 			card.ID, card.Poss = person.ID, possessive(s.langOf(r), person.Name)
 			for _, c := range choices {
 				if c.ID == person.ID {
@@ -252,6 +255,12 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 			}
 		}
 		data["Day"] = today
+		asked, err := s.askedLines(p, lang)
+		if err != nil {
+			s.fail(w, "requests", err)
+			return
+		}
+		data["AskedLines"] = asked
 	}
 	if !child {
 		current, past, lastPast, err := s.pauseRows(s.langOf(r), p, today)
@@ -359,18 +368,43 @@ func taskErrorKey(field string) string {
 }
 
 // starCardOf builds a person's star account for the page: balance and log, newest first.
-func (s *server) starCardOf(p principal, person store.Person, acc store.StarAccount) starCard {
+func (s *server) starCardOf(r *http.Request, p principal, person store.Person, acc store.StarAccount) starCard {
 	c := starCard{Name: person.Name, Color: person.Color, Balance: acc.Balance}
+	lang := s.langOf(r)
 	for _, e := range acc.Entries {
 		label := e.Note
 		if e.TaskID != "" || e.TaskTitle != "" {
 			label = e.TaskTitle
+			if e.Delta < 0 {
+				label = s.i18n.Format(lang, i18n.Msg("tasks.stars.reopened", "title", e.TaskTitle))
+			}
 		}
-		delta := strconv.Itoa(e.Delta)
+		delta := negStars(e.Delta)
 		if e.Delta > 0 {
 			delta = "+" + delta
 		}
-		c.Entries = append(c.Entries, starEntryView{Delta: delta, Label: label, By: e.BookedByName, ByRemoved: e.BookedByRemoved, When: p.dateTime(e.At)})
+		v := starEntryView{Delta: delta, Label: label, By: e.BookedByName, ByRemoved: e.BookedByRemoved, When: p.dateTime(e.At)}
+		if e.RedemptionID != "" {
+			v.Redeemed = true
+			v.Label = s.i18n.Format(lang, i18n.Msg("rwd.log.redeemed", "symbol", e.RewardSymbol, "name", e.RewardName))
+			key := "rwd.log.confirmed"
+			if e.Direct {
+				key = "rwd.log.direct"
+			}
+			v.By, v.ByRemoved = s.i18n.Format(lang, i18n.Msg(key, "name", e.BookedByName)), false
+		}
+		c.Entries = append(c.Entries, v)
+	}
+	if acc.Balance < 0 {
+		task, _, err := s.db.BelowZeroCause(person.ID)
+		if err != nil {
+			task = ""
+		}
+		key := "rwd.log.below.short"
+		if task != "" {
+			key = "rwd.log.below"
+		}
+		c.Below = s.i18n.Format(lang, i18n.Msg(key, "task", task, "n", strconv.Itoa(-acc.Balance)))
 	}
 	return c
 }
@@ -500,7 +534,12 @@ func (s *server) renderTaskPageWith(w http.ResponseWriter, r *http.Request, p pr
 		s.fail(w, "credited stars", err)
 		return
 	} else if done {
-		data["Credited"] = s.creditedNotice(s.langOf(r), owner.Name, credited)
+		cn := s.creditedNotice(s.langOf(r), owner.Name, credited)
+		if bal, err := s.balanceOfPerson(p, owner.ID); err == nil && !p.household.BelowZero && credited > 0 && bal < credited {
+			// With the switch off, reopening deducts at most what the person has (ticket 292).
+			cn.HTML += template.HTML(" " + s.i18n.Format(s.langOf(r), i18n.Msg("tasks.stars.credited.floor", "balance", strconv.Itoa(max(bal, 0)))))
+		}
+		data["Credited"] = cn
 	}
 	s.render(w, r, status, "task.html", data)
 }
@@ -559,4 +598,24 @@ func (s *server) handleTaskStars(w http.ResponseWriter, r *http.Request) {
 	default:
 		s.fail(w, "set task stars", err)
 	}
+}
+
+// askedLines names each open request of a child on their tasks page, for the way to the rewards.
+func (s *server) askedLines(p principal, lang string) ([]string, error) {
+	reqs, err := s.db.RedemptionsOf(p.household.ID, p.person.ID, s.now())
+	if err != nil {
+		return nil, err
+	}
+	people, err := s.db.People(p.household.ID)
+	if err != nil {
+		return nil, err
+	}
+	parents := s.joinNames(lang, "rwd.or", s.parentNames(people))
+	var out []string
+	for _, d := range reqs {
+		if d.Status == store.RedemptionOpen {
+			out = append(out, s.i18n.Format(lang, i18n.Msg("rwd.link.asked", "reward", d.Name, "parents", parents)))
+		}
+	}
+	return out, nil
 }

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/reward"
 	"github.com/hejmo-home/hejmo/internal/task"
 )
 
@@ -243,13 +244,32 @@ func (db *DB) SetTaskDone(householdID, id, day string, done bool, by string, at 
 func setTaskDoneTx(tx *sql.Tx, t task.Task, day string, done bool, by string, at time.Time) (changed bool, stars int, err error) {
 	var delta int
 	if done {
+		// Stars an earlier untick could not take back are held against this tick.
+		var debt int
+		if err := tx.QueryRow(`SELECT stars FROM task_star_debt WHERE task_id = ? AND day = ?`, t.ID, day).Scan(&debt); err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return false, 0, err
+		}
+		credit := max(0, t.Stars-debt)
+		// task_done keeps the full value so every untick tries to take all of
+		// it back and records the shortfall again; only the star log is
+		// reduced by the debt paid.
 		res, err := tx.Exec(`INSERT INTO task_done (task_id, day, completed_at, completed_by, stars) VALUES (?, ?, ?, NULLIF(?, ''), ?)
 			ON CONFLICT (task_id, day) DO NOTHING`, t.ID, day, at.UTC().Format(time.RFC3339), by, t.Stars)
 		if err != nil {
 			return false, 0, err
 		}
 		if n, _ := res.RowsAffected(); n > 0 {
-			changed, delta = true, t.Stars
+			changed, delta = true, credit
+			if debt > 0 {
+				if _, err := tx.Exec(`DELETE FROM task_star_debt WHERE task_id = ? AND day = ?`, t.ID, day); err != nil {
+					return false, 0, err
+				}
+				if rest := debt - (t.Stars - credit); rest > 0 {
+					if _, err := tx.Exec(`INSERT INTO task_star_debt (task_id, day, stars) VALUES (?, ?, ?)`, t.ID, day, rest); err != nil {
+						return false, 0, err
+					}
+				}
+			}
 		}
 	} else {
 		var credited int
@@ -261,7 +281,22 @@ func setTaskDoneTx(tx *sql.Tx, t task.Task, day string, done bool, by string, at
 			if _, err := tx.Exec(`DELETE FROM task_done WHERE task_id = ? AND day = ?`, t.ID, day); err != nil {
 				return false, 0, err
 			}
-			changed, delta = true, -credited
+			bal, err := balanceOf(tx, t.PersonID)
+			if err != nil {
+				return false, 0, err
+			}
+			var below bool
+			if err := tx.QueryRow(`SELECT h.below_zero FROM households h JOIN tasks k ON k.household_id = h.id WHERE k.id = ?`, t.ID).Scan(&below); err != nil {
+				return false, 0, err
+			}
+			taken := reward.Deduction(credited, bal, below)
+			changed, delta = true, -taken
+			if short := credited - taken; short > 0 { // not taken back: held against the next tick
+				if _, err := tx.Exec(`INSERT INTO task_star_debt (task_id, day, stars) VALUES (?, ?, ?)
+					ON CONFLICT (task_id, day) DO UPDATE SET stars = stars + excluded.stars`, t.ID, day, short); err != nil {
+					return false, 0, err
+				}
+			}
 		}
 	}
 	if delta != 0 {
@@ -279,8 +314,8 @@ func setTaskDoneTx(tx *sql.Tx, t task.Task, day string, done bool, by string, at
 
 // SetTaskStars changes the star value of a task (0 to task.MaxStars). It
 // counts from the next tick: task_done rows and the star log are not touched,
-// so credited ticks keep their value and unticking deducts what was credited
-// (ADR 0018).
+// so ticks keep the value they had and unticking tries to deduct that full
+// value (ADR 0018, ADR 0021 #292).
 func (db *DB) SetTaskStars(householdID, id string, stars int) error {
 	if stars < 0 || stars > task.MaxStars {
 		return fmt.Errorf("%w: %w", ErrInvalid, &task.InvalidError{Field: "stars", Msg: fmt.Sprintf("stars must be between 0 and %d", task.MaxStars)})
@@ -295,8 +330,10 @@ func (db *DB) SetTaskStars(householdID, id string, stars int) error {
 	return nil
 }
 
-// TaskDoneStars returns the stars credited when a task was ticked off on a
-// day, and whether it is ticked off that day.
+// TaskDoneStars returns the full star value the tick of a task carries on a
+// day, and whether it is ticked off that day. It is what reopening tries to
+// deduct, not necessarily what was booked: a re-tick that only paid off debt
+// (task_star_debt) books fewer stars, or none.
 func (db *DB) TaskDoneStars(id, day string) (stars int, done bool, err error) {
 	err = db.sql.QueryRow(`SELECT stars FROM task_done WHERE task_id = ? AND day = ?`, id, day).Scan(&stars)
 	if errors.Is(err, sql.ErrNoRows) {

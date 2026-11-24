@@ -283,3 +283,30 @@ func TestPairingStoresTheKindOfDeviceItsOwn(t *testing.T) {
 		}
 	}
 }
+
+// Ticket 301: the kind of screen said at pairing stays with the personal device, so "Wichtige Nummern" knows a tablet cannot call.
+func TestPersonalDeviceKeepsTheKindOfScreenItWasPairedWith(t *testing.T) {
+	db, h, mia := householdWithMia(t)
+	for _, kind := range []string{"phone", "tablet", "device"} {
+		name := "Mia's " + kind
+		pr, err := db.CreatePersonalDevicePairing(h.ID, "code-"+name, personalDeviceT0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := db.JoinPersonalDevicePairing("code-"+name, "claim-"+name, "safari|ipad", kind, personalDeviceT0); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := db.ConfirmPersonalDevicePairing(h.ID, pr.ID, mia.ID, name, personalDeviceT0); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := db.CompletePersonalDevicePairing("code-"+name, "claim-"+name, "session-"+name, personalDeviceT0, personalDeviceT0.Add(store.PersonalDeviceSessionLifetime)); err != nil {
+			t.Fatal(err)
+		}
+		if got := db.PersonalDeviceKind("session-" + name); got != kind {
+			t.Errorf("kind of %s = %q, want %q", name, got, kind)
+		}
+	}
+	if got := db.PersonalDeviceKind("no-such-session"); got != "device" {
+		t.Errorf("kind of an unknown session = %q, want device", got)
+	}
+}

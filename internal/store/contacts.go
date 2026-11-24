@@ -34,6 +34,8 @@ type Contact struct {
 	Note            string
 	Numbers, Emails []contact.Line
 	GroupIDs        []string
+	// ForChildren shows the contact on the children's page "Wichtige Nummern" (ticket 301); off for every new contact.
+	ForChildren bool
 	// Relations say who the contact is for the family; only further contacts have any (ticket 298).
 	Relations                []Relation
 	CreatedBy, CreatedByName string
@@ -116,7 +118,7 @@ func addPersonContact(tx *sql.Tx, householdID string, p Person, ts string) error
 }
 
 const contactColumns = `c.id, COALESCE(c.person_id, ''), c.hejmo_name, c.full_name, c.street, c.postcode, c.city, c.country,
-	COALESCE(c.bday_day, 0), COALESCE(c.bday_month, 0), COALESCE(c.bday_year, 0), c.hide_birthday, c.note,
+	COALESCE(c.bday_day, 0), COALESCE(c.bday_month, 0), COALESCE(c.bday_year, 0), c.hide_birthday, c.for_children, c.note,
 	COALESCE(c.created_by, ''), COALESCE(cp.name, ''), c.created_at, COALESCE(c.updated_by, ''), COALESCE(up.name, ''), c.updated_at,
 	c.photo IS NOT NULL, c.photo_origin, COALESCE(c.photo_by, ''), COALESCE(pp.name, ''), c.photo_device, c.photo_at`
 
@@ -126,7 +128,7 @@ func scanContact(sc interface{ Scan(...any) error }) (Contact, error) {
 	var c Contact
 	var created, updated, photoAt string
 	err := sc.Scan(&c.ID, &c.PersonID, &c.HejmoName, &c.FullName, &c.Street, &c.Postcode, &c.City, &c.Country,
-		&c.BdayDay, &c.BdayMonth, &c.BdayYear, &c.HideBirthday, &c.Note, &c.CreatedBy, &c.CreatedByName, &created, &c.UpdatedBy, &c.UpdatedByName, &updated,
+		&c.BdayDay, &c.BdayMonth, &c.BdayYear, &c.HideBirthday, &c.ForChildren, &c.Note, &c.CreatedBy, &c.CreatedByName, &created, &c.UpdatedBy, &c.UpdatedByName, &updated,
 		&c.HasPhoto, &c.PhotoOrigin, &c.PhotoBy, &c.PhotoByName, &c.PhotoDevice, &photoAt)
 	c.PhotoAt, _ = time.Parse(time.RFC3339, photoAt)
 	c.CreatedAt, _ = time.Parse(time.RFC3339, created)
@@ -265,6 +267,8 @@ type ContactInput struct {
 	BdayDay, BdayMonth, BdayYear                         int
 	// HideBirthday keeps the birthday out of the generated calendar Birthdays.
 	HideBirthday bool
+	// ForChildren shows the contact on the children's page "Wichtige Nummern".
+	ForChildren bool
 	// CalendarName names that calendar if this change makes it ("Birthdays", in the language of whoever saves).
 	CalendarName    string
 	Note            string
@@ -407,9 +411,9 @@ func (db *DB) CreateContact(householdID, by string, in ContactInput) (Contact, e
 	if err := checkContactName(tx, householdID, "", in.HejmoName); err != nil {
 		return Contact{}, err
 	}
-	if _, err := tx.Exec(`INSERT INTO contacts (id, household_id, hejmo_name, full_name, street, postcode, city, country, bday_day, bday_month, bday_year, hide_birthday, note, created_by, created_at, updated_by, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		id, householdID, in.HejmoName, in.FullName, in.Street, in.Postcode, in.City, in.Country, nullInt(in.BdayDay), nullInt(in.BdayMonth), nullInt(in.BdayYear), in.HideBirthday, in.Note,
+	if _, err := tx.Exec(`INSERT INTO contacts (id, household_id, hejmo_name, full_name, street, postcode, city, country, bday_day, bday_month, bday_year, hide_birthday, for_children, note, created_by, created_at, updated_by, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		id, householdID, in.HejmoName, in.FullName, in.Street, in.Postcode, in.City, in.Country, nullInt(in.BdayDay), nullInt(in.BdayMonth), nullInt(in.BdayYear), in.HideBirthday, in.ForChildren, in.Note,
 		nullString(by), ts, nullString(by), ts); err != nil {
 		return Contact{}, err
 	}
@@ -526,9 +530,9 @@ func (db *DB) UpdateContact(householdID, id, by string, in ContactInput) (Contac
 	if err := checkContactName(tx, householdID, id, in.HejmoName); err != nil {
 		return Contact{}, err
 	}
-	if _, err := tx.Exec(`UPDATE contacts SET hejmo_name = ?, full_name = ?, street = ?, postcode = ?, city = ?, country = ?, bday_day = ?, bday_month = ?, bday_year = ?, hide_birthday = ?, note = ?, updated_by = ?, updated_at = ?
+	if _, err := tx.Exec(`UPDATE contacts SET hejmo_name = ?, full_name = ?, street = ?, postcode = ?, city = ?, country = ?, bday_day = ?, bday_month = ?, bday_year = ?, hide_birthday = ?, for_children = ?, note = ?, updated_by = ?, updated_at = ?
 		WHERE id = ? AND household_id = ?`,
-		in.HejmoName, in.FullName, in.Street, in.Postcode, in.City, in.Country, nullInt(in.BdayDay), nullInt(in.BdayMonth), nullInt(in.BdayYear), in.HideBirthday, in.Note, nullString(by), ts, id, householdID); err != nil {
+		in.HejmoName, in.FullName, in.Street, in.Postcode, in.City, in.Country, nullInt(in.BdayDay), nullInt(in.BdayMonth), nullInt(in.BdayYear), in.HideBirthday, in.ForChildren, in.Note, nullString(by), ts, id, householdID); err != nil {
 		return Contact{}, err
 	}
 	if err := writeContactParts(tx, householdID, id, in, cur.IsPerson(), by, ts); err != nil {

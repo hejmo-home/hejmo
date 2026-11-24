@@ -132,10 +132,11 @@ type ctRow struct {
 	Nums             []ctNum
 	Groups           []string
 	Rels             []string // how the contact is related to the family, one sentence each (ticket 298)
+	Photo            ctPhotoView
 }
 
 func (e ctEnv) row(c store.Contact, withGroups bool) ctRow {
-	row := ctRow{Href: contactsPath + "/" + c.ID, Name: c.HejmoName}
+	row := ctRow{Href: contactsPath + "/" + c.ID, Name: c.HejmoName, Photo: photoViewOf(c)}
 	if c.FullName != "" && !strings.EqualFold(c.FullName, c.HejmoName) {
 		row.Full = c.FullName
 	}
@@ -320,7 +321,12 @@ func (s *server) handleContact(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "contact", err)
 		return
 	}
-	data := map[string]any{"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "ID": c.ID, "Name": c.HejmoName, "Note": c.Note}
+	data := map[string]any{"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "ID": c.ID, "Name": c.HejmoName, "Note": c.Note,
+		"Photo": photoViewOf(c), "PhotoAlt": e.t("contact.photo.alt", "name", c.HejmoName), "HasPhoto": c.HasPhoto}
+	data["PhotoLink"] = e.t("contact.photo.link.add")
+	if c.HasPhoto {
+		data["PhotoLink"] = e.t("contact.photo.link.change")
+	}
 	if c.FullName != "" && !strings.EqualFold(c.FullName, c.HejmoName) {
 		data["Full"] = c.FullName
 	}
@@ -358,12 +364,17 @@ func (s *server) handleContact(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	data["Groups"] = groups
+	hint := e.photoHint(c)
 	if !c.IsPerson() {
-		hint := e.createdHint(c)
-		data["Hint"] = hint
+		if hint != "" {
+			hint = e.createdHint(c) + " · " + hint
+		} else {
+			hint = e.createdHint(c)
+		}
 		data["DeleteExplain"] = e.relDeleteExplain(c)
 		data["DeleteConfirm"] = e.t("contact.delete.confirm", "name", c.HejmoName)
 	}
+	data["Hint"] = hint
 	s.render(w, r, http.StatusOK, "contact.html", data)
 }
 
@@ -413,6 +424,7 @@ type ctPersonRow struct {
 	Href, Title string
 	Lines       []string
 	Empty       bool
+	Photo       ctPhotoView
 }
 
 func (s *server) personContactRow(r *http.Request, p principal, personID string) (ctPersonRow, bool) {
@@ -421,7 +433,7 @@ func (s *server) personContactRow(r *http.Request, p principal, personID string)
 		return ctPersonRow{}, false
 	}
 	e := ctEnv{s: s, lang: s.langOf(r), p: p}
-	row := ctPersonRow{Href: contactsPath + "/" + c.ID}
+	row := ctPersonRow{Href: contactsPath + "/" + c.ID, Photo: photoViewOf(c)}
 	if c.FullName == "" && len(c.Numbers) == 0 && len(c.Emails) == 0 && c.Street == "" && c.City == "" && c.Postcode == "" && c.BdayDay == 0 {
 		row.Empty, row.Title = true, e.t("contact.person.empty")
 		row.Lines = []string{e.t("contact.person.empty.hint")}
@@ -467,6 +479,9 @@ func (s *server) contactSubpage(w http.ResponseWriter, r *http.Request) {
 		} else {
 			s.handleContactEdit(w, r)
 		}
+	case second == "photo" && !post:
+		r.SetPathValue("id", first)
+		s.handleContactPhoto(w, r)
 	case second == "delete" && post:
 		r.SetPathValue("id", first)
 		s.handleContactDelete(w, r)

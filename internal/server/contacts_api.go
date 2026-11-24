@@ -20,21 +20,31 @@ type contactLineJSON struct {
 }
 
 type contactJSON struct {
-	ID        string                `json:"id"`
-	PersonID  *string               `json:"person_id"`
-	Name      string                `json:"name"`
-	FullName  string                `json:"full_name"`
-	Numbers   []contactLineJSON     `json:"numbers"`
-	Emails    []contactLineJSON     `json:"emails"`
-	Address   contactAddress        `json:"address"`
-	Birthday  *contactBirthday      `json:"birthday"`
-	Note      string                `json:"note"`
-	Groups    []string              `json:"groups"`
-	Relations []contactRelationJSON `json:"relations"`
-	CreatedBy *string               `json:"created_by"`
-	CreatedAt string                `json:"created_at"`
-	UpdatedBy *string               `json:"updated_by"`
-	UpdatedAt string                `json:"updated_at"`
+	ID       string            `json:"id"`
+	PersonID *string           `json:"person_id"`
+	Name     string            `json:"name"`
+	FullName string            `json:"full_name"`
+	Numbers  []contactLineJSON `json:"numbers"`
+	Emails   []contactLineJSON `json:"emails"`
+	Address  contactAddress    `json:"address"`
+	Birthday *contactBirthday  `json:"birthday"`
+	// ShowInBirthdays is whether the birthday is in the generated calendar Birthdays.
+	ShowInBirthdays bool                  `json:"show_in_birthdays"`
+	Note            string                `json:"note"`
+	Groups          []string              `json:"groups"`
+	Relations       []contactRelationJSON `json:"relations"`
+	Photo           *contactPhotoJSON     `json:"photo"`
+	CreatedBy       *string               `json:"created_by"`
+	CreatedAt       string                `json:"created_at"`
+	UpdatedBy       *string               `json:"updated_by"`
+	UpdatedAt       string                `json:"updated_at"`
+}
+
+type contactPhotoJSON struct {
+	Origin string  `json:"origin"`
+	By     *string `json:"by"`
+	Device string  `json:"device"`
+	At     string  `json:"at"`
 }
 
 // contactRelationJSON is a relation (ticket 298): a word plus the people it is for, or the whole family (no people).
@@ -92,8 +102,11 @@ func (s *server) contactToJSON(p principal, c store.Contact) contactJSON {
 	out := contactJSON{
 		ID: c.ID, PersonID: strPtr(c.PersonID), Name: c.HejmoName, FullName: c.FullName,
 		Numbers: linesJSON(c.Numbers), Emails: linesJSON(c.Emails), Address: contactAddress{c.Street, c.Postcode, c.City, c.Country},
-		Note: c.Note, Groups: append([]string{}, c.GroupIDs...), Relations: relationsJSON(c.Relations), CreatedBy: strPtr(c.CreatedBy), CreatedAt: rfc3339(c.CreatedAt, loc),
+		ShowInBirthdays: !c.HideBirthday, Note: c.Note, Groups: append([]string{}, c.GroupIDs...), Relations: relationsJSON(c.Relations), CreatedBy: strPtr(c.CreatedBy), CreatedAt: rfc3339(c.CreatedAt, loc),
 		UpdatedBy: strPtr(c.UpdatedBy), UpdatedAt: rfc3339(c.UpdatedAt, loc),
+	}
+	if c.HasPhoto {
+		out.Photo = &contactPhotoJSON{Origin: c.PhotoOrigin, By: strPtr(c.PhotoBy), Device: c.PhotoDevice, At: rfc3339(c.PhotoAt, loc)}
 	}
 	if c.BdayDay != 0 {
 		b := &contactBirthday{Day: c.BdayDay, Month: c.BdayMonth}
@@ -139,8 +152,10 @@ type contactIn struct {
 	Emails   []contactLineJSON `json:"emails"`
 	Address  contactAddress    `json:"address"`
 	Birthday *contactBirthday  `json:"birthday"`
-	Note     string            `json:"note"`
-	Groups   []string          `json:"groups"`
+	// ShowInBirthdays defaults to true when omitted.
+	ShowInBirthdays *bool    `json:"show_in_birthdays"`
+	Note            string   `json:"note"`
+	Groups          []string `json:"groups"`
 	// Relations replace the contact's relations; a person's contact has none (422).
 	Relations []contactRelationJSON `json:"relations"`
 }
@@ -159,7 +174,7 @@ func jsonLines(in []contactLineJSON, number bool) ([]contact.Line, string) {
 
 func (in contactIn) draft(isPerson bool) (ctDraft, string) {
 	d := ctDraft{Name: in.Name, Full: in.FullName, Street: in.Address.Street, Postcode: in.Address.Postcode, City: in.Address.City, Country: in.Address.Country,
-		Note: in.Note, GroupIDs: in.Groups, IsPerson: isPerson}
+		Note: in.Note, GroupIDs: in.Groups, IsPerson: isPerson, HideBirthday: in.ShowInBirthdays != nil && !*in.ShowInBirthdays}
 	for _, r := range in.Relations {
 		d.Rels = append(d.Rels, ctRelDraft{Word: r.Word, Whole: r.WholeFamily, PersonIDs: r.People})
 	}
@@ -218,9 +233,9 @@ func (s *server) saveContactAPI(w http.ResponseWriter, r *http.Request, p princi
 	}
 	var saved store.Contact
 	if id == "" {
-		saved, err = s.db.CreateContact(p.household.ID, p.person.ID, d.input(s.householdNow(p.household)))
+		saved, err = s.db.CreateContact(p.household.ID, p.person.ID, d.input(s.householdNow(p.household), s.i18n.T(s.langOf(r), "birthdays.calendar_name")))
 	} else {
-		saved, err = s.db.UpdateContact(p.household.ID, id, p.person.ID, d.input(s.householdNow(p.household)))
+		saved, err = s.db.UpdateContact(p.household.ID, id, p.person.ID, d.input(s.householdNow(p.household), s.i18n.T(s.langOf(r), "birthdays.calendar_name")))
 	}
 	var taken *store.NameTakenError
 	if errors.As(err, &taken) {

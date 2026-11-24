@@ -291,12 +291,16 @@ func Complete(typed string, all []Article, max int) []Article {
 	}
 	rank := func(a Article) int {
 		best := 3
-		for _, name := range []string{Fold(a.De), Fold(a.En)} {
+		for _, n := range []struct {
+			name string
+			lang Lang
+		}{{Fold(a.De), German}, {Fold(a.En), English}} {
+			name := n.name
 			if name == "" {
 				continue
 			}
 			switch {
-			case strings.HasPrefix(name, q):
+			case strings.HasPrefix(name, q), SameName(name, q, n.lang):
 				best = min(best, 0)
 			case slices.ContainsFunc(strings.FieldsFunc(name, func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) }), func(w string) bool { return strings.HasPrefix(w, q) }):
 				best = min(best, 1)
@@ -339,18 +343,10 @@ func Complete(typed string, all []Article, max int) []Article {
 }
 
 // Resolve finds the article that the text of a list entry names: the whole
-// text equals the name in German or English, ignoring case, spaces and
-// umlauts. The first match wins, so a household's own articles (listed first)
-// beat shipped ones. Text that names no article stays free text.
+// text equals the name in German or English, ignoring case, spaces, umlauts
+// and singular or plural ("Zitronen" names "Zitrone"); an exact name wins.
+// The first match wins, so a household's own articles (listed first) beat
+// shipped ones. Text that names no article stays free text.
 func Resolve(text string, all []Article) (Article, bool) {
-	t := Fold(text)
-	if t == "" {
-		return Article{}, false
-	}
-	for _, a := range all {
-		if Fold(a.De) == t || Fold(a.En) == t {
-			return a, true
-		}
-	}
-	return Article{}, false
+	return namedBy(text, all)
 }

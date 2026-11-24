@@ -43,6 +43,10 @@ func Open(path string) (*DB, error) {
 		conn.Close()
 		return nil, err
 	}
+	if err := db.SyncAllBirthdays(); err != nil {
+		conn.Close()
+		return nil, err
+	}
 	return db, nil
 }
 

@@ -1,6 +1,6 @@
 # 0016. Family view header, columns and footer
 
-- Status: Accepted, amended by [0018](0018-path-to-0-1.md), [0023](0023-home-location-from-a-list-on-the-box.md). Amended by the product owner on 15/11/2026 (see Amendment of 15/11/2026) and on 16/11/2026 (see Amendment of 16/11/2026)
+- Status: Accepted, amended by [0018](0018-path-to-0-1.md), [0023](0023-home-location-from-a-list-on-the-box.md). Amended by the product owner on 15/11/2026 (see Amendment of 15/11/2026) and on 16/11/2026 (see Amendment of 16/11/2026); amendment of 23/11/2026 (ticket 208, with the product owner's feedback of 23/11/2026: one column in full width)
 - Date: 14/11/2026
 - Amends: [0008](0008-design-takes-precedence-over-version-plan.md) (the header shows the current time, not the next appointment; the leave-the-house countdown stays out of V1.0 and comes back per person in V2), [0015](0015-display-web-interface-and-everyday.md) (column limits per orientation, tomorrow block faded and off by default, footer tiles, task progress, dinner tile, meal plan on displays, package split of the footer)
 
@@ -69,5 +69,16 @@ The product owner approved the way into the lists on 16/11/2026 (preview-33).
 - **Header right: Lists button, time, weather.** The family view header gets a **Lists button** (list line icon and the word "Lists", with an accent border so it reads as a button, not as a status chip) before the clock. It opens the first list in the household's order; the display does not remember a choice. It is hidden when the household has no list.
 - **The footer keeps two tiles:** no third footer tile for lists, because the columns need the height. Tiles on the display come with #166.
 - The button never uses a person marker, so lists stay apart from the person columns.
+
+Everything else in this ADR is unchanged.
+
+## Amendment of 23/11/2026 (ticket 208, family view on a phone; pending the product owner's approval of preview-208)
+
+- **One scrolling page on phones.** Under 600 px wide or under 501 px high (phone landscape too) the family view scrolls as one page instead of squeezing the columns: columns show every entry and do not scroll inside, they are at least as tall as the rest of the first screen, and the progress block stays at the bottom. Each visible column shows at least its first three entries on the first screen at 375 x 812 and 375 x 667, also in the worst case of the family strip filled (2 entries today, 1 tomorrow) at 375 x 667, where the strip entries and the gaps are compact for this. Landscape phones (812 x 375) are too short for three entries on the first screen and scroll. The page padding is 14 px; columns stay 144 px wide.
+- **Tiles below the columns.** The footer tiles follow the columns, each full width and complete, in the layout's order (#180).
+- **"Below the columns" line.** A line above the columns names the tiles in words and jumps to them; the put-out pill shows in it when the tomorrow tile is highlighted. With no tile there is no line.
+- **No clock chip under 600 px** (the phone shows its own clock). A refresh keeps the page's scroll position.
+- **One column in full width** (product owner feedback of 23/11/2026, ticket 208). A tap on a person's column (name or entries, not the progress block, which opens the personal view as before) shows that column alone, as wide as the screen; the other columns are hidden, header, strip, "below the columns" line and tiles stay. The way back is a swipe to the right (at least 64 px, more than twice as far sideways as up or down) or the button "Alle Spalten" above the column; all columns return, scrolled so that person's column is first in view. A second tap on the name opens the personal view (the column says so under the name). A view refresh keeps the full column, and shows all columns if that person is gone. Phone breakpoint only (the same one as above): on wall displays (1024 x 768, 768 x 1024) there are no hints and no bar, the name opens the personal view at once, and nothing changes.
+- Wall displays (1024 x 768, 768 x 1024) are unchanged.
 
 Everything else in this ADR is unchanged.

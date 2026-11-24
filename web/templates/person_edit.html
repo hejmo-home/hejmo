@@ -4,7 +4,7 @@
   {{with .SignIn}}<h2 class="rows-head">{{t "people.signin"}}</h2>
   <ul class="list-rows">{{template "rowLink" .}}</ul>{{end}}
   {{with .ContactRow}}<h2 class="rows-head">{{t "contact.person.head"}}</h2>
-  <ul class="list-rows"><li><a href="{{.Href}}"><span class="t"><b>{{.Title}}</b>{{range .Lines}}<span class="meta">{{.}}</span>{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li></ul>{{end}}
+  <ul class="list-rows ct-row"><li><a href="{{.Href}}">{{template "ctPhoto" (dict "Photo" .Photo "Class" "" "Alt" "" "Lazy" true)}}<span class="t"><b>{{.Title}}</b>{{range .Lines}}<span class="meta">{{.}}</span>{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li></ul>{{end}}
   {{with .PersonContacts}}<h2 class="rows-head" id="contacts">{{.Head}}</h2>
   {{if .Rows}}<p class="lead-s">{{.Lead}}</p>
   {{with .Filters}}<nav class="lib-filter ct-filter pc-filter" aria-label="{{$.PersonContacts.FilterLabel}}"><ul>{{range .}}

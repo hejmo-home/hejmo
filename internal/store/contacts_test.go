@@ -346,3 +346,102 @@ func TestPersonRelationsListsWhatTheCardOfAPersonSaysAboutEachContact(t *testing
 		t.Errorf("Mama = %+v", got)
 	}
 }
+
+// Ticket 297: a photo per contact, with origin, who set it and when.
+
+func TestAContactPhotoIsStoredChangedAndRemovedWithItsOriginAndPeopleCanHaveOne(t *testing.T) {
+	t.Parallel()
+	db, h, f := exampleFamily(t)
+	jpg1, jpg2 := []byte("\xff\xd8first"), []byte("\xff\xd8second")
+	c, err := db.CreateContact(h.ID, f["Mama"].ID, store.ContactInput{HejmoName: "Oma Gerda", PhotoChange: store.SetPicture, Photo: &store.ContactPhoto{JPEG: jpg1}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !c.HasPhoto || c.PhotoOrigin != store.PhotoManual || c.PhotoBy != f["Mama"].ID || c.PhotoByName != "Mama" || c.PhotoAt.IsZero() {
+		t.Fatalf("photo of the new contact = %+v", c)
+	}
+	if got, err := db.ContactPhoto(h.ID, c.ID); err != nil || string(got.JPEG) != string(jpg1) {
+		t.Fatalf("ContactPhoto = %q, %v", got.JPEG, err)
+	}
+	// Keeping leaves it alone, also for a save by someone else.
+	if c, err = db.UpdateContact(h.ID, c.ID, f["Papa"].ID, store.ContactInput{HejmoName: "Oma Gerda", FullName: "Gerda Müller"}); err != nil || !c.HasPhoto || c.PhotoByName != "Mama" {
+		t.Fatalf("keep: %+v, %v", c, err)
+	}
+	// Change: the last one wins and the origin says who and when.
+	c, err = db.UpdateContact(h.ID, c.ID, f["Papa"].ID, store.ContactInput{HejmoName: "Oma Gerda", PhotoChange: store.SetPicture, Photo: &store.ContactPhoto{JPEG: jpg2}})
+	if err != nil || c.PhotoByName != "Papa" {
+		t.Fatalf("change: %+v, %v", c, err)
+	}
+	if got, _ := db.ContactPhoto(h.ID, c.ID); string(got.JPEG) != string(jpg2) {
+		t.Errorf("stored photo = %q", got.JPEG)
+	}
+	// A photo that came over contact sync names the phone.
+	c, err = db.UpdateContact(h.ID, c.ID, "", store.ContactInput{HejmoName: "Oma Gerda", PhotoChange: store.SetPicture,
+		Photo: &store.ContactPhoto{JPEG: jpg1, Origin: store.PhotoSync, Device: "Papas Handy"}})
+	if err != nil || c.PhotoOrigin != store.PhotoSync || c.PhotoDevice != "Papas Handy" || c.PhotoBy != "" {
+		t.Fatalf("sync: %+v, %v", c, err)
+	}
+	// Removal.
+	c, err = db.UpdateContact(h.ID, c.ID, f["Mama"].ID, store.ContactInput{HejmoName: "Oma Gerda", PhotoChange: store.RemovePicture})
+	if err != nil || c.HasPhoto || c.PhotoOrigin != "" || !c.PhotoAt.IsZero() {
+		t.Fatalf("remove: %+v, %v", c, err)
+	}
+	if _, err := db.ContactPhoto(h.ID, c.ID); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("ContactPhoto of a contact without = %v, want ErrNotFound", err)
+	}
+	// People have contacts and their contacts can have a photo.
+	mia, err := db.UpdateContact(h.ID, f["Mia"].ID, f["Mama"].ID, store.ContactInput{PhotoChange: store.SetPicture, Photo: &store.ContactPhoto{JPEG: jpg1}})
+	if err != nil || !mia.HasPhoto || mia.HejmoName != "Mia" {
+		t.Fatalf("person's photo: %+v, %v", mia, err)
+	}
+	// The overview lists contacts without loading the pictures.
+	all, _ := db.Contacts(h.ID)
+	var withPhoto int
+	for _, x := range all {
+		if x.HasPhoto {
+			withPhoto++
+		}
+	}
+	if withPhoto != 1 {
+		t.Errorf("%d contacts have a photo, want 1", withPhoto)
+	}
+	// What is not a JPEG-sized photo is refused.
+	if _, err := db.CreateContact(h.ID, "", store.ContactInput{HejmoName: "X", PhotoChange: store.SetPicture}); !errors.Is(err, store.ErrInvalid) {
+		t.Errorf("set without a photo = %v, want ErrInvalid", err)
+	}
+	// The photo goes with its contact.
+	if err := db.DeleteContact(h.ID, c.ID); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// Review of #314: changing only the photo touches nothing else, and two changes in one second differ.
+func TestSetContactPhotoChangesOnlyThePhotoColumns(t *testing.T) {
+	t.Parallel()
+	db, h, f := exampleFamily(t)
+	c, err := db.CreateContact(h.ID, f["Mama"].ID, store.ContactInput{HejmoName: "Oma Gerda", FullName: "Gerda Müller", Note: "Schlüssel"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	set, err := db.SetContactPhoto(h.ID, c.ID, f["Papa"].ID, store.SetPicture, &store.ContactPhoto{JPEG: []byte("\xff\xd8one")})
+	if err != nil || !set.HasPhoto || set.PhotoByName != "Papa" || set.FullName != "Gerda Müller" || set.Note != "Schlüssel" {
+		t.Fatalf("set: %+v, %v", set, err)
+	}
+	if set.UpdatedBy != c.UpdatedBy || !set.UpdatedAt.Equal(c.UpdatedAt) {
+		t.Errorf("the photo change bumped updated_by/at: %q %v, was %q %v", set.UpdatedBy, set.UpdatedAt, c.UpdatedBy, c.UpdatedAt)
+	}
+	again, err := db.SetContactPhoto(h.ID, c.ID, f["Papa"].ID, store.SetPicture, &store.ContactPhoto{JPEG: []byte("\xff\xd8two")})
+	if err != nil || !again.PhotoAt.After(set.PhotoAt) {
+		t.Errorf("two changes in one second: PhotoAt %v then %v, want a later one", set.PhotoAt, again.PhotoAt)
+	}
+	gone, err := db.SetContactPhoto(h.ID, c.ID, f["Papa"].ID, store.RemovePicture, nil)
+	if err != nil || gone.HasPhoto || gone.FullName != "Gerda Müller" {
+		t.Errorf("remove: %+v, %v", gone, err)
+	}
+	if _, err := db.SetContactPhoto(h.ID, c.ID, "", store.SetPicture, nil); !errors.Is(err, store.ErrInvalid) {
+		t.Errorf("set without a photo = %v, want ErrInvalid", err)
+	}
+	if _, err := db.SetContactPhoto(h.ID, "nope", "", store.RemovePicture, nil); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("unknown contact = %v, want ErrNotFound", err)
+	}
+}

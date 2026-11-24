@@ -20,11 +20,13 @@
     {{if .Strip}}<ul class="strip" data-strip>{{range .Strip}}{{template "stripItem" .}}{{end}}</ul>{{end}}
     {{if .StripTomorrow}}<ul class="strip tomorrow" data-strip-tomorrow><li class="lab">{{t "family.tomorrow"}}</li>{{range .StripTomorrow}}{{template "stripItem" .}}{{end}}</ul>{{end}}
   </div>{{end}}
+  {{if or .Meal .TomorrowTile .List}}<a class="fv-below" href="#fv-footer"><span class="t"><span class="lab">{{t "family.below"}}</span> {{$first := true}}{{range .FooterOrder}}{{if eq . "meals"}}{{with $.Meal}}{{if not $first}}<span class="sep"> · </span>{{end}}{{$first = false}}<b>{{.Label}}</b>{{end}}{{else if eq . "tomorrow"}}{{with $.TomorrowTile}}{{if not $first}}<span class="sep"> · </span>{{end}}{{$first = false}}<b>{{.Label}}</b>{{if .Alert}} <span class="flag">{{t "family.put_out"}}</span>{{end}}{{end}}{{else if eq . "list"}}{{with $.List}}{{if not $first}}<span class="sep"> · </span>{{end}}{{$first = false}}<b>{{.Name}}</b>{{end}}{{end}}{{end}}</span></a>{{end}}
+  <div class="fv-fullbar"><button type="button" class="fv-back" data-full-close><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>{{t "family.all_columns"}}</button><span class="hint">{{t "family.swipe_back"}}</span></div>
   <main class="fv-grid" style="--cols:{{len .Columns}}">
     {{range .Columns}}<section class="column" data-person="{{.Person.Slot}}" data-name="{{.Person.Name}}">
-      <h2><a class="person-link" href="/display/person/{{.Person.ID}}"><span class="marker" data-shape="{{.Person.Shape}}"></span><span class="person-name">{{.Person.Name}}</span></a></h2>
+      <h2><a class="person-link" href="/display/person/{{.Person.ID}}"><span class="marker" data-shape="{{.Person.Shape}}"></span><span class="person-name">{{.Person.Name}}</span><span class="col-hint grow" aria-hidden="true">{{t "family.show_big"}}</span><span class="col-hint to-pv" aria-hidden="true">{{t "personal.title"}} <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></a></h2>
       {{$col := .}}{{range $.ColumnBlocks}}{{if eq . "events"}}<div class="events">
-        {{range $col.Events}}<div class="event"><div class="meta">{{.Time}}</div><div class="title">{{.Title}}</div>{{if .WhoParts}}<div class="who">{{template "whoParts" .WhoParts}}</div>{{end}}</div>
+        {{if not $col.Events}}<p class="col-none">{{t "family.nothing_today"}}</p>{{end}}{{range $col.Events}}<div class="event"><div class="meta">{{.Time}}</div><div class="title">{{.Title}}</div>{{if .WhoParts}}<div class="who">{{template "whoParts" .WhoParts}}</div>{{end}}</div>
         {{end}}{{if $col.Tomorrow}}<div class="tomorrow" data-tomorrow>
           <div class="lab">{{t "family.tomorrow"}}</div>
           {{range $col.Tomorrow}}<div class="event"><div class="meta">{{.Time}}</div><div class="title">{{.Title}}</div>{{if .WhoParts}}<div class="who">{{template "whoParts" .WhoParts}}</div>{{end}}</div>
@@ -33,7 +35,7 @@
     </section>
     {{end}}
   </main>
-  {{if or .Meal .TomorrowTile .List}}<footer class="fv-footer" data-footer>
+  {{if or .Meal .TomorrowTile .List}}<footer class="fv-footer" id="fv-footer" data-footer>
     {{range .FooterOrder}}{{if eq . "meals"}}{{with $.Meal}}{{template "mealTile" .}}{{end}}{{else if eq . "tomorrow"}}{{with $.TomorrowTile}}{{template "tile" (dict "Tile" . "Kind" "tomorrow")}}{{end}}{{else if eq . "list"}}{{with $.List}}{{template "fvListTile" .}}{{end}}{{end}}{{end}}
   </footer>{{end}}
 </div>{{end}}

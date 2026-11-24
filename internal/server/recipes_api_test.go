@@ -149,7 +149,7 @@ func TestAnArticleIdWithANameEndingInAVarietyKeepsTheVariety(t *testing.T) {
 func TestRecipeUnitsAreTheHouseholdsPlusKitchenMeasuresAndContainers(t *testing.T) {
 	t.Parallel()
 	c := signedInAPI(t)
-	for _, u := range []string{"g", "piece", "tbsp", "tsp", "pinch", "knifetip", "dash", "splash", "handful", "cup", "can", "packet", "tub", "bunch", "jar", "bottle", "stick", "clove", "slice", "cube", "sprig", "stalk", "ball", "leaf", "punnet"} {
+	for _, u := range []string{"g", "piece", "tbsp", "tsp", "pinch", "knifetip", "dash", "splash", "handful", "cup", "can", "packet", "tub", "bunch", "jar", "bottle", "stick", "clove", "slice", "cube", "sprig", "stalk", "ball", "leaf", "punnet", "pot"} {
 		in := map[string]any{"name": "Probe " + u, "ingredients": []any{ingredient(1, u, "Wasser")}}
 		if status, r := createRecipe(t, c, in); status != http.StatusCreated || r["ingredients"].([]any)[0].(map[string]any)["unit"] != u {
 			t.Errorf("unit %s = %d %v", u, status, r)
@@ -160,7 +160,7 @@ func TestRecipeUnitsAreTheHouseholdsPlusKitchenMeasuresAndContainers(t *testing.
 		t.Errorf("unknown unit = %d %v", status, body)
 	}
 	_, _, units := c.call(http.MethodGet, "/recipe-units", nil)
-	if len(units) < 30 || units[len(units)-1] != "punnet" {
+	if len(units) < 30 || units[len(units)-1] != "pot" {
 		t.Errorf("units offered = %v", units)
 	}
 }

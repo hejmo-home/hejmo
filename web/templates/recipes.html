@@ -1,6 +1,7 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "recipes.title") "Frame" .Frame)}}
   <h1>{{t "recipes.title"}}</h1>
   {{if and (not .Searching) (or .Any .Parent)}}<p class="lead">{{if .Parent}}{{t "recipes.lead"}}{{else}}{{t "recipes.lead.child"}}{{end}}</p>{{end}}
+  {{if not .Searching}}<p class="rcp-starter-link"><a href="{{.StarterHref}}">{{.StarterLink}}</a></p>{{end}}
   {{if .Any}}
   {{if .Parent}}<p class="rcp-act"><a class="button" href="{{.NewHref}}">{{template "plusIcon"}}{{t "recipes.new"}}</a></p>{{end}}
   <form class="lib-search" method="get" action="/meals/recipes" role="search">

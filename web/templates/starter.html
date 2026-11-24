@@ -1,0 +1,18 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "recipes.starter.title") "Frame" .Frame)}}
+  <h1>{{t "recipes.starter.title"}}</h1>
+  {{if not .Searching}}<p class="lead">{{.Lead}}</p>{{end}}
+  <form class="lib-search" method="get" action="/meals/recipes/starter" role="search">
+    <div class="f"><label>{{t "recipes.search.label"}}<input name="q" type="search" value="{{.Q}}" placeholder="{{t "recipes.search.placeholder"}}"></label></div>
+    {{if .Cat}}<input type="hidden" name="category" value="{{.Cat}}">{{end}}
+    <button class="button secondary" type="submit">{{t "recipes.search.button"}}</button>
+  </form>
+  <nav class="lib-filter rcp-filter" aria-label="{{t "recipes.filter.label"}}"><ul>{{range .Filters}}
+    <li><a href="{{.Href}}"{{if .Current}} aria-current="true"{{end}}>{{if .Symbol}}<span class="e" aria-hidden="true">{{.Symbol}}</span>{{end}}{{.Text}}</a></li>{{end}}
+  </ul></nav>
+  {{if .Searching}}<h2>{{.ResultTitle}}</h2>{{end}}
+  {{if .Rows}}{{template "recipeRows" .Rows}}{{else}}
+  <div class="empty" data-empty><p>{{.NoneText}}</p><p class="row-actions">{{if .Q}}<a href="{{.ClearHref}}">{{t "recipes.search.clear"}}</a>{{else}}<a href="{{.AllHref}}">{{t "recipes.show.all"}}</a>{{end}}</p></div>
+  {{end}}
+  {{template "freeBox" (dict "Title" (t "lib.free.title") "Hint" (t "recipes.free.hint") "People" .FreeText)}}
+  <p class="hint"><a href="{{.OwnHref}}">{{t "recipes.starter.back"}}</a></p>
+{{template "foot"}}

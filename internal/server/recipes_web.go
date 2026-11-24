@@ -13,6 +13,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/library"
 	"github.com/hejmo-home/hejmo/internal/recipe"
+	"github.com/hejmo-home/hejmo/internal/starter"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -103,7 +104,10 @@ type rcpFilter struct {
 }
 
 // listHref is the address of the list with a search and a category.
-func listHref(q, cat string) string {
+func listHref(q, cat string) string { return listHrefAt(recipesPath, q, cat) }
+
+// listHrefAt is the address of a list page (own recipes or the starter collection).
+func listHrefAt(base, q, cat string) string {
 	v := url.Values{}
 	if q != "" {
 		v.Set("q", q)
@@ -112,9 +116,9 @@ func listHref(q, cat string) string {
 		v.Set("category", cat)
 	}
 	if len(v) == 0 {
-		return recipesPath
+		return base
 	}
-	return recipesPath + "?" + v.Encode()
+	return base + "?" + v.Encode()
 }
 
 func (s *server) handleRecipes(w http.ResponseWriter, r *http.Request) {
@@ -152,6 +156,7 @@ func (s *server) handleRecipes(w http.ResponseWriter, r *http.Request) {
 	data := map[string]any{
 		"Rows": rows, "Q": q, "Cat": cat, "Parent": parent, "Filters": filters, "Any": len(list) > 0, "Searching": q != "" || cat != "",
 		"FreeText": s.freeText(c.st), "ClearHref": listHref("", cat), "AllHref": recipesPath, "NewHref": recipesPath + "/new",
+		"StarterHref": starterPath, "StarterLink": c.t("recipes.starter.link", "n", strconv.Itoa(len(starter.All()))),
 	}
 	switch {
 	case q != "":
@@ -196,7 +201,7 @@ func (s *server) handleRecipePage(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "recipe context", err)
 		return
 	}
-	rec, err := s.db.Recipe(p.household.ID, r.PathValue("id"))
+	rec, entry, err := c.recipeOrStarter(p.household.ID, r.PathValue("id"))
 	if errors.Is(err, store.ErrNotFound) {
 		http.NotFound(w, r)
 		return
@@ -205,13 +210,17 @@ func (s *server) handleRecipePage(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "recipe", err)
 		return
 	}
-	parent := auth.RoleAllows(p.person.Role, auth.Perm("meals", auth.Write))
+	parent := auth.RoleAllows(p.person.Role, auth.Perm("meals", auth.Write)) && entry == nil
 	data := map[string]any{
 		"R": rec, "Symbol": rec.Category.Symbol(), "Title": rec.Name, "Parent": parent, "CategoryName": c.categoryName(rec.Category),
 		"PortionsText": strconv.Itoa(rec.Portions), "IngsFor": c.t("recipes.ings.for.other", "n", strconv.Itoa(rec.Portions)),
 		"Tags": rec.Tags, "Tips": rec.Tips, "Source": rec.Source, "SourceLink": recipe.SourceLink(rec.Source),
 		"Steps": rec.Steps, "Warns": c.warnLines(c.warnings(rec.Recipe)), "HasWarn": len(c.warnings(rec.Recipe)) > 0,
 		"FreeText": s.freeText(c.st), "EditHref": recipesPath + "/" + rec.ID + "/edit",
+	}
+	if entry != nil {
+		data["Starter"] = c.t("recipes.starter.note")
+		data["SourceName"] = c.t("recipes.starter.credit", "site", entry.Site)
 	}
 	if rec.Portions == 1 {
 		data["IngsFor"] = c.t("recipes.ings.for.one")

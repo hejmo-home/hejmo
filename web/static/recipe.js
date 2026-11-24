@@ -50,6 +50,14 @@ function rcpKeepsVariety(was, now) {
   return key(was) === "" || key(was) === key(now);
 }
 
+// rcpSplitLine decides what a changed name field becomes: the line's variety field takes what follows a middle dot
+// only while the line is still the library article it was (its variety field is visible, `was` is the name at
+// load or when chosen, `now` the typed text). A line retyped to something else is free text, which has no variety,
+// so its text stays as typed.
+function rcpSplitLine(was, now, varietyVisible) {
+  return rcpSplitVariety(now, varietyVisible && rcpKeepsVariety(was, now));
+}
+
 // rcpStep moves a number one step up or down within 1 and 99 (portions).
 function rcpStep(value, dir) {
   var n = parseInt(String(value).trim(), 10);
@@ -212,7 +220,7 @@ function rcpFocusAfter(count, removed) { return Math.min(removed, count - 1); }
     var el = e.target;
     if (!(el.matches && el.matches("input.in"))) return;
     var li = el.closest("li.ing"), vi = li && li.querySelector('input[name="ing_variety"]');
-    var parts = rcpSplitVariety(el.value, !!vi && vi.type !== "hidden"); // free text and blank lines carry a hidden field: no variety there
+    var parts = rcpSplitLine(el.getAttribute("data-was"), el.value, !!vi && vi.type !== "hidden");
     if (!vi || parts.variety === null) return;
     el.value = parts.name; // what was typed after the dot is the variety, edited in its own field
     vi.value = parts.variety;

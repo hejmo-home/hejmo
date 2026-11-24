@@ -1,0 +1,122 @@
+{
+  "n": 78,
+  "slug": "curry-reis-haehnchen",
+  "category": "Hauptgerichte",
+  "servings": 1,
+  "time_minutes": 40,
+  "diet_suggested": null,
+  "allergens_suggested": [],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/curry-reis-mit-haehnchen-41907.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Hähnchenfilet",
+      "article_en": "Chicken breast fillet",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 45,
+      "unit": "g",
+      "article_de": "Vollkornreis",
+      "article_en": "Wholegrain rice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Currypulver",
+      "article_en": "Curry powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 125,
+      "unit": "ml",
+      "article_de": "Hühnerbouillon, klar",
+      "article_en": "Clear chicken stock",
+      "note_de": "instant",
+      "note_en": "instant"
+    },
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Lauchzwiebeln",
+      "article_en": "Spring onions",
+      "note_de": "ca. 1 Bund",
+      "note_en": "about 1 bunch"
+    },
+    {
+      "amount": 125,
+      "unit": "g",
+      "article_de": "Paprika, rot",
+      "article_en": "Red bell pepper",
+      "note_de": "ca. 1 Stück",
+      "note_en": "about 1 piece"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Curry-Reis mit Hähnchen",
+    "steps": [
+      "Würfle 100 g Hähnchenfilet. Erhitze 1 TL Öl in einer Pfanne mit Deckel und brate das Fleisch darin an. Nimm es heraus und stelle es beiseite.",
+      "Gib 45 g Vollkornreis in das Fett in der Pfanne und dünste ihn kurz an, bis er glasig wird.",
+      "Bestäube den Reis mit 1 TL Currypulver und gieße 125 ml klare Hühnerbouillon dazu. Rühre kurz um.",
+      "Lege den Deckel auf und lass den Reis bei niedriger Hitze etwa 20 Minuten quellen.",
+      "In der Zwischenzeit schneidest du 150 g Lauchzwiebeln (etwa 1 Bund) in Ringe und die Paprika (125 g) in Würfel.",
+      "Fünf Minuten vor Ende der Garzeit hebst du Hähnchen und Gemüse unter den Reis.",
+      "Schmecke mit Salz ab. Wenn der Reis zu trocken ist, gieße noch etwas Brühe dazu."
+    ]
+  },
+  "en": {
+    "title": "Curry rice with chicken",
+    "steps": [
+      "Dice 100 g chicken fillet. Heat 1 tsp oil in a pan with a lid and brown the meat in it. Take it out and set it aside.",
+      "Add 45 g wholegrain rice to the fat in the pan and sweat it briefly until glassy.",
+      "Dust the rice with 1 tsp curry powder and add 125 ml clear chicken stock. Stir briefly.",
+      "Put the lid on and let the rice swell over low heat for about 20 minutes.",
+      "Meanwhile, slice 150 g scallions (about 1 bunch) into rings and dice the bell pepper (125 g).",
+      "Five minutes before the end of the cooking time, fold the chicken and vegetables into the rice.",
+      "Season with salt. If the rice is too dry, add a little more stock."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "Source quantities are for 1 person. Ratings shown on page: 93; list says Redaktionsküche. Steps rewritten in own words on 23/11/2026 from the source steps (times, temperatures and order per source). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "n": 14,
+  "slug": "rahmspinat",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 20,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/321101114007445/Rahmspinat.html",
+    "site": "Chefkoch",
+    "ratings": 179
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "kg",
+      "article_de": "Blattspinat",
+      "article_en": "Leaf spinach",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 25,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Mehl Type 405",
+      "article_en": "Plain flour (Type 405)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Muskat",
+      "article_en": "Nutmeg",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Rahmspinat",
+    "steps": [
+      "Den Spinat waschen und in kochendem Wasser etwa 5 Minuten blanchieren.",
+      "In ein Sieb abgießen und kalt abschrecken. Dann sehr gut ausdrücken, damit kein Wasser im Spinat bleibt, und grob hacken.",
+      "Butter in einem Topf schmelzen und den Spinat darin kurz erwärmen.",
+      "Das Mehl darüberstäuben und unterrühren.",
+      "Sahne und Milch dazugießen und gut verrühren.",
+      "Die Sauce kurz einkochen lassen, bis sie leicht sämig ist.",
+      "Mit Salz und Muskat abschmecken. Dazu passen Kartoffeln und Spiegelei."
+    ],
+    "tips": "Dazu passen Salzkartoffeln und Spiegelei."
+  },
+  "en": {
+    "title": "Creamed spinach",
+    "steps": [
+      "Wash the spinach and blanch it in boiling water for about 5 minutes.",
+      "Drain in a sieve and rinse with cold water. Then squeeze it out very well so no water stays in the spinach, and chop it roughly.",
+      "Melt the butter in a pot and warm the spinach in it briefly.",
+      "Dust the flour over it and stir it in.",
+      "Pour in cream and milk and stir well.",
+      "Let the sauce reduce briefly until slightly creamy.",
+      "Season with salt and nutmeg. Potatoes and fried eggs go well with it."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "tbsp"
+      }
+    ],
+    "tips": "Serve with boiled potatoes and fried eggs."
+  },
+  "review_note": "List title is Rahmspinat mit Kartoffeln und Spiegelei; the source recipe only gives creamed spinach (no quantities for potatoes or eggs), so only the spinach is written up. Serve with potatoes and fried eggs. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Confirmed by Lena 24/11/2026: title follows the recipe, not the list.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

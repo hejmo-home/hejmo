@@ -1,0 +1,190 @@
+{
+  "n": 168,
+  "slug": "zitronenkuchen",
+  "category": "Backen",
+  "servings": 18,
+  "time_minutes": 45,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Nüsse",
+      "en": "Tree nuts"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/einfacher-zitronenkuchen-saftig-und-erfrischend-8285.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Butter oder Margarine",
+      "article_en": "Butter or margarine",
+      "note_de": "weich",
+      "note_en": "softened"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "zweite Zuckerangabe der Quelle",
+      "note_en": "second sugar entry in the source"
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "article_de": "Bourbon-Vanillezucker",
+      "article_en": "Bourbon vanilla sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": null,
+      "article_de": "Zitronenschale, gerieben",
+      "article_en": "Lemon zest, grated",
+      "note_de": "Menge laut Quelle \"1\"",
+      "note_en": "quantity as in source: \"1\""
+    },
+    {
+      "amount": 1,
+      "unit": null,
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": "Menge laut Quelle \"1\", davon 3 EL für den Guss",
+      "note_en": "quantity as in source: \"1\", 3 tbsp of it for the icing"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Eier, Größe M",
+      "article_en": "Eggs, size M",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Speisestärke",
+      "article_en": "Cornflour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Backpulver",
+      "article_en": "Baking powder",
+      "note_de": "gestrichen",
+      "note_en": "level"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Haselnusskerne",
+      "article_en": "Hazelnuts",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Puderzucker",
+      "article_en": "Icing sugar",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Zitronenkuchen",
+    "steps": [
+      "Den Ofen auf 175 °C Ober-/Unterhitze (Umluft 150 °C) vorheizen. Eine Kastenform von etwa 25 cm Länge und mindestens 1,5 l Inhalt einfetten und mit Mehl ausstäuben.",
+      "Die weiche Butter oder Margarine mit 200 g Zucker, Vanillezucker, Zitronenschale und 1 Prise Salz schaumig schlagen und die Eier nacheinander zugeben. Mehl, Stärke und Backpulver vermengen und portionsweise nur kurz unterrühren.",
+      "Den Teig einfüllen, glätten und etwa 50 Minuten backen. In dieser Zeit die Haselnüsse in dünne Blättchen schneiden, in einer trockenen Pfanne rösten und abkühlen lassen.",
+      "Den Kuchen eine Viertelstunde in der Form stehen lassen, dann stürzen, mehrfach mit einem Holzspieß einstechen und mit dem Zitronensaft beträufeln, 3 EL davon zurückbehalten. Auf einem Gitter auskühlen lassen.",
+      "Puderzucker mit den 3 EL Zitronensaft zu einem Guss verrühren, auf den Kuchen streichen und die Nussblättchen darüberstreuen. Trocknen lassen."
+    ]
+  },
+  "en": {
+    "title": "Lemon cake",
+    "steps": [
+      "Preheat the oven to 175 °C top and bottom heat (150 °C fan). Grease a loaf tin about 25 cm long with a capacity of at least 1.5 l and dust it with flour.",
+      "Beat the soft butter or margarine with 200 g sugar, vanilla sugar, lemon zest and 1 pinch of salt until fluffy and stir in the eggs one at a time. Mix the flour, cornflour and baking powder and stir in briefly in portions.",
+      "Spread the batter in the tin and bake for about 50 minutes. During that time, slice the hazelnuts into thin flakes, toast them in a dry pan and let them cool.",
+      "Leave the cake in the tin for 15 minutes, then turn it out, prick it several times with a wooden skewer and drizzle with the lemon juice, keeping back 3 tbsp. Cool on a rack.",
+      "Stir the icing sugar with the 3 tbsp lemon juice into a glaze, spread it over the cake and scatter the nut flakes on top. Leave to set."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "packet"
+      },
+      {
+        "index": 7,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 10,
+        "amount": 2,
+        "unit": "tsp"
+      },
+      {
+        "index": 11,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Rating count from the list. Source ingredient list is ambiguous: two sugar entries (200 g and 3 tbsp, the latter not used in the source method) and lemon zest/juice quantity '1' without unit; copied as given, please check against the source. Source steps not copied. Steps restructured (own step division and order of work) after paraphrase spot-check 23/11/2026.",
+  "originality": {
+    "overlap_5gram": 0.0,
+    "checked": "23/11/2026"
+  }
+}

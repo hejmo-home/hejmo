@@ -1,0 +1,126 @@
+{
+  "n": 199,
+  "slug": "energy-balls",
+  "category": "Snacks und Brotdose",
+  "servings": 8,
+  "time_minutes": 10,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [
+    {
+      "de": "Nüsse",
+      "en": "Tree nuts"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide and sulphites"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/energy-bites",
+    "site": "BBC Good Food",
+    "ratings": 33
+  },
+  "ingredients": [
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Pekannüsse",
+      "article_en": "Pecans",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 75,
+      "unit": "g",
+      "article_de": "Rosinen",
+      "article_en": "Raisins",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Leinsamen, gemahlen",
+      "article_en": "Ground flaxseed",
+      "note_de": "oder eine Mischung aus gemahlenem Leinsamen, Mandeln, Paranüssen und Walnüssen",
+      "note_en": "or a mix of milled flaxseed, almond, Brazil nut and walnut"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Kakaopulver",
+      "article_en": "Cocoa powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Agavendicksaft",
+      "article_en": "Agave syrup",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Kokosraspeln",
+      "article_en": "Desiccated coconut",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Erdnussbutter",
+      "article_en": "Peanut butter",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Energy Balls",
+    "steps": [
+      "100 g Pekannüsse in der Küchenmaschine zu Krümeln zerkleinern.",
+      "75 g Rosinen, 2 EL Erdnussbutter, 1 EL gemahlenen Leinsamen, 1 EL Kakaopulver und 1 EL Agavendicksaft zugeben und kurz pulsieren, bis die Masse zusammenhält.",
+      "Daraus golfballgroße Kugeln formen und in 50 g Kokosraspeln wälzen. 20 Minuten in den Kühlschrank stellen, bis sie fest sind."
+    ]
+  },
+  "en": {
+    "title": "Energy balls",
+    "steps": [
+      "Blitz 100 g pecans to crumbs in a food processor.",
+      "Add 75 g raisins, 2 tbsp peanut butter, 1 tbsp ground flaxseed, 1 tbsp cocoa powder and 1 tbsp agave syrup and pulse briefly until the mixture holds together.",
+      "Roll into golf-ball-sized balls and coat in 50 g desiccated coconut. Chill for 20 minutes until firm."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Source is English; German article names translated. Peanut butter contains peanuts (list says Nüsse). Source yield \"Makes 8\". Rating count 33 from the list; JSON-LD has none. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.037
+  }
+}

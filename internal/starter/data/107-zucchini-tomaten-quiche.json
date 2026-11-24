@@ -1,0 +1,179 @@
+{
+  "n": 107,
+  "slug": "zucchini-tomaten-quiche",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 105,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/zucchini-tomaten-quiche-58649",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 220,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "für den Teig",
+      "note_en": "for the dough"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Ei",
+      "article_en": "Egg",
+      "note_de": "Größe M, für den Teig",
+      "note_en": "size M, for the dough"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Eigelb",
+      "article_en": "Egg yolk",
+      "note_de": "Größe M, für den Teig",
+      "note_en": "size M, for the dough"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Butter, kalt",
+      "article_en": "Cold butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 600,
+      "unit": "g",
+      "article_de": "Zucchini, klein",
+      "article_en": "Small zucchini",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 6,
+      "unit": "Stk",
+      "article_de": "Kirschtomaten",
+      "article_en": "Cherry tomatoes",
+      "note_de": "6 bis 8 Stück",
+      "note_en": "6 to 8"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": "Größe M, für den Guss",
+      "note_en": "size M, for the filling"
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Crème fraîche",
+      "article_en": "Crème fraîche",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer, frisch gemahlen",
+      "article_en": "Freshly ground pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Gratinkäse, gerieben",
+      "article_en": "Grated cheese for gratins",
+      "note_de": "aus der Kühltheke",
+      "note_en": "from the refrigerated aisle"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Butter und Mehl",
+      "article_en": "Butter and flour",
+      "note_de": "für die Form (28 cm Springform) und die Arbeitsfläche",
+      "note_en": "for the 28 cm springform tin and the work surface"
+    }
+  ],
+  "de": {
+    "title": "Zucchini-Tomaten-Quiche",
+    "steps": [
+      "Teig: Mehl auf die Arbeitsfläche häufen und in der Mitte eine Mulde drücken. Ei, Eigelb, Salz und die kalte Butter in Würfeln hineingeben. Alles schnell zu einem glatten Teig kneten, in Folie wickeln und 30 Minuten kalt stellen.",
+      "Ofen auf 180 °C Ober-/Unterhitze (160 °C Umluft) vorheizen, Rost auf mittlere Schiene.",
+      "Zucchini in dünne Scheiben schneiden. 2 l Wasser mit 2 EL Salz aufkochen. Das Wasser muss sehr salzig sein. Zucchini 3 Minuten darin kochen, abgießen und auf einem Küchentuch gut trocken tupfen. Kirschtomaten halbieren.",
+      "Für den Guss Eier und Crème fraîche verquirlen, mit Salz und Pfeffer würzen.",
+      "Die Springform (28 cm) mit Butter einfetten und mit Mehl bestäuben. Den Teig auf bemehlter Fläche ausrollen, in die Form legen und einen 2 cm hohen Rand hochdrücken. Den Boden mehrmals mit einer Gabel einstechen.",
+      "Die Hälfte des Käses auf den Boden streuen. Zucchini und Tomaten darauf verteilen, den Guss darübergießen, sodass alles bedeckt ist. Mit dem restlichen Käse bestreuen.",
+      "45 Minuten backen, bis die Oberfläche schön gebräunt ist.",
+      "Die Quiche 5 Minuten ruhen lassen, dann den Ring lösen und in 8 Stücke schneiden."
+    ]
+  },
+  "en": {
+    "title": "Zucchini and tomato quiche",
+    "steps": [
+      "Dough: mound the flour on the worktop and press a well into the middle. Add the egg, egg yolk, salt and the cold butter in cubes. Quickly knead everything into a smooth dough, wrap in cling film and chill for 30 minutes.",
+      "Preheat the oven to 180 °C top/bottom heat (160 °C fan), rack on the middle level.",
+      "Cut the zucchini into thin slices. Bring 2 l of water with 2 tbsp salt to the boil. The water has to be very salty. Cook the zucchini in it for 3 minutes, drain and pat well dry on a kitchen towel. Halve the cherry tomatoes.",
+      "For the custard, whisk eggs and crème fraîche and season with salt and pepper.",
+      "Grease the springform tin (28 cm) with butter and dust it with flour. Roll out the dough on a floured surface, lay it in the tin and press up a 2 cm high edge. Prick the base several times with a fork.",
+      "Scatter half of the cheese on the base. Spread zucchini and tomatoes on top and pour the custard over so everything is covered. Sprinkle with the rest of the cheese.",
+      "Bake for 45 minutes until the top is nicely browned.",
+      "Let the quiche rest for 5 minutes, then release the ring and cut into 8 pieces."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 6,
+        "unit": "piece"
+      },
+      {
+        "index": 7,
+        "amount": 2,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Time from source: 60 min prep + 45 min baking = 105 min (Aufwand shown on the page). Pie dish: 28 cm springform. Page JSON-LD ratingCount 398 (list: Redaktionsküche). Source gives 2 tbsp salt for the blanching water, not listed as an ingredient line. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

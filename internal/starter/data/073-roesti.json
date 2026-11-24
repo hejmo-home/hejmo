@@ -1,0 +1,88 @@
+{
+  "n": 73,
+  "slug": "roesti",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 70,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://fooby.ch/en/recipes/14205/roesti",
+    "site": "Fooby",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1.5,
+      "unit": "kg",
+      "article_de": "Kartoffeln, festkochend",
+      "article_en": "Waxy potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Wasser",
+      "article_en": "Water",
+      "note_de": "zum Kochen der Kartoffeln",
+      "note_en": "for boiling the potatoes"
+    },
+    {
+      "amount": 1.5,
+      "unit": "TL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Butterschmalz",
+      "article_en": "Clarified butter",
+      "note_de": "zum Braten",
+      "note_en": "for frying"
+    }
+  ],
+  "de": {
+    "title": "Rösti",
+    "steps": [
+      "Am Vortag: Koche 1,5 kg festkochende Kartoffeln in ihrer Schale in reichlich Wasser mit 1,5 TL Salz, ohne Deckel, etwa 25 Minuten. Sie sollen gerade weich sein, nicht zerfallen. Lass sie auskühlen und stelle sie über Nacht in den Kühlschrank.",
+      "Am nächsten Tag: Pelle die kalten Kartoffeln und reibe sie grob auf der Röstiraffel. Mische die Raspel mit etwas Salz.",
+      "Erhitze Butterschmalz in einer beschichteten Pfanne bei mittlerer Hitze. Gib die Kartoffelraspel hinein und brate sie etwa 5 Minuten unter Wenden an.",
+      "Drücke die Masse mit dem Pfannenwender zu einem runden Kuchen zusammen. Brate die erste Seite etwa 15 Minuten, bis unten eine goldene Kruste entstanden ist.",
+      "Lege einen großen flachen Teller auf die Pfanne und stürze die Rösti darauf. So klappt das Wenden ohne Unfall.",
+      "Gib frisches Butterschmalz in die Pfanne und gleite die Rösti mit der rohen Seite nach unten zurück hinein. Brate sie weitere 15 Minuten. Serviere sie heiß und knusprig."
+    ]
+  },
+  "en": {
+    "title": "Rösti",
+    "steps": [
+      "The day before: Boil 1.5 kg waxy potatoes in their skins in plenty of water with 1.5 tsp salt, without a lid, for about 25 minutes. They should be just soft, not falling apart. Let them cool and put them in the fridge overnight.",
+      "The next day: Peel the cold potatoes and grate them coarsely on the rösti grater. Mix the shreds with a little salt.",
+      "Heat clarified butter in a non-stick pan over medium heat. Add the potato shreds and fry them for about 5 minutes, turning them.",
+      "Press the mass into a round cake with the spatula. Fry the first side for about 15 minutes until a golden crust forms underneath.",
+      "Place a large flat plate on the pan and flip the rösti onto it. That way turning it goes without an accident.",
+      "Add fresh clarified butter to the pan and slide the rösti back in with the raw side down. Fry it for another 15 minutes. Serve hot and crisp."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 1.5,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "Source is the English Fooby page; German names translated. Source gives no quantity for clarified butter or boiling water, and the stated 70 minutes excludes the cooling time (overnight recommended). Source shows no rating on the page; list says Redaktionsküche. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

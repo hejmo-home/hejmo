@@ -1,0 +1,129 @@
+{
+  "n": 131,
+  "slug": "spargelcremesuppe",
+  "category": "Suppen",
+  "servings": 4,
+  "time_minutes": 55,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.essen-und-trinken.de/rezepte/spargelcremesuppe-rezept-fuer-geniesser-12082020.html",
+    "site": "Essen & Trinken",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "kg",
+      "article_de": "Spargel, weißer",
+      "article_en": "White asparagus",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 30,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Kartoffeln",
+      "article_en": "Potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "ml",
+      "article_de": "Schlagsahne",
+      "article_en": "Whipping cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Spargelcremesuppe",
+    "steps": [
+      "Spargel schälen und die holzigen Enden abschneiden. Schalen und Enden nicht wegwerfen, daraus kochst du gleich den Fond.",
+      "Die Spitzen (ca. 4 cm) abschneiden, der Länge nach halbieren und beiseitelegen. Die Stangen in dünne Scheiben schneiden, die Kartoffeln schälen und würfeln.",
+      "Butter im Topf schmelzen, Schalen und Enden, Zucker und eine Prise Salz dazugeben und mit etwa 1 Liter Wasser aufgießen. Ohne Deckel bei milder Hitze ca. 15 Min. ziehen lassen.",
+      "Den Fond durch ein Sieb in einen zweiten Topf gießen. Die Schalen kannst du jetzt wegwerfen.",
+      "Kartoffelwürfel und Spargelscheiben in den Fond geben, aufkochen und zugedeckt bei mittlerer Hitze 15–20 Min. garen, bis alles weich ist.",
+      "Die Suppe mit dem Stabmixer oder im Standmixer sehr fein pürieren.",
+      "Jetzt erst Sahne und die Spargelspitzen dazugeben und alles ca. 8 Min. leise köcheln lassen. Die Spitzen kommen bewusst erst nach dem Pürieren hinein, damit sie ganz bleiben.",
+      "Mit Salz, Pfeffer, einer Prise Zucker und Zitronensaft abschmecken."
+    ]
+  },
+  "en": {
+    "title": "Cream of asparagus soup",
+    "steps": [
+      "Peel the asparagus and cut off the woody ends. Keep the peels and ends, you will make the stock from them.",
+      "Cut off the tips (about 4 cm), halve them lengthways and set them aside. Slice the stalks thinly, peel the potatoes and dice them.",
+      "Melt the butter in a pot, add the peels and ends, the sugar and a pinch of salt, and pour in about 1 litre of water. Leave to infuse without a lid over low heat for about 15 min.",
+      "Pour the stock through a sieve into a second pot. You can throw the peels away now.",
+      "Add the potato cubes and asparagus slices to the stock, bring to the boil and cook covered over medium heat for 15-20 min until everything is soft.",
+      "Purée the soup very finely with a hand blender or in a blender.",
+      "Only now add the cream and the asparagus tips and let everything simmer gently for about 8 min. The tips go in after blending on purpose so they stay whole.",
+      "Season with salt, pepper, a pinch of sugar and lemon juice."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1000,
+        "unit": "g"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "Steps use the sugar for the asparagus stock and the butter for sweating; the source ingredient list gives no water amount. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

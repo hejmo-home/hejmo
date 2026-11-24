@@ -1,0 +1,104 @@
+{
+  "n": 59,
+  "slug": "basilikumpesto",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 15,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Nüsse",
+      "en": "Tree nuts"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/basilikum-pesto-29673.html",
+    "site": "Lecker",
+    "ratings": 315
+  },
+  "ingredients": [
+    {
+      "amount": 40,
+      "unit": "g",
+      "article_de": "Pinienkerne",
+      "article_en": "Pine nuts",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Basilikum",
+      "article_en": "Basil",
+      "note_de": "etwa 2 Bund",
+      "note_en": "about 2 bunches"
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": "1 bis 2 Zehen, je nach Größe",
+      "note_en": "1 to 2 cloves, depending on size"
+    },
+    {
+      "amount": 125,
+      "unit": "ml",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": "ca.",
+      "note_en": "approx."
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Parmesan oder vegetarischer Hartkäse",
+      "article_en": "Parmesan or vegetarian hard cheese",
+      "note_de": "frisch gerieben",
+      "note_en": "freshly grated"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Meersalz",
+      "article_en": "Sea salt",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Basilikum-Pesto",
+    "steps": [
+      "Röste die Pinienkerne in einer trockenen Pfanne, bis sie hellbraun sind und duften. Nimm sie gleich aus der Pfanne und lass sie abkühlen.",
+      "Spüle das Basilikum kurz kalt ab, tupfe es gründlich trocken und zupfe die Blätter ab. Schäle den Knoblauch und schneide ihn grob.",
+      "Gib Basilikum, Knoblauch, Pinienkerne und Olivenöl in einen hohen Mixbecher und püriere alles mit dem Stabmixer.",
+      "Rühre den Käse unter und schmecke das Pesto mit Meersalz ab. Es passt zu Pasta und zu Brot."
+    ]
+  },
+  "en": {
+    "title": "Basil pesto",
+    "steps": [
+      "Toast the pine nuts in a dry pan until they are light brown and fragrant. Take them out of the pan straight away and let them cool.",
+      "Rinse the basil briefly in cold water, pat it thoroughly dry and pick off the leaves. Peel the garlic and chop it roughly.",
+      "Put the basil, garlic, pine nuts and olive oil in a tall mixing jug and blend everything with a hand blender.",
+      "Stir in the cheese and season the pesto with sea salt. It goes well with pasta and with bread."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "clove"
+      }
+    ]
+  },
+  "review_note": "Replacement for missing servings in the previous source, approved by the product owner 23/11/2026. Cheese: Parmesan or a vegetarian hard cheese, source allows both (diet_suggested set to vegetarian on that basis). Garlic 1-2 cloves in the source, lower value 1 used. Oil amount is given as about 125 ml.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

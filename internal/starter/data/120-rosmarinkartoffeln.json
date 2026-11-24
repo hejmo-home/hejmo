@@ -1,0 +1,71 @@
+{
+  "n": 120,
+  "slug": "rosmarinkartoffeln",
+  "category": "Beilagen",
+  "servings": 6,
+  "time_minutes": 75,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/roast-potatoes",
+    "site": "BBC Good Food",
+    "ratings": 21
+  },
+  "ingredients": [
+    {
+      "amount": 8,
+      "unit": "Stk",
+      "article_de": "Kartoffeln, Maris Piper",
+      "article_en": "Maris Piper potatoes",
+      "note_de": "geschält und in Stücke geschnitten",
+      "note_en": "peeled and cut into chunks"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pflanzenöl",
+      "article_en": "Vegetable oil",
+      "note_de": "für das Backblech",
+      "note_en": "for the roasting tin"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Röstkartoffeln",
+    "steps": [
+      "Am Vortag die Kartoffeln in kräftig gesalzenem Wasser etwa 10 Minuten sieden lassen, bis sie gerade weich sind. Abgießen, einen kleinen Schluck vom Kochwasser auffangen und die Kartoffeln auskühlen lassen.",
+      "Der Kniff: Die beiden am weichsten gegarten Stücke durch die Kartoffelpresse drücken und mit etwas Kochwasser zu einem dickflüssigen Brei anrühren. Die kalten Kartoffeln darin wenden, auf ein mit Backpapier belegtes Blech legen und über Nacht in den Kühlschrank stellen.",
+      "Am nächsten Tag den Ofen auf 200 °C Ober-/Unterhitze (180 °C Umluft) vorheizen. Einen großen Bräter mit einem guten Schuss Pflanzenöl einige Minuten im Ofen erhitzen, die Kartoffeln vorsichtig in das heiße Fett legen, wenden und leicht salzen.",
+      "40 Minuten ohne Wenden rösten, dann die Kartoffeln behutsam umdrehen und die Temperatur auf 220 °C Ober-/Unterhitze (200 °C Umluft) erhöhen. Weitere 20 Minuten rösten und einmal erneut wenden, bis sie rundum goldgelb und knusprig sind."
+    ]
+  },
+  "en": {
+    "title": "Roast potatoes",
+    "steps": [
+      "The day before, simmer the potatoes in generously salted water for about 10 minutes until just soft. Drain, setting a little of the water aside, and leave the potatoes to cool.",
+      "The trick: push the two most thoroughly cooked pieces through a potato ricer and stir with a little cooking water into a thick paste. Turn the cold potatoes in it, lay them on a parchment-lined tray and chill overnight.",
+      "Next day, preheat the oven to 200 °C (180 °C fan). Heat a large roasting tin with a generous glug of vegetable oil in the oven for several minutes, then gently lower the potatoes into the hot fat, turn them and salt lightly.",
+      "Roast for 40 minutes without touching, then gently flip the potatoes and raise the heat to 220 °C (200 °C fan). Roast for another 20 minutes, turning once more, until evenly golden and crisp."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 8,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Title: the list calls it Rosmarinkartoffeln but the source recipe (Best ever roast potatoes) contains no rosemary; title and note adjusted to match the source, flag for the list owner. Salt only in the method. Ratings from the list (page JSON-LD has none). Steps restructured (own step division and order of work) after paraphrase spot-check 23/11/2026.",
+  "originality": {
+    "overlap_5gram": 0.0,
+    "checked": "23/11/2026"
+  }
+}

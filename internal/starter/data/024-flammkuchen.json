@@ -1,0 +1,160 @@
+{
+  "n": 24,
+  "slug": "flammkuchen",
+  "category": "Hauptgerichte",
+  "servings": 1,
+  "time_minutes": 35,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/1107291216818673/Schneller-Flammkuchen.html",
+    "site": "Chefkoch",
+    "ratings": 2698
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": "für den Teig",
+      "note_en": "for the dough"
+    },
+    {
+      "amount": 125,
+      "unit": "ml",
+      "article_de": "Wasser",
+      "article_en": "Water",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Mehl Type 405",
+      "article_en": "Plain flour (Type 405)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zwiebeln",
+      "article_en": "Onions",
+      "note_de": "in dünne halbe Ringe geschnitten",
+      "note_en": "cut into thin half rings"
+    },
+    {
+      "amount": 1,
+      "unit": "Becher",
+      "article_de": "Schmand",
+      "article_en": "Schmand (sour cream)",
+      "note_de": "24 % Fett",
+      "note_en": "24 % fat"
+    },
+    {
+      "amount": 1,
+      "unit": "Becher",
+      "article_de": "Crème double",
+      "article_en": "Crème double",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": "nach Belieben",
+      "note_en": "to taste"
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Speckwürfel",
+      "article_en": "Diced bacon",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Schnittlauch",
+      "article_en": "Chives",
+      "note_de": "in Röllchen",
+      "note_en": "cut into rings"
+    }
+  ],
+  "de": {
+    "title": "Flammkuchen",
+    "steps": [
+      "Heize den Backofen auf 250 °C Ober-/Unterhitze vor und stelle den Rost auf die untere Schiene.",
+      "Verknete Mehl, Salz, 2 EL Öl und 125 ml Wasser zu einem glatten Teig. Rolle ihn auf dem Backblech sehr dünn aus. Je dünner, desto knuspriger wird der Flammkuchen.",
+      "Verrühre Schmand und Crème double mit Salz und Pfeffer. Streiche die Mischung gleichmäßig auf den Teig. Für eine leichtere Variante nimmst du statt Crème double 20 %igen Quark.",
+      "Schneide die Zwiebeln in dünne halbe Ringe und gib sie 1 Minute bei 600 Watt in die Mikrowelle. So verbrennen sie im heißen Ofen nicht.",
+      "Verteile Zwiebeln und Speckwürfel auf dem Teig. Backe den Flammkuchen 20 Minuten.",
+      "Streue zum Schluss Schnittlauchröllchen darüber. Das Rezept reicht für 2 bis 3 Personen."
+    ]
+  },
+  "en": {
+    "title": "Tarte flambée",
+    "steps": [
+      "Preheat the oven to 250 °C top/bottom and put the rack on the lower shelf.",
+      "Knead the flour, salt, 2 tbsp of oil and 125 ml of water into a smooth dough. Roll it out very thin on the baking tray. The thinner it is, the crispier the flammkuchen gets.",
+      "Stir the schmand and crème double with salt and pepper. Spread the mixture evenly over the dough. For a lighter version, use 20% quark instead of crème double.",
+      "Cut the onions into thin half rings and microwave them for 1 minute at 600 watts. That way they do not burn in the hot oven.",
+      "Spread the onions and bacon cubes over the dough. Bake the flammkuchen for 20 minutes.",
+      "Sprinkle chives over it at the end. The recipe serves 2 to 3 people."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tub"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "tub"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Source states 1 serving; the source text notes it feeds 2-3 people. Servings copied from source. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

@@ -1,0 +1,123 @@
+{
+  "n": 182,
+  "slug": "rote-gruetze",
+  "category": "Desserts",
+  "servings": 4,
+  "time_minutes": 25,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/klassische-rote-gruetze-58788",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 600,
+      "unit": "g",
+      "article_de": "Gemischte Beeren und rote Früchte",
+      "article_en": "Mixed berries and red fruit",
+      "note_de": "z. B. Sauerkirschen, Erdbeeren, Himbeeren, Johannisbeeren",
+      "note_en": "e.g. sour cherries, strawberries, raspberries, redcurrants"
+    },
+    {
+      "amount": 0.5,
+      "unit": "Stk",
+      "article_de": "Vanilleschote",
+      "article_en": "Vanilla pod",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Liter",
+      "article_de": "Kirschsaft oder schwarzer Johannisbeersaft",
+      "article_en": "Cherry or blackcurrant juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Speisestärke",
+      "article_en": "Cornflour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Cassislikör",
+      "article_en": "Crème de cassis",
+      "note_de": "1-2 EL, nach Belieben (schwarzer Johannisbeerlikör)",
+      "note_en": "1-2 tbsp, optional (blackcurrant liqueur)"
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "ca. 3-4 EL",
+      "note_en": "about 3-4 tbsp"
+    }
+  ],
+  "de": {
+    "title": "Klassische Rote Grütze",
+    "steps": [
+      "Wasche die Früchte und putze sie. Entsteine die Kirschen, halbiere die Erdbeeren und streife die Johannisbeeren von den Rispen. Insgesamt brauchst du 600 g.",
+      "Schlitze die halbe Vanilleschote auf und kratze das Mark heraus.",
+      "Rühre 3 EL Speisestärke mit 3 bis 4 EL kaltem Wasser glatt.",
+      "Koche 0,5 Liter Saft mit Vanillemark und Schote auf.",
+      "Rühre die Stärke-Mischung ein und lass alles 2 bis 3 Minuten köcheln, bis der Saft eindickt.",
+      "Gib die Früchte hinein und lass sie nur 1 bis 2 Minuten mitziehen, sonst zerfallen sie zu Matsch. Nach Belieben 1 EL Cassislikör dazugeben.",
+      "Süße mit etwa 3 EL Zucker nach Geschmack. Nimm die Vanilleschote erst kurz vor dem Servieren heraus.",
+      "Lass die Grütze abkühlen und serviere sie mit leicht geschlagener Sahne oder Vanillesauce."
+    ]
+  },
+  "en": {
+    "title": "Red berry compote (Rote Grütze)",
+    "steps": [
+      "Wash and trim the fruit. Pit the cherries, halve the strawberries and strip the currants from their stalks. You need 600 g in total.",
+      "Split the half vanilla pod and scrape out the seeds.",
+      "Stir 3 tbsp cornflour with 3 to 4 tbsp cold water until smooth.",
+      "Bring 0.5 litre of juice to the boil with the vanilla seeds and pod.",
+      "Stir in the cornflour mixture and simmer for 2 to 3 minutes until the juice thickens.",
+      "Add the fruit and let it cook for only 1 to 2 minutes, or it turns mushy. Add 1 tbsp crème de cassis if you like.",
+      "Sweeten with about 3 tbsp sugar to taste. Take out the vanilla pod only just before serving.",
+      "Let the compote cool and serve it with lightly whipped cream or custard."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 0.5,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 500,
+        "unit": "ml"
+      },
+      {
+        "index": 3,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 3,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Source yield \"4-6 Personen\"; 4 used. Source says \"1/2 Vanilleschote\", \"1/2 l\" juice. Page shows 170 ratings; list says Redaktionsküche. Cassislikör amount \"1-2 EL\": 1 used (lower bound); sugar \"3-4 EL\": 3 used. Liqueur is optional (contains alcohol). Vegan flag from list; liqueur and sugar may vary. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

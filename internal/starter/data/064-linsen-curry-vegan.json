@@ -1,0 +1,182 @@
+{
+  "n": 64,
+  "slug": "linsen-curry-vegan",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 25,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/linsen-curry-zum-aufwaermen-85316.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Apfel",
+      "article_en": "Apple",
+      "note_de": "z. B. Granny Smith",
+      "note_en": "e.g. Granny Smith"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Reis",
+      "article_en": "Rice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Kurkuma",
+      "article_en": "Turmeric",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Currypaste, grün",
+      "article_en": "Green curry paste",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Linsen, rot",
+      "article_en": "Red lentils",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "ml",
+      "article_de": "Gemüsebrühe",
+      "article_en": "Vegetable stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Babyspinat",
+      "article_en": "Baby spinach",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Dose",
+      "article_de": "Kokosmilch",
+      "article_en": "Coconut milk",
+      "note_de": "400 ml",
+      "note_en": "400 ml"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Koriander",
+      "article_en": "Coriander",
+      "note_de": "zum Bestreuen",
+      "note_en": "to sprinkle"
+    }
+  ],
+  "de": {
+    "title": "Linsen-Curry (vegan)",
+    "steps": [
+      "Zwiebeln und Apfel in kleine Würfel schneiden. Den Apfel vorher entkernen.",
+      "Den Reis nach Packungsanleitung in Salzwasser kochen. Er garen lassen, während du das Curry machst.",
+      "Öl in einem Topf oder einer Pfanne erhitzen. Zwiebeln und Apfel darin weich dünsten.",
+      "Currypaste und 1 TL Kurkuma einrühren und kurz mitbraten, bis es duftet.",
+      "Linsen und Brühe dazugeben und aufkochen. Gesamt etwa 10 Minuten köcheln lassen, bis die Linsen weich werden.",
+      "Spinat und Kokosmilch zugeben und weitere 5 Minuten köcheln lassen, bis der Spinat zusammengefallen ist.",
+      "Mit Salz und Pfeffer abschmecken. Reis abgießen und mit dem Curry anrichten. Zum Schluss Koriander darüberstreuen."
+    ]
+  },
+  "en": {
+    "title": "Lentil curry (vegan)",
+    "steps": [
+      "Cut the onions and the apple into small cubes. Core the apple first.",
+      "Cook the rice in salted water according to the packet. Let it cook while you make the curry.",
+      "Heat the oil in a pot or pan. Soften the onions and apple in it.",
+      "Stir in the curry paste and 1 tsp turmeric and fry briefly until fragrant.",
+      "Add the lentils and stock and bring to the boil. Simmer for about 10 minutes in total until the lentils turn soft.",
+      "Add the spinach and coconut milk and simmer for another 5 minutes until the spinach has wilted.",
+      "Season with salt and pepper. Drain the rice and serve with the curry. Finally scatter the coriander on top."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 11,
+        "amount": 1,
+        "unit": "can"
+      }
+    ]
+  },
+  "review_note": "allergens_suggested is empty on the list; some green curry pastes contain shrimp paste or celery, so the label of the chosen paste should be checked. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

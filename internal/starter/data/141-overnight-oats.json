@@ -1,0 +1,118 @@
+{
+  "n": 141,
+  "slug": "overnight-oats",
+  "category": "Frühstück",
+  "servings": 1,
+  "time_minutes": 10,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Nüsse",
+      "en": "Tree nuts"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/overnight-oats",
+    "site": "BBC Good Food",
+    "ratings": "120"
+  },
+  "ingredients": [
+    {
+      "amount": 0.25,
+      "unit": "TL",
+      "article_de": "Zimt, gemahlen",
+      "article_en": "Ground cinnamon",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Haferflocken",
+      "article_en": "Porridge oats",
+      "note_de": "Porridge-Haferflocken",
+      "note_en": "porridge oats"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Naturjoghurt",
+      "article_en": "Natural yogurt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Beeren, gemischt",
+      "article_en": "Mixed berries",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Honig",
+      "article_en": "Honey",
+      "note_de": "ein Schuss zum Beträufeln",
+      "note_en": "a drizzle"
+    },
+    {
+      "amount": 0.5,
+      "unit": "EL",
+      "article_de": "Nussmus",
+      "article_en": "Nut butter",
+      "note_de": "z. B. Mandelmus",
+      "note_en": "e.g. almond butter"
+    }
+  ],
+  "de": {
+    "title": "Overnight Oats",
+    "steps": [
+      "Am Abend vorher Haferflocken, Zimt, eine Prise Salz und ca. 100 ml Milch oder Pflanzendrink in einem Glas oder einer Schüssel verrühren.",
+      "Abdecken und über Nacht quellen lassen.",
+      "Am Morgen mit einem Schuss Flüssigkeit lockern, falls es zu fest ist.",
+      "Mit Joghurt, Beeren, einem Schuss Honig und Nussmus toppen."
+    ]
+  },
+  "en": {
+    "title": "Overnight oats",
+    "steps": [
+      "The evening before, stir the oats, cinnamon, a pinch of salt and about 100 ml of milk or plant drink together in a glass or bowl.",
+      "Cover and leave to soak overnight.",
+      "In the morning loosen with a splash of liquid if it is too thick.",
+      "Top with yogurt, berries, a drizzle of honey and nut butter."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 0.25,
+        "unit": "tsp"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 0.5,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Source lists no extra liquid (milk); written up exactly as sourced, please check. Rating count from the list (the source page shows no rating data). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

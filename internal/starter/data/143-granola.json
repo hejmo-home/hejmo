@@ -1,0 +1,171 @@
+{
+  "n": 143,
+  "slug": "granola",
+  "category": "Frühstück",
+  "servings": 15,
+  "time_minutes": 35,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Sesam",
+      "en": "Sesame"
+    },
+    {
+      "de": "Nüsse",
+      "en": "Tree nuts"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/good-you-granola",
+    "site": "BBC Good Food",
+    "ratings": "453"
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Pflanzenöl",
+      "article_en": "Vegetable oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 125,
+      "unit": "ml",
+      "article_de": "Ahornsirup",
+      "article_en": "Maple syrup",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Honig",
+      "article_en": "Honey",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Vanilleextrakt",
+      "article_en": "Vanilla extract",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Haferflocken",
+      "article_en": "Porridge oats",
+      "note_de": "Porridge-Haferflocken",
+      "note_en": "porridge oats"
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Sonnenblumenkerne",
+      "article_en": "Sunflower seeds",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Sesam",
+      "article_en": "Sesame seeds",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Kürbiskerne",
+      "article_en": "Pumpkin seeds",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Mandelblättchen",
+      "article_en": "Flaked almonds",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Trockenbeeren",
+      "article_en": "Dried berries",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Kokosflocken",
+      "article_en": "Coconut flakes",
+      "note_de": "oder Kokosraspel",
+      "note_en": "or desiccated coconut"
+    }
+  ],
+  "de": {
+    "title": "Selbstgemachtes Granola",
+    "steps": [
+      "Den Backofen auf 150 °C Ober-/Unterhitze (130 °C Umluft, Gas Stufe 2) vorheizen. Zwei Backbleche bereitstellen.",
+      "Öl, Ahornsirup, Honig und Vanilleextrakt in einer großen Schüssel verrühren.",
+      "Haferflocken, Sonnenblumenkerne, Sesam, Kürbiskerne und Mandelblättchen dazugeben und gut vermischen. Trockenbeeren und Kokos bleiben noch draußen. Die Mischung auf die zwei Bleche verteilen.",
+      "15 Min. backen.",
+      "Die Bleche herausnehmen und Kokos und Trockenbeeren unterrühren. Sie kommen erst jetzt dazu, damit sie nicht verbrennen.",
+      "Weitere 10–15 Min. backen.",
+      "Das Granola auf ein flaches Blech schaben und dort abkühlen lassen. Es wird beim Abkühlen knusprig.",
+      "Luftdicht aufbewahren. Es hält sich bis zu 1 Monat."
+    ]
+  },
+  "en": {
+    "title": "Homemade granola",
+    "steps": [
+      "Preheat the oven to 150 °C (130 °C fan, gas mark 2). Get two baking sheets ready.",
+      "Mix the oil, maple syrup, honey and vanilla extract in a large bowl.",
+      "Add the oats, sunflower seeds, sesame, pumpkin seeds and flaked almonds and mix well. Dried fruit and coconut stay out for now. Spread the mixture over the two sheets.",
+      "Bake for 15 min.",
+      "Take the sheets out and stir in the coconut and dried berries. They only go in now so they do not burn.",
+      "Bake for another 10-15 min.",
+      "Scrape the granola onto a flat tray and let it cool there. It turns crisp as it cools.",
+      "Store airtight. It keeps for up to 1 month."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 6,
+        "amount": 4,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Oven temperature and times are guidance in my own words, not copied from the source; please check. Source says makes 15 servings. Rating count from the list. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

@@ -1,0 +1,201 @@
+{
+  "n": 62,
+  "slug": "haehnchen-gemuese-pfanne",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 35,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Soja",
+      "en": "Soy"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/haehnchen-gemuesepfanne-67018.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Lauchzwiebeln",
+      "article_en": "Spring onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Butternusskürbis",
+      "article_en": "Butternut squash",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 125,
+      "unit": "g",
+      "article_de": "Maiskölbchen",
+      "article_en": "Baby corn",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Paprika, rot",
+      "article_en": "Red bell pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stiel",
+      "article_de": "Koriander",
+      "article_en": "Coriander",
+      "note_de": "3 bis 4 Stiele",
+      "note_en": "3 to 4 sprigs"
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 10,
+      "unit": "g",
+      "article_de": "Ingwerknolle",
+      "article_en": "Fresh ginger",
+      "note_de": "ca.",
+      "note_en": "about"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Limette",
+      "article_en": "Lime",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Honig",
+      "article_en": "Honey",
+      "note_de": "2 bis 3 TL",
+      "note_en": "2 to 3 tsp"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Sojasoße",
+      "article_en": "Soy sauce",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Hähnchenfilet",
+      "article_en": "Chicken breast fillet",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 5,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Hähnchen-Gemüse-Pfanne",
+    "steps": [
+      "Gemüse vorbereiten: Lauchzwiebeln in Ringe schneiden. Möhren, Kürbis und Paprika in mundgerechte Stücke schneiden. Maiskölbchen abtropfen lassen. Knoblauch und Ingwer fein hacken. Koriander hacken.",
+      "Die Soße anrühren: Saft der Limette, Koriander, Honig und Sojasoße verrühren.",
+      "Das Hähnchenfilet trocken tupfen und in etwa 3 cm breite Streifen schneiden.",
+      "Die Hälfte des Öls im Wok bei hoher Hitze erhitzen. Das Fleisch etwa 2 Minuten anbraten.",
+      "Knoblauch und Ingwer dazugeben und kurz mitbraten.",
+      "Das restliche Öl und das Gemüse zugeben und etwa 4 Minuten unter Rühren braten.",
+      "Die Soße und die Lauchzwiebeln dazugeben und alles noch etwa 2 Minuten garen. Probieren und nach Bedarf nachwürzen."
+    ]
+  },
+  "en": {
+    "title": "Chicken and vegetable skillet",
+    "steps": [
+      "Prepare the vegetables: cut the spring onions into rings. Cut the carrots, squash and pepper into bite-sized pieces. Drain the baby corn. Finely chop the garlic and ginger. Chop the coriander.",
+      "Mix the sauce: stir together the lime juice, coriander, honey and soy sauce.",
+      "Pat the chicken fillet dry and cut it into strips about 3 cm wide.",
+      "Heat half of the oil in the wok over high heat. Fry the meat for about 2 minutes.",
+      "Add the garlic and ginger and fry briefly.",
+      "Add the remaining oil and the vegetables and stir-fry for about 4 minutes.",
+      "Add the sauce and the spring onions and cook everything for about 2 more minutes. Taste and adjust the seasoning if needed."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 3,
+        "unit": "sprig"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 9,
+        "amount": 2,
+        "unit": "tsp"
+      },
+      {
+        "index": 10,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 12,
+        "amount": 5,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Source gives ranges for coriander (3-4 sprigs) and honey (2-3 tsp); the lower values are used. Source rating shows 113 ratings; list says Redaktionsküche. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

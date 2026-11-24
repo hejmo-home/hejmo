@@ -1,0 +1,126 @@
+{
+  "n": 50,
+  "slug": "tomaten-mozzarella-nudelauflauf",
+  "category": "Hauptgerichte",
+  "servings": 2,
+  "time_minutes": 55,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/easy-pasta-bake",
+    "site": "BBC Good Food",
+    "ratings": 40
+  },
+  "ingredients": [
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Tomatensoße, neapolitanisch (aus dem Kühlregal)",
+      "article_en": "Neapolitan pasta sauce (from the chiller cabinet)",
+      "note_de": "Becher",
+      "note_en": "tub"
+    },
+    {
+      "amount": 1,
+      "unit": "Handvoll",
+      "article_de": "Basilikumblätter, frisch",
+      "article_en": "Fresh basil leaves",
+      "note_de": "gute",
+      "note_en": "a good"
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Tortellini, frisch, mit Spinat-Ricotta-Füllung",
+      "article_en": "Fresh stuffed spinach and ricotta tortellini",
+      "note_de": "Packung",
+      "note_en": "pack"
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Mozzarella",
+      "article_en": "Mozzarella",
+      "note_de": "in Scheiben, Packung",
+      "note_en": "sliced, pack"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Parmesan, frisch gerieben",
+      "article_en": "Freshly grated Parmesan",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Pinienkerne",
+      "article_en": "Pine nuts",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Gemischte Salatblätter",
+      "article_en": "Mixed salad leaves",
+      "note_de": "zum Servieren",
+      "note_en": "to serve"
+    }
+  ],
+  "de": {
+    "title": "Tomaten-Mozzarella-Nudelauflauf",
+    "steps": [
+      "Ofen auf 180 °C Ober-/Unterhitze (160 °C Umluft) vorheizen.",
+      "Die Tomatensoße mit 100 ml Wasser verdünnen, damit die Nudeln genug Flüssigkeit zum Garen haben. Basilikumblätter grob zupfen und untermischen.",
+      "Eine Hälfte der Soße in zwei kleine Auflaufformen (oder eine große) geben. Die rohen Tortellini darauf verteilen und mit der restlichen Soße bedecken. Die Nudeln müssen unter die Soßenoberfläche gedrückt werden, sonst werden sie nicht weich.",
+      "Mozzarellascheiben darauflegen. Mit Parmesan und Pinienkernen bestreuen.",
+      "Die Form(en) auf ein Backblech stellen, das fängt Überkochendes auf. 25 bis 30 Minuten backen, bis der Auflauf goldbraun ist und blubbert.",
+      "Mit gemischtem Salat servieren."
+    ]
+  },
+  "en": {
+    "title": "Tomato and mozzarella pasta bake",
+    "steps": [
+      "Preheat the oven to 180 C (160 C fan).",
+      "Thin the tomato sauce with 100 ml water so the pasta has enough liquid to cook. Roughly tear the basil leaves and stir them in.",
+      "Put half of the sauce into two small baking dishes (or one large one). Spread the raw tortellini on top and cover with the rest of the sauce. The pasta must be pressed below the surface of the sauce, otherwise it will not soften.",
+      "Lay the mozzarella slices on top. Sprinkle with Parmesan and pine nuts.",
+      "Stand the dish(es) on a baking sheet to catch any spills. Bake for 25 to 30 minutes until golden and bubbling.",
+      "Serve with a mixed salad."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "handful"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Pine nuts are a tree-nut allergen not in the list suggestion; check before production use. Source method adds 100 ml water to the sauce (not in its ingredient list). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

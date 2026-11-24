@@ -1,0 +1,245 @@
+{
+  "n": 98,
+  "slug": "rustikale-gemuese-tarte",
+  "category": "Hauptgerichte",
+  "servings": 8,
+  "time_minutes": 75,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/rustikale-gemuese-tarte-73628.html",
+    "site": "Lecker",
+    "ratings": 7
+  },
+  "ingredients": [
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Plain flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": "für den Teig",
+      "note_en": "for the pastry"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "weich",
+      "note_en": "softened"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eigelb",
+      "article_en": "Egg yolks",
+      "note_de": "Größe M; 1 für den Teig, 1 zum Bestreichen",
+      "note_en": "size M; 1 for the pastry, 1 for brushing"
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Zwiebeln, rot",
+      "article_en": "Red onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": "4 bis 5 EL; 2 für die Zwiebeln, der Rest fürs Gemüse",
+      "note_en": "4 to 5 tbsp; 2 for the onions, the rest for the vegetables"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "1 bis 2 EL",
+      "note_en": "1 to 2 tbsp"
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Rotweinessig",
+      "article_en": "Red wine vinegar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": "zum Würzen",
+      "note_en": "for seasoning"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Zucchini",
+      "article_en": "Courgettes (zucchini)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Dose",
+      "article_de": "Artischockenherzen",
+      "article_en": "Artichoke hearts",
+      "note_de": "425 ml",
+      "note_en": "425 ml"
+    },
+    {
+      "amount": 175,
+      "unit": "g",
+      "article_de": "Erbsen, tiefgekühlt",
+      "article_en": "Frozen peas",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Semmelbrösel",
+      "article_en": "Breadcrumbs",
+      "note_de": "ca.",
+      "note_en": "approx."
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Ziegenfrischkäse-Taler",
+      "article_en": "Fresh goat's cheese rounds",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Schlagsahne",
+      "article_en": "Whipping cream",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Rustikale Gemüse-Tarte",
+    "steps": [
+      "Verknete Mehl, ½ TL Salz, die Butter in Flöckchen, 1 Eigelb und etwa 2 EL kaltes Wasser zu einem glatten Teig. Wickle ihn in Frischhaltefolie und stelle ihn etwa 30 Minuten kalt.",
+      "Schneide die Zwiebeln in feine Spalten und brate sie in 2 EL heißem Öl 2 bis 3 Minuten. Streue den Zucker darüber, lass ihn kurz karamellisieren und lösche mit dem Essig ab. Würze mit Salz und Pfeffer, lass alles etwa 1 Minute einkochen und stelle die Zwiebeln beiseite.",
+      "Schneide die Zucchini in Scheiben, hacke den Knoblauch und viertle die abgetropften Artischocken. Dünste Zucchini und Knoblauch in 2 bis 3 EL Öl in einer zweiten Pfanne kurz an und würze mit Salz und Pfeffer. Gib die gefrorenen Erbsen dazu, gare 1 bis 2 Minuten weiter und hebe die Artischocken unter. Schmecke das Gemüse ab.",
+      "Heize den Ofen auf 200 °C (Umluft 175 °C) vor. Rolle den Teig auf Backpapier zu einem Kreis von 30 bis 32 cm Durchmesser aus, steche ihn mehrmals mit einer Gabel ein und bestreue ihn mit den Semmelbröseln. Ziehe ihn mit dem Papier auf ein Backblech.",
+      "Zerbrösele den Ziegenfrischkäse, mische ihn unter das Gemüse und verteile alles auf dem Teig. Lass dabei rundum 4 bis 5 cm Rand frei und klappe den Rand zur Mitte über das Gemüse.",
+      "Backe die Tarte auf der untersten Schiene etwa 30 Minuten. Verquirle das zweite Eigelb mit der Sahne und bestreiche den Teigrand damit, wenn noch etwa 10 Minuten fehlen. Verteile nach dem Backen die karamellisierten Zwiebeln auf der Tarte."
+    ]
+  },
+  "en": {
+    "title": "Rustic vegetable tart",
+    "steps": [
+      "Knead the flour, ½ tsp of salt, the butter in flakes, 1 egg yolk and about 2 tbsp of cold water into a smooth dough. Wrap it in cling film and chill it for about 30 minutes.",
+      "Cut the onions into thin wedges and fry them in 2 tbsp of hot oil for 2 to 3 minutes. Sprinkle over the sugar, let it caramelise briefly and deglaze with the vinegar. Season with salt and pepper, let it reduce for about 1 minute and set the onions aside.",
+      "Slice the courgettes, chop the garlic and quarter the drained artichokes. Briefly sauté the courgettes and garlic in 2 to 3 tbsp of oil in a second pan and season with salt and pepper. Add the frozen peas, cook for 1 to 2 minutes more and fold in the artichokes. Taste and adjust the seasoning.",
+      "Preheat the oven to 200 °C (175 °C fan). Roll the dough out on baking paper to a circle 30 to 32 cm across, prick it several times with a fork and sprinkle it with the breadcrumbs. Slide it with the paper onto a baking tray.",
+      "Crumble the goat's cheese, mix it into the vegetables and spread everything over the dough, leaving a border of 4 to 5 cm all round. Fold the border in towards the middle over the vegetables.",
+      "Bake the tart on the lowest shelf for about 30 minutes. Whisk the second egg yolk with the cream and brush the pastry edge with it when about 10 minutes remain. After baking, scatter the caramelised onions over the tart."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 11,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 12,
+        "amount": 1,
+        "unit": "can"
+      },
+      {
+        "index": 14,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 16,
+        "amount": 1,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Replacement for missing time in the previous source, approved by the product owner 23/11/2026. Replaces the earlier replacement (Essen & Trinken, Gemüse-Käse-Tarte): that recipe listed far more vegetables than the tart needs. This one has sensible weights, 8 pieces and 75 min. Only 7 ratings (3.7 of 5); editorial recipe. Free-form tart on a tray (no tin), with goat's cheese, artichokes and peas. Source ranges: oil 4-5 tbsp (4 used), sugar 1-2 tbsp (1 used). Breadcrumbs only 'about 2 tbsp'.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

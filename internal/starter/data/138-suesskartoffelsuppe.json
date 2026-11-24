@@ -1,0 +1,172 @@
+{
+  "n": 138,
+  "slug": "suesskartoffelsuppe",
+  "category": "Suppen",
+  "servings": 8,
+  "time_minutes": 40,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/kokos-suesskartoffelsuppe-81378.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1.5,
+      "unit": "kg",
+      "article_de": "Süßkartoffeln",
+      "article_en": "Sweet potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Paprika, rot",
+      "article_en": "Red bell peppers",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zwiebeln",
+      "article_en": "Onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Kokosöl",
+      "article_en": "Coconut oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Currypaste, gelb",
+      "article_en": "Yellow curry paste",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 20,
+      "unit": "g",
+      "article_de": "Ingwer",
+      "article_en": "Ginger",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Limettensaft",
+      "article_en": "Lime juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Dose",
+      "article_de": "Kokosmilch",
+      "article_en": "Coconut milk",
+      "note_de": "400 ml",
+      "note_en": "400 ml"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Kokoschips, geröstet",
+      "article_en": "Coconut chips, toasted",
+      "note_de": "zum Garnieren",
+      "note_en": "to garnish"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Koriander",
+      "article_en": "Coriander",
+      "note_de": "zum Garnieren",
+      "note_en": "to garnish"
+    }
+  ],
+  "de": {
+    "title": "Kokos-Süßkartoffelsuppe",
+    "steps": [
+      "Süßkartoffeln schälen und würfeln. Zwiebeln und Paprika putzen und klein würfeln. Knoblauch und Ingwer abziehen beziehungsweise schälen und klein hacken.",
+      "Kokosöl im großen Topf erhitzen und die Zwiebeln darin anbraten. Paprika und Currypaste zugeben und mitschwitzen, dann Ingwer und Knoblauch kurz mitgaren.",
+      "Die Süßkartoffeln zufügen, 2 Liter Wasser angießen und zugedeckt 15 bis 20 Minuten köcheln, bis sie weich sind.",
+      "Limettensaft und Kokosmilch einrühren, einmal kurz aufkochen und dann alles pürieren.",
+      "Zum Servieren geröstete Kokoschips und Koriander darübergeben."
+    ]
+  },
+  "en": {
+    "title": "Coconut sweet potato soup",
+    "steps": [
+      "Peel and dice the sweet potatoes. Clean and dice the onions and peppers. Peel the garlic and ginger and chop them small.",
+      "Heat the coconut oil in a large pot and fry the onions in it. Add the peppers and curry paste and sweat them, then add the ginger and garlic for a short while.",
+      "Add the sweet potatoes, pour in 2 litres of water and simmer covered for 15 to 20 minutes until tender.",
+      "Stir in the lime juice and coconut milk, bring briefly to the boil, then purée everything.",
+      "To serve, top with toasted coconut chips and coriander."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1500,
+        "unit": "g"
+      },
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "clove"
+      },
+      {
+        "index": 7,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "can"
+      }
+    ]
+  },
+  "review_note": "Source ingredient list contains no stock or water; the steps say to add enough hot water to cover the vegetables, please check. Currypaste allergens not verified.",
+  "originality": {
+    "overlap_5gram": 0,
+    "checked": "23/11/2026"
+  }
+}

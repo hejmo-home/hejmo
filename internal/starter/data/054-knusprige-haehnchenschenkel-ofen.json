@@ -1,0 +1,166 @@
+{
+  "n": 54,
+  "slug": "knusprige-haehnchenschenkel-ofen",
+  "category": "Hauptgerichte",
+  "servings": 2,
+  "time_minutes": 80,
+  "diet_suggested": null,
+  "allergens_suggested": [],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/knusprige-haehnchenschenkel-4318.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Hähnchenschenkel",
+      "article_en": "Chicken legs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zitrone",
+      "article_en": "Lemon",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel, rot",
+      "article_en": "Red onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Knoblauchknolle",
+      "article_en": "Garlic bulb",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 12,
+      "unit": "Stk",
+      "article_de": "Kartoffeln, klein",
+      "article_en": "Small potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 8,
+      "unit": "Stk",
+      "article_de": "Cherrytomaten",
+      "article_en": "Cherry tomatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 150,
+      "unit": "ml",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "ml",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Hähnchengewürz",
+      "article_en": "Chicken seasoning",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Thymian",
+      "article_en": "Thyme",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Basilikum",
+      "article_en": "Basil",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Knusprige Hähnchenschenkel aus dem Ofen",
+    "steps": [
+      "Ofen auf 200 °C Ober-/Unterhitze vorheizen.",
+      "Die Hähnchenschenkel mit dem Hähnchengewürz einreiben. Zunächst kein Öl auf das Fleisch geben.",
+      "In einer tiefen Schüssel die Marinade für die Kartoffeln mischen: das Öl, den Saft von einer Zitrone, den Thymian, das Basilikum und die Hälfte des Knoblauchs, durch die Presse gedrückt. Die kleinen Kartoffeln darin wenden.",
+      "Ein Backblech mit Folie auslegen. Hähnchenschenkel, Kartoffeln, die restlichen ganzen, geschälten Knoblauchzehen, die in Achtel geschnittene Zwiebel und die Zitronenstücke darauf verteilen.",
+      "Das übrige Öl aus der Schüssel rund um das Gemüse auf das Blech gießen, nicht über das Fleisch.",
+      "Etwa 40 Minuten im Ofen garen. Dann das Fleisch mit dem Öl vom Blech einpinseln oder beträufeln.",
+      "Die Cherrytomaten dazugeben und noch 5 Minuten fertig garen."
+    ]
+  },
+  "en": {
+    "title": "Crispy oven-baked chicken legs",
+    "steps": [
+      "Preheat the oven to 200 C top/bottom heat.",
+      "Rub the chicken legs with the chicken seasoning. Do not put any oil on the meat at first.",
+      "In a deep bowl mix the marinade for the potatoes: the oil, the juice of one lemon, the thyme, the basil and half of the garlic, pressed. Turn the small potatoes in it.",
+      "Line a baking tray with foil. Arrange the chicken legs, potatoes, the remaining whole peeled garlic cloves, the onion cut into eighths and the lemon pieces on it.",
+      "Pour the leftover oil from the bowl around the vegetables onto the tray, not over the meat.",
+      "Roast for about 40 minutes. Then brush or spoon the oil from the tray over the meat.",
+      "Add the cherry tomatoes and roast for a final 5 minutes."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 12,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 8,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Source does not say which oil (150 ml Öl vs 50 ml Olivenöl) goes where; steps say \"oil\". The remaining lemon is cut into wedges per the source (\"geachtelte Zwiebel und Zitrone\"). Source rating shows 1 rating; list says Redaktionsküche. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

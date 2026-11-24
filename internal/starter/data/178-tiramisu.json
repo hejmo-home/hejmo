@@ -1,0 +1,151 @@
+{
+  "n": 178,
+  "slug": "tiramisu",
+  "category": "Desserts",
+  "servings": 4,
+  "time_minutes": 30,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Nüsse",
+      "en": "Tree nuts"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/323461114392341/Tiramisu.html",
+    "site": "Chefkoch",
+    "ratings": 1098
+  },
+  "ingredients": [
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Puderzucker",
+      "article_en": "Icing sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Eigelb",
+      "article_en": "Egg yolks",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eiweiß",
+      "article_en": "Egg whites",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "cl",
+      "article_de": "Amaretto",
+      "article_en": "Amaretto",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Tasse",
+      "article_de": "Kaffee",
+      "article_en": "Coffee",
+      "note_de": "stark, oder Espresso",
+      "note_en": "strong, or espresso"
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Mascarpone",
+      "article_en": "Mascarpone",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Löffelbiskuits",
+      "article_en": "Ladyfingers (savoiardi)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Kakaopulver",
+      "article_en": "Cocoa powder",
+      "note_de": "etwas, zum Bestäuben",
+      "note_en": "a little, for dusting"
+    }
+  ],
+  "de": {
+    "title": "Tiramisu",
+    "steps": [
+      "Hinweis: Das Tiramisu enthält rohes Ei und Alkohol (Amaretto). Das ist nichts für kleine Kinder.",
+      "Koche 2 Tassen starken Kaffee oder Espresso und lass ihn abkühlen.",
+      "Schlage 4 Eigelb mit 100 g Puderzucker und 2 cl Amaretto mit dem Handmixer cremig.",
+      "Gib 500 g Mascarpone dazu und hebe ihn mit einem Kochlöffel von Hand unter. Nicht zu lange rühren und nie mit dem Mixer, sonst wird die Creme flüssig.",
+      "Schlage in einer sauberen Schüssel 2 Eiweiß steif und hebe sie vorsichtig unter die Creme.",
+      "Tauche 250 g Löffelbiskuits kurz in den Kaffee und lege damit den Boden einer Form aus. Verteile die Hälfte der Creme darauf.",
+      "Mach noch einmal dasselbe: Biskuits in Kaffee tunken, auflegen, restliche Creme drauf. So hast du insgesamt 4 Schichten.",
+      "Bestäube die Oberfläche dick mit Kakaopulver und stelle das Tiramisu kalt, bis es gut durchgezogen ist."
+    ]
+  },
+  "en": {
+    "title": "Tiramisu",
+    "steps": [
+      "Note: the tiramisu contains raw egg and alcohol (amaretto). It is not suitable for small children.",
+      "Make 2 cups of strong coffee or espresso and let it cool.",
+      "Beat 4 egg yolks with 100 g icing sugar and 2 cl amaretto with a hand mixer until creamy.",
+      "Add 500 g mascarpone and fold it in by hand with a wooden spoon. Do not stir for too long and never use the mixer, or the cream turns runny.",
+      "In a clean bowl, whip 2 egg whites until stiff and fold them gently into the cream.",
+      "Dip 250 g ladyfingers briefly in the coffee and use them to line the bottom of a dish. Spread half of the cream on top.",
+      "Do the same once more: dip biscuits in coffee, lay them down, add the remaining cream. That makes 4 layers in total.",
+      "Dust the top thickly with cocoa powder and chill the tiramisu until it has set well."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 20,
+        "unit": "ml"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "cup"
+      }
+    ]
+  },
+  "review_note": "Contains alcohol (amaretto) and raw egg; flag for families with small children. \"2 Tasse/n\" kept as 2 cups. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

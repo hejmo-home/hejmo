@@ -1,0 +1,180 @@
+{
+  "n": 36,
+  "slug": "haehnchen-curry-mild",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 50,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Nüsse",
+      "en": "Tree nuts"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/easy-chicken-curry",
+    "site": "BBC Good Food",
+    "ratings": 367
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Sonnenblumenöl",
+      "article_en": "Sunflower oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": "in dünne Scheiben geschnitten",
+      "note_en": "thinly sliced"
+    },
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": "zerdrückt",
+      "note_en": "crushed"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Ingwer",
+      "article_en": "Ginger",
+      "note_de": "daumengroßes Stück, gerieben",
+      "note_en": "thumb-sized piece, grated"
+    },
+    {
+      "amount": 6,
+      "unit": "Stk",
+      "article_de": "Hähnchenschenkel, ohne Knochen und Haut",
+      "article_en": "Chicken thighs, boneless and skinless",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Currypaste, mittelscharf (z. B. Tikka)",
+      "article_en": "Medium spice paste (tikka works well)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Tomaten, gehackt (Dose)",
+      "article_en": "Chopped tomatoes (can)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Joghurt, griechisch",
+      "article_en": "Greek yogurt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Koriander",
+      "article_en": "Coriander",
+      "note_de": "klein, Blätter gehackt",
+      "note_en": "small bunch, leaves chopped"
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Mandeln, gemahlen",
+      "article_en": "Ground almonds",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Naan oder gekochter Basmatireis",
+      "article_en": "Naan breads or cooked basmati rice",
+      "note_de": "zum Servieren",
+      "note_en": "to serve"
+    }
+  ],
+  "de": {
+    "title": "Hähnchen-Curry (mild)",
+    "steps": [
+      "Schneide die Zwiebel in dünne Scheiben. Reibe den Ingwer und drücke den Knoblauch durch die Presse. Schneide das Hähnchen in etwa 3 cm große Stücke.",
+      "Erhitze das Öl in einem feuerfesten Bräter oder einer großen Pfanne bei mittlerer Hitze. Brate die Zwiebel mit einer Prise Salz 8 bis 10 Minuten, bis sie goldbraun und klebrig ist.",
+      "Gib Knoblauch und Ingwer dazu und brate sie 1 Minute mit. Gib dann das Hähnchen dazu und brate es 5 Minuten rundherum an.",
+      "Rühre die Currypaste, die Tomaten und 250 ml Wasser ein. Bringe alles zum Kochen und lass es dann 25 bis 30 Minuten ohne Deckel sanft köcheln. Die Soße soll satt und etwas eingekocht sein.",
+      "Rühre ganz am Schluss Joghurt, Koriander und gemahlene Mandeln unter. Schmecke das Curry ab und serviere es mit Naan oder Basmatireis."
+    ]
+  },
+  "en": {
+    "title": "Mild chicken curry",
+    "steps": [
+      "Cut the onion into thin slices. Grate the ginger and crush the garlic. Cut the chicken into pieces of about 3 cm.",
+      "Heat the oil in a flameproof casserole or a large pan over medium heat. Fry the onion with a pinch of salt for 8 to 10 minutes, until golden and sticky.",
+      "Add the garlic and ginger and cook for 1 minute. Then add the chicken and brown it all over for 5 minutes.",
+      "Stir in the curry paste, tomatoes and 250 ml of water. Bring to the boil, then let it simmer gently without a lid for 25 to 30 minutes. The sauce should be rich and slightly reduced.",
+      "Stir in the yogurt, coriander and ground almonds right at the end. Season the curry and serve it with naan or basmati rice."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "clove"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 6,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "bunch"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Source uses a medium-hot spice paste; for a really mild curry for small children choose a mild paste (not specified in the source). Source also mentions a pinch of salt in the method without an amount. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

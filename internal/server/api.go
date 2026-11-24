@@ -46,6 +46,7 @@ var apiRoutes = []APIRoute{
 	{"PUT", "/people/{id}/food", auth.Perm("health", auth.Write), (*server).apiPutFood},
 	{"GET", "/people/{id}/stars", auth.Perm("tasks", auth.Read), (*server).apiGetStars},
 	{"POST", "/people/{id}/stars", auth.Perm("tasks", auth.Write), (*server).apiBookStars},
+	{"GET", "/people/{id}/badges", auth.Perm("tasks", auth.Read), (*server).apiGetBadges},
 	{"GET", "/me/passkeys", auth.Perm("people", auth.Read), (*server).apiListPasskeys},
 	{"POST", "/me/passkeys/registration", auth.Perm("people", auth.Write), (*server).apiPasskeyBegin},
 	{"POST", "/me/passkeys", auth.Perm("people", auth.Write), (*server).apiPasskeyCreate},

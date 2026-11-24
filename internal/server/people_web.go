@@ -257,7 +257,7 @@ func (s *server) renderPerson(w http.ResponseWriter, r *http.Request, p principa
 		streaksShown = v // a rejected form keeps the switch as the parent left it
 	}
 	data := map[string]any{
-		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Subject": chip, "Role": person.Role, "StreaksShown": streaksShown,
+		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Subject": chip, "Role": person.Role, "StreaksShown": streaksShown, "Possessive": possessive(s.langOf(r), person.Name),
 		"Form": form, "Error": form["Error"], "ErrorField": form["ErrorField"],
 	}
 	f, err := s.db.PersonFood(p.household.ID, person.ID)

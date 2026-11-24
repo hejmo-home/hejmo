@@ -2665,6 +2665,35 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /people/{id}/badges:
+    get:
+      operationId: getBadges
+      summary: A person's badges (scope tasks:read)
+      description: |
+        The ten fixed badges (ticket 295) a person has earned, newest first (the
+        ones earned together in catalogue order): `first_routine`, `whole_day`,
+        `whole_week`, `streak_7`, `streak_30`, `first_star`, `stars_100`,
+        `stars_500`, `first_reward`, `goal_reached`. A badge is earned once per
+        person and never taken away: unticking, a falling balance or a broken
+        week leave it in place. `stars_100` and `stars_500` count every star
+        earned (ticks and parents' positive bookings), not the balance.
+        `new` is true for a badge earned today or yesterday (household time
+        zone) while the person's switch "week count and badges" was on.
+        `name` and `how` are in the language of the request. Read only: there is
+        no way to award or remove a badge. While `streaks_shown` is false the
+        list is empty (badges are hidden everywhere, but still earned and
+        stored). Everyone may read it; there is no ranking between people.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The badges
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Badges" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /people/{id}/savings-goal:
     get:
       operationId: getSavingsGoal
@@ -5236,6 +5265,26 @@ components:
         entries:
           type: array
           items: { $ref: "#/components/schemas/StarEntry" }
+    Badges:
+      type: object
+      required: [person_id, streaks_shown, badges]
+      properties:
+        person_id: { type: string, format: uuid }
+        streaks_shown: { type: boolean, description: "The person's switch \"week count and badges\"; the list is empty while it is off" }
+        badges:
+          type: array
+          items: { $ref: "#/components/schemas/Badge" }
+    Badge:
+      type: object
+      required: [key, name, how, earned_at, new]
+      properties:
+        key:
+          type: string
+          enum: [first_routine, whole_day, whole_week, streak_7, streak_30, first_star, stars_100, stars_500, first_reward, goal_reached]
+        name: { type: string, description: "The short name in the language of the request" }
+        how: { type: string, description: "One sentence saying how the badge is earned" }
+        earned_at: { type: string, format: date-time, description: "In the household time zone; a box updated to this version dates the badges its history already earned that day" }
+        new: { type: boolean, description: "Earned today or yesterday (household time zone) while the switch was on" }
     ListColor:
       type: string
       description: The person colour slot 1 to 6 of DESIGN.md, by name

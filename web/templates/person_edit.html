@@ -24,7 +24,7 @@
     </fieldset>
     <fieldset>
       <legend>{{t "people.routines"}}</legend>
-      {{template "switch" (dict "Name" "streaks" "Label" (t "people.streaks.label") "OnText" (tf "people.streaks.on" "name" .Subject.Name) "OffText" (tf "people.streaks.off" "name" .Subject.Name) "AriaLabel" (t "people.streaks.aria") "Checked" .StreaksShown)}}
+      {{template "switch" (dict "Name" "streaks" "Label" (t "people.streaks.label") "OnText" (tf "people.streaks.on" "name" .Subject.Name) "OffText" (tf "people.streaks.off" "name" .Subject.Name "possessive" .Possessive) "AriaLabel" (t "people.streaks.aria") "Checked" .StreaksShown)}}
       <p class="hint">{{t "people.streaks.hint"}}</p>
     </fieldset>
     <button class="button" type="submit">{{t "people.save"}}</button>

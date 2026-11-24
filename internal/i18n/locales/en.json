@@ -4579,6 +4579,7 @@
   "cimp.c.new.taken": "Will be called “{name}” because the name is taken.",
   "cimp.c.new.two": "Add as two contacts",
   "cimp.c.new.many": "Add as {n} contacts",
+  "cimp.c.new.names": "Will be called {names}.",
   "cimp.c.skip": "Do not take over",
   "cimp.c.skip.person": "{name} is in Hejmo already and is not added twice.",
   "cimp.c.skip.two": "Take over neither",

@@ -741,3 +741,31 @@ func TestAGroupThatDoesNotExistIsRefusedAtTheReviewNotAnErrorPage(t *testing.T) 
 		t.Error("a contact was made although the confirmation was refused")
 	}
 }
+
+func TestSeveralCardsOfOneContactSayThatChoosingNewMakesOneContactEachAndShowTheMergedValues(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	c.add(t, contactForm("Kinderarzt", "Kinderarztpraxis Dr. Yılmaz", [][3]string{{"work", "", "089 1234 5670"}}, nil))
+	data := vcf(`BEGIN:VCARD
+VERSION:3.0
+FN:Praxis Eins
+TEL;TYPE=WORK:089 1234 5670
+EMAIL:eins@example.de
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Praxis Zwei
+TEL;TYPE=WORK:089 1234 5670
+ADR;TYPE=WORK:;;Hauptstr 1;München;;80331;
+END:VCARD
+`)
+	path := c.startImport("praxis.vcf", data)
+	body := c.page(path, "de").body
+	ctHas(t, "several", body, "Als zwei Kontakte anlegen", "Praxis Eins", "Praxis Zwei", "Hauptstr 1")
+	ctHasNot(t, "several", body, "Als eigenen Kontakt anlegen")
+	before := c.contactCount()
+	c.confirm(path, url.Values{"d-1": {"new"}})
+	if c.contactCount() != before+2 || c.contactNamed("Praxis Eins") == nil || c.contactNamed("Praxis Zwei") == nil {
+		t.Errorf("two contacts expected, have %d new", c.contactCount()-before)
+	}
+}

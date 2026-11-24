@@ -145,7 +145,7 @@ func TestMergingAddsNewValuesFillsEmptyFieldsAddsAYearAndNeverOverwrites(t *test
 	if !m.PhotoChoice || m.FileAddress != "Am Erlenbach 9, 83022 Rosenheim" {
 		t.Errorf("photo choice %v, differing address %q", m.PhotoChoice, m.FileAddress)
 	}
-	ops, sum := d.apply("Kontakte Papa.vcf", "keep")
+	ops, sum := d.apply("Kontakte Papa.vcf", nil)
 	in := ops.Input
 	if ops.MergeInto != "oma" || in.HejmoName != "Oma Gerda" || in.FullName != "Gerda Müller" || in.Street != "Am Erlenbach 7" || in.Note != "Mag Rosen" || in.BdayYear != 1950 {
 		t.Errorf("input = %+v", in)
@@ -159,7 +159,7 @@ func TestMergingAddsNewValuesFillsEmptyFieldsAddsAYearAndNeverOverwrites(t *test
 	if sum != "Oma Gerda" {
 		t.Errorf("name = %q", sum)
 	}
-	if ops, _ := d.apply("f.vcf", "file"); ops.Input.PhotoChange != store.SetPicture || string(ops.Input.Photo.JPEG) != "jpeg" || ops.Input.Photo.File != "f.vcf" {
+	if ops, _ := d.apply("f.vcf", d.Cards); ops.Input.PhotoChange != store.SetPicture || string(ops.Input.Photo.JPEG) != "jpeg" || ops.Input.Photo.File != "f.vcf" {
 		t.Errorf("the photo of the file was not set: %+v", ops.Input)
 	}
 }
@@ -172,7 +172,7 @@ func TestAPhotoIsAddedWhenHejmoHasNoneAndNeedsNoChoice(t *testing.T) {
 	if !d.Merge.AddPhoto || d.Merge.PhotoChoice {
 		t.Errorf("merge = %+v", d.Merge)
 	}
-	if ops, _ := d.apply("f.vcf", ""); ops.Input.PhotoChange != store.SetPicture {
+	if ops, _ := d.apply("f.vcf", nil); ops.Input.PhotoChange != store.SetPicture {
 		t.Error("the photo was not added")
 	}
 }
@@ -191,7 +191,7 @@ func TestAHouseholdPersonOnlyGetsNumbersAddressAndPhoto(t *testing.T) {
 	if len(m.AddNumbers) != 1 || len(m.AddEmails) != 0 || m.AddFull != "" || m.AddBirthday || m.AddYear || !m.AddAddress || !m.LockedEmails || !m.LockedBirthday {
 		t.Errorf("merge = %+v", m)
 	}
-	ops, _ := d.apply("f.vcf", "")
+	ops, _ := d.apply("f.vcf", nil)
 	in := ops.Input
 	if len(in.Emails) != 1 || in.Emails[0].Value != "kathi@example.de" || in.BdayDay != 17 || in.FullName != "Katharina Maier-Schmidt" || in.HejmoName != "Mama" || len(in.Relations) != 0 {
 		t.Errorf("a person changed: %+v", in)
@@ -263,7 +263,7 @@ func TestTwoCardsOfTheFileWithTheSameNumberAreOneQuestionAndNothingIsMergedSilen
 	if !d.InFile || d.Existing != nil || len(d.Cards) != 2 || d.Preselect != "merge" || strings.Join(d.Choices, ",") != "merge,new,skip" || d.Matches[0].Kind != MatchNumber {
 		t.Fatalf("dup = %+v", d)
 	}
-	op, _ := d.apply("f.vcf", "")
+	op, _ := d.apply("f.vcf", nil)
 	in := op.Input
 	if op.MergeInto != "" || in.HejmoName != "Herr Brandl" || len(in.Numbers) != 2 || in.PhotoChange != store.SetPicture || string(in.Photo.JPEG) != "jpeg" {
 		t.Errorf("merged = %+v", in)
@@ -402,5 +402,61 @@ func TestTwoQuestionsMergedIntoOneContactAreOneOperationWithEverythingBothBring(
 	ops, res := p.Ops(Decisions{Dup: map[string]string{"d1": "merge", "d2": "merge"}}, "f.vcf")
 	if len(ops) != 1 || len(res.Completed) != 1 || len(ops[0].Input.Emails) != 2 || len(ops[0].Input.Numbers) != 3 {
 		t.Errorf("ops = %+v, res = %+v", ops, res)
+	}
+}
+
+// A photo picked in the second of two questions that merge into one contact is not lost.
+func TestAPhotoChosenInTheSecondOfTwoMergedQuestionsIsUsed(t *testing.T) {
+	t.Parallel()
+	a := card(1, "Gerda Müller", []string{"0160 111 1111"}, nil)
+	a.Photo = []byte("AAA")
+	b := card(2, "Gerda Müller", []string{"0160 222 2222"}, nil)
+	b.Photo = []byte("BBB")
+	p := Build([]vcard.Card{a, b}, hejmo(), "DE")
+	if len(p.Dups) != 2 {
+		t.Fatalf("plan = %+v", p)
+	}
+	dec := Decisions{Dup: map[string]string{"d1": "merge", "d2": "merge"}, Photo: map[string]string{"d2": "file"}}
+	ops, _ := p.Ops(dec, "f.vcf")
+	if len(ops) != 1 || ops[0].Input.Photo == nil || string(ops[0].Input.Photo.JPEG) != "BBB" {
+		t.Errorf("ops = %+v, want the photo of the second card", ops)
+	}
+	ops, _ = p.Ops(Decisions{Dup: dec.Dup}, "f.vcf")
+	if len(ops) != 1 || ops[0].Input.Photo != nil {
+		t.Errorf("without a choice Hejmo keeps its photo: %+v", ops)
+	}
+}
+
+// A card that is tied to the cards of a contact only by name stays out of that question, and the reasons name
+// only what Hejmo has.
+func TestACardTiedToAnotherNewCardOnlyByNameIsNotPulledIntoTheQuestionOfAContact(t *testing.T) {
+	t.Parallel()
+	a := card(1, "Gerda", []string{"0171 3456789", "0160 111 222"}, nil)
+	b := card(2, "Frau Müller", []string{"0160 111 222"}, nil)
+	c := card(3, "Frau Müller", nil, []string{"fm@example.de"})
+	p := Build([]vcard.Card{a, b, c}, hejmo(), "DE")
+	if len(p.Dups) != 1 || len(p.Dups[0].Cards) != 2 || len(p.News) != 1 || p.News[0].Card.Number != 3 {
+		t.Fatalf("plan = %+v", p)
+	}
+	oma := hejmo()[3]
+	for _, m := range p.Dups[0].Matches {
+		if m.Hejmo.Value != oma.Numbers[0].Value && m.Hejmo.Value != oma.Numbers[1].Value {
+			t.Errorf("reason %+v names a value Hejmo does not have", m)
+		}
+	}
+}
+
+// The merge shows what the merged cards add, whichever card brings it.
+func TestTheMergeNamesTheAddressAndNoteOfTheCardThatBringsThem(t *testing.T) {
+	t.Parallel()
+	a := card(1, "Praxis", []string{"089 1234 5670"}, []string{"p@example.de"})
+	b := card(2, "Praxis Süd", []string{"089 1234 5670"}, nil)
+	b.Street, b.City, b.Note = "Hauptstr 1", "München", "Mo-Fr"
+	p := Build([]vcard.Card{a, b}, hejmo(), "DE")
+	if len(p.Dups) != 1 || len(p.Dups[0].Cards) != 2 {
+		t.Fatalf("plan = %+v", p)
+	}
+	if m := p.Dups[0].Merge; !m.AddAddress || m.Address != "Hauptstr 1, München" || !m.AddNote || m.Note != "Mo-Fr" {
+		t.Errorf("merge = %+v", m)
 	}
 }

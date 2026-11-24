@@ -4579,6 +4579,7 @@
   "cimp.c.new.taken": "Heißt dann „{name}“, weil der Name schon vergeben ist.",
   "cimp.c.new.two": "Als zwei Kontakte anlegen",
   "cimp.c.new.many": "Als {n} Kontakte anlegen",
+  "cimp.c.new.names": "Heißen dann {names}.",
   "cimp.c.skip": "Nicht übernehmen",
   "cimp.c.skip.person": "{name} ist schon in Hejmo und wird nicht zweimal angelegt.",
   "cimp.c.skip.two": "Beide nicht übernehmen",

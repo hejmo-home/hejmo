@@ -950,7 +950,18 @@ func (e ctEnv) dupView(imp store.ContactImport, d contactimport.Dup, dec contact
 				}
 			case contactimport.ChoiceNew:
 				ch.Label = e.t("cimp.c.new")
-				if d.NewNote != nil && d.NewNote.Kind == contactimport.NameTaken {
+				if len(d.Cards) > 1 {
+					// Every card becomes a contact of its own: say so, with every name.
+					ch.Label = e.t("cimp.c.new.many", "n", strconv.Itoa(len(d.Cards)))
+					if len(d.Cards) == 2 {
+						ch.Label = e.t("cimp.c.new.two")
+					}
+					quoted := make([]string, len(d.NewNames))
+					for i, n := range d.NewNames {
+						quoted[i] = "“" + n + "”"
+					}
+					ch.Small = e.t("cimp.c.new.names", "names", contact.JoinNames(quoted, e.t("contact.rel.and")))
+				} else if d.NewNote != nil && d.NewNote.Kind == contactimport.NameTaken {
 					ch.Small = e.t("cimp.c.new.taken", "name", d.NewName)
 				} else {
 					ch.Small = e.t("cimp.c.new.name", "name", d.NewName)
@@ -1006,7 +1017,6 @@ func (e ctEnv) mergeOut(imp store.ContactImport, d contactimport.Dup, dec contac
 	m := impMergeOut{Head: e.t("cimp.merge.h")}
 	c := *d.Existing
 	mg := d.Merge
-	card := d.Cards[0]
 	for _, l := range mg.AddNumbers {
 		m.Add = append(m.Add, e.kindWord(l, false)+" "+l.Value)
 	}
@@ -1017,16 +1027,16 @@ func (e ctEnv) mergeOut(imp store.ContactImport, d contactimport.Dup, dec contac
 		m.Add = append(m.Add, e.t("cimp.add.full", "name", mg.AddFull))
 	}
 	if mg.AddAddress {
-		m.Add = append(m.Add, e.t("cimp.add.address", "address", addressText(card.Street, card.Postcode, card.City, card.Country)))
+		m.Add = append(m.Add, e.t("cimp.add.address", "address", mg.Address))
 	}
 	if mg.AddBirthday {
-		m.Add = append(m.Add, e.t("cimp.add.birthday", "date", e.bdayText(card.BdayDay, card.BdayMonth, card.BdayYear)))
+		m.Add = append(m.Add, e.t("cimp.add.birthday", "date", e.bdayText(mg.Birthday[0], mg.Birthday[1], mg.Birthday[2])))
 	}
 	if mg.AddYear {
-		m.Add = append(m.Add, e.t("cimp.add.year", "from", e.bdayText(c.BdayDay, c.BdayMonth, 0), "to", e.bdayText(card.BdayDay, card.BdayMonth, card.BdayYear)))
+		m.Add = append(m.Add, e.t("cimp.add.year", "from", e.bdayText(c.BdayDay, c.BdayMonth, 0), "to", e.bdayText(mg.Birthday[0], mg.Birthday[1], mg.Birthday[2])))
 	}
 	if mg.AddNote {
-		m.Add = append(m.Add, e.t("cimp.add.note", "text", clipText(card.Note, 60)))
+		m.Add = append(m.Add, e.t("cimp.add.note", "text", clipText(mg.Note, 60)))
 	}
 	if mg.AddPhoto {
 		m.Add = append(m.Add, e.t("cimp.add.photo"))
@@ -1097,6 +1107,7 @@ func (e ctEnv) mergeOut(imp store.ContactImport, d contactimport.Dup, dec contac
 	if mg.Dropped > 0 {
 		m.Keep = append(m.Keep, e.t("cimp.keep.dropped", "n", strconv.Itoa(mg.Dropped)))
 	}
+	card, _ := firstCardWith(d.Cards, func(c vcard.Card) bool { return len(c.Photo) > 0 })
 	switch {
 	case mg.PhotoChoice:
 		w := e.fileSide(imp, card, c.HejmoName)

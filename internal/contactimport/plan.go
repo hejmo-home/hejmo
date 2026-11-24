@@ -65,6 +65,9 @@ type Merge struct {
 	AddAddress            bool
 	AddBirthday, AddYear  bool
 	AddNote, AddPhoto     bool
+	// What is added, as it stands in the merged contact: the address line, the birthday (day, month, year) and the note.
+	Address, Note string
+	Birthday      [3]int
 	// PhotoChoice is set when both sides have a photo and something else is added: the parent chooses.
 	PhotoChoice bool
 	// What the file says and Hejmo keeps as it is (only where both have a value that differs).
@@ -115,7 +118,7 @@ type Dup struct {
 func (d *Dup) join(c vcard.Card, ms []Match) {
 	i, _ := slices.BinarySearchFunc(d.Cards, c.Number, func(x vcard.Card, n int) int { return x.Number - n })
 	d.Cards = slices.Insert(d.Cards, i, c)
-	if len(d.Matches) == 0 || ms[0].Kind != MatchName {
+	if len(ms) > 0 && (len(d.Matches) == 0 || ms[0].Kind != MatchName) {
 		d.Matches = append(d.Matches, ms...)
 	}
 	if d.Matches[0].Kind != MatchName {
@@ -319,6 +322,15 @@ func mergeInto(f fields, rest []fields, person bool, region string) (fields, Mer
 			all.FileBirthday = m.FileBirthday
 		}
 	}
+	if all.AddAddress {
+		all.Address = f.address()
+	}
+	if all.AddBirthday || all.AddYear {
+		all.Birthday = [3]int{f.Day, f.Month, f.Year}
+	}
+	if all.AddNote {
+		all.Note = f.Note
+	}
 	return f, all
 }
 
@@ -413,6 +425,33 @@ type cluster struct {
 	match []Match
 }
 
+// addToClusters puts a new card in the first cluster that has a card it shares a number, an e-mail address or the
+// name with, else in a cluster of its own.
+func addToClusters(clusters []*cluster, ci cardInfo, region string) []*cluster {
+	for _, cl := range clusters {
+		for _, other := range cl.infos {
+			ms := ci.matchOf(other.card.Numbers, other.card.Emails, other.nm, region)
+			if len(ms) == 0 {
+				continue
+			}
+			cl.infos = append(cl.infos, ci)
+			if len(cl.match) == 0 || (cl.match[0].Kind == MatchName && ms[0].Kind != MatchName) {
+				cl.match = ms
+			}
+			return clusters
+		}
+	}
+	return append(clusters, &cluster{infos: []cardInfo{ci}})
+}
+
+func clustersOf(infos []cardInfo, region string) []*cluster {
+	var out []*cluster
+	for _, ci := range infos {
+		out = addToClusters(out, ci, region)
+	}
+	return out
+}
+
 // Build works out what the cards bring to the contacts of a household. region is the home country (ISO 3166-1).
 func Build(cards []vcard.Card, existing []store.Contact, region string) Plan {
 	p := Plan{Cards: len(cards)}
@@ -467,48 +506,54 @@ func Build(cards []vcard.Card, existing []store.Contact, region string) Plan {
 			continue
 		}
 		// Another new card of the file.
-		joined := false
-		for _, cl := range clusters {
-			for _, other := range cl.infos {
-				ms := ci.matchOf(other.card.Numbers, other.card.Emails, other.nm, region)
-				if len(ms) == 0 {
+		clusters = addToClusters(clusters, ci, region)
+	}
+	// A new card that shares a number or an e-mail address with a card that matched a contact is in that question
+	// too, whichever of the two comes first in the file, and so are the cards of its cluster that share a number or
+	// an e-mail address with it. A card tied to them by name alone stays a card of its own. The matches between
+	// cards are not reasons (they are no value of the contact), so they are not kept.
+	var left []*cluster
+	for _, cl := range clusters {
+		linked := make([]bool, len(cl.infos))
+		joinedTo := -1
+		for k, ci := range cl.infos {
+			for i := range p.Dups {
+				d := &p.Dups[i]
+				if d.Matches[0].Kind == MatchName {
 					continue
 				}
-				cl.infos = append(cl.infos, ci)
-				if len(cl.match) == 0 || (cl.match[0].Kind == MatchName && ms[0].Kind != MatchName) {
-					cl.match = ms
+				for _, dc := range d.Cards {
+					if len(ci.matchOf(dc.Numbers, dc.Emails, nil, region)) > 0 { // a name alone does not join
+						linked[k], joinedTo = true, i
+					}
 				}
-				joined = true
-				break
-			}
-			if joined {
-				break
 			}
 		}
-		if !joined {
-			clusters = append(clusters, &cluster{infos: []cardInfo{ci}})
+		if joinedTo < 0 {
+			left = append(left, cl)
+			continue
 		}
+		for changed := true; changed; {
+			changed = false
+			for k, ci := range cl.infos {
+				for j, other := range cl.infos {
+					if linked[j] && !linked[k] && len(ci.matchOf(other.card.Numbers, other.card.Emails, nil, region)) > 0 {
+						linked[k], changed = true, true
+					}
+				}
+			}
+		}
+		var rest []cardInfo
+		for k, ci := range cl.infos {
+			if linked[k] {
+				p.Dups[joinedTo].join(ci.card, nil)
+			} else {
+				rest = append(rest, ci)
+			}
+		}
+		left = append(left, clustersOf(rest, region)...)
 	}
-	// A new card that shares a number, an e-mail address or the name with a card that matched a contact is in that
-	// question too, whichever of the two comes first in the file.
-	clusters = slices.DeleteFunc(clusters, func(cl *cluster) bool {
-		for i := range p.Dups {
-			d := &p.Dups[i]
-			for _, dc := range slices.Clone(d.Cards) {
-				for _, ci := range cl.infos {
-					ms := ci.matchOf(dc.Numbers, dc.Emails, nil, region) // a name alone does not join
-					if len(ms) == 0 || d.Matches[0].Kind == MatchName {
-						continue
-					}
-					for _, in := range cl.infos {
-						d.join(in.card, ms)
-					}
-					return true
-				}
-			}
-		}
-		return false
-	})
+	clusters = left
 	for i := range p.Dups {
 		d := &p.Dups[i]
 		var all []fields
@@ -749,9 +794,9 @@ func withPhoto(in store.ContactInput, jpeg []byte, file string) store.ContactInp
 }
 
 // apply makes the operation for merging: into the contact in Hejmo, or, for cards of the file, into one new
-// contact. photo is "file" when the parent wants the photo of the file over the one Hejmo has. It also returns the
-// name of the contact.
-func (d Dup) apply(file, photo string) (store.ImportOp, string) {
+// contact. photoCards are the cards whose photo the parent wants over the one Hejmo has. It also returns the name
+// of the contact.
+func (d Dup) apply(file string, photoCards []vcard.Card) (store.ImportOp, string) {
 	var rest []fields
 	for _, c := range d.Cards {
 		rest = append(rest, fieldsOfCard(c))
@@ -764,8 +809,10 @@ func (d Dup) apply(file, photo string) (store.ImportOp, string) {
 	f, m := mergeInto(fieldsOfContact(e), rest, e.IsPerson(), d.region)
 	in := input(e.HejmoName, f, file)
 	in.HideBirthday, in.GroupIDs, in.Relations = e.HideBirthday, slices.Clone(e.GroupIDs), slices.Clone(e.Relations)
-	if m.AddPhoto || (m.PhotoChoice && photo == "file") {
+	if m.AddPhoto {
 		in = withPhoto(in, firstPhoto(d.Cards), file)
+	} else if m.PhotoChoice && len(photoCards) > 0 {
+		in = withPhoto(in, firstPhoto(photoCards), file)
 	}
 	return store.ImportOp{MergeInto: e.ID, Input: in}, e.HejmoName
 }
@@ -800,6 +847,13 @@ func (p Plan) Ops(dec Decisions, file string) ([]store.ImportOp, Result) {
 			into[d.Existing.ID] = append(into[d.Existing.ID], d.Cards...)
 		}
 	}
+	// A photo chosen in any of the questions counts: the cards of those questions give it.
+	filePhoto := map[string][]vcard.Card{}
+	for _, d := range p.Dups {
+		if c, _ := d.chosen(dec); c == ChoiceMerge && !d.InFile && dec.Photo[d.Key] == "file" {
+			filePhoto[d.Existing.ID] = append(filePhoto[d.Existing.ID], d.Cards...)
+		}
+	}
 	made := map[string]bool{}
 	for _, d := range p.Dups {
 		choice, _ := d.chosen(dec)
@@ -814,7 +868,12 @@ func (p Plan) Ops(dec Decisions, file string) ([]store.ImportOp, Result) {
 				d.Cards = slices.Clone(into[d.Existing.ID])
 				slices.SortStableFunc(d.Cards, func(a, b vcard.Card) int { return a.Number - b.Number })
 			}
-			op, name := d.apply(file, dec.Photo[d.Key])
+			photoCards := d.Cards
+			if !d.InFile {
+				photoCards = filePhoto[d.Existing.ID]
+				slices.SortStableFunc(photoCards, func(a, b vcard.Card) int { return a.Number - b.Number })
+			}
+			op, name := d.apply(file, photoCards)
 			it.ops, it.names = []store.ImportOp{op}, []Entry{{Name: name, Completed: !d.InFile}}
 		case ChoiceNew:
 			it.ops = d.applyNew(file)

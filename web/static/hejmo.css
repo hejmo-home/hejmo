@@ -3172,6 +3172,9 @@ ol.porder > li.prow { margin: 0; padding: 0; background: none; border-radius: 0;
 [data-theme="bw"] .m-col .pg { background: var(--progress-track); }
 [data-theme="bw"] .m-col .pg b { background: var(--progress-fill); }
 .m-col.anchor .pg { margin-top: auto; }
+/* The stars block (ticket 293): a small bar under the tasks bar. */
+.m-col .gl { height: 3px; border-radius: 2px; background: var(--pc); opacity: .7; }
+[data-theme="bw"] .m-col .gl { background: var(--progress-fill); opacity: 1; }
 .m-foot { flex: none; display: flex; gap: var(--g); }
 .m-tile { flex: 1 1 0; min-width: 0; display: grid; gap: 2px; padding: 4px 5px; border-radius: 7px; background: var(--surface); }
 .m-tile i { display: flex; align-items: center; gap: 2px; color: var(--text-secondary); overflow-wrap: anywhere; }
@@ -3200,6 +3203,7 @@ ol.porder > li.prow { margin: 0; padding: 0; background: none; border-radius: 0;
 .layout:has(input[name="b_events"]:not(:checked)) .m-col .ev,
 .layout:has(input[name="b_routines"]:not(:checked)) .m-col .rt,
 .layout:has(input[name="b_tasks"]:not(:checked)) .m-col .pg,
+.layout:has(input[name="b_stars"]:not(:checked)) .m-col .gl,
 .layout:has(input[name="b_meals"]:not(:checked)) .m-meals,
 .layout:has(input[name="b_tomorrow"]:not(:checked)) .m-tomorrow,
 .layout:has(input[name="b_list"]:not(:checked)) .m-list { display: none; }
@@ -3870,3 +3874,75 @@ ol.run li[data-state="fail"] .st { justify-self: start; padding: 4px 8px; border
 .upd-entry .hint { margin: 0; }
 /* A lead-in of a notice is a sentence and may wrap (".notice b" keeps its words together elsewhere); found by the rendered layout check at 375 px. */
 .notice.lead-in > p > b, .error.lead-in > p > b { white-space: normal; }
+
+/* ---- ticket 293: savings goal ---- */
+/* Family view: the column block "stars" (stars and savings goal), under the tasks bar (ticket 293). */
+.fv .col-goal { flex: none; display: grid; grid-template-columns: 32px minmax(0, 1fr); column-gap: 8px; row-gap: 5px; align-items: center; margin-top: var(--gap-cards); padding-top: var(--gap-cards); border-top: 1px solid var(--border); min-height: var(--touch-target); color: inherit; text-decoration: none; font-size: var(--fs-label); }
+.fv .col-goal > * { grid-column: 1 / -1; }
+.fv .col-goal > .art-sym { grid-column: 1; width: 32px; height: 32px; font-size: 20px; border-radius: 8px; }
+.fv .col-goal > .k { grid-column: 2; }
+.fv .col-goal:not([data-goal]) { grid-template-columns: minmax(0, 1fr); }
+.fv .col-goal:not([data-goal]) > * { grid-column: 1; }
+.col-goal .k { font-size: var(--fs-meta); color: var(--text-secondary); line-height: 1.2; }
+.pv-goal .g-name { min-width: 0; display: grid; font-weight: 600; line-height: 1.25; overflow-wrap: break-word; hyphens: auto; margin: 0; }
+.pv-goal .g-name .k { display: flex; align-items: center; gap: 4px; font-size: var(--fs-meta); font-weight: 400; color: var(--text-secondary); }
+.pv-goal .g-name .k .icon { stroke: var(--text-secondary); }
+.col-goal .progress, .pv-goal .progress { width: 100%; }
+.g-count { margin: 0; display: flex; gap: 6px; align-items: flex-start; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: break-word; hyphens: auto; }
+.g-count b { font-weight: 700; }
+.g-count .icon.star { flex: none; margin-top: 1px; color: var(--pc); }
+.g-count.done .icon { flex: none; stroke: var(--pc); stroke-width: 2.4; }
+.g-count.g-bal { font-weight: 400; color: var(--text-secondary); }
+.col-goal[data-reached] .progress > span, .pv-goal[data-reached] .progress > span { width: 100%; }
+
+/* Personal view: the savings goal at the foot of the tasks column, always in sight. */
+.pv-goal { flex: none; display: flex; gap: 12px; align-items: center; padding: 12px var(--pad-column) var(--pad-column); border-top: 1px solid var(--border); }
+.pv-goal .g-body { flex: 1; min-width: 0; display: grid; gap: 6px; }
+.pv-goal .g-name { font-size: var(--fs-event-title); }
+.pv-goal .g-count { font-size: var(--fs-event-title); font-weight: 400; }
+.pv-goal[data-reached] { background: var(--pc-tint); color: var(--pc-text); }
+.pv-goal[data-reached] .g-name .k, .pv-goal[data-reached] .g-name .k .icon { color: var(--pc-text); stroke: var(--pc-text); }
+
+/* Child's reward page: "Your savings goal" above the groups; "Save for this" on cards. */
+.rwd-goal { display: grid; gap: 8px; max-width: 560px; }
+.rwd-goal h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: var(--fs-person-name); }
+.rwd-goal h2 .icon { flex: none; stroke: var(--pc); }
+.rwd-goal .hint { margin: 0; }
+.rwd.goal { border: 2px solid var(--pc); padding: 11px; }
+.rwd.goal .rwd-state.save p { font-weight: 400; }
+.rwd.goal .rwd-state.later { color: var(--text-secondary); }
+.rwd .g-acts, .rwd .rwd-act { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; }
+.rwd .button.sq { min-height: var(--touch-target); }
+.rwd .button.sq .icon.goal-ic { stroke: currentColor; }
+.rwd-group .g-pick { margin: -4px 0 10px; max-width: 560px; }
+.notice.g-ended { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 var(--gap); }
+.notice.g-ended .icon { flex: none; stroke: var(--notice-text); margin-top: 2px; }
+.notice.g-ended p { margin: 0; min-width: 0; overflow-wrap: break-word; }
+.reward-link .g-inline { font-size: inherit; color: var(--text); }
+
+/* Parents: the goal line in each star card, and the choice of a goal. */
+.cards.stars .goal-line { margin: 2px 0 0; display: flex; gap: 6px; align-items: flex-start; overflow-wrap: break-word; }
+.cards.stars .goal-line .icon.goal-ic { flex: none; stroke: var(--pc); margin-top: 2px; }
+.cards.stars .goal-line .k { color: var(--text-secondary); }
+.cards.stars .goal-line .art-sym.sm { display: inline-grid; vertical-align: middle; width: 24px; height: 24px; font-size: 16px; border-radius: 6px; margin: 0 4px 0 2px; }
+.cards.stars .goal-line.none { color: var(--text-secondary); }
+.cards.stars .g-link { justify-self: start; min-height: var(--touch-target); display: inline-flex; align-items: center; }
+fieldset.choice.goals { max-width: 640px; }
+.choice.goals label { grid-template-columns: auto auto minmax(0, 1fr); }
+.choice.goals label > input, .choice.goals label > .art-sym { grid-row: span 2; }
+.choice.goals b, .choice.goals small { grid-column: 3; overflow-wrap: break-word; }
+.choice.goals small { font-size: var(--fs-label); }
+.choice.goals .art-sym { font-size: 26px; }
+.choice.goals small .price { font-weight: 600; }
+.choice.goals label.none .art-sym .icon { stroke: var(--text-secondary); }
+.goal-form .button .icon.goal-ic { stroke: currentColor; }
+
+[data-theme="bw"] .col-goal .k, [data-theme="bw"] .g-count.g-bal { color: var(--text); }
+[data-theme="bw"] .g-count .icon.star { color: var(--text); }
+[data-theme="bw"] .pv-goal[data-reached] { background: var(--surface); border-top: 3px solid var(--text); }
+[data-theme="bw"] .rwd.goal { border: 4px solid var(--text); padding: 9px; }
+[data-theme="bw"] .cards.stars .goal-line .icon.goal-ic, [data-theme="bw"] .rwd-goal h2 .icon { stroke: var(--text); }
+.cards.stars .st-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: var(--fs-person-name); }
+.cards.stars .st-head .stars-balance { font-variant-numeric: tabular-nums; }
+.cards.stars .st-head .stars-balance::before { content: "\2605\00a0" / ""; color: var(--pc); }
+[data-theme="bw"] .cards.stars .st-head .stars-balance::before { color: var(--text); }

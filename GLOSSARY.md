@@ -388,7 +388,7 @@ Exchanging stars for a reward. A child asks and a parent confirms, or a parent r
 _Avoid_: purchase, payout
 
 **Savings goal**:
-The one reward a person has chosen to save for; their personal view and the family view show the progress towards its star price.
+The one reward a person has chosen to save for, by the person on their own device or by a parent; their personal view and the family view show the progress towards its star price. It sets no stars aside, and it ends by itself when that reward is redeemed for the person, archived or no longer meant for them.
 _Avoid_: wish, target
 
 **Streak**:

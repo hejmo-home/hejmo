@@ -161,6 +161,10 @@ var mcpTools = []mcpTool{
 		req("id", "string", "The person id"), opt("limit", "integer", "How many log entries, 1 to 200 (default 50)")}},
 	{name: "book_stars", desc: "Book stars by hand with a note: positive adds, negative takes away.", method: "POST", path: "/people/{id}/stars", params: []mcpParam{
 		req("id", "string", "The person id"), req("delta", "integer", "Stars to add (positive) or take away (negative)"), req("note", "string", "Why")}},
+	{name: "get_savings_goal", desc: "Get the reward a person saves for, with their balance and whether it is reached.", method: "GET", path: "/people/{id}/savings-goal", params: []mcpParam{idOf("person")}},
+	{name: "set_savings_goal", desc: "Choose the reward a person saves for: an offered reward meant for them. A child token may only set its own.", method: "PUT", path: "/people/{id}/savings-goal", params: []mcpParam{
+		idOf("person"), req("reward_id", "string", "The reward id")}},
+	{name: "clear_savings_goal", desc: "Clear a person's savings goal; their stars stay.", method: "DELETE", path: "/people/{id}/savings-goal", params: []mcpParam{idOf("person")}},
 
 	// Reward catalogue
 	{name: "list_rewards", desc: "List the reward catalogue by price (for a child: only what is meant for them, with what they can afford).", method: "GET", path: "/rewards"},

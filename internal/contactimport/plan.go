@@ -100,7 +100,7 @@ type Dup struct {
 	Preselect string // ChoiceMerge for a number or e-mail match, else empty
 	Choices   []string
 	Merge     Merge
-	// NewName is the name an own contact of the (first) card would get; NewNames has one per card for InFile.
+	// NewName is the name an own contact of the (first) card would get; NewNames has one per card.
 	NewName  string
 	NewNote  *NameNote
 	NewNames []string
@@ -109,6 +109,18 @@ type Dup struct {
 
 	merged fields
 	region string
+}
+
+// join adds a card to the question of a contact in Hejmo, in the order of the file, and what it has in common.
+func (d *Dup) join(c vcard.Card, ms []Match) {
+	i, _ := slices.BinarySearchFunc(d.Cards, c.Number, func(x vcard.Card, n int) int { return x.Number - n })
+	d.Cards = slices.Insert(d.Cards, i, c)
+	if len(d.Matches) == 0 || ms[0].Kind != MatchName {
+		d.Matches = append(d.Matches, ms...)
+	}
+	if d.Matches[0].Kind != MatchName {
+		d.Preselect = ChoiceMerge
+	}
 }
 
 // New is a card that is nobody in Hejmo yet.
@@ -432,20 +444,25 @@ func Build(cards []vcard.Card, existing []store.Contact, region string) Plan {
 		}
 		if best >= 0 {
 			e := existing[best]
-			f, m := mergeInto(fieldsOfContact(e), []fields{fieldsOfCard(c)}, e.IsPerson(), region)
-			_ = f
+			_, m := mergeInto(fieldsOfContact(e), []fields{fieldsOfCard(c)}, e.IsPerson(), region)
 			if m.Empty() {
 				p.Same = append(p.Same, Same{Name: e.HejmoName, ID: e.ID})
 				continue
 			}
-			d := Dup{Key: "d" + itoa(c.Number), Cards: []vcard.Card{c}, Existing: &existing[best], Matches: bestMatches, Merge: m, region: region}
-			if bestMatches[0].Kind != MatchName {
-				d.Preselect = ChoiceMerge
+			// Cards that match the same contact by number or e-mail address are one question (a match by name
+			// alone is a question of its own; Ops still makes one merge of them if both are chosen).
+			if i := slices.IndexFunc(p.Dups, func(d Dup) bool {
+				return d.Existing.ID == e.ID && d.Matches[0].Kind != MatchName && bestMatches[0].Kind != MatchName
+			}); i >= 0 {
+				p.Dups[i].join(c, bestMatches)
+				continue
 			}
+			d := Dup{Key: "d" + itoa(c.Number), Existing: &existing[best], region: region}
 			d.Choices = []string{ChoiceMerge, ChoiceNew, ChoiceSkip}
 			if e.IsPerson() {
 				d.Choices = []string{ChoiceMerge, ChoiceSkip}
 			}
+			d.join(c, bestMatches)
 			p.Dups = append(p.Dups, d)
 			continue
 		}
@@ -472,6 +489,35 @@ func Build(cards []vcard.Card, existing []store.Contact, region string) Plan {
 			clusters = append(clusters, &cluster{infos: []cardInfo{ci}})
 		}
 	}
+	// A new card that shares a number, an e-mail address or the name with a card that matched a contact is in that
+	// question too, whichever of the two comes first in the file.
+	clusters = slices.DeleteFunc(clusters, func(cl *cluster) bool {
+		for i := range p.Dups {
+			d := &p.Dups[i]
+			for _, dc := range slices.Clone(d.Cards) {
+				for _, ci := range cl.infos {
+					ms := ci.matchOf(dc.Numbers, dc.Emails, nil, region) // a name alone does not join
+					if len(ms) == 0 || d.Matches[0].Kind == MatchName {
+						continue
+					}
+					for _, in := range cl.infos {
+						d.join(in.card, ms)
+					}
+					return true
+				}
+			}
+		}
+		return false
+	})
+	for i := range p.Dups {
+		d := &p.Dups[i]
+		var all []fields
+		for _, c := range d.Cards {
+			all = append(all, fieldsOfCard(c))
+		}
+		_, d.Merge = mergeInto(fieldsOfContact(*d.Existing), all, d.Existing.IsPerson(), region)
+		d.Key = "d" + itoa(d.Cards[0].Number)
+	}
 	taken := map[string]takenBy{}
 	for _, e := range existing {
 		taken[strings.ToLower(e.HejmoName)] = takenBy{e.HejmoName, e.IsPerson()}
@@ -496,7 +542,11 @@ func Build(cards []vcard.Card, existing []store.Contact, region string) Plan {
 		switch {
 		case u.dup >= 0:
 			d := p.Dups[u.dup]
-			d.NewName, d.NewNote = assignName(d.Cards[0], taken)
+			for _, c := range d.Cards {
+				name, note := assignName(c, taken)
+				d.NewNames, d.NewNotes = append(d.NewNames, name), append(d.NewNotes, note)
+			}
+			d.NewName, d.NewNote = d.NewNames[0], d.NewNotes[0]
 			dups = append(dups, d)
 		case len(u.cl.infos) == 1:
 			c := u.cl.infos[0].card
@@ -701,7 +751,7 @@ func withPhoto(in store.ContactInput, jpeg []byte, file string) store.ContactInp
 // apply makes the operation for merging: into the contact in Hejmo, or, for cards of the file, into one new
 // contact. photo is "file" when the parent wants the photo of the file over the one Hejmo has. It also returns the
 // name of the contact.
-func (d Dup) apply(_ []store.Contact, file, photo string) (store.ImportOp, string) {
+func (d Dup) apply(file, photo string) (store.ImportOp, string) {
 	var rest []fields
 	for _, c := range d.Cards {
 		rest = append(rest, fieldsOfCard(c))
@@ -735,19 +785,36 @@ func (d Dup) applyNew(file string) []store.ImportOp {
 
 // Ops makes the operations the decisions ask for, in the order of the file, and names what they make and
 // complete. The caller has checked that nothing is missing.
-func (p Plan) Ops(existing []store.Contact, dec Decisions, file string) ([]store.ImportOp, Result) {
+func (p Plan) Ops(dec Decisions, file string) ([]store.ImportOp, Result) {
 	type item struct {
 		first int
 		ops   []store.ImportOp
 		names []Entry
 	}
 	var items []item
+	// Two questions may merge into one contact (one by name, one by number): each operation is the whole
+	// contact, so they are made as one from the cards of both and the second would drop what the first adds.
+	into := map[string][]vcard.Card{}
+	for _, d := range p.Dups {
+		if c, _ := d.chosen(dec); c == ChoiceMerge && !d.InFile {
+			into[d.Existing.ID] = append(into[d.Existing.ID], d.Cards...)
+		}
+	}
+	made := map[string]bool{}
 	for _, d := range p.Dups {
 		choice, _ := d.chosen(dec)
 		it := item{first: d.Cards[0].Number}
 		switch choice {
 		case ChoiceMerge:
-			op, name := d.apply(existing, file, dec.Photo[d.Key])
+			if !d.InFile {
+				if made[d.Existing.ID] {
+					continue
+				}
+				made[d.Existing.ID] = true
+				d.Cards = slices.Clone(into[d.Existing.ID])
+				slices.SortStableFunc(d.Cards, func(a, b vcard.Card) int { return a.Number - b.Number })
+			}
+			op, name := d.apply(file, dec.Photo[d.Key])
 			it.ops, it.names = []store.ImportOp{op}, []Entry{{Name: name, Completed: !d.InFile}}
 		case ChoiceNew:
 			it.ops = d.applyNew(file)

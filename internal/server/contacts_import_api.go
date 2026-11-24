@@ -134,12 +134,11 @@ func (s *server) apiCreateContactImport(w http.ResponseWriter, r *http.Request, 
 		writeFieldError(w, f.status, "file", f.text)
 		return
 	}
-	cards, photos, f := s.checkUpload(r.Context(), "en", name, data, anyReadable)
+	_, photos, f := s.checkUpload(r.Context(), "en", name, data, anyReadable)
 	if f != nil {
 		writeFieldError(w, f.status, "file", f.text)
 		return
 	}
-	_ = cards
 	imp, err := s.db.AddContactImport(p.household.ID, p.person.ID, name, data, photos, s.now())
 	if s.storeError(w, "add contact import", err) {
 		return

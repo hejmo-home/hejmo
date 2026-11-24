@@ -54,10 +54,9 @@ func (s *server) importSweep() {
 // importState is an uploaded file read again: the cards (with their photos as the picture rules made them), and
 // what they bring to the contacts Hejmo has now.
 type importState struct {
-	imp      store.ContactImport
-	cards    []vcard.Card
-	existing []store.Contact
-	plan     contactimport.Plan
+	imp   store.ContactImport
+	cards []vcard.Card
+	plan  contactimport.Plan
 }
 
 // loadImport finds an uploaded file for this parent and reads it. found is false (and the answer is written)
@@ -94,7 +93,7 @@ func (s *server) readImport(p principal, imp store.ContactImport) (importState, 
 	if err != nil {
 		return importState{}, err
 	}
-	return importState{imp: imp, cards: cards, existing: existing, plan: contactimport.Build(cards, existing, homeRegion(p.household))}, nil
+	return importState{imp: imp, cards: cards, plan: contactimport.Build(cards, existing, homeRegion(p.household))}, nil
 }
 
 // ---- step 1: the upload
@@ -330,6 +329,18 @@ func (s *server) handleContactImportConfirm(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	dec := s.importDecisions(r, st.plan)
+	for _, g := range dec.Groups {
+		if _, err := s.db.ContactGroup(p.household.ID, g); err != nil { // as REST: a group that is gone is no server error
+			if !errors.Is(err, store.ErrNotFound) {
+				s.fail(w, "contact group", err)
+				return
+			}
+			view := e.reviewView(p, st, dec, false)
+			view["Error"] = e.t("cimp.err.group")
+			s.render(w, r, http.StatusUnprocessableEntity, "contact_import_review.html", view)
+			return
+		}
+	}
 	if missing := st.plan.Missing(dec); len(missing) > 0 {
 		view := e.reviewView(p, st, dec, true)
 		s.render(w, r, http.StatusUnprocessableEntity, "contact_import_review.html", view)
@@ -354,7 +365,7 @@ func (s *server) handleContactImportConfirm(w http.ResponseWriter, r *http.Reque
 
 // applyImport writes the contacts the decisions ask for and deletes the file.
 func (s *server) applyImport(p principal, st importState, dec contactimport.Decisions, calendarName string) (contactimport.Result, []string, error) {
-	ops, res := st.plan.Ops(st.existing, dec, st.imp.FileName)
+	ops, res := st.plan.Ops(dec, st.imp.FileName)
 	for i := range ops {
 		ops[i].Input.CalendarName = calendarName
 		ops[i].Input.Today = s.householdNow(p.household)
@@ -432,7 +443,7 @@ func (s *server) handleContactImportPhoto(w http.ResponseWriter, r *http.Request
 		return
 	}
 	imp, err := s.db.ContactImport(p.household.ID, r.PathValue("id"))
-	if errors.Is(err, store.ErrNotFound) || (err == nil && (imp.UploadedBy != p.person.ID || imp.Expired)) {
+	if errors.Is(err, store.ErrNotFound) || (err == nil && (imp.UploadedBy != p.person.ID || imp.Expired || !s.now().Before(imp.UploadedAt.Add(importTTL)))) {
 		http.NotFound(w, r)
 		return
 	} else if err != nil {

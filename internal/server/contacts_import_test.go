@@ -712,5 +712,32 @@ func TestTheLicencesPageNamesTheLibraryThatReadsPhoneNumbers(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
 	body := b.do(http.MethodGet, "/settings/licences", nil, map[string]string{"Accept-Language": "en"}).body
-	ctHas(t, "licences", body, `data-licence="numbers"`, "Go library of Nyaruka (MIT licence", "libphonenumber", "nothing is looked up on the internet")
+	ctHas(t, "licences", body, `data-licence="numbers"`, "Go library of Nyaruka (MIT licence", "libphonenumber", "nothing is looked up on the internet", `href="https://github.com/nyaruka/phonenumbers"`, `href="https://github.com/nyaruka/phonenumbers/blob/master/LICENSE"`)
+}
+
+func TestAPhotoOfAFileWhoseHourIsOverIsNotServedEvenBeforeAnyPageSweptIt(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	pic := base64.StdEncoding.EncodeToString(testJPEG(t, 600, 600))
+	path := c.startImport("Foto.vcf", vcf("BEGIN:VCARD\nVERSION:3.0\nFN:Tante Susanne\nTEL:0172 4455 6600\nPHOTO;ENCODING=b;TYPE=JPEG:"+pic+"\nEND:VCARD\n"))
+	if status, _, _ := c.getPhoto(path + "/photo/1"); status != http.StatusOK {
+		t.Fatalf("photo within the hour = %d", status)
+	}
+	c.now = c.now.Add(61 * time.Minute) // no page was visited since: nothing swept the file
+	if status, _, _ := c.getPhoto(path + "/photo/1"); status != http.StatusNotFound {
+		t.Errorf("photo after the hour = %d, want 404", status)
+	}
+}
+
+func TestAGroupThatDoesNotExistIsRefusedAtTheReviewNotAnErrorPage(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	path := c.startImport("eins.vcf", vcf("BEGIN:VCARD\nVERSION:3.0\nFN:Eins\nTEL:0171 1\nEND:VCARD\n"))
+	r := c.confirm(path, url.Values{"take": {"1"}, "group": {"00000000-0000-4000-8000-000000000000"}})
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("unknown group = %d, want 422\n%s", r.status, r.body)
+	}
+	if c.contactNamed("Eins") != nil {
+		t.Error("a contact was made although the confirmation was refused")
+	}
 }

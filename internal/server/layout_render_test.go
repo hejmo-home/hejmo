@@ -550,7 +550,7 @@ var notRendered = map[string]string{
 
 // matches reports whether a request path is served by a route pattern.
 func matches(pattern, path string) bool {
-	if i := strings.Index(path, "?"); i >= 0 {
+	if i := strings.IndexAny(path, "?#"); i >= 0 { // a query, or the "#state" a page of a POST is recorded under
 		path = path[:i]
 	}
 	re := regexp.QuoteMeta(pattern)
@@ -1502,18 +1502,18 @@ func contactImportPages(t *testing.T, f *layoutFixture) []layoutPage {
 	same := file("BEGIN:VCARD\nVERSION:3.0\nFN:Kinderarztpraxis Dr. Elif Yılmaz-Hoffmann und Kollegen\nTEL:089 1234 5670\nEND:VCARD\nBEGIN:VCARD\nVERSION:3.0\nNOTE:x\nEND:VCARD\n")
 	for _, lang := range []string{"de", "en"} {
 		hdr := map[string]string{"Accept-Language": lang}
-		capture := func(name string, r resp, want int) {
+		capture := func(path, name string, r resp, want int) {
 			if r.status != want {
 				t.Fatalf("%s = %d, want %d\n%s", name, r.status, want, r.body)
 			}
-			pages = append(pages, layoutPage{site: site, path: "/contacts/import#" + name, html: map[string]string{lang: r.body}})
+			pages = append(pages, layoutPage{site: site, path: path + "#" + name, html: map[string]string{lang: r.body}})
 		}
-		capture("refused", upload(lang, "Urlaub Gardasee mit sehr langem Dateinamen.jpg", testJPEG(t, 40, 30)), http.StatusUnprocessableEntity)
-		capture("nothing-new", upload(lang, "Kontakte Papa.vcf", same), http.StatusOK)
-		capture("review", f.do(http.MethodGet, "/contacts/import/"+review.ID, nil, hdr), http.StatusOK)
-		capture("missing", f.do(http.MethodPost, "/contacts/import/"+review.ID, url.Values{"take": {"1"}}, hdr), http.StatusUnprocessableEntity)
-		capture("single", f.do(http.MethodGet, "/contacts/import/"+single.ID, nil, hdr), http.StatusOK)
-		capture("expired", f.do(http.MethodGet, "/contacts/import/"+old.ID, nil, hdr), http.StatusOK)
+		capture("/contacts/import", "refused", upload(lang, "Urlaub Gardasee mit sehr langem Dateinamen.jpg", testJPEG(t, 40, 30)), http.StatusUnprocessableEntity)
+		capture("/contacts/import", "nothing-new", upload(lang, "Kontakte Papa.vcf", same), http.StatusOK)
+		capture("/contacts/import/"+review.ID, "review", f.do(http.MethodGet, "/contacts/import/"+review.ID, nil, hdr), http.StatusOK)
+		capture("/contacts/import/"+review.ID, "missing", f.do(http.MethodPost, "/contacts/import/"+review.ID, url.Values{"take": {"1"}}, hdr), http.StatusUnprocessableEntity)
+		capture("/contacts/import/"+single.ID, "single", f.do(http.MethodGet, "/contacts/import/"+single.ID, nil, hdr), http.StatusOK)
+		capture("/contacts/import/"+old.ID, "expired", f.do(http.MethodGet, "/contacts/import/"+old.ID, nil, hdr), http.StatusOK)
 	}
 	return mergeCardPages(pages)
 }

@@ -233,3 +233,15 @@ func TestLongNumbersListsAndNamesAreKeptWhole(t *testing.T) {
 		t.Errorf("%d numbers: every distinct number of a card is kept, the same number twice once", len(c.Numbers))
 	}
 }
+
+// The usual exporter writes the soft line break of quoted-printable with nothing before the continuation.
+func TestVCard21QuotedPrintableSoftBreakWithoutLeadingWhitespaceJoinsTheLines(t *testing.T) {
+	t.Parallel()
+	c := one(t, crlf("BEGIN:VCARD\nVERSION:2.1\nFN:Gerda\n"+
+		"NOTE;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:Gru=C3=9F aus=\nRosenheim=\n und Wasserburg\n"+
+		"TEL;CELL:0171 1\nEND:VCARD\n"))
+	if c.Note != "Gruß ausRosenheim und Wasserburg" {
+		t.Errorf("note = %q", c.Note)
+	}
+	eq(t, "numbers", values(c.Numbers), []string{"cell||0171 1"})
+}

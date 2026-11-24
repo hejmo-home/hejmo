@@ -4519,6 +4519,7 @@
   "cimp.err.unreadable": "“{file}” holds no contact Hejmo can read. Export the contacts again as vCard (.vcf).",
   "cimp.err.big": "“{file}” is {size}. Hejmo takes files up to {max} MB.",
   "cimp.err.read": "Hejmo could not read the file. Try again.",
+  "cimp.err.group": "One of the chosen groups no longer exists. Reload the page and choose the groups again.",
   "cimp.review.title": "Check contacts",
   "cimp.review.title.one": "Check contact",
   "cimp.review.lead": "Nothing is saved yet. See what Hejmo takes from the file, then tap “Take over” below.",

@@ -4228,3 +4228,78 @@ li.ing .place-list.art-sugg li + li { border-top: 1px solid var(--border); }
   .rcp-steps li { grid-template-columns: 30px minmax(0, 1fr); gap: 10px; }
   .rcp-steps li::before { width: 30px; height: 30px; }
 }
+
+/* Recipe on the meal plan (ticket 281). A recipe entry is a framed box in
+   place of the text field: symbol, name (link to the recipe with the entry's
+   portions), "Rezept · category · time", portions stepper with its meaning in
+   words, warnings, "Anderes Gericht". Suggestions span the whole day card. */
+.meal-form .place-list li, .meal-form .mrow li { background: none; border-radius: 0; padding: 6px 8px; }
+.meal-form .mrow span:not(.art-sym):not(.today), .meal-form .mrow small span { color: inherit; font-size: inherit; }
+/* Fix: ".steps .src { display: contents }" (a setup rule) also hit the meal plan's source line. */
+.steps .mrow .src { display: flex; }
+/* A recipe row puts the mealtime word above a full-width box (room for the stepper and warnings). */
+.mrow.has-rcp { grid-template-columns: minmax(0, 1fr); align-items: start; }
+.mrow.has-rcp > .src { grid-column: 1; }
+.meal-form .mrow .art-sym { font-size: 26px; }
+.mrow .rcp-entry { grid-column: 1; display: grid; gap: 8px; justify-items: start; padding: 8px 10px 10px; border: 1.5px solid var(--accent); border-radius: var(--radius-card); background: var(--surface); min-width: 0; }
+.mrow.adjusted .rcp-entry { border: 2px solid var(--notice-text); }
+.mrow.invalid .rcp-entry { border: 2px solid var(--error-text); }
+.rcp-entry .rcp-head { display: flex; gap: 10px; align-items: flex-start; min-width: 0; width: 100%; }
+.rcp-entry .rcp-head > div { display: grid; gap: 2px; min-width: 0; }
+.rcp-entry .rcp-name { font-size: var(--fs-event-title); font-weight: 700; color: var(--text); text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; }
+.rcp-entry small, .art-sugg small { display: flex; align-items: flex-start; gap: 4px; font-size: var(--fs-label); color: var(--text-secondary); }
+.rcp-entry small .icon, .art-sugg small .icon { flex: none; stroke: var(--text-secondary); margin-top: 2px; }
+.rcp-entry .portions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; }
+.rcp-entry .portions > label { font-size: var(--fs-label); font-weight: 700; color: var(--text); }
+.rcp-entry .portions .stepper { gap: 6px; }
+.rcp-entry .portions .stepper input { width: 3em; min-height: var(--touch-target); box-sizing: border-box; padding: 6px 4px; }
+.rcp-entry .portions .for { font-size: var(--fs-label); color: var(--text-secondary); }
+.rcp-entry .portions .ferr { flex: 1 1 100%; }
+.rcp-entry .acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.rcp-entry .acts .button, .mrow .src .button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: var(--fs-label); }
+.rcp-entry .acts .icon { stroke: currentColor; }
+[data-theme="bw"] .mrow .rcp-entry { border: 2px solid var(--text); }
+[data-theme="bw"] .mrow.adjusted .rcp-entry { border: 2px dashed var(--text); }
+[data-theme="bw"] .mrow.invalid .rcp-entry { border: 3px solid var(--text); }
+[data-theme="bw"] .rcp-entry .rcp-name { text-decoration-color: var(--text); }
+/* Suggestions under a meal: full width of the day card. */
+.mrow > .sugg { grid-column: 1 / -1; display: grid; gap: 6px; min-width: 0; margin-top: 2px; }
+.mrow textarea.focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.mrow .place-list.art-sugg li { grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 2px; justify-items: start; }
+.mrow .place-list.art-sugg li > .art-sym { grid-row: 1 / span 2; align-self: start; }
+.mrow .place-list.art-sugg li > :not(.art-sym) { grid-column: 2; }
+.mrow .place-list.art-sugg li + li { border-top: 1px solid var(--border); }
+.mrow .place-list.art-sugg li[aria-selected="true"] { border-radius: var(--radius-field); background: var(--background); outline: 2px solid var(--accent); outline-offset: -2px; }
+.mrow .place-list.art-sugg li b { font-weight: 700; -webkit-hyphens: manual; hyphens: manual; overflow-wrap: break-word; }
+.mrow .art-sugg .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.mrow .art-sugg li.old .art-sym { background: none; border: 1.5px solid var(--border); }
+.mrow .art-sugg li.old .art-sym .icon, .mrow .art-sugg li.free .art-sym .icon { stroke: var(--text-secondary); }
+.mrow .art-sugg li.old b, .mrow .art-sugg li.free b { font-weight: 600; }
+.sugg-none { display: flex; gap: 8px; align-items: flex-start; margin: 0; font-size: var(--fs-label); color: var(--text); }
+.sugg-none .icon { flex: none; stroke: var(--accent); margin-top: 1px; }
+[data-theme="bw"] .mrow .place-list.art-sugg li + li { border-top-color: var(--text); }
+[data-theme="bw"] .mrow .art-sugg li.old .art-sym { border: 2px solid var(--text); }
+[data-theme="bw"] .mrow .place-list.art-sugg li[aria-selected="true"] { outline: 3px solid var(--text); background: var(--surface); }
+[data-theme="bw"] .mrow .place-list { border: 2px solid var(--text); }
+/* The free-text allergies of the family under a week that holds a recipe. */
+.meal-form .meal-unch { margin: var(--gap) 0 0; }
+/* Read view (children): a recipe is a link with its symbol and "Rezept ansehen". */
+.meal-day dd .rcp-link { display: inline-flex; gap: 10px; align-items: flex-start; color: var(--text); text-decoration: none; min-height: var(--touch-target); }
+.meal-day dd .rcp-link .art-sym { width: 36px; height: 36px; font-size: 22px; }
+.meal-day dd .rcp-link > span:last-child { display: grid; gap: 2px; }
+.meal-day dd .rcp-link .nm { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+.meal-day dd .rcp-link small { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-label); font-weight: 600; color: var(--accent); text-decoration: none; }
+.meal-day dd .rcp-link small .icon { width: 16px; height: 16px; stroke: currentColor; }
+.meal-day dd .allergen-warn { margin-top: 6px; font-weight: 600; }
+.meal-day dd { -webkit-hyphens: manual; hyphens: manual; }
+[data-theme="bw"] .meal-day dd .rcp-link small { color: var(--text); }
+[data-theme="bw"] .meal-day dd .rcp-link .nm { text-decoration-color: var(--text); }
+/* Recipe page: portions to view, scaled on the server (links, no script). */
+.portions-view { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0 4px; }
+.portions-view .pv-l { font-size: var(--fs-event-title); font-weight: 600; color: var(--text); }
+.portions-view .pv-n { min-width: 2.2em; text-align: center; font-size: var(--fs-person-name); font-variant-numeric: tabular-nums; }
+.portions-view .step { display: inline-flex; align-items: center; justify-content: center; width: var(--touch-target); height: var(--touch-target); padding: 0; border-radius: var(--radius-field); box-sizing: border-box; }
+.portions-view .step .icon { stroke: currentColor; stroke-width: 2.4; }
+.portions-view .step[aria-disabled="true"] { border-color: var(--border); color: var(--text-secondary); pointer-events: none; }
+[data-theme="bw"] .portions-view .step[aria-disabled="true"] { border: 1px dashed var(--text); color: var(--text); }
+.rcp-part > .pv-hint { margin: 0 0 10px; }

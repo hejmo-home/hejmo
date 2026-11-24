@@ -2511,10 +2511,10 @@ paths:
         The name must be free in the household, ignoring case (else 422, field
         `name`). An ingredient is an article of the library (`article_id`, or the
         exact name, or a name followed by a variety such as "Mehl Type 405") or
-        free text, which Hejmo does not check for allergens. A `variety` sent
-        with the line wins over one written in the text (`text` "Mehl Type 405"
-        with `variety` "Type 550" is Type 550); the text's variety is used only
-        when `variety` is empty or left out. A unit without a
+        free text, which Hejmo does not check for allergens. A variety written in
+        the text (`text` "Mehl Type 405") wins over a `variety` sent with the
+        line, since it is what was typed; `variety` is used when the text has
+        none. A unit without a
         quantity means one. The units are those of `GET /recipe-units`.
         Warnings never block saving.
       requestBody:

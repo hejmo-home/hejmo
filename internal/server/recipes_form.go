@@ -334,7 +334,8 @@ func (c *itemCtx) buildRecipe(f *rcpForm, known []string, existing []store.Recip
 	}
 	for _, m := range r.Mealtimes {
 		if !meal.Mealtime(m).Valid() {
-			is.add("rcp", c.t("recipes.err.link.mealtimes")) // only a crafted request: the form offers the mealtimes
+			is.More["mealtimes"] = c.t("recipes.err.mealtimes") // only a crafted request: the form offers the mealtimes
+			is.add("more", c.t("recipes.err.link.mealtimes"))
 			break
 		}
 	}

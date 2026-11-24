@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"html"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -548,22 +549,37 @@ func TestAVarietyTypedAfterTheDotFillsAnEmptyVarietyField(t *testing.T) {
 	}
 }
 
-func TestAChangeOnlyInTheVarietyFieldIsKept(t *testing.T) {
+func TestAVarietyTypedInTheNameWinsOverADifferentOneInTheField(t *testing.T) {
 	t.Parallel()
-	for _, name := range []string{"Weizenmehl", "Weizenmehl Type 405", "Weizenmehl · Type 405"} {
-		rb := newRecipeBox(t)
-		l := lines([]string{"200"}, []string{"g"}, []string{name})
-		l["ing_article"] = []string{"wheat-flour"}
-		l["ing_variety"] = []string{"Type 550"}
-		if r := rb.save(t, "/meals/recipes", rcpFormOf("Kuchen", l)); r.status != http.StatusSeeOther {
-			t.Fatalf("%q: save = %d\n%s", name, r.status, r.body)
-		}
-		if in := rb.onlyRecipe(t).Ingredients[0]; in.ArticleID != "wheat-flour" || in.Variety != "Type 550" {
-			t.Errorf("%q: line = %+v, want wheat flour, variety Type 550", name, in)
+	for _, article := range []string{"", "wheat-flour"} {
+		for _, name := range []string{"Weizenmehl · Type 550", "Weizenmehl Type 550"} {
+			rb := newRecipeBox(t)
+			l := lines([]string{"200"}, []string{"g"}, []string{name})
+			l["ing_article"] = []string{article}
+			l["ing_variety"] = []string{"Type 405"}
+			if r := rb.save(t, "/meals/recipes", rcpFormOf("Kuchen", l)); r.status != http.StatusSeeOther {
+				t.Fatalf("%q/%q: save = %d\n%s", name, article, r.status, r.body)
+			}
+			if in := rb.onlyRecipe(t).Ingredients[0]; in.ArticleID != "wheat-flour" || in.Variety != "Type 550" {
+				t.Errorf("%q with article %q: line = %+v, want wheat flour, variety Type 550 (what was typed)", name, article, in)
+			}
 		}
 	}
 }
 
+func TestAChangeOnlyInTheVarietyFieldIsKept(t *testing.T) {
+	t.Parallel()
+	rb := newRecipeBox(t)
+	l := lines([]string{"200"}, []string{"g"}, []string{"Weizenmehl"})
+	l["ing_article"] = []string{"wheat-flour"}
+	l["ing_variety"] = []string{"Type 550"}
+	if r := rb.save(t, "/meals/recipes", rcpFormOf("Kuchen", l)); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d\n%s", r.status, r.body)
+	}
+	if in := rb.onlyRecipe(t).Ingredients[0]; in.ArticleID != "wheat-flour" || in.Variety != "Type 550" {
+		t.Errorf("line = %+v, want wheat flour, variety Type 550", in)
+	}
+}
 func TestAVarietyClearedInItsFieldIsGone(t *testing.T) {
 	t.Parallel()
 	rb := newRecipeBox(t)
@@ -592,6 +608,23 @@ func TestAVarietyDeletedFromTheNameStaysInItsField(t *testing.T) {
 	}
 }
 
+// inputValue is the value of the first <input> named name on the page, whatever the order of its attributes.
+func inputValue(t *testing.T, page, name string) string {
+	t.Helper()
+	tag, attr := regexp.MustCompile(`<input\b[^>]*>`), regexp.MustCompile(`\b(\w[\w-]*)="([^"]*)"`)
+	for _, in := range tag.FindAllString(page, -1) {
+		got := map[string]string{}
+		for _, m := range attr.FindAllStringSubmatch(in, -1) {
+			got[m[1]] = html.UnescapeString(m[2])
+		}
+		if got["name"] == name {
+			return got["value"]
+		}
+	}
+	t.Fatalf("no input %q on the page", name)
+	return ""
+}
+
 func TestTheEditFormKeepsTheVarietyOutOfTheNameField(t *testing.T) {
 	t.Parallel()
 	rb := newRecipeBox(t)
@@ -602,11 +635,11 @@ func TestTheEditFormKeepsTheVarietyOutOfTheNameField(t *testing.T) {
 		t.Fatalf("save = %d\n%s", r.status, r.body)
 	}
 	page := rb.b.do(http.MethodGet, "/meals/recipes/"+rb.onlyRecipe(t).ID+"/edit", nil, rcpDE).body
-	if strings.Contains(page, `name="ing_name" autocomplete="off" aria-label="Zutat 1" placeholder="Zutat, zum Beispiel Mehl Type 405" value="Wheat flour Type 405"`) || strings.Contains(page, "Type 405\">\n          <input type=\"hidden\" name=\"ing_article\"") {
-		t.Errorf("the name field holds the variety, which belongs in its own field")
+	if got := inputValue(t, page, "ing_name"); got != "Wheat flour" {
+		t.Errorf("name field = %q, want the name alone", got)
 	}
-	if !strings.Contains(page, `aria-label="Zutat 1" placeholder="Zutat, zum Beispiel Mehl Type 405" value="Wheat flour">`) || !strings.Contains(page, `name="ing_variety" maxlength="60" value="Type 405"`) {
-		t.Errorf("edit form lacks the name and the variety as separate fields")
+	if got := inputValue(t, page, "ing_variety"); got != "Type 405" {
+		t.Errorf("variety field = %q, want Type 405", got)
 	}
 }
 
@@ -644,6 +677,9 @@ func TestACraftedMealtimeIsNamedInTheSummaryLink(t *testing.T) {
 	}
 	if !strings.Contains(r.body, "the mealtimes") || strings.Contains(r.body, "unknown mealtime") {
 		t.Errorf("the summary does not name the mealtimes in words:\n%s", r.body)
+	}
+	if !strings.Contains(r.body, `id="err-mealtimes"`) {
+		t.Errorf("the error is not shown at the mealtimes field:\n%s", r.body)
 	}
 }
 

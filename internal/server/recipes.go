@@ -62,8 +62,8 @@ func (c *itemCtx) recipeIngredient(in recipe.IngredientInput) (recipe.Ingredient
 			return recipe.Ingredient{}, nil, &recipe.FieldError{Field: "article_id", Msg: "unknown article"}
 		}
 		art = &it
-		// A name that ends in a variety ("Erdnussbutter · cremig") keeps it, unless one was given.
-		if a, rest, ok := library.LeadingName(name, c.visibleArticles()); ok && a.ID == it.ID && strings.TrimSpace(variety) == "" {
+		// A name that ends in a variety ("Erdnussbutter · cremig") takes it over a given one.
+		if a, rest, ok := library.LeadingName(name, c.visibleArticles()); ok && a.ID == it.ID {
 			variety = rest
 		}
 	case name != "":
@@ -73,9 +73,7 @@ func (c *itemCtx) recipeIngredient(in recipe.IngredientInput) (recipe.Ingredient
 			if it, ok := c.article(a.ID); ok {
 				art = &it
 				name = strings.TrimRight(strings.TrimSuffix(name, rest), " \t,·-:") // the name as typed, without the variety
-				if strings.TrimSpace(variety) == "" {
-					variety = rest
-				}
+				variety = rest
 			}
 		}
 	}

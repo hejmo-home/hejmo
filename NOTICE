@@ -13,3 +13,9 @@ GeoNames place list (data, CC BY 4.0, embedded in the binary)
 
 Figtree typeface (font, SIL Open Font License 1.1)
   web/static/fonts/Figtree-wght.ttf, licence: web/static/fonts/OFL.txt
+
+nyaruka/phonenumbers (Go library, MIT, linked into the Hejmo binary)
+  Go port of Google's libphonenumber by Nyaruka; its number plans are Google's libphonenumber metadata
+  (Apache License 2.0). Reads, checks and normalises phone numbers (ADR 0026). No network connections.
+  Licence: https://github.com/nyaruka/phonenumbers/blob/master/LICENSE
+  Also named on the licences page of the web interface (Settings -> Licences).

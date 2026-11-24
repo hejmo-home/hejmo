@@ -54,6 +54,9 @@ func (db *DB) BookStars(householdID, personID string, delta int, note, by string
 	e := StarEntry{ID: newID(), PersonID: personID, Delta: delta, Note: strings.TrimSpace(note), BookedBy: by, At: at.UTC()}
 	_, err := db.sql.Exec(`INSERT INTO star_log (id, person_id, delta, note, booked_by, created_at) VALUES (?, ?, ?, ?, NULLIF(?, ''), ?)`,
 		e.ID, personID, delta, e.Note, by, e.At.Format(time.RFC3339))
+	if err == nil && delta > 0 {
+		db.awardAfter(householdID, personID, at) // a booking of stars can earn a star badge (ticket 295)
+	}
 	return e, err
 }
 

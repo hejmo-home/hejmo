@@ -224,11 +224,7 @@ func (s *server) pendingFlash(r *http.Request) (key, arg string) {
 // pendingFlashKey is the key of the success line waiting for this browser,
 // without using it up.
 func (s *server) pendingFlashKey(r *http.Request) string {
-	c, err := r.Cookie(flashCookie)
-	if err != nil {
-		return ""
-	}
-	key, _, _ := strings.Cut(c.Value, ":")
+	key, _ := s.pendingFlash(r)
 	return key
 }
 

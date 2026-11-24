@@ -3,6 +3,7 @@ package server_test
 import (
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -249,10 +250,15 @@ func TestEveryWayToTickAwardsTheBadgeOnce(t *testing.T) {
 	if keys := w.badgeKeys(t, "Mia"); len(keys) != 1 || keys[0] != "first_star" {
 		t.Fatalf("after the display tick: %v", keys)
 	}
-	// The REST API (a parent), twice.
-	for range 2 {
-		if r := w.do(http.MethodPut, "/api/tasks/"+w.steps[1].ID+"/done", nil, map[string]string{"Content-Type": "application/json"}); r.status >= 500 {
-			t.Fatalf("api tick = %d", r.status)
+	// The REST API (a parent) completes the routine: the next badge, and ticking again changes nothing.
+	api := newAPIClient(t, w.box)
+	api.cookie = true
+	for i := range 2 {
+		if status, got, _ := api.call(http.MethodPut, "/tasks/"+w.steps[1].ID+"/done", map[string]any{"done": true}); status != http.StatusOK {
+			t.Fatalf("api tick %d = %d %v", i+1, status, got)
+		}
+		if keys := w.badgeKeys(t, "Mia"); !slices.Equal(slices.Sorted(slices.Values(keys)), []string{"first_routine", "first_star"}) {
+			t.Fatalf("after api tick %d: %v", i+1, keys)
 		}
 	}
 }

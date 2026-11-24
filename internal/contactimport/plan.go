@@ -543,6 +543,22 @@ func Build(cards []vcard.Card, existing []store.Contact, region string) Plan {
 				}
 			}
 		}
+		// Two cards that share a number or an e-mail address but are each tied to a different contact are linked to
+		// both: like a card tied to two contacts, they stay new cards.
+		linked := make([]bool, len(target))
+		for k, ci := range cl.infos {
+			for j, other := range cl.infos {
+				if k != j && target[k] >= 0 && target[j] >= 0 && target[k] != target[j] &&
+					len(ci.matchOf(other.card.Numbers, other.card.Emails, nil, region)) > 0 {
+					linked[k] = true
+				}
+			}
+		}
+		for k := range target {
+			if linked[k] {
+				target[k] = conflict
+			}
+		}
 		direct := slices.Clone(target)
 		for changed := true; changed; {
 			changed = false

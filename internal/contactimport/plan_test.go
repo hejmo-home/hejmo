@@ -483,3 +483,43 @@ func TestTheMergeNamesTheAddressAndNoteOfTheCardThatBringsThem(t *testing.T) {
 		t.Errorf("merge = %+v", m)
 	}
 }
+
+// A card tied to two different contacts (through numbers it shares with a card of each) belongs to neither question;
+// it stays a new card.
+func TestACardTiedToTwoDifferentContactsStaysANewCard(t *testing.T) {
+	t.Parallel()
+	p := Build([]vcard.Card{
+		card(1, "Gerda", []string{"0171 3456789", "0160 111 111"}, nil),
+		card(2, "Praxis", []string{"089 1234 5670", "0160 222 222"}, nil),
+		card(3, "X Y", []string{"0160 111 111", "0160 222 222"}, nil),
+	}, hejmo(), "DE")
+	if len(p.Dups) != 2 || len(p.News) != 1 || p.News[0].Card.Number != 3 {
+		t.Fatalf("card 3 must be a new card, in no question: %+v", p)
+	}
+	for _, d := range p.Dups {
+		if len(d.Cards) != 1 {
+			t.Errorf("question %s must hold only its own card: %+v", d.Key, d.Cards)
+		}
+	}
+}
+
+// Two new cards that share a number but are each tied to a different contact are linked to both contacts; they are
+// not merged into either, they stay a question of their own (the two cards of the file).
+func TestTwoCardsThatShareANumberButAreTiedToDifferentContactsAreMergedIntoNeither(t *testing.T) {
+	t.Parallel()
+	p := Build([]vcard.Card{
+		card(1, "Gerda", []string{"0171 3456789", "0160 333 333"}, nil),
+		card(2, "Praxis", []string{"089 1234 5670", "0160 444 444"}, nil),
+		card(3, "X Y", []string{"0160 111 111", "0160 333 333"}, nil),
+		card(4, "Z W", []string{"0160 111 111", "0160 444 444"}, nil),
+	}, hejmo(), "DE")
+	if len(p.Dups) != 3 {
+		t.Fatalf("want three questions: %+v", p.Dups)
+	}
+	for _, d := range p.Dups {
+		inFile := d.Existing == nil
+		if inFile != (len(d.Cards) == 2) || (inFile && (d.Cards[0].Number != 3 || d.Cards[1].Number != 4)) {
+			t.Errorf("question %s: want cards 1 and 2 alone with their contacts, 3 and 4 together: %+v", d.Key, d.Cards)
+		}
+	}
+}

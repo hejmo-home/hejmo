@@ -39,7 +39,11 @@ function cookParseSearch(search) {
   var out = { view: "", step: 0, portions: 0, have: [], hasState: false };
   String(search || "").replace(/^\?/, "").split("&").forEach(function (pair) {
     if (!pair) return;
-    var i = pair.indexOf("="), k = decodeURIComponent(pair.slice(0, i < 0 ? pair.length : i)), v = i < 0 ? "" : decodeURIComponent(pair.slice(i + 1).replace(/\+/g, " "));
+    var i = pair.indexOf("="), k, v;
+    try {
+      k = decodeURIComponent(pair.slice(0, i < 0 ? pair.length : i));
+      v = i < 0 ? "" : decodeURIComponent(pair.slice(i + 1).replace(/\+/g, " "));
+    } catch (e) { return; } // a malformed pair is skipped, the rest still counts
     if (k === "view" && (v === "ings" || v === "steps")) { out.view = v; out.hasState = true; }
     else if (k === "step") { out.step = parseInt(v, 10) || 0; out.hasState = true; }
     else if (k === "portions") out.portions = cookPortionsOf(v);
@@ -175,7 +179,6 @@ function cookInit(form) {
     root.setAttribute("data-view", state.view);
     hidden("view", state.view);
     if (steps) hidden("step", state.step);
-    hidden("from", state.portions);
     var tabs = form.querySelectorAll(".cook-tabs button");
     Array.prototype.forEach.call(tabs, function (b) {
       if (b.value === state.view) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
@@ -255,7 +258,7 @@ function cookInit(form) {
   }
   // The two buttons of the stepper lead one below and one above the number in the field.
   function stepper(value) {
-    var buttons = form.querySelectorAll(".stepper button[name=portions]");
+    var buttons = form.querySelectorAll(".stepper button[name=nudge]");
     var typed = cookPortionsOf(value) || parseInt(value, 10) || lastValid;
     if (buttons.length === 2) {
       buttons[0].value = cookClamp(typed - 1, COOK_MIN, COOK_MAX);
@@ -311,8 +314,8 @@ function cookInit(form) {
     } else if (name === "done") {
       if (storage) cookForget(storage, recipe);
       window.location.assign(action + "?done=1");
-    } else if (name === "portions") {
-      changePortions(value, s === form.querySelector(".stepper button[name=portions]") ? 0 : 2);
+    } else if (name === "nudge") {
+      changePortions(value, s === form.querySelector(".stepper button[name=nudge]") ? 0 : 2);
     } else if (form.querySelector("#portions")) {
       changePortions(form.querySelector("#portions").value, 1);
     }

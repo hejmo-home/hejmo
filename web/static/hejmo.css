@@ -4320,13 +4320,13 @@ ul.cook-ings { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px;
 .cook-nav .button { min-height: 56px; font-size: var(--fs-person-name); display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .cook-nav .button .icon { stroke: currentColor; stroke-width: 2.2; flex: none; }
 .cook-nav .back { margin-right: auto; }
-.cook-nav .for-ings, .cook-nav .phone-only { display: none; }
+.cook-nav .for-ings, .cook-nav .narrow-only { display: none; }
 @media (min-width: 700px) {
   .cook-cols { grid-template-columns: minmax(300px, 5fr) minmax(0, 6fr); }
 }
 @media (min-width: 700px) and (max-width: 899px) {
-  .cook-tick { grid-template-columns: var(--touch-target) 28px minmax(0, 1fr); gap: 4px 10px; padding-right: 10px; }
-  .cook-tick .e { width: 28px; font-size: 24px; }
+  .cook-tick { grid-template-columns: var(--touch-target) 30px minmax(0, 1fr); gap: 4px 10px; padding-right: 10px; }
+  .cook-tick .e { width: 30px; font-size: 24px; }
   .cook-card { padding: 14px; }
 }
 @media (max-width: 699px) {
@@ -4338,7 +4338,7 @@ ul.cook-ings { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px;
   .cook[data-view="ings"] .cook-step, .cook[data-view="steps"] .cook-ings-part { display: none; }
   .cook[data-view="ings"] .cook-nav .for-steps { display: none; }
   .cook[data-view="ings"] .cook-nav .for-ings { display: inline-flex; flex: 1; }
-  .cook-nav .phone-only { display: inline-flex; }
+  .cook-nav .narrow-only { display: inline-flex; }
   .cook-nav .button { flex: 1 1 0; padding-left: 12px; padding-right: 12px; font-size: var(--fs-event-title); }
   .cook-nav .back { flex: 0 1 auto; }
   .cook-text { font-size: var(--fs-cook-step-phone); }

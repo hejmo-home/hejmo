@@ -4,6 +4,7 @@ import (
 	"errors"
 	"html/template"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -51,33 +52,23 @@ type cookStep struct {
 }
 
 var (
-	cookDigits   = regexp.MustCompile(`^\+?\d+$`)
-	cookNegative = regexp.MustCompile(`^-\d+$`)
+	cookDigits = regexp.MustCompile(`^\+?\d+$`)
 )
 
 // clampPortions keeps a stepper value within 1 and 99.
 func clampPortions(n int) int { return min(max(n, 1), recipe.MaxPortions) }
 
-// cookPortionsParam picks the portions out of what the address carries. The
-// stepper's buttons and the field all send "portions": minus before the field,
-// plus after it, and the form says which number it showed (from). A button sends
-// that number minus or plus one; it wins over what was typed.
-func cookPortionsParam(vals []string, from int) (string, bool) {
-	switch len(vals) {
-	case 0:
-		return "", false
-	case 1:
-		return vals[0], true
+// cookPortionsParam picks the portions out of what the address carries. The field
+// sends "portions"; each stepper button sends "nudge" with the number it leads to. A
+// button that was pressed wins over what was typed; a nudge that is no number is ignored.
+func cookPortionsParam(q url.Values) (string, bool) {
+	if v := q.Get("nudge"); cookDigits.MatchString(strings.TrimSpace(v)) {
+		return v, true
 	}
-	first, last := vals[0], vals[len(vals)-1]
-	minus, plus := strconv.Itoa(clampPortions(from-1)), strconv.Itoa(clampPortions(from+1))
-	switch {
-	case first == minus:
-		return first, true
-	case last == plus:
-		return last, true
+	if vals := q["portions"]; len(vals) > 0 {
+		return vals[len(vals)-1], true
 	}
-	return last, true
+	return "", false
 }
 
 // cookStepParam reads the step: a number, clamped to the steps there are; a
@@ -92,9 +83,6 @@ func cookStepParam(raw string, n int) int {
 			return min(max(v, 1), n)
 		}
 		return n
-	}
-	if cookNegative.MatchString(raw) {
-		return 1
 	}
 	return 1
 }
@@ -136,12 +124,8 @@ func (s *server) handleRecipeCook(w http.ResponseWriter, r *http.Request) {
 
 	// Portions: a typed number that is no number from 1 to 99 stays in the field with
 	// its error, and the quantities stay as written for the recipe's own portions.
-	from := base
-	if v, err := strconv.Atoi(q.Get("from")); err == nil {
-		from = v
-	}
 	portions, typed, invalid, stepFrom := base, strconv.Itoa(base), false, base
-	if raw, has := cookPortionsParam(q["portions"], from); has {
+	if raw, has := cookPortionsParam(q); has {
 		if n, ok := recipe.ParsePortions(raw); ok {
 			portions, typed, stepFrom = n, strconv.Itoa(n), n
 		} else {
@@ -194,24 +178,23 @@ func (s *server) handleRecipeCook(w http.ResponseWriter, r *http.Request) {
 		steps = append(steps, c.cookStepView(rec.Steps, i))
 	}
 
-	count := func(key string, kv ...string) string { return c.t(key, kv...) }
-	tabIngs, tabSteps := count("cook.none"), count("cook.none")
+	tabIngs, tabSteps := c.t("cook.none"), c.t("cook.none")
 	if len(ings) > 0 {
-		tabIngs = count("cook.ticked", "k", strconv.Itoa(len(ticked)), "n", strconv.Itoa(len(ings)))
+		tabIngs = c.t("cook.ticked", "k", strconv.Itoa(len(ticked)), "n", strconv.Itoa(len(ings)))
 	}
 	if n > 0 {
-		tabSteps = count("cook.step", "k", strconv.Itoa(k), "n", strconv.Itoa(n))
+		tabSteps = c.t("cook.step", "k", strconv.Itoa(k), "n", strconv.Itoa(n))
 	}
 	ones := func(key string) string { // the sentence with its number, and the one for 1 portion
 		return c.s.i18n.T(lang, key)
 	}
 	data := map[string]any{
 		"R": rec, "Title": rec.Name, "Parent": parent, "ID": rec.ID, "RecipeHref": recipesPath + "/" + rec.ID, "EditHref": recipesPath + "/" + rec.ID + "/edit",
-		"View": view, "Step": k, "Steps": steps, "HasSteps": n > 0, "Ings": ings, "Typed": typed, "Invalid": invalid, "Base": base, "From": stepFrom,
+		"View": view, "Step": k, "Steps": steps, "HasSteps": n > 0, "Ings": ings, "Typed": typed, "Invalid": invalid, "Base": base,
 		"Less": clampPortions(stepFrom - 1), "More": clampPortions(stepFrom + 1),
-		"Ticked": len(ticked), "TabIngs": tabIngs, "TabSteps": tabSteps,
-		"TickedText": count("cook.ticked", "k", strconv.Itoa(len(ticked)), "n", strconv.Itoa(len(ings))), "AllReady": len(ings) > 0 && len(ticked) == len(ings),
-		"AllReadyText": count("cook.allready", "n", strconv.Itoa(len(ings))),
+		"TabIngs": tabIngs, "TabSteps": tabSteps,
+		"TickedText": c.t("cook.ticked", "k", strconv.Itoa(len(ticked)), "n", strconv.Itoa(len(ings))), "AllReady": len(ings) > 0 && len(ticked) == len(ings),
+		"AllReadyText": c.t("cook.allready", "n", strconv.Itoa(len(ings))),
 		"TickedTpl":    ones("cook.ticked"), "AllReadyTpl": ones("cook.allready"),
 		"ErrTpl": ones("cook.portions.err"), "ErrOne": ones("cook.portions.err.one"), "OfflineTpl": ones("cook.portions.offline"), "OfflineOne": ones("cook.portions.offline.one"),
 	}

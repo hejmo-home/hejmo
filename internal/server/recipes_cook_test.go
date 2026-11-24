@@ -251,11 +251,11 @@ func TestPortionsScaleTheQuantitiesOnTheServerAndASentenceSaysSo(t *testing.T) {
 	id := rb.cookCurry(t)
 	base := rb.b.do(http.MethodGet, cookPath(id), nil, enHeader).body
 	rcpHas(t, "base", base, `<label for="portions">Servings</label>`, `<input id="portions" name="portions" type="text" inputmode="numeric" value="4" autocomplete="off">`,
-		`<button class="button secondary step" type="submit" name="portions" value="3" aria-label="One serving less">`, `<button class="button secondary step" type="submit" name="portions" value="5" aria-label="One serving more">`)
+		`<button class="button secondary step" type="submit" name="nudge" value="3" aria-label="One serving less">`, `<button class="button secondary step" type="submit" name="nudge" value="5" aria-label="One serving more">`)
 	rcpLacks(t, "base", base, "converted", `class="ferr"`, "invalid")
 	six := rb.b.do(http.MethodGet, cookPath(id, "portions=6"), nil, enHeader).body
 	rcpHas(t, "six", six, `<span class="q">900 g</span> Süßkartoffeln`, `<span class="q">4.5 tbsp</span> Currypaste`, `<span class="q">4.5 tbsp</span> Erdnussbutter`, `value="6" autocomplete="off"`,
-		`<p class="hint">Quantities converted from 4 to 6 servings, rounded to one decimal.</p>`, `name="portions" value="5" aria-label="One serving less"`, `name="portions" value="7" aria-label="One serving more"`)
+		`<p class="hint">Quantities converted from 4 to 6 servings, rounded to one decimal.</p>`, `name="nudge" value="5" aria-label="One serving less"`, `name="nudge" value="7" aria-label="One serving more"`)
 	one := rb.b.do(http.MethodGet, cookPath(id, "portions=1"), nil, enHeader).body
 	rcpHas(t, "one", one, `<span class="q">150 g</span> Süßkartoffeln`, `<span class="q">0.8 tbsp</span> Currypaste`, "Quantities converted from 4 to 1 serving, rounded to one decimal.")
 	rcpHas(t, "one, German", rb.b.do(http.MethodGet, cookPath(id, "portions=1"), nil, rcpDE).body, `<span class="q">0,8 EL</span> Currypaste`, "Mengen umgerechnet von 4 auf 1 Portion, auf eine Nachkommastelle gerundet.")
@@ -263,8 +263,8 @@ func TestPortionsScaleTheQuantitiesOnTheServerAndASentenceSaysSo(t *testing.T) {
 	same := rb.b.do(http.MethodGet, cookPath(id, "portions=4"), nil, enHeader).body
 	rcpLacks(t, "the base portions", same, "converted")
 	// The stepper stays within 1 and 99.
-	rcpHas(t, "1", rb.b.do(http.MethodGet, cookPath(id, "portions=1"), nil, enHeader).body, `name="portions" value="1" aria-label="One serving less"`, `name="portions" value="2" aria-label="One serving more"`)
-	rcpHas(t, "99", rb.b.do(http.MethodGet, cookPath(id, "portions=99"), nil, enHeader).body, `name="portions" value="98" aria-label="One serving less"`, `name="portions" value="99" aria-label="One serving more"`)
+	rcpHas(t, "1", rb.b.do(http.MethodGet, cookPath(id, "portions=1"), nil, enHeader).body, `name="nudge" value="1" aria-label="One serving less"`, `name="nudge" value="2" aria-label="One serving more"`)
+	rcpHas(t, "99", rb.b.do(http.MethodGet, cookPath(id, "portions=99"), nil, enHeader).body, `name="nudge" value="98" aria-label="One serving less"`, `name="nudge" value="99" aria-label="One serving more"`)
 	// The recipe itself did not change.
 	if r, err := rb.b.db.Recipe(rb.hid, id); err != nil || r.Portions != 4 || r.Ingredients[0].Amount != 600 {
 		t.Errorf("recipe = %+v %v", r, err)
@@ -308,13 +308,15 @@ func TestWithoutScriptThePortionButtonsAndTheTypedNumberAreToldApart(t *testing.
 		q    []string
 		want string
 	}{
-		{"enter after typing 6", []string{"from=4", "portions=6"}, "value=\"6\" autocomplete"},
-		{"minus", []string{"from=4", "portions=3", "portions=4"}, "value=\"3\" autocomplete"},
-		{"plus", []string{"from=4", "portions=4", "portions=5"}, "value=\"5\" autocomplete"},
-		{"typed 7 then plus", []string{"from=4", "portions=7", "portions=5"}, "value=\"5\" autocomplete"},
-		{"typed 8 then minus", []string{"from=4", "portions=3", "portions=8"}, "value=\"3\" autocomplete"},
-		{"minus at 1", []string{"from=1", "portions=1", "portions=1"}, "value=\"1\" autocomplete"},
-		{"plus at 99", []string{"from=99", "portions=99", "portions=99"}, "value=\"99\" autocomplete"},
+		{"enter after typing 6", []string{"portions=6"}, "value=\"6\" autocomplete"},
+		{"minus", []string{"portions=4", "nudge=3"}, "value=\"3\" autocomplete"},
+		{"plus", []string{"portions=4", "nudge=5"}, "value=\"5\" autocomplete"},
+		{"typed 3 then plus", []string{"portions=3", "nudge=5"}, "value=\"5\" autocomplete"},
+		{"typed 5 then minus", []string{"portions=5", "nudge=3"}, "value=\"3\" autocomplete"},
+		{"typed 7 then plus", []string{"portions=7", "nudge=5"}, "value=\"5\" autocomplete"},
+		{"minus at 1", []string{"portions=1", "nudge=1"}, "value=\"1\" autocomplete"},
+		{"plus at 99", []string{"portions=99", "nudge=99"}, "value=\"99\" autocomplete"},
+		{"nudge that is no number is ignored", []string{"portions=6", "nudge=x"}, "value=\"6\" autocomplete"},
 	} {
 		page := rb.b.do(http.MethodGet, cookPath(id, c.q...), nil, enHeader).body
 		if !strings.Contains(page, c.want) {
@@ -322,7 +324,8 @@ func TestWithoutScriptThePortionButtonsAndTheTypedNumberAreToldApart(t *testing.
 		}
 	}
 	page := rb.b.do(http.MethodGet, cookPath(id, "portions=6"), nil, enHeader).body
-	rcpHas(t, "from", rcpBetween(t, page, `<form class="cook-form"`, `<nav`), `<input type="hidden" name="from" value="6">`)
+	form := rcpBetween(t, page, `<div class="cook-portions`, `</div>`)
+	rcpHas(t, "buttons", form, `name="nudge" value="5"`, `name="nudge" value="7"`)
 }
 
 // Acceptance: "Done" goes back to the recipe with a success line and saves nothing.

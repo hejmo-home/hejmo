@@ -217,3 +217,9 @@ test('the service worker keeps the script of the cooking view, so steps and tick
   assert.ok(list, 'sw.js has an ASSETS list');
   assert.ok(JSON.parse(list[1].replace(/'/g, '"')).includes('/static/cook.js'));
 });
+
+test('a malformed address does not throw: the bad pair is skipped', () => {
+  let out;
+  assert.doesNotThrow(() => { out = ctx.cookParseSearch('?have=%E0&step=2&%E0=1&portions=6'); });
+  assert.deepEqual(plain(out), { view: '', step: 2, portions: 6, have: [], hasState: true });
+});

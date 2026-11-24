@@ -390,7 +390,10 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /contacts/groups", s.handleContactGroups)
 	mux.HandleFunc("POST /contacts/groups", s.handleContactGroupCreate)
 	mux.HandleFunc("POST /contacts/groups/{id}/delete", s.handleContactGroupDelete)
+	mux.HandleFunc("GET /contacts/for-children", s.handleKidsParents)
 	mux.HandleFunc("GET /contacts/{id}", s.handleContact)
+	mux.HandleFunc("GET /numbers", s.handleNumbers)
+	mux.HandleFunc("GET /numbers/{id}/photo", s.handleNumbersPhoto)
 	// "/contacts/{id}/edit" and "/contacts/groups/{id}" match a request alike ("/contacts/groups/edit"), which the mux
 	// refuses as two patterns: one decides.
 	mux.HandleFunc("GET /contacts/{first}/{second}", s.contactSubpage)

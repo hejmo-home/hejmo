@@ -2,7 +2,6 @@ package server_test
 
 import (
 	"net/http"
-	"net/url"
 	"strings"
 	"testing"
 )
@@ -61,11 +60,9 @@ func TestContactFormHasTheKidCardAfterTheNumbersAndItIsOffForANewContact(t *test
 	}
 	ctHas(t, "English", k.page("/contacts/new", "en").body, "Important numbers for children", "Show to the children", "Off: The children do not see this contact.")
 	// A person's contact is off as well: parents choose on purpose.
-	mama := k.page("/contacts", "de").body
-	_ = mama
 	_, _, list := k.api.call(http.MethodGet, "/contacts", nil)
-	id := list[0].(map[string]any)["id"].(string)
-	ctHasNot(t, "Mama's form", k.page("/contacts/"+id+"/edit", "de").body[strings.Index(k.page("/contacts/"+id+"/edit", "de").body, `id="kids"`):], `name="for_children" value="1" checked`)
+	mama := k.page("/contacts/"+list[0].(map[string]any)["id"].(string)+"/edit", "de").body
+	ctHasNot(t, "Mama's form", mama[strings.Index(mama, `id="kids"`):], `value="1" checked`)
 }
 
 func TestSwitchingOnShowsWhatTheChildrenSeeAndOffWithoutANumberTheNotice(t *testing.T) {
@@ -159,5 +156,4 @@ func TestKidSwitchPostRoundTripKeepsTheSwitchWhenALineIsAdded(t *testing.T) {
 	f.Set("more", "number")
 	r := k.send("/contacts/new", f)
 	ctHas(t, "form again", r.body, `name="for_children" value="1" checked`)
-	_ = url.Values{}
 }

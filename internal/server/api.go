@@ -41,6 +41,10 @@ var apiRoutes = []APIRoute{
 	{"PATCH", "/contact-groups/{id}", auth.Perm("contacts", auth.Write), (*server).apiRenameContactGroup},
 	{"DELETE", "/contact-groups/{id}", auth.Perm("contacts", auth.Delete), (*server).apiDeleteContactGroup},
 
+	// The children's page "Wichtige Nummern" (ticket 301): a child's device reads it, which the address book refuses.
+	{"GET", "/numbers", auth.Perm("numbers", auth.Read), (*server).apiNumbers},
+	{"GET", "/numbers/{id}/photo", auth.Perm("numbers", auth.Read), (*server).apiNumbersPhoto},
+
 	{"GET", "/food", auth.Perm("health", auth.Read), (*server).apiListFood},
 	{"GET", "/people/{id}/food", auth.Perm("health", auth.Read), (*server).apiGetFood},
 	{"PUT", "/people/{id}/food", auth.Perm("health", auth.Write), (*server).apiPutFood},

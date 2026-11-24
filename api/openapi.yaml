@@ -648,6 +648,58 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /numbers:
+    get:
+      operationId: listNumbers
+      summary: The important numbers for children (scope numbers:read; a child's device session, parents and tokens with read)
+      description: |
+        What the web page "Wichtige Nummern" (`/numbers`) shows: the contacts a parent switched on (`for_children`)
+        that have at least one phone number, in up to three sections in this order: `emergency` (the group Notfall,
+        in the order the contacts were made), `family` (the people of the household in the order of the people, then
+        the contacts of the group Familie A to Z) and `other` (A to Z by Hejmo name, in the language of the request).
+        A contact is in the first section that fits and only once; empty sections are left out. A child never gets
+        their own contact; parents get every contact on the list, the children included. A contact holds nothing but
+        its name, whether it has a photo (`GET /numbers/{id}/photo`) and its numbers: never address, e-mail
+        addresses, birthday, groups or note. The address book (`/contacts`) stays closed to children.
+      responses:
+        "200":
+          description: The sections
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sections]
+                properties:
+                  sections:
+                    type: array
+                    items:
+                      type: object
+                      required: [key, contacts]
+                      properties:
+                        key: { type: string, enum: [emergency, family, other] }
+                        contacts:
+                          type: array
+                          items: { $ref: "#/components/schemas/ChildContact" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /numbers/{id}/photo:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getNumbersPhoto
+      summary: The photo of a contact on the children's page (scope numbers:read)
+      description: |
+        The same JPEG as `GET /contacts/{id}/photo`, for a child's device session. 404 when the contact has no photo
+        or is not on the children's page (not switched on, or no phone number); parents get the photo of every contact.
+      responses:
+        "200":
+          description: A JPEG
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /contact-groups:
     get:
       operationId: listContactGroups
@@ -4683,6 +4735,16 @@ components:
         created_at: { type: string, format: date-time }
         updated_by: { type: string, format: uuid, nullable: true }
         updated_at: { type: string, format: date-time }
+    ChildContact:
+      type: object
+      description: A contact as the children see it. The photo, the Hejmo name and the phone numbers are all of it.
+      required: [id, person_id, name, has_photo, numbers]
+      properties:
+        id: { type: string, format: uuid }
+        person_id: { type: string, format: uuid, nullable: true, description: "Set for the contact of a person of the household" }
+        name: { type: string, description: "The Hejmo name" }
+        has_photo: { type: boolean }
+        numbers: { type: array, items: { $ref: "#/components/schemas/ContactLine" } }
     ContactPhoto:
       type: object
       description: Where the photo of a contact came from. The last change wins.

@@ -4534,7 +4534,7 @@
   "kidspage.lead.many": "This is how {names} see this page on their devices under “Important numbers”. Whoever is on the list does not see themselves there. Tap a name to change the contact.",
   "kidspage.lead.none": "This is how children see this page on their devices under “Important numbers”. Tap a name to change the contact.",
   "kidspage.wait.title": "On for children, no number yet",
-  "kidspage.wait.text": "The children see the contact only with a phone number.",
+  "kidspage.wait.text": ": The children see the contact only with a phone number.",
   "kidspage.hidden.title": "Not visible to children",
   "kidspage.empty.title": "The children do not see a number yet.",
   "kidspage.empty.text": "Open a contact, tap “Change contact” and switch on “Show to the children”. A good start: Mama, Papa and the emergency number.",

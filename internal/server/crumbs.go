@@ -53,7 +53,7 @@ var crumbTrails = map[string][]crumb{
 	"token.html": {crumbSettings, crumbCalDAV}, "token_once.html": {crumbSettings, crumbCalDAV},
 	"personal_device.html": {crumbSettings, crumbPersonalDevices},
 	"mcp_token.html":       {crumbSettings, crumbMCP}, "mcp_token_new.html": {crumbSettings, crumbMCP}, "mcp_token_once.html": {crumbSettings, crumbMCP},
-	"contacts.html": {crumbSettings}, "contact.html": {crumbSettings, crumbContacts}, "contact_groups.html": {crumbSettings, crumbContacts}, "contact_group.html": {crumbSettings, crumbContacts, crumbContactGroups},
+	"contacts.html": {crumbSettings}, "contacts_kids.html": {crumbSettings, crumbContacts}, "contact.html": {crumbSettings, crumbContacts}, "contact_groups.html": {crumbSettings, crumbContacts}, "contact_group.html": {crumbSettings, crumbContacts, crumbContactGroups},
 	"person_edit.html": {crumbSettings, crumbPeople}, "group.html": {crumbSettings, crumbPeople},
 	"account_reset.html": {crumbSettings, crumbAccount}, "passkey.html": {crumbSettings, crumbAccount}, "recovery_codes.html": {crumbSettings, crumbAccount},
 	"session.html": {crumbSettings, crumbSessions},

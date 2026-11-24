@@ -4534,7 +4534,7 @@
   "kidspage.lead.many": "So sehen {names} diese Seite auf ihren Geräten unter „Wichtige Nummern“. Wer selbst auf der Liste steht, sieht sich dort nicht. Tippe auf einen Namen, um den Kontakt zu ändern.",
   "kidspage.lead.none": "So sehen Kinder diese Seite auf ihren Geräten unter „Wichtige Nummern“. Tippe auf einen Namen, um den Kontakt zu ändern.",
   "kidspage.wait.title": "Für Kinder an, noch ohne Nummer",
-  "kidspage.wait.text": "Die Kinder sehen den Kontakt erst mit einer Telefonnummer.",
+  "kidspage.wait.text": ": Die Kinder sehen den Kontakt erst mit einer Telefonnummer.",
   "kidspage.hidden.title": "Nicht für Kinder sichtbar",
   "kidspage.empty.title": "Die Kinder sehen noch keine Nummer.",
   "kidspage.empty.text": "Öffne einen Kontakt, tippe auf „Kontakt ändern“ und schalte „Bei den Kindern zeigen“ ein. Gut für den Anfang: Mama, Papa und der Notruf.",

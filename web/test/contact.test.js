@@ -120,3 +120,85 @@ test('typing marks the form as not saved yet', () => {
   t.handlers.input({});
   assert.equal(t.dirty.hidden, false);
 });
+
+// ---- the photo card (ticket 297) ----
+// Choosing a file submits the form with picture=upload (the server prepares the photo and shows it); a HEIC photo
+// is converted in the browser first, with the code of the photos page.
+
+function photoSetup(sniffs, opts) {
+  opts = opts || {};
+  const handlers = {};
+  const appended = [];
+  const inputs = [{ value: 'x' }, { value: 'x' }, { value: 'x' }];
+  const form = {
+    submitted: 0,
+    addEventListener(t, f) { handlers[t] = f; },
+    querySelector(sel) { return sel === 'input[name="picture"][data-upload]' ? appended[0] || null : null; },
+    querySelectorAll(sel) { return sel === 'input[type="file"][name="photo"]' ? inputs : []; },
+    appendChild(el) { appended.push(el); },
+    requestSubmit() { this.submitted++; },
+  };
+  const calls = [];
+  const HejmoPhotos = {
+    sniff: () => sniffs,
+    jpegName: (n) => n.replace(/\.[^.]*$/, '') + '.jpg',
+    head: async () => { calls.push('head'); return new Uint8Array(4); },
+    convert: async () => { calls.push('convert'); if (opts.convertFails) throw new Error('no decoder'); return { blob: true }; },
+  };
+  class File { constructor(parts, name, o) { this.parts = parts; this.name = name; this.type = o && o.type; } }
+  class DataTransfer { constructor() { this.items = { add: (f) => { this.files = [f]; } }; } }
+  const document = { querySelector: (sel) => (sel === 'form.ct-form' ? form : null), createElement: () => ({ setAttribute() {} }) };
+  vm.runInNewContext(source, { document, HejmoPhotos: opts.noPhotos ? undefined : HejmoPhotos, File, DataTransfer });
+  const choose = async (file) => {
+    const input = Object.assign(inputs[1], { files: [file], name: 'photo', matches: (s) => s === 'input[type="file"][name="photo"]' });
+    handlers.change({ target: input });
+    await new Promise((r) => setTimeout(r, 10));
+    return input;
+  };
+  return { form, appended, inputs, choose, calls, handlers };
+}
+
+test('choosing a photo submits the form with picture=upload and keeps only that file', async () => {
+  const t = photoSetup('jpeg');
+  const file = { name: 'IMG_1.jpg' };
+  const input = await t.choose(file);
+  assert.equal(t.form.submitted, 1);
+  assert.equal(t.appended.length, 1);
+  assert.equal(t.appended[0].name, 'picture');
+  assert.equal(t.appended[0].value, 'upload');
+  assert.equal(input.files[0], file, 'a JPEG goes up as it is');
+  assert.deepEqual(t.calls, ['head']);
+  assert.equal(t.inputs[0].value, '', 'the other buttons hold no file');
+  assert.equal(t.inputs[2].value, '');
+});
+
+test('a HEIC photo is converted to JPEG in the browser before it is sent', async () => {
+  const t = photoSetup('heic');
+  const input = await t.choose({ name: 'IMG_4810.HEIC' });
+  assert.deepEqual(t.calls, ['head', 'convert']);
+  assert.equal(input.files[0].name, 'IMG_4810.jpg');
+  assert.equal(input.files[0].type, 'image/jpeg');
+  assert.equal(t.form.submitted, 1);
+});
+
+test('a HEIC photo that cannot be converted is sent as it is: the box names the problem', async () => {
+  const t = photoSetup('heic', { convertFails: true });
+  const file = { name: 'IMG_4810.HEIC' };
+  const input = await t.choose(file);
+  assert.equal(input.files[0], file);
+  assert.equal(t.form.submitted, 1);
+});
+
+test('without the photo helpers the file is still submitted', async () => {
+  const t = photoSetup('jpeg', { noPhotos: true });
+  await t.choose({ name: 'a.jpg' });
+  assert.equal(t.form.submitted, 1);
+});
+
+test('choosing nothing submits nothing', async () => {
+  const t = photoSetup('jpeg');
+  t.handlers.change({ target: { files: [], matches: () => true } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(t.form.submitted, 0);
+  assert.equal(t.appended.length, 0);
+});

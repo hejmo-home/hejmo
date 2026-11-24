@@ -79,6 +79,50 @@
     var d = form.querySelector(".savebar .dirty");
     if (d) d.hidden = false;
   }
+
+  // The photo card (ticket 297): choosing a file sends the form with picture=upload. The box prepares the photo,
+  // shows it as it will appear and keeps everything typed; "Speichern" stores it. A HEIC photo is converted to
+  // JPEG here first, with the code of the photos page (photos.js); if that fails the file goes up as it is and
+  // the box names the problem at the card. Without this script the photo goes in with "Speichern".
+  function submitUpload() {
+    var mark = form.querySelector('input[name="picture"][data-upload]');
+    if (!mark) {
+      mark = document.createElement("input");
+      mark.setAttribute("type", "hidden");
+      mark.setAttribute("name", "picture");
+      mark.setAttribute("data-upload", "");
+      mark.name = "picture";
+      form.appendChild(mark);
+    }
+    mark.value = "upload";
+    if (form.requestSubmit) form.requestSubmit(); else form.submit();
+  }
+
+  function choosePhoto(input) {
+    var file = input.files && input.files[0];
+    if (!file) return;
+    var others = form.querySelectorAll('input[type="file"][name="photo"]');
+    for (var i = 0; i < others.length; i++) if (others[i] !== input) others[i].value = ""; // one file goes up
+    var photos = typeof HejmoPhotos !== "undefined" ? HejmoPhotos : null;
+    if (!photos) { submitUpload(); return; }
+    Promise.resolve()
+      .then(function () { return photos.head(file); })
+      .then(function (head) {
+        if (photos.sniff(head) !== "heic") return;
+        return photos.convert(file).then(function (blob) {
+          var jpeg = new File([blob], photos.jpegName(file.name), { type: "image/jpeg" });
+          var dt = new DataTransfer();
+          dt.items.add(jpeg);
+          input.files = dt.files;
+        });
+      })
+      .then(submitUpload, submitUpload);
+  }
+
   form.addEventListener("input", markDirty);
-  form.addEventListener("change", markDirty);
+  form.addEventListener("change", function (ev) {
+    markDirty();
+    var el = ev && ev.target;
+    if (el && el.matches && el.matches('input[type="file"][name="photo"]')) choosePhoto(el);
+  });
 })();

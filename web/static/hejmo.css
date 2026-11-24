@@ -4273,6 +4273,7 @@ ul.cook-ings { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px;
 .cook-tick .box .icon { display: none; stroke: var(--accent-text); stroke-width: 3.2; }
 .cook-tick .e { width: 36px; font-size: 28px; line-height: 1; text-align: center; }
 .cook-tick .e .icon { stroke: var(--text-secondary); }
+.cook-tick .e img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-field); }
 .cook-tick .t { min-width: 0; overflow-wrap: break-word; hyphens: manual; }
 .cook-tick .q { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .cook-tick .variety { font-weight: 400; }

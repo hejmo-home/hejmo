@@ -2781,6 +2781,145 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /rewards/requests:
+    get:
+      operationId: listRewardRequests
+      summary: Requests to redeem rewards (scope tasks:read)
+      description: |
+        A parent gets the open requests of the household, oldest first. A child
+        gets their own: the open ones and the ones decided in the last 7 days
+        (confirmed or declined), oldest first.
+      responses:
+        "200":
+          description: The requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Redemption" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /rewards/requests/{id}/withdraw:
+    post:
+      operationId: withdrawRewardRequest
+      summary: A child takes an open request back (scope tasks:complete, children only)
+      description: |
+        The stars were never booked, so they are free again. A request decided
+        already is 409 with `code: decided` and who decided it.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Withdrawn
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Redemption" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/RedemptionRefused" }
+  /rewards/requests/{id}/confirm:
+    post:
+      operationId: confirmRewardRequest
+      summary: Say yes to a request (scope tasks:write, parents only)
+      description: |
+        Balance and limit are checked again and the price is booked in the
+        star log in one transaction ("Eingelöst: symbol name", negative). When
+        either fails the request stays open and the answer is 409 with `code`
+        `stars` (and `missing`) or `limit` (and `available_again`). A second
+        decision books nothing and is 409 with `code: decided`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Confirmed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Redemption" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/RedemptionRefused" }
+  /rewards/requests/{id}/decline:
+    post:
+      operationId: declineRewardRequest
+      summary: Say no to a request (scope tasks:write, parents only)
+      description: The child keeps the stars. The note is optional (at most 120 characters) and the child sees it.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note: { type: string, maxLength: 120 }
+      responses:
+        "200":
+          description: Declined
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Redemption" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/RedemptionRefused" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /rewards/{id}/ask:
+    post:
+      operationId: askReward
+      summary: A child asks a parent for a reward (scope tasks:complete, children only)
+      description: |
+        Nothing is booked. The price must fit into the child's free stars: the
+        balance minus the prices of their other open requests (else 409,
+        `code: stars`). A child has at most one open request per reward (else
+        409, `code: asked`) and cannot ask while the limit is used up (409,
+        `code: limit`). The request keeps the reward's name, symbol, picture
+        and price as they are now.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "201":
+          description: The open request
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Redemption" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/RedemptionRefused" }
+  /rewards/{id}/redeem:
+    post:
+      operationId: redeemReward
+      summary: A parent redeems a reward for a person now (scope tasks:write, parents only)
+      description: |
+        The same balance and limit checks as a confirmation (409 with `code`
+        `stars` or `limit`); the stars go at once. When the person has an open
+        request for this reward, that request is confirmed instead of a second
+        booking, and the answer is that request (`direct: false`).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [person_id]
+              properties:
+                person_id: { type: string, format: uuid }
+      responses:
+        "201":
+          description: The confirmed redemption
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Redemption" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/RedemptionRefused" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /rewards/{id}:
     get:
       operationId: getReward
@@ -5083,6 +5222,10 @@ components:
         booked_by: { type: string, description: "Name of the person who booked; empty when a display did. Once that person is removed, their last name" }
         booked_by_removed: { type: boolean, description: "True when the person who booked has been removed; clients show the name as removed" }
         created_at: { type: string, format: date-time }
+        redemption_id: { type: string, description: "Of the redemption this booking pays for; empty otherwise" }
+        reward_name: { type: string, description: "With a redemption: the reward's name when it was asked for or redeemed" }
+        reward_symbol: { type: string, description: "With a redemption: the reward's symbol then" }
+        direct: { type: boolean, description: "With a redemption: a parent redeemed it directly, else `booked_by` confirmed a request" }
     StarAccount:
       type: object
       required: [person_id, balance, shown, entries]
@@ -5170,6 +5313,33 @@ components:
     Unit:
       type: string
       enum: [piece, dozen, pack, bunch, g, kg, ml, l, oz, lb, floz_us, floz_uk, cup_us, pint_us, pint_uk, quart_us, gallon_us, gallon_uk]
+    Redemption:
+      type: object
+      required: [id, person_id, reward_id, name, symbol, price, status, note, asked_at, decided_at, decided_by, decided_by_name, direct, decline_reason]
+      properties:
+        id: { type: string, format: uuid }
+        person_id: { type: string, format: uuid }
+        reward_id: { type: string, format: uuid, nullable: true, description: "Null once the reward was deleted" }
+        name: { type: string, description: "The reward's name when it was asked for (when redeemed, for a direct redemption)" }
+        symbol: { type: string }
+        price: { type: integer, description: "The price then" }
+        status: { type: string, enum: [open, confirmed, declined, withdrawn] }
+        note: { type: string, maxLength: 120, description: "The parent's note when declining" }
+        asked_at: { type: string, format: date-time }
+        decided_at: { type: string, format: date-time, nullable: true }
+        decided_by: { type: string, format: uuid, nullable: true, description: "The parent who confirmed or declined; null when nobody did (withdrawn, or the reward was removed)" }
+        decided_by_name: { type: string }
+        direct: { type: boolean, description: "A parent redeemed it directly, without a request" }
+        decline_reason: { type: string, enum: [parent, reward_gone], nullable: true }
+    RedemptionRefused:
+      type: object
+      required: [error, code]
+      properties:
+        error: { type: string }
+        code: { type: string, enum: [stars, limit, asked, decided] }
+        missing: { type: integer, description: "With `stars`: how many stars are missing" }
+        available_again: { type: string, format: date-time, description: "With `limit`: when the next period starts" }
+        redemption: { $ref: "#/components/schemas/Redemption" }
     SavingsGoal:
       type: object
       required: [person_id, reward_id, name, symbol, price, balance, reached, set_at, ended]
@@ -5849,7 +6019,7 @@ components:
         region_code: { type: string, description: "ISO 3166-2 code of the state or canton, one of the regions of the setup form", example: DE-BY }
     Settings:
       type: object
-      required: [date_format, time_format, temperature_unit, auto_update, home_name, home_place_id, latitude, longitude, first_steps_hidden, first_steps_skipped, meal_cutoffs]
+      required: [date_format, time_format, temperature_unit, auto_update, home_name, home_place_id, latitude, longitude, below_zero, first_steps_hidden, first_steps_skipped, meal_cutoffs]
       properties:
         date_format: { type: string, enum: [dmy, mdy], description: "Day first DD.MM.YYYY (default) or month first MM/DD/YYYY. Only how the web interface writes dates in numbers; this API, CalDAV and iCalendar stay ISO 8601" }
         home_name: { type: string, description: "The name of the home place; the name of the place picked from the list" }
@@ -5858,6 +6028,7 @@ components:
         longitude: { type: number, nullable: true, format: double, description: "Longitude of the home in degrees (east positive); null until the home has a location" }
         time_format: { type: string, enum: ["24h", "12h"], description: "24-hour (default) or 12-hour clock" }
         temperature_unit: { type: string, enum: [c, f], description: "Degrees Celsius (default) or Fahrenheit" }
+        below_zero: { type: boolean, description: "Whether unticking a task may take a star balance below zero (default true). With false, unticking deducts at most down to zero. Redeeming never goes below zero." }
         first_steps_hidden: { type: boolean, description: "Whether the first steps card on the start page is hidden (default false). A parent closes the card when all six steps are done or skipped, or hides it earlier." }
         first_steps_skipped:
           type: array
@@ -5886,6 +6057,7 @@ components:
         time_format: { type: string, description: "24h or 12h" }
         temperature_unit: { type: string, description: "c or f" }
         auto_update: { type: string, description: "on, off or notify" }
+        below_zero: { type: boolean, description: "Allow or forbid a star balance below zero after unticking a task" }
         first_steps_hidden: { type: boolean, description: "Hide or show the first steps card on the start page" }
         first_steps_skipped:
           type: array
@@ -6330,6 +6502,14 @@ components:
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
+    RedemptionRefused:
+      description: |
+        Refused: not enough stars (`stars`), the limit is used up (`limit`),
+        there is an open request already (`asked`), or the request was decided
+        already (`decided`, with who decided it and when). Nothing was booked.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/RedemptionRefused" }
     Invalid:
       description: Request is well-formed but not valid
       content:

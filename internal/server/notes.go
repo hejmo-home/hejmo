@@ -274,6 +274,10 @@ func (s *server) renderHome(w http.ResponseWriter, r *http.Request, status int, 
 		data["Child"] = child
 	}
 	if person.Role == store.RoleParent {
+		if err := s.asksData(r, principal{person: person, household: h}, "home", data); err != nil { // open requests to redeem, above the day (ticket 292)
+			s.fail(w, "requests", err)
+			return
+		}
 		if first == nil { // the day comes after the first steps
 			people, err := s.db.People(h.ID)
 			if err != nil {

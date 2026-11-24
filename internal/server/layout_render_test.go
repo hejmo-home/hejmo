@@ -328,6 +328,7 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	}
 	f.outlook = f.addOutlook(t)
 	f.rewards = f.addRewards(t)
+	f.addRequests(t)
 	if r := f.post("/caldav/tokens", url.Values{"name": {"iPhone von Friedrich mit langem Gerätenamen"}}); r.status != http.StatusOK {
 		t.Fatalf("CalDAV token = %d\n%s", r.status, r.body)
 	}
@@ -554,6 +555,7 @@ var notRendered = map[string]string{
 
 	"/articles/{id}/picture":                  "an image",
 	"/tasks/rewards/{id}/picture":             "the photo of a reward, an image",
+	"/tasks/rewards/requests/{id}/picture":    "the photo a reward had when it was asked for, an image",
 	"/display/articles/{id}/picture":          "an image",
 	"/display/rewards/{id}/picture":           "an image",
 	"/settings/lists/library/picture/{token}": "an image",
@@ -1346,7 +1348,7 @@ func (f *layoutFixture) addRewards(t *testing.T) []string {
 	}
 	redeem := func(id, person string) {
 		t.Helper()
-		if _, err := db.SQL().Exec(`INSERT INTO reward_redemptions (id, reward_id, person_id, status, price, requested_at, decided_at) VALUES (lower(hex(randomblob(8))), ?, ?, 'confirmed', 5, ?, ?)`, id, person, "2026-11-12T10:00:00Z", "2026-11-12T10:00:00Z"); err != nil {
+		if _, err := db.SQL().Exec(`INSERT INTO reward_redemptions (id, household_id, reward_id, person_id, status, price, requested_at, decided_at) SELECT lower(hex(randomblob(8))), household_id, id, ?, 'confirmed', 5, ?, ? FROM rewards WHERE id = ?`, person, "2026-11-12T10:00:00Z", "2026-11-12T10:00:00Z", id); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -1375,6 +1377,55 @@ func (f *layoutFixture) addRewards(t *testing.T) []string {
 		t.Fatal(err)
 	}
 	return []string{redeemed, never, byHand, gone}
+}
+
+// addRequests makes the open requests of the layout fixture (#292): every child asks for two rewards, so
+// Start and the rewards page carry many rows with long names, and Anna-Lena's own page holds an open request,
+// a yes and a no with a note.
+func (f *layoutFixture) addRequests(t *testing.T) {
+	t.Helper()
+	db, h := f.db, f.householdID
+	rewards, err := db.Rewards(h)
+	if err != nil {
+		t.Fatal(err)
+	}
+	byName := map[string]string{}
+	for _, r := range rewards {
+		byName[r.Name] = r.ID
+	}
+	spiel, eis, kino := byName["Spielenachmittag mit Freundinnen und Freunden daheim"], byName["Eis aus der Eisdiele"], byName["Kinoabend"]
+	anna := f.people["Anna-Lena"].ID
+	ask := func(child, rw string, at time.Time) string {
+		t.Helper()
+		d, err := db.AskReward(h, child, rw, at, time.UTC)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return d.ID
+	}
+	for i, id := range f.ids {
+		p := f.people[layoutNames[i]]
+		if p.Role != store.RoleChild || id == anna {
+			continue
+		}
+		if _, err := db.BookStars(h, id, 40, "layout", f.ids[0], f.now.Add(-48*time.Hour)); err != nil {
+			t.Fatal(err)
+		}
+		ask(id, spiel, f.now.Add(-26*time.Hour))
+		ask(id, eis, f.now.Add(-3*time.Hour))
+	}
+	if _, err := db.BookStars(h, anna, 40, "layout", f.ids[0], f.now.Add(-48*time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	yes := ask(anna, spiel, f.now.Add(-30*time.Hour))
+	if _, err := db.ConfirmRedemption(h, yes, f.ids[0], f.now.Add(-29*time.Hour), time.UTC); err != nil {
+		t.Fatal(err)
+	}
+	no := ask(anna, kino, f.now.Add(-28*time.Hour))
+	if _, err := db.DeclineRedemption(h, no, f.ids[1], "Erst am Wochenende, heute ist Training und danach gibt es Abendessen bei Oma", f.now.Add(-27*time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	ask(anna, eis, f.now.Add(-2*time.Hour))
 }
 
 // rewardFormPages returns the reward form as the box answers a form with an error at every field.

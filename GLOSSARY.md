@@ -395,8 +395,19 @@ _Avoid_: prize, shop item
 Exchanging stars for a reward. A child asks and a parent confirms, or a parent redeems directly; the stars leave the person's star log only on confirmation, and never below zero.
 _Avoid_: purchase, payout
 
+**Request** (to redeem):
+A child's ask for a reward, open until a parent confirms or declines it or the child withdraws it. It keeps the reward's name, symbol, picture and price as they were when asked; nothing is booked while it is open. A child has at most one open request per reward. Decided requests stay visible to the child for 7 days.
+_Avoid_: order, wish
+
+**Free stars**:
+A child's balance minus the prices of their open requests: what they can still ask for. The balance itself stays whole until a parent says yes.
+_Avoid_: available points
+
+**Stars below zero**:
+A household switch (on by default). When on, unticking a task whose stars were already redeemed may take the balance below zero; when off, unticking deducts at most down to zero. Redeeming itself never goes below zero.
+
 **Savings goal**:
-The one reward a person has chosen to save for, by the person on their own device or by a parent; their personal view and the family view show the progress towards its star price. It sets no stars aside, and it ends by itself when that reward is redeemed for the person, archived or no longer meant for them.
+The one reward a person has chosen to save for, by the person on their own device or by a parent; their personal view and the family view show the progress towards its star price. Progress is the plain star balance on every screen, also while open requests set stars aside; only asking for the goal needs the price in free stars. The child's goal card then says "enough stars" and, once asked, that it waits for the parents. It sets no stars aside itself, and it ends by itself when that reward is redeemed for the person, archived or no longer meant for them.
 _Avoid_: wish, target
 
 **Streak**:

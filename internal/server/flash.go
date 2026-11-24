@@ -330,6 +330,12 @@ func (s *server) successHTML(lang, key, arg string) template.HTML {
 	if key == "flash.routine_template_saved" && arg != "" {
 		return s.templateSavedHTML(lang, arg)
 	}
+	if _, ok := flashFields[key]; ok && strings.HasPrefix(key, "flash.rwd_") && arg != "" {
+		return s.rwdFlashHTML(lang, key, arg) // the values escaped, the bold from the locale (ticket 292)
+	}
+	if strings.HasPrefix(key, "flash.rwd_below_") {
+		return template.HTML(s.i18n.T(lang, key))
+	}
 	if strings.HasPrefix(key, starsSavedPrefix) {
 		text := s.i18n.T(lang, key)
 		if n, err := strconv.Atoi(arg); err == nil && key == starsSavedPrefix+"other" {

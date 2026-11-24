@@ -177,6 +177,10 @@ var wholeFamilyTexts = map[string]bool{
 	"recipes.units.group.household":            true, // "Eure Einheiten": the household's units
 	"recipes.check.title":                      true, // "Allergien in eurer Familie": the card names the family, not the reader
 	"recipes.check.none":                       true,
+	"meals.rcp.you_are":                        true, // "ihr seid 4": the people at the table, the whole family (ticket 281)
+	"meals.rcp.error.portions":                 true,
+	"meals.rcp.error.portions.empty":           true,
+	"meals.sugg.unchecked":                     true, // "Prüft Hejmo nicht:" is no imperative: Hejmo is the subject (ticket 281)
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

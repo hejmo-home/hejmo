@@ -103,9 +103,6 @@ func (c *itemCtx) formOfRecipe(r recipe.Recipe) rcpForm {
 		if in.Amount > 0 {
 			line.Amount = recipe.FormatAmount(in.Amount, c.lang)
 		}
-		if in.ArticleID != "" && in.Variety != "" {
-			line.Name = in.Text + " " + in.Variety // typing it again means the same
-		}
 		f.Ings = append(f.Ings, line)
 	}
 	f.Ings = append(f.Ings, rcpIngLine{})

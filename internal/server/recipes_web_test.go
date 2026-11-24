@@ -518,9 +518,9 @@ func TestAChosenSuggestionKeepsItsVarietyWhenTheScriptFillsNameAndArticle(t *tes
 func TestARetypedNameDoesNotKeepTheVarietyOfTheOldArticleWithoutTheScript(t *testing.T) {
 	t.Parallel()
 	rb := newRecipeBox(t)
-	// What the form sends without script: the line was "Mehl · Type 405", the name was retyped, the hidden fields kept the old article and variety.
+	// What the form sends without script: the line was "Weizenmehl · Type 405", the name was retyped to Zucker, the hidden fields kept the old article and variety.
 	l := lines([]string{"200"}, []string{"g"}, []string{"Zucker"})
-	l["ing_article"] = []string{"flour"}
+	l["ing_article"] = []string{"wheat-flour"}
 	l["ing_variety"] = []string{"Type 405"}
 	if r := rb.save(t, "/meals/recipes", rcpFormOf("Kuchen", l)); r.status != http.StatusSeeOther {
 		t.Fatalf("save = %d\n%s", r.status, r.body)
@@ -532,13 +532,12 @@ func TestARetypedNameDoesNotKeepTheVarietyOfTheOldArticleWithoutTheScript(t *tes
 	}
 }
 
-func TestAVarietyTypedAfterTheDotWinsOverTheOneTheLineHadBefore(t *testing.T) {
+func TestAVarietyTypedAfterTheDotFillsAnEmptyVarietyField(t *testing.T) {
 	t.Parallel()
 	rb := newRecipeBox(t)
-	// The script clears the article id when the text is edited and keeps the variety field of the chosen option.
 	l := lines([]string{"3", "3"}, []string{"tbsp", "tbsp"}, []string{"Erdnussbutter · stückig", "Erdnussbutter · stückig"})
 	l["ing_article"] = []string{"", "peanut-butter"}
-	l["ing_variety"] = []string{"cremig", "cremig"}
+	l["ing_variety"] = []string{"", ""}
 	if r := rb.save(t, "/meals/recipes", rcpFormOf("Curry", l)); r.status != http.StatusSeeOther {
 		t.Fatalf("save = %d\n%s", r.status, r.body)
 	}
@@ -546,6 +545,68 @@ func TestAVarietyTypedAfterTheDotWinsOverTheOneTheLineHadBefore(t *testing.T) {
 		if in.ArticleID != "peanut-butter" || in.Variety != "stückig" {
 			t.Errorf("line %d = %+v, want peanut butter, variety stückig", i, in)
 		}
+	}
+}
+
+func TestAChangeOnlyInTheVarietyFieldIsKept(t *testing.T) {
+	t.Parallel()
+	for _, name := range []string{"Weizenmehl", "Weizenmehl Type 405", "Weizenmehl · Type 405"} {
+		rb := newRecipeBox(t)
+		l := lines([]string{"200"}, []string{"g"}, []string{name})
+		l["ing_article"] = []string{"wheat-flour"}
+		l["ing_variety"] = []string{"Type 550"}
+		if r := rb.save(t, "/meals/recipes", rcpFormOf("Kuchen", l)); r.status != http.StatusSeeOther {
+			t.Fatalf("%q: save = %d\n%s", name, r.status, r.body)
+		}
+		if in := rb.onlyRecipe(t).Ingredients[0]; in.ArticleID != "wheat-flour" || in.Variety != "Type 550" {
+			t.Errorf("%q: line = %+v, want wheat flour, variety Type 550", name, in)
+		}
+	}
+}
+
+func TestAVarietyClearedInItsFieldIsGone(t *testing.T) {
+	t.Parallel()
+	rb := newRecipeBox(t)
+	l := lines([]string{"200"}, []string{"g"}, []string{"Weizenmehl"})
+	l["ing_article"] = []string{"wheat-flour"}
+	l["ing_variety"] = []string{""}
+	if r := rb.save(t, "/meals/recipes", rcpFormOf("Kuchen", l)); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d\n%s", r.status, r.body)
+	}
+	if in := rb.onlyRecipe(t).Ingredients[0]; in.Variety != "" {
+		t.Errorf("a cleared variety stayed: %+v", in)
+	}
+}
+
+func TestAVarietyDeletedFromTheNameStaysInItsField(t *testing.T) {
+	t.Parallel()
+	rb := newRecipeBox(t)
+	l := lines([]string{"200"}, []string{"g"}, []string{"Weizenmehl"})
+	l["ing_article"] = []string{"wheat-flour"}
+	l["ing_variety"] = []string{"Type 405"}
+	if r := rb.save(t, "/meals/recipes", rcpFormOf("Kuchen", l)); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d\n%s", r.status, r.body)
+	}
+	if in := rb.onlyRecipe(t).Ingredients[0]; in.Variety != "Type 405" {
+		t.Errorf("line = %+v, want variety Type 405", in)
+	}
+}
+
+func TestTheEditFormKeepsTheVarietyOutOfTheNameField(t *testing.T) {
+	t.Parallel()
+	rb := newRecipeBox(t)
+	l := lines([]string{"200"}, []string{"g"}, []string{"Weizenmehl"})
+	l["ing_article"] = []string{"wheat-flour"}
+	l["ing_variety"] = []string{"Type 405"}
+	if r := rb.save(t, "/meals/recipes", rcpFormOf("Kuchen", l)); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d\n%s", r.status, r.body)
+	}
+	page := rb.b.do(http.MethodGet, "/meals/recipes/"+rb.onlyRecipe(t).ID+"/edit", nil, rcpDE).body
+	if strings.Contains(page, `name="ing_name" autocomplete="off" aria-label="Zutat 1" placeholder="Zutat, zum Beispiel Mehl Type 405" value="Wheat flour Type 405"`) || strings.Contains(page, "Type 405\">\n          <input type=\"hidden\" name=\"ing_article\"") {
+		t.Errorf("the name field holds the variety, which belongs in its own field")
+	}
+	if !strings.Contains(page, `aria-label="Zutat 1" placeholder="Zutat, zum Beispiel Mehl Type 405" value="Wheat flour">`) || !strings.Contains(page, `name="ing_variety" maxlength="60" value="Type 405"`) {
+		t.Errorf("edit form lacks the name and the variety as separate fields")
 	}
 }
 

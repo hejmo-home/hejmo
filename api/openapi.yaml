@@ -2511,7 +2511,10 @@ paths:
         The name must be free in the household, ignoring case (else 422, field
         `name`). An ingredient is an article of the library (`article_id`, or the
         exact name, or a name followed by a variety such as "Mehl Type 405") or
-        free text, which Hejmo does not check for allergens. A unit without a
+        free text, which Hejmo does not check for allergens. A `variety` sent
+        with the line wins over one written in the text (`text` "Mehl Type 405"
+        with `variety` "Type 550" is Type 550); the text's variety is used only
+        when `variety` is empty or left out. A unit without a
         quantity means one. The units are those of `GET /recipe-units`.
         Warnings never block saving.
       requestBody:
@@ -2547,7 +2550,7 @@ paths:
     put:
       operationId: updateRecipe
       summary: Replace a recipe (scope meals:write, parents only)
-      description: Give all fields; the ingredients, steps and tags are replaced. Who wrote the recipe stays.
+      description: Give all fields; the ingredients, steps and tags are replaced. Who wrote the recipe stays. An ingredient's variety is read as in `POST /recipes`.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -6233,7 +6236,7 @@ components:
         unit: { type: string, nullable: true, description: "A key of GET /recipe-units; none for a plain number" }
         name: { type: string, maxLength: 200 }
         article_id: { type: string, nullable: true, description: The key of a shipped article or the id of an own one }
-        variety: { type: string, nullable: true, maxLength: 60, description: 'The more exact kind, such as "Type 405"; only an article has one' }
+        variety: { type: string, nullable: true, maxLength: 60, description: 'The more exact kind, such as "Type 405"; only an article has one. Wins over a variety written in `text` ("Mehl Type 405" with variety "Type 550" is Type 550); the text''s variety counts only when this is null, empty or left out' }
     NewRecipe:
       type: object
       required: [name]

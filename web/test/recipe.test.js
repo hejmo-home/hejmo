@@ -28,14 +28,14 @@ test('suggestions are asked for from two letters on, with the text trimmed and e
 
 test('a chosen suggestion writes the name and, after a middle dot, the variety', () => {
   assert.equal(ctx.rcpOptionText('Erdnussbutter', ''), 'Erdnussbutter');
-  assert.equal(ctx.rcpOptionText('Erdnussbutter', 'cremig'), 'Erdnussbutter · cremig');
-  assert.equal(ctx.rcpOptionText(' Mehl ', ' Type 405 '), 'Mehl · Type 405');
+  assert.equal(ctx.rcpOptionText('Erdnussbutter', 'cremig'), 'Erdnussbutter', 'the variety goes into its own field, not the name');
+  assert.equal(ctx.rcpOptionText(' Mehl ', ' Type 405 '), 'Mehl');
   assert.equal(ctx.rcpOptionText(null, null), '');
 });
 
 test('a chosen suggestion sets the article and its variety, and clears a variety left from another article', () => {
   assert.deepEqual(JSON.parse(JSON.stringify(ctx.rcpOptionFields({ name: 'Erdnussbutter', variety: 'cremig', article: 'peanut-butter' }))),
-    { text: 'Erdnussbutter · cremig', article: 'peanut-butter', variety: 'cremig' });
+    { text: 'Erdnussbutter', article: 'peanut-butter', variety: 'cremig' });
   assert.deepEqual(JSON.parse(JSON.stringify(ctx.rcpOptionFields({ name: 'Mehl', variety: null, article: 'wheat-flour' }))),
     { text: 'Mehl', article: 'wheat-flour', variety: '' }, 'no variety: the old one is cleared');
   assert.deepEqual(JSON.parse(JSON.stringify(ctx.rcpOptionFields({ free: true }))), { article: '', variety: '' }, 'free text: no article, no variety');

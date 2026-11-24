@@ -16,11 +16,10 @@ function rcpSuggestUrl(base, typed) {
   return base + "?q=" + encodeURIComponent(q);
 }
 
-// rcpOptionText is what a chosen suggestion writes into the name field: the name, and after a middle dot the variety.
-function rcpOptionText(name, variety) {
-  name = String(name || "").trim();
-  variety = String(variety || "").trim();
-  return variety ? name + " · " + variety : name;
+// rcpOptionText is what a chosen suggestion writes into the name field: the name only. The variety lives in its own
+// field, the one place it is edited.
+function rcpOptionText(name) {
+  return String(name || "").trim();
 }
 
 // rcpOptionFields is what choosing a suggestion writes into the line: the text of the name field, the article and
@@ -29,7 +28,7 @@ function rcpOptionText(name, variety) {
 function rcpOptionFields(opt) {
   if (opt.free) return { article: "", variety: "" };
   var variety = String(opt.variety || "").trim();
-  return { text: rcpOptionText(opt.name, variety), article: opt.article || "", variety: variety };
+  return { text: rcpOptionText(opt.name), article: opt.article || "", variety: variety };
 }
 
 // rcpKeepsVariety says whether a line keeps its variety when its name changes from `was` to `now`: yes while

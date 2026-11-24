@@ -3701,6 +3701,7 @@ p.why.fam b { display: inline; }
 }
 .ct-form p.lab-static { margin: 0 0 -4px; font-size: var(--fs-label); color: var(--text-secondary); }
 
+/* ---- ticket 298: relations between contacts and people (preview docs/design/preview-298.html; no new tokens) ---- */
 /* ---- ticket 297: contact photos (preview docs/design/preview-297.html; size tokens photo-row, photo-kid, photo-page) ---- */
 /* One photo component everywhere a contact appears: a square with card corners (never a circle, so it is never read as a person marker). */
 .ct-photo { flex: none; box-sizing: border-box; width: var(--photo-row); height: var(--photo-row); border-radius: var(--radius-card); overflow: hidden; display: grid; place-items: center; background: var(--background); }
@@ -3737,6 +3738,41 @@ p.why.fam b { display: inline; }
   .ct-head { grid-template-columns: minmax(0, 1fr); grid-template-areas: "ph" "name" "full" "act"; row-gap: 10px; }
   .ct-head > h1 { margin: 0; }
 }
+/* Rows: the relation is the first line under the name, in text colour, so it reads as "who is that". */
+.list-rows .t > .rel { color: var(--text); font-size: var(--fs-label-large); overflow-wrap: break-word; hyphens: manual; }
+/* Contact page head: relations under the full name, one line per relation, names with their markers. */
+.ct-head { grid-template-areas: "ph name" "ph full" "ph rels" "ph act"; }
+.ct-head > .ct-rels { grid-area: rels; }
+.ct-rels { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; font-size: var(--fs-label-large); line-height: 1.45; }
+.ct-rels li { overflow-wrap: break-word; }
+.ct-rels .who { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.ct-rels .who .marker { width: 12px; height: 12px; }
+.ct-rels .icon { width: 18px; height: 18px; stroke: currentColor; vertical-align: -3px; margin-right: 4px; }
+@media (max-width: 479px) { .ct-head { grid-template-areas: "ph" "name" "full" "rels" "act"; } .ct-rels { margin: 0; } }
+/* Form card "Beziehungen": one line per relation (word plus person chips), like the number lines. */
+.ct-form .rels-card { display: grid; gap: 12px; }
+.ct-form .rel-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.ct-form .rel-line { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "word rm" "who who" "say say" "err err"; gap: 10px 8px; align-items: end; padding: 14px 0; border-radius: 0; background: none; border-top: 1px solid var(--border); }
+.ct-form .rel-line:first-child { border-top: 0; padding-top: 4px; }
+.ct-form .rel-line > .f { grid-area: word; max-width: 22em; }
+.ct-form .rel-line > .f input { width: 100%; box-sizing: border-box; }
+.ct-form .rel-line > .rm { grid-area: rm; }
+.ct-form .rel-line > fieldset.chips { grid-area: who; }
+.ct-form .rel-line > .rel-say { grid-area: say; margin: 0; font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: break-word; }
+.ct-form .rel-line > .rel-say b { color: var(--text); font-weight: 600; }
+.ct-form .rel-line > .ferr { grid-area: err; margin: 0; }
+.ct-form .rel-line.blank { grid-template-areas: "word word" "who who" "say say" "err err"; }
+.ct-form .rel-line .f.invalid input { border: 2px solid var(--error-text); }
+.ct-form .rel-line.no-word > fieldset.chips .pchip:has(input:checked) { outline: 0; }
+[data-theme="bw"] .ct-form .rel-line { border: 0; border-top: 2px solid var(--text); }
+[data-theme="bw"] .ct-form .rel-line:first-child { border: 0; }
+[data-theme="bw"] .ct-form .rel-line > fieldset.chips { border: 0; padding: 0; }
+/* Person page: "Kontakte von Mia" with a group filter (only the groups her contacts have). */
+.rows-head + .lead-s { margin: -4px 0 12px; max-width: 560px; color: var(--text-secondary); font-size: var(--fs-label); }
+.pc-filter ul { margin-bottom: 14px; }
+.pc-actions { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 4px 0 var(--gap-section); max-width: 560px; }
+.pc-actions .button { display: inline-flex; align-items: center; gap: 8px; }
+.pc-actions .button .icon { stroke: currentColor; }
 
 /* Form card "Foto": current state, then the buttons, then the hint. */
 .ct-form .ph-card { display: grid; gap: 12px; }

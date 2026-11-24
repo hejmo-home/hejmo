@@ -29,14 +29,15 @@ type contactJSON struct {
 	Address  contactAddress    `json:"address"`
 	Birthday *contactBirthday  `json:"birthday"`
 	// ShowInBirthdays is whether the birthday is in the generated calendar Birthdays.
-	ShowInBirthdays bool              `json:"show_in_birthdays"`
-	Note            string            `json:"note"`
-	Groups          []string          `json:"groups"`
-	Photo           *contactPhotoJSON `json:"photo"`
-	CreatedBy       *string           `json:"created_by"`
-	CreatedAt       string            `json:"created_at"`
-	UpdatedBy       *string           `json:"updated_by"`
-	UpdatedAt       string            `json:"updated_at"`
+	ShowInBirthdays bool                  `json:"show_in_birthdays"`
+	Note            string                `json:"note"`
+	Groups          []string              `json:"groups"`
+	Relations       []contactRelationJSON `json:"relations"`
+	Photo           *contactPhotoJSON     `json:"photo"`
+	CreatedBy       *string               `json:"created_by"`
+	CreatedAt       string                `json:"created_at"`
+	UpdatedBy       *string               `json:"updated_by"`
+	UpdatedAt       string                `json:"updated_at"`
 }
 
 type contactPhotoJSON struct {
@@ -44,6 +45,13 @@ type contactPhotoJSON struct {
 	By     *string `json:"by"`
 	Device string  `json:"device"`
 	At     string  `json:"at"`
+}
+
+// contactRelationJSON is a relation (ticket 298): a word plus the people it is for, or the whole family (no people).
+type contactRelationJSON struct {
+	Word        string   `json:"word"`
+	WholeFamily bool     `json:"whole_family"`
+	People      []string `json:"people"`
 }
 
 type contactAddress struct {
@@ -74,6 +82,14 @@ func linesJSON(in []contact.Line) []contactLineJSON {
 	return out
 }
 
+func relationsJSON(in []store.Relation) []contactRelationJSON {
+	out := make([]contactRelationJSON, 0, len(in))
+	for _, r := range in {
+		out = append(out, contactRelationJSON{Word: r.Word, WholeFamily: r.WholeFamily, People: append([]string{}, r.PersonIDs...)})
+	}
+	return out
+}
+
 func strPtr(s string) *string {
 	if s == "" {
 		return nil
@@ -86,7 +102,7 @@ func (s *server) contactToJSON(p principal, c store.Contact) contactJSON {
 	out := contactJSON{
 		ID: c.ID, PersonID: strPtr(c.PersonID), Name: c.HejmoName, FullName: c.FullName,
 		Numbers: linesJSON(c.Numbers), Emails: linesJSON(c.Emails), Address: contactAddress{c.Street, c.Postcode, c.City, c.Country},
-		ShowInBirthdays: !c.HideBirthday, Note: c.Note, Groups: append([]string{}, c.GroupIDs...), CreatedBy: strPtr(c.CreatedBy), CreatedAt: rfc3339(c.CreatedAt, loc),
+		ShowInBirthdays: !c.HideBirthday, Note: c.Note, Groups: append([]string{}, c.GroupIDs...), Relations: relationsJSON(c.Relations), CreatedBy: strPtr(c.CreatedBy), CreatedAt: rfc3339(c.CreatedAt, loc),
 		UpdatedBy: strPtr(c.UpdatedBy), UpdatedAt: rfc3339(c.UpdatedAt, loc),
 	}
 	if c.HasPhoto {
@@ -140,6 +156,8 @@ type contactIn struct {
 	ShowInBirthdays *bool    `json:"show_in_birthdays"`
 	Note            string   `json:"note"`
 	Groups          []string `json:"groups"`
+	// Relations replace the contact's relations; a person's contact has none (422).
+	Relations []contactRelationJSON `json:"relations"`
 }
 
 func jsonLines(in []contactLineJSON, number bool) ([]contact.Line, string) {
@@ -157,6 +175,9 @@ func jsonLines(in []contactLineJSON, number bool) ([]contact.Line, string) {
 func (in contactIn) draft(isPerson bool) (ctDraft, string) {
 	d := ctDraft{Name: in.Name, Full: in.FullName, Street: in.Address.Street, Postcode: in.Address.Postcode, City: in.Address.City, Country: in.Address.Country,
 		Note: in.Note, GroupIDs: in.Groups, IsPerson: isPerson, HideBirthday: in.ShowInBirthdays != nil && !*in.ShowInBirthdays}
+	for _, r := range in.Relations {
+		d.Rels = append(d.Rels, ctRelDraft{Word: r.Word, Whole: r.WholeFamily, PersonIDs: r.People})
+	}
 	var bad string
 	if d.Numbers, bad = jsonLines(in.Numbers, true); bad != "" {
 		return d, "numbers." + bad
@@ -196,6 +217,10 @@ func (s *server) saveContactAPI(w http.ResponseWriter, r *http.Request, p princi
 		if isPerson {
 			in.Name = all[i].HejmoName
 		}
+	}
+	if isPerson && len(in.Relations) > 0 {
+		writeFieldError(w, http.StatusUnprocessableEntity, "relations", "relations: the contact of a person has none")
+		return
 	}
 	d, bad := in.draft(isPerson)
 	if bad != "" {

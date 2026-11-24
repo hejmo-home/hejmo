@@ -30,10 +30,12 @@ type Contact struct {
 	// BdayDay and BdayMonth belong together; BdayYear is 0 when it is unknown.
 	BdayDay, BdayMonth, BdayYear int
 	// HideBirthday keeps the birthday out of the generated calendar Birthdays (ticket 302).
-	HideBirthday             bool
-	Note                     string
-	Numbers, Emails          []contact.Line
-	GroupIDs                 []string
+	HideBirthday    bool
+	Note            string
+	Numbers, Emails []contact.Line
+	GroupIDs        []string
+	// Relations say who the contact is for the family; only further contacts have any (ticket 298).
+	Relations                []Relation
 	CreatedBy, CreatedByName string
 	CreatedAt                time.Time
 	UpdatedBy, UpdatedByName string
@@ -180,7 +182,11 @@ func (db *DB) loadContactParts(q interface {
 			list[i].GroupIDs = append(list[i].GroupIDs, g)
 		}
 	}
-	return rows.Err()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	rows.Close()
+	return loadRelations(q, householdID, onlyID, list, at)
 }
 
 // Contacts lists the contacts of a household: those of people first in the
@@ -265,6 +271,8 @@ type ContactInput struct {
 	Numbers, Emails []contact.Line
 	// GroupIDs are the groups the contact is in; a person is always in Familie as well.
 	GroupIDs []string
+	// Relations replace the contact's relations; a person's contact has none.
+	Relations []Relation
 	// NewGroup, when not empty, is the name of a group made together with the contact and added to it.
 	NewGroup string
 	// Today is the household's today, which the birthday is checked against; the zero value means now.
@@ -344,6 +352,9 @@ func writeContactParts(tx *sql.Tx, householdID, id string, in ContactInput, isPe
 				return err
 			}
 		}
+	}
+	if err := writeRelations(tx, householdID, id, in.Relations, isPerson); err != nil {
+		return err
 	}
 	ids := append([]string(nil), in.GroupIDs...)
 	if in.NewGroup != "" {

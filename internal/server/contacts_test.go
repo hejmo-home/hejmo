@@ -168,7 +168,7 @@ func TestContactSearchLooksInNamesNumbersAndEmailsAndFiltersByGroup(t *testing.T
 		t.Error("the search keeps a contact that does not match")
 	}
 	none := c.page("/contacts?q="+url.QueryEscape("Bäckerei Huber"), "de").body
-	ctHas(t, "no match", none, "Kein Kontakt passt zu „Bäckerei Huber“. Gesucht wird in Namen, Nummern und E-Mail-Adressen.", `href="/contacts/new?name=B%C3%A4ckerei+Huber"`, "„Bäckerei Huber“ als Kontakt anlegen", "Suche aufheben")
+	ctHas(t, "no match", none, "Kein Kontakt passt zu „Bäckerei Huber“. Gesucht wird in Namen, Nummern, E-Mail-Adressen und Beziehungen.", `href="/contacts/new?name=B%C3%A4ckerei+Huber"`, "„Bäckerei Huber“ als Kontakt anlegen", "Suche aufheben")
 	// The new form has the name prefilled.
 	ctHas(t, "prefilled form", c.page("/contacts/new?name=B%C3%A4ckerei+Huber", "de").body, `value="Bäckerei Huber"`)
 }

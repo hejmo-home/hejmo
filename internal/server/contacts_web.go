@@ -131,6 +131,7 @@ type ctRow struct {
 	Shape            string
 	Nums             []ctNum
 	Groups           []string
+	Rels             []string // how the contact is related to the family, one sentence each (ticket 298)
 	Photo            ctPhotoView
 }
 
@@ -145,6 +146,7 @@ func (e ctEnv) row(c store.Contact, withGroups bool) ctRow {
 	for _, l := range c.Numbers {
 		row.Nums = append(row.Nums, ctNum{e.kindWord(l, false), l.Value})
 	}
+	row.Rels = e.relSentences(c, "")
 	if withGroups && !c.IsPerson() {
 		for _, id := range c.GroupIDs {
 			if g, ok := e.groupByID(id); ok {
@@ -155,7 +157,7 @@ func (e ctEnv) row(c store.Contact, withGroups bool) ctRow {
 	return row
 }
 
-// matches reports whether a contact holds the search text in a name, a number or an e-mail address.
+// matches reports whether a contact holds the search text in a name, a number, an e-mail address or the word of a relation.
 func ctMatches(c store.Contact, q string) bool {
 	q = library.Fold(q)
 	if q == "" {
@@ -163,6 +165,11 @@ func ctMatches(c store.Contact, q string) bool {
 	}
 	if strings.Contains(library.Fold(c.HejmoName), q) || strings.Contains(library.Fold(c.FullName), q) {
 		return true
+	}
+	for _, r := range c.Relations {
+		if strings.Contains(library.Fold(r.Word), q) {
+			return true
+		}
 	}
 	digits := onlyDigits(q)
 	for _, l := range c.Numbers {
@@ -337,6 +344,7 @@ func (s *server) handleContact(w http.ResponseWriter, r *http.Request) {
 		facts = append(facts, ctFact{Label: e.factLabel(l, true), Value: l.Value, Mail: "mailto:" + l.Value, Kind: "mail"})
 	}
 	data["Facts"] = facts
+	data["Rels"] = e.relItems(c)
 	var adr []string
 	if c.Street != "" {
 		adr = append(adr, c.Street)
@@ -363,7 +371,7 @@ func (s *server) handleContact(w http.ResponseWriter, r *http.Request) {
 		} else {
 			hint = e.createdHint(c)
 		}
-		data["DeleteExplain"] = e.t("contact.delete.explain", "name", c.HejmoName)
+		data["DeleteExplain"] = e.relDeleteExplain(c)
 		data["DeleteConfirm"] = e.t("contact.delete.confirm", "name", c.HejmoName)
 	}
 	data["Hint"] = hint

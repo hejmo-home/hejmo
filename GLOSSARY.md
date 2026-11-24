@@ -434,7 +434,7 @@ The generated, read-only calendar of the birthdays in the address book: one year
 _Avoid_: birthday list, anniversary calendar
 
 **Relation**:
-The link of a contact to one or more people of the household, with what they are to them, such as "friend of Mia" or "paediatrician".
+The link of a contact to one or more people of the household, with what they are to them, such as "friend of Mia" or "paediatrician": one free-text word (at most 40 characters) plus the people it is for, or the whole family. The whole family stores no people, so a person who joins later is included. Only further contacts have relations, never the contact of a household person. A relation alone does not make a contact visible to children.
 _Avoid_: connection, relationship type
 
 ## Offline mode and connections to the outside

@@ -2,6 +2,8 @@ package store_test
 
 import (
 	"errors"
+	"reflect"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -217,6 +219,131 @@ func TestOwnGroupsAreMadeRenamedAndDeletedWhileTheirContactsStay(t *testing.T) {
 	}
 	if _, err := db.Contact(h.ID, c.ID); !errors.Is(err, store.ErrNotFound) {
 		t.Errorf("deleted contact: %v", err)
+	}
+}
+
+// Ticket 298: relations between a contact and the people of the household.
+
+func relOf(t *testing.T, db *store.DB, h store.Household, id string) []store.Relation {
+	t.Helper()
+	c, err := db.Contact(h.ID, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return c.Relations
+}
+
+func TestARelationIsAWordPlusPeopleOrTheWholeFamilyAndKeepsItsOrder(t *testing.T) {
+	t.Parallel()
+	db, h, f := exampleFamily(t)
+	c, err := db.CreateContact(h.ID, f["Mama"].ID, store.ContactInput{HejmoName: "Oma Gerda", Relations: []store.Relation{
+		{Word: " Oma ", PersonIDs: []string{f["Mia"].ID, f["Sebastian"].ID}},
+		{Word: "Mutter", PersonIDs: []string{f["Papa"].ID}},
+		{Word: "Nachbarin", WholeFamily: true},
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []store.Relation{
+		{Word: "Oma", PersonIDs: []string{f["Sebastian"].ID, f["Mia"].ID}}, // in the order of the people
+		{Word: "Mutter", PersonIDs: []string{f["Papa"].ID}},
+		{Word: "Nachbarin", WholeFamily: true},
+	}
+	if !reflect.DeepEqual(c.Relations, want) {
+		t.Fatalf("relations = %+v, want %+v", c.Relations, want)
+	}
+	// Replaced as a whole, like the numbers.
+	c, err = db.UpdateContact(h.ID, c.ID, f["Mama"].ID, store.ContactInput{HejmoName: "Oma Gerda", Relations: []store.Relation{{Word: "Oma", WholeFamily: true}}})
+	if err != nil || !reflect.DeepEqual(c.Relations, []store.Relation{{Word: "Oma", WholeFamily: true}}) {
+		t.Fatalf("after update = %+v, %v", c.Relations, err)
+	}
+	// "Whole family" stores no people, even when some are named.
+	c, err = db.UpdateContact(h.ID, c.ID, f["Mama"].ID, store.ContactInput{HejmoName: "Oma Gerda", Relations: []store.Relation{{Word: "Oma", WholeFamily: true, PersonIDs: []string{f["Mia"].ID}}}})
+	if err != nil || !reflect.DeepEqual(c.Relations, []store.Relation{{Word: "Oma", WholeFamily: true}}) {
+		t.Fatalf("whole family with people = %+v, %v", c.Relations, err)
+	}
+}
+
+func TestTheSameWordForTheSamePeopleIsMergedInSilence(t *testing.T) {
+	t.Parallel()
+	db, h, f := exampleFamily(t)
+	c, err := db.CreateContact(h.ID, "", store.ContactInput{HejmoName: "Frau Schmidt", Relations: []store.Relation{
+		{Word: "Lehrerin", PersonIDs: []string{f["Mia"].ID, f["Sebastian"].ID}},
+		{Word: "lehrerin", PersonIDs: []string{f["Sebastian"].ID, f["Mia"].ID}},
+		{Word: "Lehrerin", PersonIDs: []string{f["Mia"].ID}}, // other people: its own relation
+		{Word: "Nachbarin", WholeFamily: true},
+		{Word: "Nachbarin", WholeFamily: true},
+	}})
+	if err != nil || len(c.Relations) != 3 {
+		t.Fatalf("relations = %+v, %v", c.Relations, err)
+	}
+	if c.Relations[0].Word != "Lehrerin" || len(c.Relations[0].PersonIDs) != 2 {
+		t.Errorf("first = %+v", c.Relations[0])
+	}
+}
+
+func TestARelationNeedsAWordOfAtMost40CharactersAndKnownPeopleAndOnlyFurtherContactsHaveOne(t *testing.T) {
+	t.Parallel()
+	db, h, f := exampleFamily(t)
+	var fe *store.FieldError
+	for name, rel := range map[string]store.Relation{
+		"no word":       {PersonIDs: []string{f["Mia"].ID}},
+		"41 characters": {Word: strings.Repeat("ä", 41), WholeFamily: true},
+		"unknown":       {Word: "Oma", PersonIDs: []string{"00000000-0000-4000-8000-000000000000"}},
+		"no people":     {Word: "Oma"},
+	} {
+		if _, err := db.CreateContact(h.ID, "", store.ContactInput{HejmoName: "X " + name, Relations: []store.Relation{rel}}); !errors.As(err, &fe) || fe.Field != "relations" {
+			t.Errorf("%s: err = %v, want a relations error", name, err)
+		}
+	}
+	if _, err := db.CreateContact(h.ID, "", store.ContactInput{HejmoName: "Vierzig", Relations: []store.Relation{{Word: strings.Repeat("ä", 40), WholeFamily: true}}}); err != nil {
+		t.Errorf("40 characters: %v", err)
+	}
+	// A person's contact has none: the people are related through "Personen".
+	if _, err := db.UpdateContact(h.ID, f["Mia"].ID, "", store.ContactInput{Relations: []store.Relation{{Word: "Oma", WholeFamily: true}}}); !errors.As(err, &fe) || fe.Field != "relations" {
+		t.Errorf("a person's contact: err = %v", err)
+	}
+}
+
+func TestDeletingAContactDeletesItsRelationsAndLeavesThePeople(t *testing.T) {
+	t.Parallel()
+	db, h, f := exampleFamily(t)
+	c, err := db.CreateContact(h.ID, "", store.ContactInput{HejmoName: "Frau Schmidt", Relations: []store.Relation{{Word: "Lehrerin", PersonIDs: []string{f["Mia"].ID}}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.DeleteContact(h.ID, c.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := db.PersonRelations(h.ID, f["Mia"].ID); err != nil || len(got) != 0 {
+		t.Errorf("relations of Mia = %+v, %v", got, err)
+	}
+	if _, err := db.Person(h.ID, f["Mia"].ID); err != nil {
+		t.Errorf("Mia: %v", err)
+	}
+}
+
+func TestPersonRelationsListsWhatTheCardOfAPersonSaysAboutEachContact(t *testing.T) {
+	t.Parallel()
+	db, h, f := exampleFamily(t)
+	if _, err := db.CreateContact(h.ID, "", store.ContactInput{HejmoName: "Oma Gerda", Relations: []store.Relation{
+		{Word: "Oma", PersonIDs: []string{f["Mia"].ID}}, {Word: "Mutter", PersonIDs: []string{f["Papa"].ID}}}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.CreateContact(h.ID, "", store.ContactInput{HejmoName: "Frau Wöllenstein", Relations: []store.Relation{{Word: "Nachbarin", WholeFamily: true}}}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := db.PersonRelations(h.ID, f["Mia"].ID)
+	if err != nil || len(got) != 2 {
+		t.Fatalf("Mia = %+v, %v", got, err)
+	}
+	words := []string{got[0].Word + "/" + got[0].ContactName, got[1].Word + "/" + got[1].ContactName}
+	sort.Strings(words)
+	if strings.Join(words, ",") != "Nachbarin/Frau Wöllenstein,Oma/Oma Gerda" || got[0].ContactID == "" {
+		t.Errorf("Mia = %+v", got)
+	}
+	if got, _ := db.PersonRelations(h.ID, f["Mama"].ID); len(got) != 1 || got[0].Word != "Nachbarin" {
+		t.Errorf("Mama = %+v", got)
 	}
 }
 

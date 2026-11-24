@@ -121,6 +121,100 @@ test('typing marks the form as not saved yet', () => {
   assert.equal(t.dirty.hidden, false);
 });
 
+// ---- Relations (ticket 298): the sentence under each line follows the word and the chips ----
+
+const DE = { of: 'von', whole: 'der ganzen Familie', and: 'und' };
+const EN = { of: 'of', whole: 'of the whole family', and: 'and' };
+
+test('relSentence writes every name out, in German and in English, and one for the whole family', () => {
+  const sandbox = { document: { querySelector: () => null }, module: { exports: {} } };
+  vm.runInNewContext(source, sandbox);
+  const { relSentence } = sandbox.module.exports;
+  assert.equal(relSentence('Oma', ['Mia'], false, DE), 'Oma von Mia');
+  assert.equal(relSentence('Oma', ['Mia', 'Ben'], false, DE), 'Oma von Mia und Ben');
+  assert.equal(relSentence('Oma', ['Sebastian', 'Mia', 'Charlotte-Sophie', 'Jonas', 'Lotta', 'Ben'], false, DE), 'Oma von Sebastian, Mia, Charlotte-Sophie, Jonas, Lotta und Ben');
+  assert.equal(relSentence('Grandma', ['Mia', 'Ben', 'Lotta'], false, EN), 'Grandma of Mia, Ben and Lotta');
+  assert.equal(relSentence(' Nachbarin ', [], true, DE), 'Nachbarin der ganzen Familie');
+  assert.equal(relSentence('Neighbour', [], true, EN), 'Neighbour of the whole family');
+  assert.equal(relSentence('', ['Mia'], false, DE), '', 'no word, no sentence');
+  assert.equal(relSentence('Oma', [], false, DE), '', 'nobody and not the whole family: nothing to say');
+});
+
+// A relation line with a word, the chip "Ganze Familie" and one chip per person.
+function relSetup(names) {
+  const say = { hidden: true, b: { textContent: '' }, querySelector(sel) { return sel === 'b' ? this.b : null; } };
+  const word = { value: '', hasAttribute: () => false };
+  const whole = { checked: true, hasAttribute: (a) => a === 'data-whole' };
+  const chips = names.map((n) => ({ checked: false, hasAttribute: () => false, closest: () => ({ textContent: '\n ' + n + ' ' }) }));
+  const li = {
+    removed: false,
+    classes: new Set(['rel-line']),
+    classList: { contains: (c) => li.classes.has(c), remove: (c) => li.classes.delete(c) },
+    querySelector(sel) { return sel === '.rel-say' ? say : sel === 'input[name$="_word"]' ? word : sel === 'input[data-whole]' ? whole : null; },
+    querySelectorAll(sel) { return sel === '.pchip:not(.all) input' ? chips : []; },
+    remove() { li.removed = true; ul.items = ul.items.filter((x) => x !== li); },
+  };
+  word.closest = () => li; whole.closest = () => li; chips.forEach((c) => { c.lineOf = li; });
+  const ul = { items: [li], querySelectorAll: () => ul.items };
+  const handlers = {};
+  const card = { getAttribute: (k) => ({ 'data-of': 'von', 'data-whole': 'der ganzen Familie', 'data-and': 'und' })[k] || null };
+  const dirty = { hidden: true };
+  const form = {
+    addEventListener(t, f) { (handlers[t] = handlers[t] || []).push(f); },
+    querySelector(sel) { return sel === 'fieldset#rels' ? card : sel === 'ul.rel-lines' ? ul : sel === '.savebar .dirty' ? dirty : null; },
+  };
+  vm.runInNewContext(source, { document: { querySelector: (sel) => (sel === 'form.ct-form' ? form : null) } });
+  const fire = (type, target) => (handlers[type] || []).forEach((h) => h({ target }));
+  // The target knows its line: closest('li.rel-line') is the line.
+  [word, whole, ...chips].forEach((el) => { el.closest = (sel) => (sel === 'li.rel-line' ? li : el.label || li); });
+  chips.forEach((c, i) => { c.label = { textContent: '\n ' + names[i] + ' ' }; c.closest = (sel) => (sel === 'li.rel-line' ? li : c.label); });
+  return { li, say, word, whole, chips, fire, dirty, ul };
+}
+
+test('the sentence under a line follows the word and the chips while you type', () => {
+  const t = relSetup(['Mama', 'Papa', 'Sebastian']);
+  assert.equal(t.say.hidden, true);
+  t.word.value = 'Oma';
+  t.fire('input', t.word);
+  assert.equal(t.say.b.textContent, 'Oma der ganzen Familie', 'whole family is chosen from the start');
+  assert.equal(t.say.hidden, false);
+  t.chips[0].checked = true; t.chips[2].checked = true;
+  t.fire('change', t.chips[2]);
+  assert.equal(t.say.b.textContent, 'Oma von Mama und Sebastian');
+  t.chips[0].checked = false; t.chips[2].checked = false;
+  t.whole.checked = true;
+  t.fire('change', t.whole);
+  assert.equal(t.say.b.textContent, 'Oma der ganzen Familie');
+  t.word.value = '  ';
+  t.fire('input', t.word);
+  assert.equal(t.say.b.textContent, '');
+  assert.equal(t.say.hidden, true, 'no word: nothing is said');
+  assert.equal(t.dirty.hidden, false);
+});
+
+test('choosing "Ganze Familie" while people are still ticked says the whole family', () => {
+  const t = relSetup(['Mama', 'Papa']);
+  t.word.value = 'Nachbarin';
+  t.chips[1].checked = true; // form.js clears it only after this handler
+  t.whole.checked = true;
+  t.fire('change', t.whole);
+  assert.equal(t.say.b.textContent, 'Nachbarin der ganzen Familie');
+});
+
+test('submitting leaves out a blank line for the whole family and keeps every other line', () => {
+  const t = relSetup(['Mama']);
+  t.fire('submit', null);
+  assert.equal(t.li.removed, true, 'no word and the whole family');
+  const u = relSetup(['Mama']);
+  u.word.value = 'Oma';
+  u.fire('submit', null);
+  assert.equal(u.li.removed, false);
+  const v = relSetup(['Mama']);
+  v.whole.checked = false; v.chips[0].checked = true; // people but no word: the server tells the parent
+  v.fire('submit', null);
+  assert.equal(v.li.removed, false);
+});
+
 // ---- the photo card (ticket 297) ----
 // Choosing a file submits the form with picture=upload (the server prepares the photo and shows it); a HEIC photo
 // is converted in the browser first, with the code of the photos page.

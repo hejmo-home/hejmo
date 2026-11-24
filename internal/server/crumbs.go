@@ -79,6 +79,9 @@ func crumbsFor(name string, data map[string]any) []crumb {
 		if id, who := lookup(data, "CT", "ID"), lookup(data, "CT", "Name"); id != "" {
 			return []crumb{crumbSettings, crumbContacts, {Href: "/contacts/" + id, Name: who}}
 		}
+		if id, who := lookup(data, "ForPerson", "ID"), lookup(data, "ForPerson", "Name"); id != "" { // opened from a person's page
+			return []crumb{crumbSettings, crumbPeople, {Href: "/people/" + id, Name: who}}
+		}
 		return []crumb{crumbSettings, crumbContacts}
 	case "connection_off.html":
 		if id, who := lookup(data, "Connection", "ID"), lookup(data, "Connection", "Username"); id != "" {

@@ -51,7 +51,7 @@ func shopOnDisplay(t *testing.T) (*familyBox, string, map[string]string) {
 func TestTheDisplayShowsTheAddCardAndAQuantityButtonOnEveryOpenEntry(t *testing.T) {
 	f, id, ids := shopOnDisplay(t)
 	body := f.display.get("/display/lists/"+id, "en").body
-	for _, want := range []string{`class="add-entry adder"`, `data-adder="/display/lists/` + id + `"`, `name="mode" value="qty"`, `<button class="qty-open" type="button" data-qty-open="` + ids["Eggs"] + `" aria-expanded="false"`, "6 pieces", `class="qty-open none"`, "Change quantity: Eggs, 6 pieces", `<script src="/static/adder.js"`} {
+	for _, want := range []string{`class="add-entry adder"`, `data-adder="/display/lists/` + id + `"`, `name="mode" value="qty"`, `<button class="qty-open" type="button" data-qty-open="` + ids["Eggs"] + `" aria-expanded="false"`, "6 pieces", `class="qty-open none"`, "Change quantity or variety: Eggs, 6 pieces", `<script src="/static/adder.js"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("the display lacks %q", want)
 		}

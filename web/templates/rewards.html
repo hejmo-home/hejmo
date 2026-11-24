@@ -1,4 +1,5 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "rwd.title") "Frame" .Frame)}}
+  {{with .EndedSuccess}}{{template "success" .}}{{end}}{{with .EndedNotice}}<div class="notice g-ended" role="status"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11h14V8M10 12h4"/></svg><p>{{.}}</p></div>{{end}}
   <h1>{{t "rwd.title"}}</h1>
   {{if .Parent}}
   <p class="lead">{{t "rwd.lead"}}</p>
@@ -27,6 +28,16 @@
       <p>{{.Balance}}{{if .NoStars}}<small>{{t "rwd.child.bal.hint"}}</small>{{end}}</p>
     </div>
     {{if not .Any}}<div class="empty" data-empty><p>{{.Empty}}</p></div>{{end}}
+    {{with .Goal}}<section class="rwd-goal" aria-labelledby="goal-h">
+      <h2 id="goal-h">{{template "goalIcon" 22}}{{t "rwd.goal.title"}}</h2>
+      <div class="rwd goal{{if .Affordable}} ok{{end}}">{{template "rwdPic" .}}<div class="rwd-body"><h3>{{.Name}}</h3>{{template "rwdMeta" .}}
+        {{if .Affordable}}<p class="rwd-state ok"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b>{{t "rwd.child.enough"}}</b></p>
+        {{else}}<div class="rwd-state save"><span class="progress" role="img" aria-label="{{.Label}}"><span style="--pct:{{.Pct}}"></span></span><p>{{tfh "goal.progress" "have" (printf "%d" .Have) "price" (printf "%d" .Cost) "left" (printf "%d" .Left)}}</p></div>{{end}}
+        {{if .Later}}<p class="rwd-state later"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg><span><b>{{.Later}}</b> {{.Keep}}</span></p>{{end}}
+        <div class="g-acts"><form method="post" action="/tasks/rewards/goal/clear"><button class="button secondary sq" type="submit"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>{{t "rwd.goal.clear"}}</button></form></div>
+      </div></div>
+      <p class="hint">{{t "rwd.goal.hint"}}</p>
+    </section>{{end}}
     {{if .Ok}}<section class="rwd-group ok">
       <h2><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>{{t "rwd.child.group.ok"}}</h2>
       <ul class="rwd-cards">{{range .Ok}}
@@ -36,21 +47,25 @@
     </section>{{end}}
     {{if .Save}}<section class="rwd-group save">
       <h2><svg class="icon star" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.6 6 .7-4.5 4.1 1.2 6-5.3-3-5.3 3 1.2-6L3.4 9.8l6-.7z"/></svg>{{t "rwd.child.group.save"}}</h2>
+      {{if $.NoGoal}}<p class="hint g-pick">{{t "rwd.goal.pick"}}</p>{{end}}
       <ul class="rwd-cards">{{range .Save}}
         <li class="rwd save">{{template "rwdPic" .}}<div class="rwd-body"><h3>{{.Name}}</h3>{{template "rwdMeta" .}}
-          <div class="rwd-state save"><span class="progress" role="img" aria-label="{{.Label}}"><span style="--pct:{{.Pct}}"></span></span><p><b>{{.Missing}}</b></p></div></div></li>{{end}}
+          <div class="rwd-state save"><span class="progress" role="img" aria-label="{{.Label}}"><span style="--pct:{{.Pct}}"></span></span><p><b>{{.Missing}}</b></p></div>{{template "saveFor" .}}</div></li>{{end}}
       </ul>
     </section>{{end}}
     {{if .Later}}<section class="rwd-group later">
       <h2><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>{{t "rwd.child.group.later"}}</h2>
       <ul class="rwd-cards">{{range .Later}}
         <li class="rwd later">{{template "rwdPic" .}}<div class="rwd-body"><h3>{{.Name}}</h3>{{template "rwdMeta" .}}
-          <p class="rwd-state later"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg><span><b>{{.Later}}</b> {{.Missing}}</span></p></div></li>{{end}}
+          <p class="rwd-state later"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg><span><b>{{.Later}}</b> {{.Missing}}</span></p>{{template "saveFor" .}}</div></li>{{end}}
       </ul>
     </section>{{end}}
   </div>
   {{end}}
 {{template "foot"}}
+
+{{/* "Save for this": makes the card the savings goal. Cards the child can pay for need none. */}}
+{{define "saveFor"}}{{if .CanSave}}<form class="rwd-act" method="post" action="/tasks/rewards/{{.ID}}/goal"><button class="button secondary sq" type="submit">{{template "goalIcon" 18}}{{t "rwd.goal.save"}}</button></form>{{end}}{{end}}
 
 {{/* The picture of a reward, or its symbol. */}}
 {{define "rwdPic"}}<span class="art-sym huge" aria-hidden="true">{{if .Picture}}<img src="{{.Picture}}" alt="">{{else}}{{.Symbol}}{{end}}</span>{{end}}

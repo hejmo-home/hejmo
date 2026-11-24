@@ -2,6 +2,7 @@ package store
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -29,14 +30,40 @@ type Contact struct {
 	// BdayDay and BdayMonth belong together; BdayYear is 0 when it is unknown.
 	BdayDay, BdayMonth, BdayYear int
 	// HideBirthday keeps the birthday out of the generated calendar Birthdays (ticket 302).
-	HideBirthday             bool
-	Note                     string
-	Numbers, Emails          []contact.Line
-	GroupIDs                 []string
+	HideBirthday    bool
+	Note            string
+	Numbers, Emails []contact.Line
+	GroupIDs        []string
+	// Relations say who the contact is for the family; only further contacts have any (ticket 298).
+	Relations                []Relation
 	CreatedBy, CreatedByName string
 	CreatedAt                time.Time
 	UpdatedBy, UpdatedByName string
 	UpdatedAt                time.Time
+	// HasPhoto says there is a photo (ContactPhoto reads it); the rest says where it came from: PhotoOrigin is
+	// PhotoManual (PhotoBy, the parent who set it) or PhotoSync (PhotoDevice, the phone). PhotoBy is empty when
+	// that person is gone.
+	HasPhoto             bool
+	PhotoOrigin          string
+	PhotoBy, PhotoByName string
+	PhotoDevice          string
+	PhotoAt              time.Time
+}
+
+// Where a contact photo came from.
+const (
+	PhotoManual = "manual" // a parent chose it
+	PhotoSync   = "sync"   // a phone sent it over contact sync (ticket 299)
+)
+
+// ContactPhoto is a photo to store, or the stored one: the JPEG Hejmo made. Origin defaults to PhotoManual; the
+// parent who sets it is the `by` of the save.
+type ContactPhoto struct {
+	JPEG   []byte
+	Origin string
+	Device string // the phone, for PhotoSync
+	By     string
+	At     time.Time
 }
 
 // IsPerson reports whether the contact is a person of the household.
@@ -90,15 +117,18 @@ func addPersonContact(tx *sql.Tx, householdID string, p Person, ts string) error
 
 const contactColumns = `c.id, COALESCE(c.person_id, ''), c.hejmo_name, c.full_name, c.street, c.postcode, c.city, c.country,
 	COALESCE(c.bday_day, 0), COALESCE(c.bday_month, 0), COALESCE(c.bday_year, 0), c.hide_birthday, c.note,
-	COALESCE(c.created_by, ''), COALESCE(cp.name, ''), c.created_at, COALESCE(c.updated_by, ''), COALESCE(up.name, ''), c.updated_at`
+	COALESCE(c.created_by, ''), COALESCE(cp.name, ''), c.created_at, COALESCE(c.updated_by, ''), COALESCE(up.name, ''), c.updated_at,
+	c.photo IS NOT NULL, c.photo_origin, COALESCE(c.photo_by, ''), COALESCE(pp.name, ''), c.photo_device, c.photo_at`
 
-const contactFrom = ` FROM contacts c LEFT JOIN people cp ON cp.id = c.created_by LEFT JOIN people up ON up.id = c.updated_by `
+const contactFrom = ` FROM contacts c LEFT JOIN people cp ON cp.id = c.created_by LEFT JOIN people up ON up.id = c.updated_by LEFT JOIN people pp ON pp.id = c.photo_by `
 
 func scanContact(sc interface{ Scan(...any) error }) (Contact, error) {
 	var c Contact
-	var created, updated string
+	var created, updated, photoAt string
 	err := sc.Scan(&c.ID, &c.PersonID, &c.HejmoName, &c.FullName, &c.Street, &c.Postcode, &c.City, &c.Country,
-		&c.BdayDay, &c.BdayMonth, &c.BdayYear, &c.HideBirthday, &c.Note, &c.CreatedBy, &c.CreatedByName, &created, &c.UpdatedBy, &c.UpdatedByName, &updated)
+		&c.BdayDay, &c.BdayMonth, &c.BdayYear, &c.HideBirthday, &c.Note, &c.CreatedBy, &c.CreatedByName, &created, &c.UpdatedBy, &c.UpdatedByName, &updated,
+		&c.HasPhoto, &c.PhotoOrigin, &c.PhotoBy, &c.PhotoByName, &c.PhotoDevice, &photoAt)
+	c.PhotoAt, _ = time.Parse(time.RFC3339, photoAt)
 	c.CreatedAt, _ = time.Parse(time.RFC3339, created)
 	c.UpdatedAt, _ = time.Parse(time.RFC3339, updated)
 	return c, err
@@ -152,7 +182,11 @@ func (db *DB) loadContactParts(q interface {
 			list[i].GroupIDs = append(list[i].GroupIDs, g)
 		}
 	}
-	return rows.Err()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	rows.Close()
+	return loadRelations(q, householdID, onlyID, list, at)
 }
 
 // Contacts lists the contacts of a household: those of people first in the
@@ -237,10 +271,15 @@ type ContactInput struct {
 	Numbers, Emails []contact.Line
 	// GroupIDs are the groups the contact is in; a person is always in Familie as well.
 	GroupIDs []string
+	// Relations replace the contact's relations; a person's contact has none.
+	Relations []Relation
 	// NewGroup, when not empty, is the name of a group made together with the contact and added to it.
 	NewGroup string
 	// Today is the household's today, which the birthday is checked against; the zero value means now.
 	Today time.Time
+	// PhotoChange says what the save does to the photo: keep it (the zero value), set Photo, or remove it.
+	PhotoChange PictureChange
+	Photo       *ContactPhoto
 }
 
 func (in *ContactInput) clean() error {
@@ -265,6 +304,17 @@ func (in *ContactInput) clean() error {
 	for _, l := range append(append([]contact.Line{}, in.Numbers...), in.Emails...) {
 		if !contact.KindValid(l.Kind) || (l.Kind == contact.Custom && (l.Label == "" || contact.Runes(l.Label) > contact.MaxOwnLabel)) {
 			return &FieldError{Field: "kind", Msg: "a custom kind needs a label of at most 30 characters"}
+		}
+	}
+	if in.PhotoChange == SetPicture {
+		if in.Photo == nil || len(in.Photo.JPEG) == 0 {
+			return &FieldError{Field: "photo", Msg: "a photo to set is needed"}
+		}
+		if in.Photo.Origin == "" {
+			in.Photo.Origin = PhotoManual
+		}
+		if in.Photo.Origin != PhotoManual && in.Photo.Origin != PhotoSync {
+			return &FieldError{Field: "photo", Msg: "the photo comes from the hand or from sync"}
 		}
 	}
 	if in.BdayDay == 0 && in.BdayMonth == 0 {
@@ -302,6 +352,9 @@ func writeContactParts(tx *sql.Tx, householdID, id string, in ContactInput, isPe
 				return err
 			}
 		}
+	}
+	if err := writeRelations(tx, householdID, id, in.Relations, isPerson); err != nil {
+		return err
 	}
 	ids := append([]string(nil), in.GroupIDs...)
 	if in.NewGroup != "" {
@@ -363,6 +416,9 @@ func (db *DB) CreateContact(householdID, by string, in ContactInput) (Contact, e
 	if err := writeContactParts(tx, householdID, id, in, false, by, ts); err != nil {
 		return Contact{}, err
 	}
+	if err := writeContactPhoto(tx, id, in, by); err != nil {
+		return Contact{}, err
+	}
 	if err := syncBirthdays(tx, householdID, in.CalendarName); err != nil {
 		return Contact{}, err
 	}
@@ -370,6 +426,75 @@ func (db *DB) CreateContact(householdID, by string, in ContactInput) (Contact, e
 		return Contact{}, err
 	}
 	return db.Contact(householdID, id)
+}
+
+// writeContactPhoto applies the photo change of a save; the last change wins.
+func writeContactPhoto(tx *sql.Tx, id string, in ContactInput, by string) error {
+	return applyContactPhoto(tx, id, in.PhotoChange, in.Photo, by)
+}
+
+// applyContactPhoto writes the photo columns. The time of a photo has nanoseconds: it is part of the address of
+// the picture, so two changes in one second must not give the same address.
+func applyContactPhoto(tx *sql.Tx, id string, change PictureChange, photo *ContactPhoto, by string) error {
+	switch change {
+	case SetPicture:
+		device := ""
+		if photo.Origin == PhotoSync {
+			device, by = photo.Device, ""
+		}
+		_, err := tx.Exec(`UPDATE contacts SET photo = ?, photo_origin = ?, photo_by = ?, photo_device = ?, photo_at = ? WHERE id = ?`,
+			photo.JPEG, photo.Origin, nullString(by), device, time.Now().UTC().Format(time.RFC3339Nano), id)
+		return err
+	case RemovePicture:
+		_, err := tx.Exec(`UPDATE contacts SET photo = NULL, photo_origin = '', photo_by = NULL, photo_device = '', photo_at = '' WHERE id = ?`, id)
+		return err
+	}
+	return nil
+}
+
+// SetContactPhoto sets or removes the photo of a contact and touches nothing else: no other field is checked, and
+// updated_by and updated_at stay as they are. ErrNotFound for an unknown contact; ErrInvalid for a photo to set
+// that is missing or has an unknown origin.
+func (db *DB) SetContactPhoto(householdID, id, by string, change PictureChange, photo *ContactPhoto) (Contact, error) {
+	if change == SetPicture {
+		if photo == nil || len(photo.JPEG) == 0 {
+			return Contact{}, &FieldError{Field: "photo", Msg: "a photo to set is needed"}
+		}
+		if photo.Origin == "" {
+			photo.Origin = PhotoManual
+		}
+		if photo.Origin != PhotoManual && photo.Origin != PhotoSync {
+			return Contact{}, &FieldError{Field: "photo", Msg: "the photo comes from the hand or from sync"}
+		}
+	}
+	if _, err := db.Contact(householdID, id); err != nil {
+		return Contact{}, err
+	}
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return Contact{}, err
+	}
+	defer tx.Rollback()
+	if err := applyContactPhoto(tx, id, change, photo, by); err != nil {
+		return Contact{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return Contact{}, err
+	}
+	return db.Contact(householdID, id)
+}
+
+// ContactPhoto reads the stored JPEG of a contact; ErrNotFound when there is none.
+func (db *DB) ContactPhoto(householdID, id string) (ContactPhoto, error) {
+	var p ContactPhoto
+	var at string
+	err := db.sql.QueryRow(`SELECT photo, photo_origin, COALESCE(photo_by, ''), photo_device, photo_at FROM contacts WHERE household_id = ? AND id = ?`,
+		householdID, id).Scan(&p.JPEG, &p.Origin, &p.By, &p.Device, &at)
+	if errors.Is(err, sql.ErrNoRows) || (err == nil && p.JPEG == nil) {
+		return ContactPhoto{}, ErrNotFound
+	}
+	p.At, _ = time.Parse(time.RFC3339, at)
+	return p, err
 }
 
 func nullString(s string) any {
@@ -407,6 +532,9 @@ func (db *DB) UpdateContact(householdID, id, by string, in ContactInput) (Contac
 		return Contact{}, err
 	}
 	if err := writeContactParts(tx, householdID, id, in, cur.IsPerson(), by, ts); err != nil {
+		return Contact{}, err
+	}
+	if err := writeContactPhoto(tx, id, in, by); err != nil {
 		return Contact{}, err
 	}
 	if err := syncBirthdays(tx, householdID, in.CalendarName); err != nil {

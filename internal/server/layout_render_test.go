@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"bytes"
 	"context"
 	_ "embed"
 	"encoding/json"
@@ -8,6 +9,7 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -125,11 +127,13 @@ type layoutFixture struct {
 	kid *screen  // the personal device of a child, which shows lists as tiles
 
 	lists         []string // list IDs
+	omaID         string   // the contact with a photo (ticket 297)
+	longVariety   string   // the entry of an article with a very long variety, on the first list
+	contactGroups []string // the ids of the contact groups in their order
 	inviteToken   string   // the invitation of Maximilian, a parent without account
 	hint          *screen  // a display that shows the screensaver's hint
 	outlook       []string // the Outlook pages (#177) that no link leads to
 	rewards       []string // reward IDs (#291): redeemed, never redeemed, archived by hand, archived because its person left
-	contactGroups []string // the ids of the contact groups in their order
 }
 
 func newLayoutFixture(t *testing.T) *layoutFixture {
@@ -192,6 +196,22 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 		}
 		_, err := db.AddItem(h, l.ID, it, func(base float64, _ unit.Kind) string { return q.unit })
 		must(err)
+	}
+	// Varieties (ticket 277): the same article without and with varieties, one of them very long.
+	for _, q := range []struct {
+		text, art, variety string
+		amount             float64
+		unit               string
+	}{{"Weizenmehl", "wheat-flour", "", 500, "g"}, {"Weizenmehl", "wheat-flour", "Type 405", 1, "kg"}, {"Dinkelmehl", "spelt-flour", "Dinkel-Vollkorn Type 1050 aus der Mühle Schäftlarn", 0, ""}, {"Milch", "milk", "laktosefrei", 3, "l"}} {
+		it := store.Item{Text: q.text, ArticleID: q.art, Variety: q.variety}
+		if q.unit != "" {
+			it.Qty = list.NewQuantity(q.amount, q.unit)
+		}
+		r, err := db.AddItem(h, l.ID, it, func(base float64, _ unit.Kind) string { return q.unit })
+		must(err)
+		if len(q.variety) > 40 {
+			f.longVariety = r.Entry.ID
+		}
 	}
 	l2, err := db.CreateList(h, list.List{Name: "Urlaubsvorbereitungen Ostsee", Color: "green", Symbol: "circle-empty", Sort: list.Manual})
 	must(err)
@@ -519,6 +539,7 @@ var notRendered = map[string]string{
 	"/articles/{id}/picture":                  "an image",
 	"/tasks/rewards/{id}/picture":             "the photo of a reward, an image",
 	"/display/articles/{id}/picture":          "an image",
+	"/display/rewards/{id}/picture":           "an image",
 	"/settings/lists/library/picture/{token}": "an image",
 	"/settings/lists/library/suggest":         "JSON for the live list under the name field",
 	"/settings/lists/library/plan/{id}":       "fragment: the sentence under the card of an article, rendered inside it",
@@ -576,6 +597,7 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	add(kid, "/lists")
 	add(kid, "/lists/"+f.lists[0])
 	add(kid, "/lists/"+f.lists[1])
+	add(parent, "/lists/"+f.lists[0]+"?qty="+f.longVariety) // the editor with the Sorte row and the long variety as its pill
 	// The display: the family view and the personal views of two people.
 	display := siteOf("display", f.box, f.display.client)
 	add(display, "/display")
@@ -598,7 +620,8 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	pages = append(pages, connectChoicePages(t, f)...)
 
 	// The address book (ticket 296): a search without a match and the form with every kind of error.
-	for _, p := range []string{"/contacts?q=Bäckereiverkäuferinnenvereinigung", "/contacts?g=" + f.contactGroups[0], "/contacts/" + f.ids[1], "/contacts/" + f.ids[1] + "/edit", "/people/" + f.ids[1]} {
+	for _, p := range []string{"/contacts?q=Bäckereiverkäuferinnenvereinigung", "/contacts?g=" + f.contactGroups[0], "/contacts/" + f.ids[1], "/contacts/" + f.ids[1] + "/edit", "/people/" + f.ids[1],
+		"/contacts/" + f.omaID, "/contacts/" + f.omaID + "/edit"} { // with and without a photo (ticket 297)
 		add(parent, p)
 	}
 	pages = append(pages, contactPages(t, f)...)
@@ -928,6 +951,9 @@ func TestTheLayoutFixtureShowsEveryKindOfTile(t *testing.T) {
 		if !strings.Contains(page, want) {
 			t.Errorf("the child's tiles lack %q", want)
 		}
+	}
+	if tile := tileOf(t, page, "Dinkelmehl"); !strings.Contains(tile, `<span class="variety"><span class="vh">Variety: </span>Dinkel-Vollkorn Type 1050 aus der Mühle Schäftlarn</span>`) {
+		t.Errorf("the tile of an article with a long variety:\n%s", tile)
 	}
 	if toast := tileOf(t, page, "Toastbrot"); strings.Count(toast, `<span class="line">`) < 3 {
 		t.Errorf("the toast does not warn three people:\n%s", toast)
@@ -1362,16 +1388,20 @@ func (f *layoutFixture) addContacts(t *testing.T) {
 		f.contactGroups = append(f.contactGroups, g.ID)
 	}
 	long := strings.Repeat("Sehr lange Notiz mit vielen Wörtern und Zeilenumbrüchen. ", 12)
-	for _, in := range []store.ContactInput{
-		{HejmoName: "Oma Gerda im Gartenfreundeverein", FullName: "Gerda Müller-Schulze-Hohenstein-Wöllenstein", Street: "Am Erlenbach zehn, Haus 7, Hinterhof", Postcode: "83022", City: "Rosenheim", Country: "Deutschland",
+	for i, in := range []store.ContactInput{
+		{HejmoName: "Oma Gerda im Gartenfreundeverein", PhotoChange: store.SetPicture, Photo: &store.ContactPhoto{JPEG: testJPEG(t, 512, 512)}, FullName: "Gerda Müller-Schulze-Hohenstein-Wöllenstein", Street: "Am Erlenbach zehn, Haus 7, Hinterhof", Postcode: "83022", City: "Rosenheim", Country: "Deutschland",
 			BdayDay: 14, BdayMonth: 3, Note: long, GroupIDs: []string{f.contactGroups[0], f.contactGroups[3]},
 			Numbers: []contact.Line{{Kind: contact.Cell, Value: "+49 (0) 171 3456 789 12 34"}, {Kind: contact.Home, Value: "08031 87 65 43"}, {Kind: contact.Custom, Label: "Gartenhaus im Urlaub", Value: "0160 111 2223"}, {Kind: contact.Work, Value: "089 4455 6677-12"}},
 			Emails:  []contact.Line{{Kind: contact.Home, Value: "gerda.mueller-schulze@gartenfreunde-am-erlenbach-rosenheim.example"}, {Kind: contact.Custom, Label: "Gartenfreundeverein", Value: "gerda@example.de"}}},
 		{HejmoName: "Kinderarztpraxis Yılmaz-Hoffmann", FullName: "Kinderarztpraxis Dr. Elif Yılmaz-Hoffmann und Kollegen", Numbers: []contact.Line{{Kind: contact.Work, Value: "089 1234 5670"}}, BdayDay: 2, BdayMonth: 9, BdayYear: 1950, GroupIDs: []string{f.contactGroups[2]}},
 		{HejmoName: "Ärztlicher Bereitschaftsdienst", GroupIDs: []string{f.contactGroups[2], f.contactGroups[3]}, NewGroup: "Fußball-Eltern der U11 am Erlenweg"},
 	} {
-		if _, err := db.CreateContact(h, by, in); err != nil {
+		c, err := db.CreateContact(h, by, in)
+		if err != nil {
 			t.Fatal(err)
+		}
+		if i == 0 {
+			f.omaID = c.ID
 		}
 	}
 	// The people have contact data too.
@@ -1387,6 +1417,7 @@ func (f *layoutFixture) addContacts(t *testing.T) {
 func contactPages(t *testing.T, f *layoutFixture) []layoutPage {
 	t.Helper()
 	var pages []layoutPage
+	pages = append(pages, contactPhotoPages(t, f)...)
 	site := siteOf("contact form", f.box, f.client)
 	form := url.Values{"name": {layoutNames[1]}, "full_name": {"Maximilian Schulz"}, "bday_day": {"31"}, "bday_month": {"2"}, "bday_year": {"2018"}, "new_group": {"Familie"},
 		"note": {strings.Repeat("n", 1001)}}
@@ -1407,4 +1438,59 @@ func contactPages(t *testing.T, f *layoutFixture) []layoutPage {
 		pages = append(pages, layoutPage{site: site, path: "/contacts/new#refused", html: map[string]string{lang: refused.body}})
 	}
 	return mergeCardPages(pages)
+}
+
+// contactPhotoPages are the photo card in the states only a POST reaches (ticket 297): a photo prepared and not
+// saved yet, marked for removal, and refused with its error, in both languages.
+func contactPhotoPages(t *testing.T, f *layoutFixture) []layoutPage {
+	t.Helper()
+	site := siteOf("contact photo card", f.box, f.client)
+	post := func(lang, path string, fields url.Values, name string, data []byte) string {
+		var buf bytes.Buffer
+		mw := multipart.NewWriter(&buf)
+		for k, vs := range fields {
+			for _, v := range vs {
+				_ = mw.WriteField(k, v)
+			}
+		}
+		if data != nil {
+			part, _ := mw.CreateFormFile("photo", name)
+			_, _ = part.Write(data)
+		}
+		_ = mw.Close()
+		req, _ := http.NewRequest(http.MethodPost, f.srv.URL+path, &buf)
+		req.Header.Set("Content-Type", mw.FormDataContentType())
+		req.Header.Set("Origin", f.srv.URL)
+		req.Header.Set("Accept-Language", lang)
+		res, err := f.client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		var out bytes.Buffer
+		_, _ = out.ReadFrom(res.Body)
+		return out.String()
+	}
+	edit := "/contacts/" + f.omaID + "/edit"
+	name := url.Values{"name": {"Oma Gerda im Gartenfreundeverein"}}
+	var pages []layoutPage
+	for _, c := range []struct {
+		path, label string
+		fields      url.Values
+		file        string
+		data        []byte
+	}{
+		{edit, "#prepared", url.Values{"name": name["name"], "picture": {"upload"}}, "Familienfoto-vom-Sommerfest-am-Erlenbach-2026-mit-sehr-langem-Namen.jpg", testJPEG(t, 3024, 4032)},
+		{edit, "#removal", url.Values{"name": name["name"], "picture": {"remove"}}, "", nil},
+		{edit, "#refused", url.Values{"name": name["name"], "picture": {"upload"}}, "Mietvertrag-der-Praxis-in-der-Hauptstrasse-mit-langem-Namen.pdf", []byte("%PDF-1.4")},
+		{"/contacts/new", "#new-prepared", url.Values{"name": {"Leonie (Babysitterin)"}, "picture": {"upload"}}, "leonie.jpg", testJPEG(t, 800, 600)},
+		{"/contacts/new", "#new-refused", url.Values{"name": {"Leonie (Babysitterin)"}, "picture": {"upload"}}, "IMG_4031.png", bytes.Repeat([]byte{0}, 16<<20)},
+	} {
+		html := map[string]string{}
+		for _, lang := range []string{"de", "en"} {
+			html[lang] = post(lang, c.path, c.fields, c.file, c.data)
+		}
+		pages = append(pages, layoutPage{site: site, path: c.path + c.label, html: html})
+	}
+	return pages
 }

@@ -80,6 +80,36 @@ type Input struct {
 	Routines map[string][]RoutineLine
 	// List is the list of the block "one list"; nil when the block has none.
 	List *ListInput
+	// Stars is each person's star balance and savings goal, by person ID
+	// (ticket 293). A person without an entry, or with Shown false, gets no
+	// stars block.
+	Stars map[string]StarsInput
+}
+
+// StarsInput is one person's stars: the plain balance (the number of the star
+// chip), whether stars show for them (a task worth stars or a booking, ADR
+// 0018) and their savings goal, if any.
+type StarsInput struct {
+	Balance int
+	Shown   bool
+	Goal    *GoalInput
+}
+
+// GoalInput is the reward a person saves for, as it is now: Picture is the URL
+// of an uploaded picture, empty to show Symbol.
+type GoalInput struct {
+	Name, Symbol, Picture string
+	Price                 int
+}
+
+// Goal is the savings goal of a column. Reached is Balance >= Price, Pct the
+// filled share of the bar, 0 to 100 (nothing below zero).
+type Goal struct {
+	Name, Symbol, Picture string
+	Price, Balance        int
+	Reached               bool
+	Pct                   int
+	Left                  int // stars still missing, 0 once reached
 }
 
 // RoutineLine is one routine of a person today with its progress (Q86).
@@ -147,6 +177,7 @@ type Column struct {
 	Tomorrow []Event   // from 18:00: the first timed events of the next day
 	Progress *Progress // nil: no bar
 	Routines []RoutineLine
+	Stars    *Stars // nil: no stars block (block off, or stars hidden for the person)
 }
 
 // Strip item kinds.
@@ -284,6 +315,9 @@ func Build(in Input) View {
 		if lay.Enabled(layout.Routines) {
 			col.Routines = in.Routines[p.ID]
 		}
+		if st, ok := in.Stars[p.ID]; ok && st.Shown && lay.Enabled(layout.Stars) {
+			col.Stars = &Stars{Shown: true, Balance: st.Balance, Goal: goalOf(st.Goal, st.Balance)}
+		}
 		v.Columns = append(v.Columns, col)
 	}
 	if lay.Enabled(layout.Meals) {
@@ -377,6 +411,15 @@ func Build(in Input) View {
 	}
 	v.Strip = append(append(v.Strip, bars...), lines...)
 	return v
+}
+
+// goalOf builds the view of a goal for a balance; nil without a goal.
+func goalOf(g *GoalInput, balance int) *Goal {
+	if g == nil || g.Price <= 0 {
+		return nil
+	}
+	return &Goal{Name: g.Name, Symbol: g.Symbol, Picture: g.Picture, Price: g.Price, Balance: balance,
+		Reached: balance >= g.Price, Pct: max(0, min(100, balance*100/g.Price)), Left: max(0, g.Price-balance)}
 }
 
 // clock formats the times in the household's zone, whatever zone the event is

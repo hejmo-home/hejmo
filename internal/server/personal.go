@@ -77,6 +77,24 @@ func (s *server) personalView(h store.Household, d *store.Display, lang, personI
 		return familyview.PersonalView{}, err
 	}
 	in.Stars = familyview.Stars{Shown: sums[person.ID].Shown, Balance: sums[person.ID].Balance}
+	goal, err := s.db.Goal(h.ID, person.ID)
+	if err != nil {
+		return familyview.PersonalView{}, err
+	}
+	in.Goal = displayGoal(goal)
+	if in.Goal != nil {
+		people, err := s.db.People(h.ID)
+		if err != nil {
+			return familyview.PersonalView{}, err
+		}
+		var parents []string
+		for _, x := range people {
+			if x.Role == store.RoleParent {
+				parents = append(parents, x.Name)
+			}
+		}
+		in.Parents = s.joinNames(lang, "rwd.or", parents)
+	}
 	return familyview.BuildPersonal(in), nil
 }
 

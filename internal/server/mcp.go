@@ -110,7 +110,7 @@ var mcpTools = []mcpTool{
 		idOf("list"), opt("name", "string", "List name"), opt("color", "string", "terracotta, blue, green, ochre, plum or teal"), opt("symbol", "string", "The list symbol"), opt("sort", "string", "manual or alphabetical")}},
 	{name: "delete_list", desc: "Delete a list with all its entries.", method: "DELETE", path: "/lists/{id}", params: []mcpParam{idOf("list")}},
 	{name: "add_list_entry", desc: "Add an entry at the end of a list, for example an item on the shopping list.", method: "POST", path: "/lists/{id}/entries", params: []mcpParam{
-		idOf("list"), req("text", "string", "The entry text")}},
+		idOf("list"), req("text", "string", "The entry text; the exact name of an article of the library (any language, singular or plural) makes it that article"), opt("variety", "string", "A variety of the article, for example Type 405 for flour (at most 60 characters). Only for an article; quantities add up only for the same variety")}},
 	{name: "delete_list_entry", desc: "Delete one entry of a list.", method: "DELETE", path: "/lists/{id}/entries/{entry}", params: []mcpParam{idOf("list"), req("entry", "string", "The id of the entry")}},
 	{name: "set_list_entry_done", desc: "Tick an entry off, or open it again.", method: "PUT", path: "/lists/{id}/entries/{entry}/done", params: []mcpParam{
 		idOf("list"), req("entry", "string", "The id of the entry"), req("done", "boolean", "true to tick off, false to open again")}},
@@ -161,6 +161,10 @@ var mcpTools = []mcpTool{
 		req("id", "string", "The person id"), opt("limit", "integer", "How many log entries, 1 to 200 (default 50)")}},
 	{name: "book_stars", desc: "Book stars by hand with a note: positive adds, negative takes away.", method: "POST", path: "/people/{id}/stars", params: []mcpParam{
 		req("id", "string", "The person id"), req("delta", "integer", "Stars to add (positive) or take away (negative)"), req("note", "string", "Why")}},
+	{name: "get_savings_goal", desc: "Get the reward a person saves for, with their balance and whether it is reached.", method: "GET", path: "/people/{id}/savings-goal", params: []mcpParam{idOf("person")}},
+	{name: "set_savings_goal", desc: "Choose the reward a person saves for: an offered reward meant for them. A child token may only set its own.", method: "PUT", path: "/people/{id}/savings-goal", params: []mcpParam{
+		idOf("person"), req("reward_id", "string", "The reward id")}},
+	{name: "clear_savings_goal", desc: "Clear a person's savings goal; their stars stay.", method: "DELETE", path: "/people/{id}/savings-goal", params: []mcpParam{idOf("person")}},
 
 	// Reward catalogue
 	{name: "list_rewards", desc: "List the reward catalogue by price (for a child: only what is meant for them, with what they can afford).", method: "GET", path: "/rewards"},

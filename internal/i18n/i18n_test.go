@@ -166,6 +166,8 @@ var wholeFamilyTexts = map[string]bool{
 	"contact.error.name.taken_person":          true, // "aus eurer Familie"
 	"hub.contacts.hint":                        true, // "eurer Familie und von allen, die ihr erreichen wollt"
 	"hub.contacts.state":                       true, // "aus eurer Familie"
+	"contact.f.rels.hint":                      true, // "Für wen in eurer Familie": the people of the household (ticket 298)
+	"contact.f.rels.kids":                      true, // "legt ihr extra fest": the family sets what children see (ticket 298)
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

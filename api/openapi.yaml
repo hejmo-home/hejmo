@@ -492,7 +492,7 @@ paths:
       summary: The address book, parents only (scope contacts:read)
       description: |
         Every contact of the household: the people (one contact each, always in the
-        group Familie) and everyone else. `q` searches Hejmo name, full name, numbers
+        group Familie) and everyone else. `q` searches Hejmo name, full name, numbers, the words of relations
         and e-mail addresses; `group` keeps the contacts of one group.
       parameters:
         - { name: q, in: query, required: false, schema: { type: string } }
@@ -585,6 +585,69 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /contacts/{id}/photo:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getContactPhoto
+      summary: The photo of a contact (parents only, scope contacts:read)
+      description: |
+        A square JPEG of at most 512 by 512 pixels without metadata. 404 when the contact has no photo.
+        The web interface adds `?v=` (the time the photo was set) to the address so a changed photo is
+        fetched again; the answer is `Cache-Control: private`.
+      responses:
+        "200":
+          description: A JPEG
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: setContactPhoto
+      summary: Set or replace the photo of a contact (parents only, scope contacts:write)
+      description: |
+        Send a JPEG, PNG, WebP or GIF as `multipart/form-data` in the part `file`; the web interface
+        converts HEIC to JPEG in the browser first and HEIC sent here is refused with 422. The box cuts
+        the picture to a square (landscape from the centre, portrait with a quarter of the excess taken
+        from the top), shrinks it to at most 512 by 512 pixels and stores it as a JPEG without location
+        or camera data. A file over 15 MB is refused with 413, one that is no picture or has more than
+        24 million pixels with 422. The last change wins, whether it came from here, the web interface
+        or contact sync. Also works for the contact of a person.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "200":
+          description: The contact, with its photo
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Contact" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "413":
+          description: The file is over 15 MB
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteContactPhoto
+      summary: Remove the photo of a contact (parents only, scope contacts:delete)
+      description: Answers 204 also when there was no photo. Hejmo then shows the initials of the name.
+      responses:
+        "204": { description: Removed }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /contact-groups:
     get:
       operationId: listContactGroups
@@ -2463,6 +2526,70 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /people/{id}/savings-goal:
+    get:
+      operationId: getSavingsGoal
+      summary: A person's savings goal (scope tasks:read)
+      description: |
+        The reward a person saves for (ticket 293), with their star balance
+        (the number of the star chip; nothing is set aside) and whether it is
+        reached (`balance >= price`, the reward's current price). Without a goal
+        `reward_id` is null. A goal ends by itself when its redemption is
+        confirmed, when the reward is archived or deleted, or when it is no
+        longer meant for the person; `ended` then says why and when, for 7 days
+        or until a new goal is chosen. Everyone may read it. There is exactly
+        one goal per person and no ranking between people.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The savings goal
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SavingsGoal" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: setSavingsGoal
+      summary: Choose a savings goal (scope tasks:complete, parents for anyone, a child only for themselves)
+      description: |
+        Replaces the person's goal (and any ended line). The reward must be
+        offered (not archived) and meant for the person, else 422 with field
+        `reward_id`. A child changing another person's goal gets 403.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reward_id]
+              properties:
+                reward_id: { type: string, format: uuid }
+      responses:
+        "200":
+          description: The savings goal now
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SavingsGoal" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: clearSavingsGoal
+      summary: Clear the savings goal (scope tasks:complete, parents for anyone, a child only for themselves)
+      description: The stars stay. Without a goal nothing happens.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: No savings goal now }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /rewards:
     get:
       operationId: listRewards
@@ -2781,6 +2908,16 @@ paths:
         first default unit. `amount` is a number above 0 up to 9999; a unit
         that is switched off (`GET /units`) is refused. A list without
         suggestions takes plain `text` only.
+
+        `variety` is the more exact kind of an article ("Mehl · Type 405"): the
+        entry stands next to the same article without a variety, and
+        quantities add up only for the same article **and** variety, ignoring
+        case, spaces and umlauts (`Type 405` and `type  405` are one). Adding
+        without a quantity says `exists` only when article and variety are both
+        equal. A variety needs an article (`article_id`, or a `text` that names
+        one) and at most 60 characters, else 422 with field `variety`; free
+        text has none. Allergens and diets come from the article, never from
+        the variety.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -2794,6 +2931,7 @@ paths:
                 article_id: { type: string, description: "Key of a shipped article or id of an own one" }
                 amount: { type: number, description: "Above 0, at most 9999; anything else is refused with 422" }
                 unit: { type: string, description: "A key of `GET /units`; one that is switched off is refused with 422" }
+                variety: { type: string, nullable: true, description: "The variety of the article, at most 60 characters (422 otherwise), for example `Type 405`; trimmed, inner spaces collapsed. Null or empty: none. Only with an article, else 422 with field `variety`" }
       responses:
         "200":
           description: Merged into an entry that was there, or already there
@@ -2813,8 +2951,16 @@ paths:
   /lists/{id}/entries/{entry}:
     patch:
       operationId: setListEntryQuantity
-      summary: Change the quantity of an open entry (scope lists:write, parents only)
+      summary: Change the quantity or the variety of an open entry (scope lists:write, parents only)
       description: |
+        Send `amount` (with `unit`), `variety` or both; what is left out stays.
+        `variety` replaces the variety (null or empty takes it away); only an
+        entry with an article has one (422 with field `variety` for free text
+        or more than 60 characters). When another open entry has the same
+        article, the same variety as it will be and the same kind of quantity,
+        this entry goes into it (`result: merged`, the answer is the entry that
+        stays).
+
         The amount **replaces** the old quantity and never adds to it. The
         caller converts a change of unit within one kind (500 g to 0.5 kg keeps
         the amount). `amount` is rounded as shown (two decimals, whole g and ml);
@@ -2835,10 +2981,11 @@ paths:
           application/json:
             schema:
               type: object
-              required: [amount]
+              description: At least one of `amount` and `variety`
               properties:
-                amount: { type: number, nullable: true, description: "Above 0, at most 9999; null takes the quantity away" }
+                amount: { type: number, nullable: true, description: "Above 0, at most 9999; null takes the quantity away. Left out: the quantity stays" }
                 unit: { type: string, description: "A key of `GET /units`; one that is switched off is refused with 422" }
+                variety: { type: string, nullable: true, description: "The new variety, at most 60 characters (422 otherwise); null or empty takes it away. Left out: the variety stays" }
       responses:
         "200":
           description: The entry now
@@ -4483,6 +4630,22 @@ components:
         day: { type: integer, description: "1 to 31, a day that exists" }
         month: { type: integer, description: "1 to 12" }
         year: { type: integer, nullable: true, description: "1900 to this year, not in the future; null when unknown (then no age is shown)" }
+    ContactRelation:
+      type: object
+      description: "A relation (ADR 0021): one word plus the people it is for, or the whole family. A whole-family relation stores no people, so a person who joins later is included. Only further contacts have relations, never a person's contact."
+      required: [word, whole_family, people]
+      properties:
+        word: { type: string, description: "1 to 40 characters, for example Oma, Klassenlehrerin, Kinderärztin; the same word for the same people is merged" }
+        whole_family: { type: boolean, description: "True: the whole family; `people` is then empty" }
+        people: { type: array, items: { type: string, format: uuid }, description: "Ids of people of the household, in the order of the people; at least one unless `whole_family`" }
+    ContactRelationInput:
+      type: object
+      description: "A relation as the API takes it: `whole_family` and `people` may be left out (false, none). A word with no people and no `whole_family` is 422 (unlike the web form, which reads a line with no person chosen as the whole family)."
+      required: [word]
+      properties:
+        word: { type: string, description: "1 to 40 characters; leave it empty only for an empty line (whole family), which is skipped" }
+        whole_family: { type: boolean }
+        people: { type: array, items: { type: string, format: uuid } }
     ContactInput:
       type: object
       required: [name]
@@ -4496,9 +4659,10 @@ components:
         show_in_birthdays: { type: boolean, default: true, description: "Whether the birthday is in the generated calendar of kind `birthdays`. Omitted means true, so a replace without it switches the birthday on again" }
         note: { type: string, description: "At most 1000 characters" }
         groups: { type: array, items: { type: string }, description: "Ids of contact groups" }
+        relations: { type: array, items: { $ref: "#/components/schemas/ContactRelationInput" }, description: "Replaces the relations; an empty line (no word, whole family) is skipped, people without a word are 422, so are a word with no people (and no `whole_family`), more than 40 characters, unknown people, more than 20 relations and any relation on a person's contact" }
     Contact:
       type: object
-      required: [id, person_id, name, full_name, numbers, emails, address, birthday, show_in_birthdays, note, groups, created_by, created_at, updated_by, updated_at]
+      required: [id, person_id, name, full_name, numbers, emails, address, birthday, show_in_birthdays, note, groups, relations, photo, created_by, created_at, updated_by, updated_at]
       properties:
         id: { type: string, format: uuid, description: "The id of the person for a person's contact" }
         person_id: { type: string, format: uuid, nullable: true }
@@ -4511,10 +4675,21 @@ components:
         show_in_birthdays: { type: boolean, description: "Whether the birthday is in the generated calendar of kind `birthdays`" }
         note: { type: string }
         groups: { type: array, items: { type: string } }
+        relations: { type: array, items: { $ref: "#/components/schemas/ContactRelation" } }
+        photo: { allOf: [{ $ref: "#/components/schemas/ContactPhoto" }], nullable: true, description: "Null without a photo; the photo itself is at `/contacts/{id}/photo`" }
         created_by: { type: string, format: uuid, nullable: true }
         created_at: { type: string, format: date-time }
         updated_by: { type: string, format: uuid, nullable: true }
         updated_at: { type: string, format: date-time }
+    ContactPhoto:
+      type: object
+      description: Where the photo of a contact came from. The last change wins.
+      required: [origin, by, device, at]
+      properties:
+        origin: { type: string, enum: [manual, sync], description: "`manual`: a parent chose it; `sync`: a personal device sent it over contact sync" }
+        by: { type: string, format: uuid, nullable: true, description: "The parent who set it (`manual`); null for `sync` or when that person is gone" }
+        device: { type: string, description: "The personal device, for `sync`; else empty" }
+        at: { type: string, format: date-time }
     ContactGroup:
       type: object
       required: [id, name, shipped_key, contacts]
@@ -4856,6 +5031,27 @@ components:
     Unit:
       type: string
       enum: [piece, dozen, pack, bunch, g, kg, ml, l, oz, lb, floz_us, floz_uk, cup_us, pint_us, pint_uk, quart_us, gallon_us, gallon_uk]
+    SavingsGoal:
+      type: object
+      required: [person_id, reward_id, name, symbol, price, balance, reached, set_at, ended]
+      properties:
+        person_id: { type: string, format: uuid }
+        reward_id: { type: string, format: uuid, nullable: true, description: "The reward saved for; null without a goal" }
+        name: { type: string, nullable: true }
+        symbol: { type: string, nullable: true }
+        price: { type: integer, nullable: true, description: "The reward's current price" }
+        balance: { type: integer, description: "The plain star balance" }
+        reached: { type: boolean, description: "balance >= price" }
+        set_at: { type: string, format: date-time, nullable: true }
+        ended:
+          nullable: true
+          description: Why and when the goal ended by itself; null after 7 days and once a new goal is chosen
+          type: object
+          required: [reason, at, name]
+          properties:
+            reason: { type: string, enum: [redeemed, archived, deleted, audience] }
+            at: { type: string, format: date-time }
+            name: { type: string, description: "The reward's name when the goal ended" }
     Reward:
       type: object
       required: [id, name, symbol, picture, picture_source, price, limit_period, limit_count, whole_family, person_ids, archived, archived_at, archived_reason, redeemed, created_by, created_at, affordable, limit_reached, available_again]
@@ -4993,12 +5189,13 @@ components:
       enum: [piece, dozen, pack, bunch, g, kg, ml, l, oz, lb, floz_us, floz_uk, cup_us, pint_us, pint_uk, quart_us, gallon_us, gallon_uk]
     ListEntry:
       type: object
-      required: [id, text, done, article_id, symbol, picture]
+      required: [id, text, done, article_id, variety, symbol, picture]
       properties:
         id: { type: string, format: uuid }
-        text: { type: string }
+        text: { type: string, description: "The entry's words: for an article its name, without the variety" }
         done: { type: boolean }
-        article_id: { type: string, nullable: true, description: "The library article of the entry: the one stored when it was added from the library, else (an entry without one) the article its text names exactly in German or English, ignoring case and umlauts; never an article hidden by hand. The key of a shipped article or the id of an own one. Null for free text." }
+        variety: { type: string, nullable: true, maxLength: 60, description: "The variety of the article, for example `Type 405` (shown as \"Mehl · Type 405\"); null for none and for free text. Quantities add up only for the same article and variety." }
+        article_id: { type: string, nullable: true, description: "The library article of the entry: the one stored when it was added from the library, else (an entry without one) the article its text names in German or English, ignoring case, umlauts and singular or plural (the exact name first, the endings of the name's own language only); never an article hidden by hand. The key of a shipped article or the id of an own one. Null for free text." }
         symbol: { type: string, nullable: true, description: "The emoji a tile shows for the article (its department's symbol when it has none). Null for free text and for an article that has a picture." }
         picture: { type: string, nullable: true, description: "Path of the own article's picture, `GET /articles/{id}/picture`. Null without one." }
         amount: { type: number, description: "How much, as shown (rounded: g and ml whole, else at most two decimals); missing without a quantity" }
@@ -5166,7 +5363,7 @@ components:
             type: object
             required: [id, zone, enabled]
             properties:
-              id: { type: string, enum: [clock, weather, events, routines, tasks, meals, tomorrow, list] }
+              id: { type: string, enum: [clock, weather, events, routines, tasks, stars, meals, tomorrow, list] }
               zone: { type: string, enum: [header, columns, footer] }
               enabled: { type: boolean }
         list_id: { type: string, format: uuid, nullable: true, description: "The list of the block `list` (\"one list\"); at most 8 open entries show. Null: none chosen. A list that was deleted meanwhile stays here and the display shows no list until another is chosen" }
@@ -5188,7 +5385,7 @@ components:
             type: object
             required: [id]
             properties:
-              id: { type: string, enum: [clock, weather, events, routines, tasks, meals, tomorrow, list] }
+              id: { type: string, enum: [clock, weather, events, routines, tasks, stars, meals, tomorrow, list] }
               enabled: { type: boolean }
         list_id: { type: string, description: "The ID of the list of the block `list`; an empty string removes the choice" }
     Brightness:

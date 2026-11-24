@@ -71,7 +71,9 @@
     return ctl;
   }
 
-  global.HejmoPhotos = { sniff: sniff, jpegName: jpegName, fill: fill, upload: upload };
+  // head and convert are the browser's part and are used by the contact form too (ticket 297); both are
+  // function declarations further down, so they exist here already.
+  global.HejmoPhotos = { sniff: sniff, jpegName: jpegName, fill: fill, upload: upload, head: head, convert: convert };
 
   var root = global.document && global.document.querySelector && global.document.querySelector("[data-photo-upload]");
   var doc = global.document;

@@ -55,7 +55,8 @@ func (s *server) routeRewards() http.Handler {
 	mux.HandleFunc("POST /tasks/rewards/requests/{id}/withdraw", s.handleRequestWithdraw)
 	mux.HandleFunc("POST /tasks/rewards/requests/{id}/confirm", s.handleRequestConfirm)
 	mux.HandleFunc("POST /tasks/rewards/requests/{id}/decline", s.handleRequestDecline)
-	return mux
+	mux.HandleFunc("POST /tasks/rewards/{id}/goal", s.handleGoalSet)
+	return s.withGoalPages(mux)
 }
 
 // rewardSymbols are the symbols offered first: what rewards often are.
@@ -243,6 +244,15 @@ type childCard struct {
 	ID, Name, Symbol, Picture, Price, Limit string
 	Missing, Progress, Label, Later         string
 	Pct                                     int
+	Affordable                              bool
+	// Keep says, on a goal whose limit is used up, that saving goes on.
+	Keep string
+	// Have and Left are the numbers of the goal card.
+	Have, Left, Cost int
+	// CanSave: the card offers "Save for this".
+	CanSave bool
+	// Asked: a request for it is open, so the goal card offers no second one.
+	Asked bool
 }
 
 // askCard is one request of the child, open or answered in the last 7 days.
@@ -254,9 +264,18 @@ type askCard struct {
 	Open                          bool
 }
 
-// renderChildRewards is the child's view: their balance, their requests and
-// the rewards meant for them in three groups (enough free stars, still
-// saving, not right now).
+// childGoal is what the child's page shows of the savings goal (ticket 293).
+type childGoal struct {
+	Card childCard
+	// Ended is the line after a goal ended by itself, as markup, within 7 days
+	// of it ending; Redeemed tells whether it is the celebrating one.
+	Ended    template.HTML
+	Redeemed bool
+}
+
+// renderChildRewards is the child's view: their balance, their requests, their
+// savings goal and the rewards meant for them in three groups (enough free
+// stars, still saving, not right now).
 func (s *server) renderChildRewards(w http.ResponseWriter, r *http.Request, p principal, status int, lang string, people []store.Person) {
 	list, err := s.db.RewardsFor(p.household.ID, p.person.ID)
 	if err != nil {
@@ -290,30 +309,26 @@ func (s *server) renderChildRewards(w http.ResponseWriter, r *http.Request, p pr
 		s.fail(w, "redemptions", err)
 		return
 	}
+	goal, err := s.db.Goal(p.household.ID, p.person.ID)
+	if err != nil {
+		s.fail(w, "savings goal", err)
+		return
+	}
 	byID := map[string]store.Reward{}
 	var ok, save, later []childCard
+	var goalCard *childCard
 	for _, rw := range list {
 		byID[rw.ID] = rw
-		if asked[rw.ID] {
+		isGoal := goal.Active() && goal.Reward.ID == rw.ID
+		if asked[rw.ID] && !isGoal {
 			continue // it stands under "Your requests"
 		}
 		st := states[rw.ID]
-		c := childCard{ID: rw.ID, Name: rw.Name, Symbol: rw.Symbol, Picture: pictureOf(rw), Price: s.starsWords(lang, rw.Price)}
+		c := childCard{ID: rw.ID, Name: rw.Name, Symbol: rw.Symbol, Picture: pictureOf(rw), Price: s.starsWords(lang, rw.Price), Affordable: st.Affordable}
 		if rw.Limit.Period != reward.NoLimit {
 			c.Limit = s.limitWords(lang, rw.Limit)
 		}
-		switch {
-		case st.LimitReached:
-			key := "rwd.child.later." + string(rw.Limit.Period) + ".one"
-			if rw.Limit.Count > 1 {
-				key = "rwd.child.later." + string(rw.Limit.Period) + ".many"
-			}
-			c.Later = s.i18n.Format(lang, i18n.Msg(key, "n", strconv.Itoa(rw.Limit.Count)))
-			c.Missing = s.i18n.Format(lang, i18n.Msg("rwd.child.later.again", "when", s.againWords(p, lang, st.AvailableAgain)))
-			later = append(later, c)
-		case st.Affordable:
-			ok = append(ok, c)
-		default:
+		if !st.Affordable {
 			key := "rwd.child.missing.other"
 			if st.Missing == 1 {
 				key = "rwd.child.missing.one"
@@ -321,6 +336,32 @@ func (s *server) renderChildRewards(w http.ResponseWriter, r *http.Request, p pr
 			c.Missing = s.i18n.Format(lang, i18n.Msg(key, "n", strconv.Itoa(st.Missing)))
 			c.Pct = max(0, min(100, free*100/rw.Price))
 			c.Label = s.i18n.Format(lang, i18n.Msg("rwd.child.progress", "have", strconv.Itoa(free), "price", strconv.Itoa(rw.Price)))
+			c.Have, c.Left = free, st.Missing
+		}
+		c.Cost = rw.Price
+		if st.LimitReached {
+			key := "rwd.child.later." + string(rw.Limit.Period) + ".one"
+			if rw.Limit.Count > 1 {
+				key = "rwd.child.later." + string(rw.Limit.Period) + ".many"
+			}
+			c.Later = s.i18n.Format(lang, i18n.Msg(key, "n", strconv.Itoa(rw.Limit.Count)))
+			again := s.i18n.Format(lang, i18n.Msg("rwd.child.later.again", "when", s.againWords(p, lang, st.AvailableAgain)))
+			c.Missing = again
+			if goal.Active() && goal.Reward.ID == rw.ID {
+				c.Keep = again + " " + s.i18n.T(lang, "rwd.goal.keep")
+			}
+		}
+		c.CanSave = !st.Affordable
+		switch {
+		case isGoal:
+			cc := c
+			cc.CanSave, cc.Asked = false, asked[rw.ID]
+			goalCard = &cc
+		case st.LimitReached:
+			later = append(later, c)
+		case st.Affordable:
+			ok = append(ok, c)
+		default:
 			save = append(save, c)
 		}
 	}
@@ -411,11 +452,23 @@ func (s *server) renderChildRewards(w http.ResponseWriter, r *http.Request, p pr
 		small = template.HTML(s.i18n.T(lang, "rwd.child.bal.hint"))
 	}
 	o := outcomeOf(r)
-	s.render(w, r, status, "rewards.html", map[string]any{
+	data := map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Parent": false, "ChildSlot": slot,
-		"Balance": bal, "BalSmall": small, "Below": below, "Ok": ok, "Save": save, "Later": later, "Cards": cards, "AskNotice": o.Notice, "Any": len(list) > 0 || len(cards) > 0,
+		"Balance": bal, "BalSmall": small, "Below": below, "Ok": ok, "Save": save, "Later": later, "Cards": cards, "AskNotice": o.Notice,
+		"Any":   len(list) > 0 || len(cards) > 0 || goalCard != nil,
 		"Empty": s.i18n.Format(lang, i18n.Msg("rwd.child.empty", "parents", s.joinNames(lang, "rwd.or", parents))),
-	})
+		"Goal":  goalCard, "NoGoal": goalCard == nil,
+	}
+	if goal.EndedShown(s.now()) {
+		key := "rwd.goal.ended.archived"
+		if goal.EndedReason == store.GoalRedeemed {
+			key = "rwd.goal.ended.redeemed"
+			data["EndedSuccess"] = formatHTML(s.i18n, lang, key, "name", goal.EndedName)
+		} else {
+			data["EndedNotice"] = formatHTML(s.i18n, lang, key, "name", goal.EndedName)
+		}
+	}
+	s.render(w, r, status, "rewards.html", data)
 }
 
 // The form.

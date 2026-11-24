@@ -120,12 +120,17 @@ var flashFields = map[string][]string{
 	"flash.routine_applied":        {"owner", "routine", "person", "tasks", "template"},
 	"flash.routine_applied_own":    {"owner", "routine", "person", "tasks", "template", "origin"},
 	"flash.pause_saved":            {"names", "range"},
+	"flash.contact_added_for":      {"name", "sentence"},
 	"flash.rtpl_moved":             {"title", "place", "total"},
 	"flash.routine_template_saved": {"name", "id"},
 	"flash.photo_moved":            {"n", "album"},
 	"flash.photos_moved":           {"n", "album"},
 	"flash.photo_deleted":          {"n"},
 	"flash.photos_deleted":         {"n"},
+	"flash.goal_set":               {"name"},
+	"flash.goal_switched":          {"name", "old"},
+	"flash.goal_set_for":           {"possessive", "name"},
+	"flash.goal_cleared_for":       {"name"},
 	"flash.otp_reset":              {"name"},
 	"flash.otp_reset_passkey":      {"name", "possessive", "passkeys"},
 	"flash.otp_reset_passkeys":     {"name", "possessive", "passkeys"},
@@ -202,6 +207,17 @@ func (s *server) takeFlash(w http.ResponseWriter, r *http.Request) (key, arg str
 		}
 	}
 	return key, arg
+}
+
+// pendingFlashKey is the key of the success line waiting for this browser,
+// without using it up.
+func (s *server) pendingFlashKey(r *http.Request) string {
+	c, err := r.Cookie(flashCookie)
+	if err != nil {
+		return ""
+	}
+	key, _, _ := strings.Cut(c.Value, ":")
+	return key
 }
 
 // successText is the text of a success line. After "Sync now" it says when
@@ -293,6 +309,18 @@ func (s *server) successText(lang, key, arg string) string {
 // successHTML is the success line as markup: the text of successText escaped,
 // except the lines after a changed star value, which put the new value in bold.
 func (s *server) successHTML(lang, key, arg string) template.HTML {
+	if _, ok := flashFields[key]; ok && arg != "" && strings.HasPrefix(key, "flash.goal_") {
+		// The savings goal lines put the name in bold: the values are escaped, the text is ours.
+		values, ok := s.fieldValues(key, arg)
+		if !ok {
+			return "" // the box restarted or the line is old: better none than a wrong one
+		}
+		kv := make([]string, 0, 2*len(values))
+		for _, n := range flashFields[key] {
+			kv = append(kv, n, values[n])
+		}
+		return formatHTML(s.i18n, lang, key, kv...)
+	}
 	if key == "flash.task_created" && arg != "" {
 		if line, ok := s.taskCreatedHTML(lang, arg); ok {
 			return template.HTML(line)

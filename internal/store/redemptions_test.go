@@ -22,15 +22,6 @@ func (f rewardFixture) stars(t *testing.T, p store.Person, n int) {
 	}
 }
 
-func (f rewardFixture) reward(t *testing.T, r store.Reward) store.Reward {
-	t.Helper()
-	got, err := f.db.CreateReward(f.h.ID, f.mama.ID, r, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return got
-}
-
 func (f rewardFixture) balance(t *testing.T, p store.Person) int {
 	t.Helper()
 	acc, err := f.db.StarAccount(f.h.ID, p.ID, 20)

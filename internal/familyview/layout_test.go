@@ -78,7 +78,7 @@ func TestWithoutALayoutTheViewIsTodays(t *testing.T) {
 	v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: at(14, 8, 0), Lang: "en", Region: "DE-BY", People: family(),
 		Weather: &familyview.Weather{TempC: 8, Icon: "clear"}, Meals: map[meal.Mealtime]string{meal.Dinner: "Pasta"}})
 	same(t, orderOf(v.HeaderOrder), []string{"clock", "weather"})
-	same(t, orderOf(v.ColumnBlocks), []string{"events", "tasks"})
+	same(t, orderOf(v.ColumnBlocks), []string{"events", "tasks", "stars"})
 	same(t, orderOf(v.FooterOrder), []string{"meals", "tomorrow"})
 	if v.Weather == nil || v.Meal == nil {
 		t.Fatalf("view = %+v", v)
@@ -119,7 +119,7 @@ func TestColumnBlocksCanBeSwitchedOff(t *testing.T) {
 	if c := column(t, v, "Mia"); len(c.Events) != 1 || c.Progress != nil {
 		t.Errorf("tasks off = %+v", c)
 	}
-	same(t, orderOf(v.ColumnBlocks), []string{"events"})
+	same(t, orderOf(v.ColumnBlocks), []string{"events", "stars"})
 }
 
 // Q86: routines in the columns, one line per routine, off until switched on.
@@ -138,7 +138,7 @@ func TestRoutinesShowInTheColumnsWhenSwitchedOn(t *testing.T) {
 	if got := column(t, v, "Mama").Routines; len(got) != 0 {
 		t.Errorf("Mama has none: %v", got)
 	}
-	same(t, orderOf(v.ColumnBlocks), []string{"events", "routines", "tasks"})
+	same(t, orderOf(v.ColumnBlocks), []string{"events", "routines", "tasks", "stars"})
 }
 
 // Footer: the tiles follow the order of the blocks; a block off or without content leaves no tile.
@@ -157,7 +157,7 @@ func TestFooterTilesFollowTheBlocks(t *testing.T) {
 		t.Errorf("tomorrow tile with its block off")
 	}
 	same(t, orderOf(v.FooterOrder), []string{"meals"})
-	v = buildWith(func(l *layout.Layout) { l.Blocks[5], l.Blocks[6] = l.Blocks[6], l.Blocks[5] }, in)
+	v = buildWith(func(l *layout.Layout) { l.Blocks[6], l.Blocks[7] = l.Blocks[7], l.Blocks[6] }, in)
 	same(t, orderOf(v.FooterOrder), []string{"tomorrow", "meals"})
 }
 

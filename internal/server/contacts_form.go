@@ -3,7 +3,9 @@ package server
 import (
 	"errors"
 	"net/http"
+	"regexp"
 	"slices"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -23,8 +25,45 @@ type ctForm struct {
 	Day, Month, Year                string
 	Groups                          []string
 	NewGroup, Note                  string
-	HideBirthday                    bool // "keep out of the Birthdays calendar"
+	Rels                            []ctRelForm // the relation lines (ticket 298)
+	For                             string      // the person whose page the form was opened from ("Kontakt für Mia anlegen")
+	// Token is the prepared photo that waits for the save (ticket 297); Gone marks the saved photo for removal.
+	Token        string
+	Gone         bool
+	HideBirthday bool // "keep out of the Birthdays calendar"
 }
+
+// ctRelForm is a relation line as the form holds it. Whole is "no person chosen": the whole family stores no
+// people, so the server reads the line as the whole family when none is ticked (the page works without JavaScript).
+type ctRelForm struct {
+	Word   string
+	Whole  bool
+	People []string
+}
+
+var relWordField = regexp.MustCompile(`^rel(\d+)_word$`)
+
+// parseRels reads the relation lines in the order of their numbers; the numbers may have gaps.
+func parseRels(r *http.Request) []ctRelForm {
+	var ns []int
+	for k := range r.PostForm {
+		if m := relWordField.FindStringSubmatch(k); m != nil {
+			if n, err := strconv.Atoi(m[1]); err == nil {
+				ns = append(ns, n)
+			}
+		}
+	}
+	sort.Ints(ns)
+	var out []ctRelForm
+	for _, n := range ns {
+		base := "rel" + strconv.Itoa(n)
+		people := slices.Clone(r.PostForm[base+"_person"])
+		out = append(out, ctRelForm{Word: r.PostForm.Get(base + "_word"), People: people, Whole: len(people) == 0})
+	}
+	return out
+}
+
+const maxRelLines = 20 // relation lines on a form
 
 const ownKind = "own"        // the select option "Eigene Bezeichnung …"
 const labelPrefix = "label:" // a saved own label, as an option of its own
@@ -57,6 +96,8 @@ func parseContactForm(r *http.Request) ctForm {
 		Street: r.PostFormValue("street"), Postcode: r.PostFormValue("postcode"), City: r.PostFormValue("city"), Country: r.PostFormValue("country"),
 		Day: r.PostFormValue("bday_day"), Month: r.PostFormValue("bday_month"), Year: r.PostFormValue("bday_year"),
 		Groups: r.PostForm["group"], NewGroup: r.PostFormValue("new_group"), Note: strings.ReplaceAll(r.PostFormValue("note"), "\r\n", "\n"),
+		Rels: parseRels(r), For: r.PostFormValue("for"),
+		Token: r.PostFormValue("picture_token"), Gone: r.PostFormValue("photo_gone") != "",
 		HideBirthday: r.PostFormValue("hide_birthday") != "",
 	}
 	return f
@@ -93,6 +134,9 @@ func atoiOrZero(s string) (int, bool) {
 func (f ctForm) draft(isPerson bool) ctDraft {
 	d := ctDraft{Name: f.Name, Full: f.Full, Street: f.Street, Postcode: f.Postcode, City: f.City, Country: f.Country, Note: f.Note,
 		NewGroup: f.NewGroup, GroupIDs: f.Groups, IsPerson: isPerson, HideBirthday: f.HideBirthday}
+	for _, r := range f.Rels {
+		d.Rels = append(d.Rels, ctRelDraft{Word: r.Word, Whole: r.Whole, PersonIDs: r.People})
+	}
 	for _, l := range f.Numbers {
 		d.Numbers = append(d.Numbers, l.line(true))
 	}
@@ -115,6 +159,9 @@ func ctFormOf(c store.Contact) ctForm {
 	}
 	for _, l := range c.Emails {
 		f.Emails = append(f.Emails, lineFormOf(l))
+	}
+	for _, r := range c.Relations {
+		f.Rels = append(f.Rels, ctRelForm{Word: r.Word, Whole: r.WholeFamily, People: r.PersonIDs})
 	}
 	if c.BdayDay != 0 {
 		f.Day, f.Month = strconv.Itoa(c.BdayDay), strconv.Itoa(c.BdayMonth)
@@ -220,6 +267,19 @@ func (e ctEnv) problemText(pr ctProblem, d ctDraft) string {
 		return e.t("contact.error.name.taken", "name", strings.TrimSpace(d.Name), "existing", pr.Arg, "examples", e.nameExamples(d))
 	case "full_name.long":
 		return e.t("contact.error.full.long")
+	case "rel.word":
+		var names []string
+		if pr.N >= 1 && pr.N <= len(d.Rels) {
+			names = e.relNames(d.Rels[pr.N-1].PersonIDs)
+		}
+		key := "contact.error.rel.word"
+		kv := []string{"contact", strings.TrimSpace(d.Name), "names", contact.JoinNames(names, e.t("contact.rel.and")), "example", e.t("contact.rel.example")}
+		if strings.TrimSpace(d.Name) == "" {
+			key = "contact.error.rel.word.unnamed"
+		}
+		return e.t(key, kv...)
+	case "rel.long":
+		return e.t("contact.error.rel.long")
 	case "number.char", "email.char":
 		return e.t("contact.error.number.char", "char", pr.Arg)
 	case "number.digits":
@@ -234,6 +294,8 @@ func (e ctEnv) problemText(pr ctProblem, d ctDraft) string {
 		return e.t("contact.error.label.required")
 	case "number_own.label_long", "email_own.label_long":
 		return e.t("contact.error.label.long")
+	case "rels.many":
+		return e.t("contact.error.rels.many", "max", strconv.Itoa(maxRelLines))
 	case "numbers.many":
 		return e.t("contact.error.numbers.many")
 	case "emails.many":
@@ -281,10 +343,14 @@ func (e ctEnv) anchorText(pr ctProblem) string {
 		return e.t("contact.link.full")
 	case pr.Anchor == "name":
 		return e.t("contact.link.name")
+	case pr.Field == "rel":
+		return e.t("contact.link.rel", "n", strconv.Itoa(pr.N))
 	case pr.Field == "number" || pr.Field == "number_own":
 		return e.t("contact.link.number", "n", strconv.Itoa(pr.N))
 	case pr.Field == "email" || pr.Field == "email_own":
 		return e.t("contact.link.email", "n", strconv.Itoa(pr.N))
+	case pr.Field == "rels":
+		return e.t("contact.link.rels")
 	case pr.Field == "numbers":
 		return e.t("contact.link.numbers")
 	case pr.Field == "emails":
@@ -305,6 +371,9 @@ type ctFormState struct {
 	Problems []ctProblem
 	Draft    ctDraft
 	Status   int
+	// The prepared photo, and what is wrong with the photo that was just chosen (ticket 297).
+	Pend     *pendingPicture
+	PhotoErr string
 }
 
 // groupChoices are the chips of the groups, ticked as the form has them.
@@ -353,8 +422,16 @@ func (s *server) renderContactForm(w http.ResponseWriter, r *http.Request, e ctE
 		"Months": e.months(f.Month), "MDY": p.household.DateFormat == store.DateMDY, "MaxYear": s.householdNow(p.household).Year(),
 		"NoteCount": contact.Runes(strings.TrimSpace(f.Note)),
 		"BdayErr":   errs["birthday"] != "", "NewGroupOpen": f.NewGroup != "" || errs["new_group"] != "",
-		"MoreNumbers": len(f.Numbers) < contact.MaxLines, "MoreEmails": len(f.Emails) < contact.MaxLines,
+		"MoreNumbers": len(f.Numbers) < contact.MaxLines, "MoreRels": len(f.Rels) < maxRelLines, "MoreEmails": len(f.Emails) < contact.MaxLines,
 		"CountryHint": e.countryHint(), "NumberTpl": e.lineTemplate(true), "EmailTpl": e.lineTemplate(false),
+		"Rels": e.relViews(f.Rels, lineErrs), "RelTpl": e.relTemplate(), "People": e.peopleChips(),
+		"SayOf": e.t("contact.rel.of"), "SayWhole": e.t("contact.rel.whole"), "SayAnd": e.t("contact.rel.and"),
+	}
+	if all, err := s.db.Contacts(p.household.ID); err == nil {
+		data["RelWords"] = e.relWords(all)
+	} else {
+		s.fail(w, "contacts", err)
+		return
 	}
 	if len(links) > 0 {
 		key := "contact.error.summary.many"
@@ -363,7 +440,16 @@ func (s *server) renderContactForm(w http.ResponseWriter, r *http.Request, e ctE
 		}
 		data["ErrLead"] = e.t(key, "n", strconv.Itoa(len(links)))
 		data["ErrEnd"] = e.t("contact.error.summary.end")
+		if st.Pend != nil { // a photo that was prepared before another field was wrong stays prepared
+			data["ErrEnd"] = e.t("contact.error.summary.end") + " " + e.t("contact.photo.kept")
+		}
 	}
+	saveLabel := e.t("contact.new")
+	if st.Contact != nil {
+		saveLabel = e.t("people.save")
+	}
+	card := e.photoCard(f, st.Contact, st.Pend, st.PhotoErr, saveLabel)
+	data["Photo"], data["Dirty"] = card, card.Mode == "new" || card.Mode == "gone"
 	chips, fam := e.groupChoices(f, st.Contact)
 	data["GroupChips"], data["FamChip"] = chips, fam
 	if c := st.Contact; c != nil {
@@ -382,6 +468,12 @@ func (s *server) renderContactForm(w http.ResponseWriter, r *http.Request, e ctE
 	} else {
 		data["Action"] = contactsPath + "/new"
 		data["Title"] = e.t("contact.new.title")
+		if i := slices.IndexFunc(e.people, func(x store.Person) bool { return x.ID == f.For }); i >= 0 && f.For != "" { // opened from a person's page
+			who := e.people[i].Name
+			data["ForPerson"] = map[string]string{"ID": f.For, "Name": who}
+			data["Title"] = e.t("contact.new.for.title", "name", who)
+			data["Lead"] = e.t("contact.new.for.lead", "name", who)
+		}
 	}
 	s.render(w, r, st.Status, "contact_form.html", data)
 }
@@ -451,7 +543,11 @@ func (s *server) handleContactNew(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	s.renderContactForm(w, r, e, ctForm{Name: strings.TrimSpace(r.URL.Query().Get("name"))}, ctFormState{Status: http.StatusOK})
+	f := ctForm{Name: strings.TrimSpace(r.URL.Query().Get("name")), For: e.knownPerson(r.URL.Query().Get("for"))}
+	if f.For != "" { // "Kontakt für Mia anlegen": the one relation line has Mia chosen
+		f.Rels = []ctRelForm{{People: []string{f.For}}}
+	}
+	s.renderContactForm(w, r, e, f, ctFormState{Status: http.StatusOK})
 }
 
 // handleContactCreate and handleContactSave answer the contact form. A button "Weitere Nummer" or "Entfernen"
@@ -487,12 +583,40 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 		}
 		cur = &all[i]
 	}
+	file, tooBig := s.readContactBody(w, r)
+	if r.MultipartForm != nil {
+		defer r.MultipartForm.RemoveAll()
+	}
 	f := parseContactForm(r)
+	if tooBig && cur != nil { // nothing of the form was read: show what is saved, not an empty form
+		f = ctFormOf(*cur)
+	}
+	if cur != nil {
+		f.For = ""
+	}
 	if cur != nil && cur.IsPerson() {
 		f.Name = cur.HejmoName
+		f.Rels = nil // the people of the household are related through "Personen"
+	}
+	pend, photoErr := s.contactPhotoStep(r, e, &f, cur, file, tooBig)
+	state := func(st ctFormState) ctFormState {
+		st.Contact, st.Pend, st.PhotoErr = cur, pend, photoErr
+		return st
+	}
+	if action := r.PostFormValue("picture"); action == "upload" || action == "remove" || action == "keep" {
+		status := http.StatusOK
+		if photoErr != "" {
+			status = http.StatusUnprocessableEntity
+		}
+		s.renderContactForm(w, r, e, f, state(ctFormState{Status: status}))
+		return
 	}
 	if more, remove := r.PostFormValue("more"), r.PostFormValue("remove"); more != "" || remove != "" {
 		switch more {
+		case "rel":
+			if len(f.Rels) < maxRelLines {
+				f.Rels = append(f.Rels, ctRelForm{Whole: true})
+			}
 		case "number":
 			if len(f.Numbers) < contact.MaxLines {
 				f.Numbers = append(f.Numbers, ctLineForm{})
@@ -510,24 +634,35 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 				*base.lines = slices.Delete(slices.Clone(*base.lines), n-1, n)
 			}
 		}
-		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Status: http.StatusOK})
+		if n, err := strconv.Atoi(strings.TrimPrefix(remove, "rel")); err == nil && strings.HasPrefix(remove, "rel") && n >= 1 && n <= len(f.Rels) {
+			f.Rels = slices.Delete(slices.Clone(f.Rels), n-1, n)
+		}
+		s.renderContactForm(w, r, e, f, state(ctFormState{Status: http.StatusOK}))
 		return
 	}
 	gone := e.dropVanishedGroups(&f)
+	e.dropVanishedPeople(&f)
 	d := f.draft(cur != nil && cur.IsPerson())
 	problems := checkContact(d, s.householdNow(p.household), nameTakenIn(all, id), e.groupTaken)
 	if gone {
 		problems = append(problems, ctProblem{Anchor: "groups", Field: "groups", Code: "gone"})
 	}
-	if len(problems) > 0 {
-		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Problems: problems, Draft: d, Status: http.StatusUnprocessableEntity})
+	if len(problems) > 0 || photoErr != "" {
+		s.renderContactForm(w, r, e, f, state(ctFormState{Problems: problems, Draft: d, Status: http.StatusUnprocessableEntity}))
 		return
+	}
+	in := d.input(s.householdNow(p.household), s.i18n.T(e.lang, "birthdays.calendar_name"))
+	switch {
+	case pend != nil:
+		in.PhotoChange, in.Photo = store.SetPicture, &store.ContactPhoto{JPEG: pend.JPEG}
+	case f.Gone:
+		in.PhotoChange = store.RemovePicture
 	}
 	var saved store.Contact
 	if cur == nil {
-		saved, err = s.db.CreateContact(p.household.ID, p.person.ID, d.input(s.householdNow(p.household), s.i18n.T(e.lang, "birthdays.calendar_name")))
+		saved, err = s.db.CreateContact(p.household.ID, p.person.ID, in)
 	} else {
-		saved, err = s.db.UpdateContact(p.household.ID, id, p.person.ID, d.input(s.householdNow(p.household), s.i18n.T(e.lang, "birthdays.calendar_name")))
+		saved, err = s.db.UpdateContact(p.household.ID, id, p.person.ID, in)
 	}
 	var taken *store.NameTakenError
 	var fe *store.FieldError
@@ -537,12 +672,12 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 		if taken.ExistingIsPerson {
 			code = "taken_person"
 		}
-		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Draft: d, Status: http.StatusUnprocessableEntity,
-			Problems: []ctProblem{{Anchor: "name", Field: "name", Code: code, Arg: taken.Existing}}})
+		s.renderContactForm(w, r, e, f, state(ctFormState{Draft: d, Status: http.StatusUnprocessableEntity,
+			Problems: []ctProblem{{Anchor: "name", Field: "name", Code: code, Arg: taken.Existing}}}))
 		return
 	case errors.As(err, &fe) && fe.Field == "new_group" && fe.Msg == store.GroupExistsMsg: // a group of this name was made between the check and the save
-		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Draft: d, Status: http.StatusUnprocessableEntity,
-			Problems: []ctProblem{{Anchor: "groups", Field: "new_group", Code: "taken", Arg: strings.TrimSpace(d.NewGroup)}}})
+		s.renderContactForm(w, r, e, f, state(ctFormState{Draft: d, Status: http.StatusUnprocessableEntity,
+			Problems: []ctProblem{{Anchor: "groups", Field: "new_group", Code: "taken", Arg: strings.TrimSpace(d.NewGroup)}}}))
 		return
 	case errors.As(err, &fe) && fe.Field == "groups": // a ticked group was deleted between the check and the save
 		// e.groups was read before the other delete: read it again, or the group stays offered and ticked
@@ -551,14 +686,27 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 			return
 		}
 		e.dropVanishedGroups(&f)
-		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Draft: f.draft(cur != nil && cur.IsPerson()), Status: http.StatusUnprocessableEntity,
-			Problems: []ctProblem{{Anchor: "groups", Field: "groups", Code: "gone"}}})
+		s.renderContactForm(w, r, e, f, state(ctFormState{Draft: f.draft(cur != nil && cur.IsPerson()), Status: http.StatusUnprocessableEntity,
+			Problems: []ctProblem{{Anchor: "groups", Field: "groups", Code: "gone"}}}))
 		return
 	case err != nil: // the form checked every other rule the store knows, so a store refusal here is a bug
 		s.fail(w, "save contact", err)
 		return
 	}
-	s.redirectSavedNamed(w, r, contactsPath+"/"+saved.ID, "flash.contact_saved", saved.HejmoName)
+	if pend != nil {
+		s.pictures.drop(f.Token)
+	}
+	if f.For != "" { // back to the person's page, with the relation in the success line
+		if says := e.relSentences(saved, f.For); len(says) > 0 {
+			s.redirectSavedFields(w, r, "/people/"+f.For+"#contacts", "flash.contact_added_for", saved.HejmoName, strings.Join(says, ", "))
+			return
+		}
+	}
+	flash := "flash.contact_saved"
+	if pend != nil {
+		flash = "flash.contact_saved_photo"
+	}
+	s.redirectSavedNamed(w, r, contactsPath+"/"+saved.ID, flash, saved.HejmoName)
 }
 
 func (s *server) handleContactEdit(w http.ResponseWriter, r *http.Request) {

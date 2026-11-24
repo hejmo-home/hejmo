@@ -1,8 +1,10 @@
 {{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
   <h1>{{.Title}}</h1>
-  {{if not .Editing}}<p class="lead">{{t "contact.new.lead"}}</p>{{end}}
+  {{if not .Editing}}<p class="lead">{{or .Lead (t "contact.new.lead")}}</p>{{end}}
   {{if .ErrLinks}}<p class="error form-error" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{.ErrLead}} {{range .ErrLinks}}<a href="#{{.Anchor}}">{{.Text}}</a>{{.Sep}}{{end}}{{.ErrEnd}}</span></p>{{end}}
-  <form method="post" action="{{.Action}}" class="steps ct-form" novalidate>
+  <form method="post" action="{{.Action}}" enctype="multipart/form-data" class="steps ct-form" novalidate>
+    {{with .F.For}}<input type="hidden" name="for" value="{{.}}">{{end}}
+    {{with .Photo.Token}}<input type="hidden" name="picture_token" value="{{.}}">{{end}}{{if .Photo.Gone}}<input type="hidden" name="photo_gone" value="1">{{end}}
     <fieldset id="name">
       <legend>{{t "contact.f.name"}}</legend>
       {{if .IsPerson}}<p class="lab-static">{{t "contact.f.hejmo"}}</p>
@@ -15,6 +17,31 @@
       {{template "ctErr" (dict "ID" "full_name" "Text" $bad)}}
       <p class="hint" id="hint-full">{{t "contact.f.full.hint"}}</p></div>
     </fieldset>
+    <fieldset id="photo" class="ph-card{{if .Photo.Invalid}} invalid{{end}}">
+      <legend>{{t "contact.f.photo"}} <span class="tag hidden-tag">{{t "contact.photo.optional"}}</span></legend>
+      {{with .Photo.Result}}<div class="pic-result" role="status"><img src="{{.URL}}" alt="{{.Alt}}" width="132" height="132"><div><b>{{template "tickIcon" 20}}<span>{{.Title}}</span></b><small>{{.Text}}</small><small>{{.Save}}</small></div></div>
+      {{else}}<div class="ph-now">{{template "ctPhoto" (dict "Photo" $.Photo.View "Class" " page" "Alt" $.Photo.Alt)}}
+        {{if $.Photo.Gone}}<div class="ph-gone" role="status"><span><b>{{$.Photo.GoneText}}</b> {{$.Photo.GoneAfter}}</span><button class="button secondary" type="submit" name="picture" value="keep" formnovalidate><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 0 12"/></svg> {{t "contact.photo.keep"}}</button></div>
+        {{else}}<p class="st"><b>{{$.Photo.Title}}</b><small>{{$.Photo.Text}}</small></p>{{end}}</div>{{end}}
+      <div class="ph-pick">{{if not .Photo.Gone}}{{$d := ""}}{{if .Photo.Invalid}}{{$d = "err-photo hint-photo"}}{{else}}{{$d = "hint-photo"}}{{end}}
+        <label class="button secondary touch"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3.5l1.5-2.5h6L16.5 8H20v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>{{if .Photo.Other}}{{t "contact.photo.take.new"}}{{else}}{{t "contact.photo.take"}}{{end}}<input type="file" name="photo" accept="image/*" capture="environment" {{if .Photo.Invalid}}aria-invalid="true" {{end}}aria-describedby="{{$d}}"></label>
+        <label class="button secondary touch">{{template "ctGalleryIcon"}}{{if .Photo.Other}}{{t "contact.photo.gallery.other"}}{{else}}{{t "contact.photo.gallery"}}{{end}}<input type="file" name="photo" accept="image/*" {{if .Photo.Invalid}}aria-invalid="true" {{end}}aria-describedby="{{$d}}"></label>
+        <label class="button secondary mouse"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 19h14"/></svg>{{if .Photo.Other}}{{t "contact.photo.pick.other"}}{{else}}{{t "contact.photo.pick"}}{{end}}<input type="file" name="photo" accept="image/*" {{if .Photo.Invalid}}aria-invalid="true" {{end}}aria-describedby="{{$d}}"></label>
+        {{if .Photo.RemoveLabel}}<button class="button secondary rm" type="submit" name="picture" value="remove" formnovalidate><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>{{.Photo.RemoveLabel}}</button>{{end}}{{end}}</div>
+      {{template "ctErr" (dict "ID" "photo" "Text" .Photo.Err)}}
+      {{if not .Photo.Gone}}<p class="hint" id="hint-photo">{{t "contact.photo.hint"}}</p>{{end}}
+    </fieldset>
+    {{if not .IsPerson}}<fieldset id="rels" class="rels-card" data-of="{{.SayOf}}" data-whole="{{.SayWhole}}" data-and="{{.SayAnd}}">
+      <legend>{{t "contact.f.rels"}} <span class="tag hidden-tag">{{t "contact.f.optional"}}</span></legend>
+      <p class="hint">{{t "contact.f.rels.hint"}}</p>
+      <ul class="rel-lines" data-lines="rel">{{range .Rels}}{{template "ctRel" (dict "L" . "People" $.People)}}{{end}}</ul>
+      {{if .MoreRels}}<button class="button secondary sq add" type="submit" name="more" value="rel" formnovalidate><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>{{t "contact.f.rels.more"}}</button>{{end}}
+      <p class="hint">{{t "contact.f.rels.kids"}}</p>
+      {{template "ctErr" (dict "ID" "rels" "Text" .Errs.rels)}}
+      <datalist id="rel-words">{{range .RelWords}}<option value="{{.}}">{{end}}</datalist>
+      <template data-line="rel">{{template "ctRel" (dict "L" .RelTpl "People" .People)}}</template>
+    </fieldset>
+    {{end}}
     <fieldset id="numbers">
       <legend>{{t "contact.f.numbers"}}</legend>
       <p class="hint">{{t "contact.f.numbers.hint"}}</p>
@@ -63,12 +90,20 @@
       {{template "ctErr" (dict "ID" "note" "Text" $bad)}}
       <p class="hint" id="hint-note">{{t "contact.f.note.hint"}}</p></div>
     </fieldset>
-    <div class="savebar"><button class="button" type="submit">{{if .Editing}}{{t "people.save"}}{{else}}{{t "contact.new"}}{{end}}</button>{{if .Editing}}<span class="dirty" hidden>{{t "contact.dirty"}}</span>{{end}}</div>
+    <div class="savebar"><button class="button" type="submit">{{if .Editing}}{{t "people.save"}}{{else}}{{t "contact.new"}}{{end}}</button>{{if or .Editing .Dirty}}<span class="dirty"{{if not .Dirty}} hidden{{end}}>{{t "contact.dirty"}}</span>{{end}}</div>
   </form>
   <script src="/static/note.js" defer></script>
+  <script src="/static/photos.js" defer></script>
   <script src="/static/contact.js" defer></script>
 {{template "foot"}}
 {{define "ctErr"}}{{if .Text}}<p class="ferr" id="err-{{.ID}}" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{.Text}}</span></p>{{end}}{{end}}
+{{define "ctRel"}}{{$l := .L}}<li class="rel-line{{if $l.Blank}} blank{{end}}" id="{{$l.ID}}">
+        <div class="f{{if $l.Err}} invalid{{end}}"><label>{{t "contact.f.rels.word"}}<input name="{{$l.WordName}}" type="text" list="rel-words" maxlength="40" autocomplete="off" value="{{$l.Word}}"{{if $l.Err}} aria-invalid="true" aria-describedby="err-{{$l.ID}}"{{end}}></label></div>
+        {{if not $l.Blank}}<button class="button secondary sq rm" type="submit" name="remove" value="{{$l.ID}}" formnovalidate aria-label="{{$l.AriaRemove}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>{{t "contact.f.remove"}}</button>{{end}}
+        {{template "personChips" (dict "Root" (dict) "Name" $l.PersonName "WholeName" $l.WholeName "Legend" (t "contact.f.rels.who") "People" .People "Selected" $l.Selected "Whole" true)}}
+        <p class="rel-say"{{if not $l.Say}} hidden{{end}}>{{t "contact.rel.say"}} <b>{{$l.Say}}</b></p>
+        {{if $l.Err}}<p class="ferr" id="err-{{$l.ID}}" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{$l.Err}}</span></p>{{end}}
+      </li>{{end}}
 {{define "ctDay"}}<div class="f d"><label>{{t "contact.f.day"}}<input name="bday_day" type="number" inputmode="numeric" min="1" max="31" value="{{.F.Day}}"{{if .BdayErr}} aria-invalid="true"{{end}}></label></div>{{end}}
 {{define "ctMonth"}}<div class="f m"><label>{{t "contact.f.month"}}<select name="bday_month"{{if .BdayErr}} aria-invalid="true"{{end}}>{{range .Months}}<option value="{{.Value}}"{{if .Selected}} selected{{end}}>{{.Text}}</option>{{end}}</select></label></div>{{end}}
 {{define "ctLine"}}{{$l := .L}}<li class="line{{if $l.Blank}} blank{{end}}{{if or $l.Err $l.OwnErr}} invalid{{end}}" id="{{$l.ID}}">

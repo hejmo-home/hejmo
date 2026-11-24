@@ -1,6 +1,9 @@
 package contact_test
 
 import (
+	"bytes"
+	"encoding/base64"
+	"strings"
 	"testing"
 	"time"
 
@@ -95,5 +98,78 @@ func TestCleanDropsEmptyLinesAndKeepsTheTypedValue(t *testing.T) {
 	got := contact.CleanLines(in)
 	if len(got) != 2 || got[0].Value != "0171 3456 789" || got[1].Label != "Gartenhaus" {
 		t.Fatalf("CleanLines = %+v", got)
+	}
+}
+
+// Ticket 297: the initials that stand in for a missing photo.
+func TestInitialsAreTheFirstLettersOfTheFirstTwoWordsOfTheHejmoName(t *testing.T) {
+	t.Parallel()
+	for in, want := range map[string]string{
+		"Oma Gerda":                      "OG",
+		"Kita Sonnenschein":              "KS",
+		"Kinderarzt":                     "K",
+		"Anna (Mama von Lukas)":          "AM",
+		"Ärztlicher Bereitschaftsdienst": "ÄB",
+		"  frau   müller ":               "FM",
+		"Dr. Müller":                     "DM",
+		"- 112 Notruf":                   "N",
+		"(Notruf) 112 Giftnotruf":        "NG",
+		"öffentlich":                     "Ö",
+		"Charlotte-Sophie":               "C",
+		"":                               "",
+		"112":                            "",
+	} {
+		if got := contact.Initials(in); got != want {
+			t.Errorf("Initials(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+// Ticket 297, acceptance: the photo is ready for the phone in vCard 3.0
+// (base64) and 4.0 (data URI) form.
+func TestPhotoIsReadyForVCard3AsBase64AndVCard4AsDataURI(t *testing.T) {
+	t.Parallel()
+	jpg := make([]byte, 5000)
+	for i := range jpg {
+		jpg[i] = byte(i * 7)
+	}
+	jpg[0], jpg[1] = 0xff, 0xd8
+	unfold := func(p string) string { return strings.ReplaceAll(p, "\r\n ", "") }
+
+	v3 := contact.PhotoVCard3(jpg)
+	if !strings.HasPrefix(v3, "PHOTO;ENCODING=b;TYPE=JPEG:") {
+		t.Errorf("3.0 = %.60q", v3)
+	}
+	got, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(unfold(v3), "PHOTO;ENCODING=b;TYPE=JPEG:"))
+	if err != nil || !bytes.Equal(got, jpg) {
+		t.Errorf("3.0 does not carry the photo back: %v", err)
+	}
+	v4 := contact.PhotoVCard4(jpg)
+	if !strings.HasPrefix(v4, "PHOTO:data:image/jpeg;base64,") {
+		t.Errorf("4.0 = %.60q", v4)
+	}
+	got, err = base64.StdEncoding.DecodeString(strings.TrimPrefix(unfold(v4), "PHOTO:data:image/jpeg;base64,"))
+	if err != nil || !bytes.Equal(got, jpg) {
+		t.Errorf("4.0 does not carry the photo back: %v", err)
+	}
+	for _, v := range []string{v3, v4} {
+		lines := strings.Split(v, "\r\n")
+		if len(lines) < 10 {
+			t.Fatalf("a 5 KB photo is folded into %d lines", len(lines))
+		}
+		for i, l := range lines {
+			if len(l) > 75 {
+				t.Errorf("line %d is %d octets, the limit is 75", i, len(l))
+			}
+			if i > 0 && !strings.HasPrefix(l, " ") {
+				t.Errorf("line %d does not start with the folding space", i)
+			}
+		}
+		if strings.Contains(v, "\n") && !strings.Contains(v, "\r\n") || strings.HasSuffix(v, "\r\n") {
+			t.Error("lines are separated by CRLF and the property has no line end of its own")
+		}
+	}
+	if contact.PhotoVCard3(nil) != "" || contact.PhotoVCard4(nil) != "" {
+		t.Error("no photo, no PHOTO line")
 	}
 }

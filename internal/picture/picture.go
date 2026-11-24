@@ -35,6 +35,8 @@ const (
 	MaxSide = 512
 	// RecipeMaxSide is the longest side of a recipe picture (ticket 276).
 	RecipeMaxSide = 1600
+	// ContactMaxSide is the side of a contact photo, which is square (ticket 297).
+	ContactMaxSide = 512
 	// MaxPixels is the most pixels a picture may have before it is decoded; a
 	// small file can claim a gigantic image.
 	MaxPixels = 24_000_000
@@ -85,6 +87,19 @@ func ProcessContext(ctx context.Context, r io.Reader) (Result, error) {
 // caller; a value of zero or less means MaxSide. Everything else is the same:
 // the picture is re-encoded and carries no metadata.
 func ProcessMax(ctx context.Context, r io.Reader, maxSide int) (Result, error) {
+	return process(ctx, r, maxSide, false)
+}
+
+// ProcessSquare is ProcessMax for a picture that is shown as a square (a
+// contact photo, ticket 297): after it is turned upright it is cut to a
+// square, a landscape picture from the centre, a portrait picture with a
+// quarter of the excess taken from the top, so that heads stay whole. The
+// square is then scaled down to maxSide, never up.
+func ProcessSquare(ctx context.Context, r io.Reader, maxSide int) (Result, error) {
+	return process(ctx, r, maxSide, true)
+}
+
+func process(ctx context.Context, r io.Reader, maxSide int, square bool) (Result, error) {
 	if maxSide <= 0 {
 		maxSide = MaxSide
 	}
@@ -129,6 +144,9 @@ func ProcessMax(ctx context.Context, r io.Reader, maxSide int) (Result, error) {
 			res.Rotated = o >= 5
 		}
 	}
+	if square {
+		rgba = cropSquare(rgba)
+	}
 	rgba = scale(rgba, maxSide)
 	res.ToW, res.ToH = rgba.Bounds().Dx(), rgba.Bounds().Dy()
 
@@ -149,6 +167,25 @@ func looksLikeWebPage(data []byte) bool {
 		}
 	}
 	return false
+}
+
+// cropSquare cuts the largest square out of src: from the centre of a
+// landscape picture, from a quarter of the excess down in a portrait picture.
+func cropSquare(src *image.RGBA) *image.RGBA {
+	b := src.Bounds()
+	w, h := b.Dx(), b.Dy()
+	if w == h {
+		return src
+	}
+	x0, y0, side := 0, 0, min(w, h)
+	if w > h {
+		x0 = (w - h) / 2
+	} else {
+		y0 = (h - w) / 4
+	}
+	dst := image.NewRGBA(image.Rect(0, 0, side, side))
+	draw.Draw(dst, dst.Bounds(), src, image.Pt(b.Min.X+x0, b.Min.Y+y0), draw.Src)
+	return dst
 }
 
 func scale(src *image.RGBA, maxSide int) *image.RGBA {

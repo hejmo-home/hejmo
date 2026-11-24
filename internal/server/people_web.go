@@ -269,6 +269,12 @@ func (s *server) renderPerson(w http.ResponseWriter, r *http.Request, p principa
 	if row, ok := s.personContactRow(r, p, person.ID); ok { // the contact data of the person (ticket 296)
 		data["ContactRow"] = row
 	}
+	if section, err := s.personContacts(r, p, people, person); err != nil { // the contacts related to the person (ticket 298)
+		s.fail(w, "contacts of a person", err)
+		return
+	} else {
+		data["PersonContacts"] = section
+	}
 	if person.Role == store.RoleParent { // children get no account (ADR 0010)
 		row, err := s.signInRow(r, p, person)
 		if err != nil {

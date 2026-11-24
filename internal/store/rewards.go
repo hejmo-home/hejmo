@@ -174,6 +174,7 @@ func checkAudience(q rewardDB, householdID string, ids []string) error {
 	return nil
 }
 
+// setAudience replaces who a reward is meant for; goals of people no longer in it end.
 func setAudience(q rewardDB, rewardID string, ids []string) error {
 	if _, err := q.Exec(`DELETE FROM reward_people WHERE reward_id = ?`, rewardID); err != nil {
 		return err
@@ -183,7 +184,7 @@ func setAudience(q rewardDB, rewardID string, ids []string) error {
 			return err
 		}
 	}
-	return nil
+	return endGoalsOutsideAudience(q, rewardID)
 }
 
 func dedupe(ids []string) []string {

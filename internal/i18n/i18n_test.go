@@ -168,6 +168,8 @@ var wholeFamilyTexts = map[string]bool{
 	"hub.contacts.state":                       true, // "aus eurer Familie"
 	"rwd.child.wait":                           true, // "Wartet auf Mama oder Papa": the request waits, not an order to the child (preview 292)
 	"rwd.link.asked":                           true, // "Wartet auf Mama oder Papa": the request waits, not an order to the child (preview 292)
+	"contact.f.rels.hint":                      true, // "Für wen in eurer Familie": the people of the household (ticket 298)
+	"contact.f.rels.kids":                      true, // "legt ihr extra fest": the family sets what children see (ticket 298)
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

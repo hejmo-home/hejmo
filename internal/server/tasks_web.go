@@ -45,11 +45,23 @@ func (v taskView) withSubs(list []store.DaySubtask) taskView {
 
 // starCard is a person's star account on the tasks page.
 type starCard struct {
-	Name, Color string
-	Balance     int
-	Entries     []starEntryView
+	ID, Name, Color, Shape string
+	Slot                   int
+	Balance                int
+	Entries                []starEntryView
 	// Below says the balance is below zero and why (ticket 292).
 	Below string
+	// HasRewards: at least one reward is meant for the person, so the card has a goal line.
+	HasRewards bool
+	Goal       *starGoalLine // nil: no goal yet
+	Poss       string        // the person's name in the possessive
+}
+
+// starGoalLine is the savings goal of a star card (ticket 293).
+type starGoalLine struct {
+	Name, Symbol, Picture string
+	Have, Price, Left     int
+	Reached               bool
 }
 
 type starEntryView struct {
@@ -116,6 +128,18 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 		return
 	}
 	var cards []starCard
+	var goals map[string]store.Goal
+	var offered []store.Reward
+	if p.person.Role != store.RoleChild {
+		if goals, err = s.db.Goals(p.household.ID); err != nil {
+			s.fail(w, "savings goals", err)
+			return
+		}
+		if offered, err = s.db.Rewards(p.household.ID); err != nil {
+			s.fail(w, "rewards", err)
+			return
+		}
+	}
 	var groups []personTasks
 	choices := chipsOf(people)
 	child := p.person.Role == store.RoleChild
@@ -130,7 +154,24 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 				s.fail(w, "star log", err)
 				return
 			}
-			cards = append(cards, s.starCardOf(r, p, person, acc))
+			card := s.starCardOf(r, p, person, acc)
+			card.ID, card.Poss = person.ID, possessive(s.langOf(r), person.Name)
+			for _, c := range choices {
+				if c.ID == person.ID {
+					card.Slot, card.Shape = c.Slot, c.Shape
+				}
+			}
+			for _, rw := range offered {
+				if !rw.Archived() && rw.MeantFor(person.ID) {
+					card.HasRewards = true
+				}
+			}
+			if g := goals[person.ID]; g.Active() {
+				line := &starGoalLine{Name: g.Reward.Name, Symbol: g.Reward.Symbol, Picture: pictureOf(g.Reward), Have: acc.Balance, Price: g.Reward.Price}
+				line.Reached, line.Left = acc.Balance >= line.Price, max(0, line.Price-acc.Balance)
+				card.Goal = line
+			}
+			cards = append(cards, card)
 		}
 		g := personTasks{ID: person.ID, Name: person.Name, Color: person.Color}
 		for _, rt := range routines {
@@ -171,6 +212,8 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 	data := map[string]any{
 		"Person": p.person, "Groups": groups, "StarCards": cards, "StarForm": starForm, "StarError": starForm["Error"], "People": choices, "Weekdays": taskWeekdays, "Repeats": []string{"once", "daily", "weekly"}, "Form": form, "Child": child, "MaxStars": task.MaxStars,
 		"SyncStale": s.syncStale(p.household.ID), "Error": form["Error"], "ErrorField": form["ErrorField"],
+		// The success line after saving a goal sits in the stars section (ticket 293).
+		"SuccessInline":     strings.HasPrefix(s.pendingFlashKey(r), "flash.goal_"),
 		"SuggestedTemplate": s.i18n.T(s.langOf(r), "routine.tpl."+task.Shipped[0].ID),
 	}
 	if child {
@@ -195,9 +238,21 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 		}
 		data["RewardLink"] = offered
 		lang := s.langOf(r)
-		data["RewardSub"] = s.i18n.T(lang, "rwd.link.sub.none")
-		if sums[p.person.ID].Balance > 0 {
-			data["RewardSub"] = s.i18n.Format(lang, i18n.Msg("rwd.link.sub", "stars", s.starsWords(lang, sums[p.person.ID].Balance)))
+		balance := sums[p.person.ID].Balance
+		data["RewardSub"] = template.HTML(html.EscapeString(s.i18n.T(lang, "rwd.link.sub.none")))
+		if balance > 0 {
+			data["RewardSub"] = formatHTML(s.i18n, lang, "rwd.link.sub", "stars", s.starsWords(lang, balance))
+		}
+		if goal, err := s.db.Goal(p.household.ID, p.person.ID); err != nil {
+			s.fail(w, "savings goal", err)
+			return
+		} else if goal.Active() {
+			// Naming the goal in words (ticket 293).
+			if balance >= goal.Reward.Price {
+				data["RewardSub"] = formatHTML(s.i18n, lang, "rwd.link.goal.enough", "stars", s.starsWords(lang, balance), "name", goal.Reward.Name)
+			} else {
+				data["RewardSub"] = formatHTML(s.i18n, lang, "rwd.link.goal.missing", "stars", s.starsWords(lang, balance), "name", goal.Reward.Name, "left", s.starsWords(lang, goal.Reward.Price-balance))
+			}
 		}
 		data["Day"] = today
 		asked, err := s.askedLines(p, lang)

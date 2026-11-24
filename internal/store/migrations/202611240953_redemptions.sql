@@ -59,3 +59,19 @@ CREATE TABLE task_star_debt (
     stars   INTEGER NOT NULL CHECK (stars > 0),
     PRIMARY KEY (task_id, day)
 );
+
+-- Rebuilding reward_redemptions dropped the triggers other tickets keep on it:
+-- a confirmed redemption ends the person's savings goal on that reward (ticket 293).
+CREATE TRIGGER savings_goals_redeemed_insert AFTER INSERT ON reward_redemptions
+WHEN NEW.status = 'confirmed' AND NEW.person_id IS NOT NULL AND NEW.reward_id IS NOT NULL
+BEGIN
+    UPDATE savings_goals SET ended_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now'), ended_reason = 'redeemed', ended_name = COALESCE((SELECT name FROM rewards WHERE id = NEW.reward_id), '')
+    WHERE person_id = NEW.person_id AND reward_id = NEW.reward_id AND ended_at IS NULL;
+END;
+
+CREATE TRIGGER savings_goals_redeemed_update AFTER UPDATE OF status ON reward_redemptions
+WHEN NEW.status = 'confirmed' AND NEW.person_id IS NOT NULL AND NEW.reward_id IS NOT NULL
+BEGIN
+    UPDATE savings_goals SET ended_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now'), ended_reason = 'redeemed', ended_name = COALESCE((SELECT name FROM rewards WHERE id = NEW.reward_id), '')
+    WHERE person_id = NEW.person_id AND reward_id = NEW.reward_id AND ended_at IS NULL;
+END;

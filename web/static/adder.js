@@ -46,7 +46,16 @@
     if (c) c.value = "1";
   }
 
-  var api = { step: step, parse: parse, stepUp: stepUp, stepDown: stepDown, show: show, convert: convert, markConverted: markConverted };
+  // varietyState says what the closed "Sorte:" row shows (ticket 277): the chip
+  // chosen ("" none, a variety, or "new" with the text typed). A variety is
+  // trimmed and its inner spaces collapsed, as the box does.
+  function varietyState(pick, text) {
+    text = String(text == null ? "" : text).replace(/\s+/g, " ").replace(/^ | $/g, "");
+    if (pick === "new") return text ? { kind: "chosen", text: text } : { kind: "empty", text: "" };
+    return pick ? { kind: "chosen", text: String(pick) } : { kind: "none", text: "" };
+  }
+
+  var api = { step: step, parse: parse, stepUp: stepUp, stepDown: stepDown, show: show, convert: convert, markConverted: markConverted, varietyState: varietyState };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (typeof document === "undefined" || !document.addEventListener) return;
 
@@ -100,8 +109,39 @@
     if (input) input.setAttribute("aria-expanded", form.querySelector(".sugg") ? "true" : "false");
   }
 
+  // ---- the "Sorte:" row
+
+  // currentVariety reads the chip chosen and the text typed of a card or an editor.
+  function currentVariety(root) {
+    var pick = root.querySelector('input[name="variety_pick"]:checked, input[name="qvariety_pick"]:checked');
+    var text = root.querySelector('input[name="variety"], input[name="qvariety"]');
+    return { pick: pick ? pick.value : null, text: text ? text.value : "" };
+  }
+
+  // varietyQuery is the Sorte row as part of a question to the box.
+  function varietyQuery(root) {
+    var v = currentVariety(root);
+    return v.pick === null ? "" : "&variety_pick=" + encodeURIComponent(v.pick) + "&variety=" + encodeURIComponent(v.text);
+  }
+
+  // syncVariety keeps the closed row in step with the chip and the field.
+  function syncVariety(root) {
+    var d = root.querySelector("details.variety-more");
+    var state = d && d.querySelector(".v-state");
+    if (!state) return;
+    var v = currentVariety(root), st = varietyState(v.pick === null ? "" : v.pick, v.text);
+    state.className = "v-state" + (st.kind === "chosen" ? " chosen" : "");
+    state.textContent = st.kind === "chosen" ? st.text : d.getAttribute(st.kind === "empty" ? "data-empty" : "data-none") || "";
+  }
+
+  // dropTyped removes the variety a tap on a suggestion put into the form.
+  function dropTyped(form) {
+    var hs = form.querySelectorAll("input.js-variety");
+    for (var i = 0; i < hs.length; i++) hs[i].parentNode.removeChild(hs[i]);
+  }
+
   function putQuantity(form, html) {
-    var old = form.querySelectorAll(".picked, fieldset.qty");
+    var old = form.querySelectorAll(".picked, .variety-more, fieldset.qty");
     var anchor = form.querySelector(".adder-go");
     for (var i = 0; i < old.length; i++) old[i].parentNode.removeChild(old[i]);
     var holder = parts(html), nodes = holder.children, list = [];
@@ -128,11 +168,11 @@
     ask(base + "/suggest?q=" + encodeURIComponent(q) + "&mode=" + mode(form), function (html) { putSuggestions(form, html); });
   }
 
-  function loadQuantity(form, article) {
+  function loadQuantity(form, article, variety) {
     var base = form.getAttribute("data-adder");
     var amount = form.querySelector('input[name="amount"]');
     var u = form.querySelector('input[name="unit"]:checked');
-    var url = base + "/quantity?article=" + encodeURIComponent(article || "") + "&text=" + encodeURIComponent(form.querySelector("#text").value) +
+    var url = base + "/quantity?article=" + encodeURIComponent(article || "") + (variety ? "&variety=" + encodeURIComponent(variety) : "") + "&text=" + encodeURIComponent(form.querySelector("#text").value) +
       "&amount=" + encodeURIComponent(amount && amount.value ? amount.value : "1") + (u && !article ? "&unit=" + encodeURIComponent(u.value) : "");
     ask(url, function (html) { if (html) putQuantity(form, html); });
   }
@@ -149,7 +189,7 @@
       var a = form.querySelector('input[name="amount"]');
       var u = form.querySelector('input[name="qunit"]:checked');
       var none = form.getAttribute("data-mode") === "none" ? "1" : "";
-      ask(base + "/quantity?entry=" + encodeURIComponent(entry) + "&amount=" + encodeURIComponent(a ? a.value : "") + "&unit=" + encodeURIComponent(u ? u.value : "") + (none ? "&none=1" : ""), function (html) { holder.innerHTML = html; });
+      ask(base + "/quantity?entry=" + encodeURIComponent(entry) + "&amount=" + encodeURIComponent(a ? a.value : "") + "&unit=" + encodeURIComponent(u ? u.value : "") + (none ? "&none=1" : "") + varietyQuery(form), function (html) { holder.innerHTML = html; });
       return;
     }
     if (mode(form) !== "qty") return;
@@ -157,7 +197,7 @@
     var amount = form.querySelector('input[name="amount"]');
     var unit = form.querySelector('input[name="unit"]:checked');
     ask(base + "/quantity?part=merge&article=" + encodeURIComponent(art) + "&text=" + encodeURIComponent(form.querySelector("#text").value) +
-      "&amount=" + encodeURIComponent(amount ? amount.value : "1") + "&unit=" + encodeURIComponent(unit ? unit.value : ""), function (html) { holder.innerHTML = html; });
+      "&amount=" + encodeURIComponent(amount ? amount.value : "1") + "&unit=" + encodeURIComponent(unit ? unit.value : "") + varietyQuery(form), function (html) { holder.innerHTML = html; });
   }
 
   function syncMinus(root) {
@@ -174,6 +214,7 @@
   function choose(form, li) {
     var input = form.querySelector("#text");
     var hidden = form.querySelector('input[name="article"]');
+    dropTyped(form);
     if (li.hasAttribute("data-free")) {
       hidden.value = "";
       putSuggestions(form, "");
@@ -181,13 +222,20 @@
       else form.requestSubmit ? form.requestSubmit() : form.submit();
       return;
     }
-    var name = li.querySelector("b").textContent;
-    input.value = name;
+    var variety = li.getAttribute("data-variety") || "";
+    input.value = li.getAttribute("data-name") || li.querySelector("b").textContent;
     hidden.value = li.getAttribute("data-article");
     putSuggestions(form, "");
     if (mode(form) === "qty") {
-      loadQuantity(form, hidden.value);
+      loadQuantity(form, hidden.value, variety);
     } else {
+      if (variety) { // a row with a variety: the card has no Sorte row in this mode, so the variety goes along as hidden fields
+        [["variety_pick", "new"], ["variety", variety]].forEach(function (f) {
+          var h = document.createElement("input");
+          h.type = "hidden"; h.name = f[0]; h.value = f[1]; h.className = "js-variety";
+          form.appendChild(h);
+        });
+      }
       form.requestSubmit ? form.requestSubmit() : form.submit();
     }
   }
@@ -211,18 +259,29 @@
     if (form && t.id === "text") {
       form.querySelector('input[name="article"]').value = "";
       dropResult(form);
-      var picked = form.querySelector(".picked");
-      if (picked) { picked.parentNode.removeChild(picked); }
+      var picked = form.querySelector(".picked, .variety-more");
+      while (picked) { picked.parentNode.removeChild(picked); picked = form.querySelector(".picked, .variety-more"); }
+      dropTyped(form);
       later("sugg", function () { loadSuggestions(form); }, 150);
       return;
     }
     if (form && t.name === "amount") { syncMinus(form); later("merge", function () { refreshSentence(form); }, 250); return; }
+    if (t.name === "variety" || t.name === "qvariety") {
+      var vroot = form || closest(t, "form.qty-edit");
+      if (vroot) { syncVariety(vroot); later("merge-v", function () { refreshSentence(vroot); }, 250); }
+      return;
+    }
     var ed = closest(t, "form.qty-edit");
     if (ed && t.name === "amount") { syncMinus(ed); later("merge-e", function () { refreshSentence(ed); }, 250); }
   });
 
   document.addEventListener("change", function (e) {
     var t = e.target, form = closest(t, "form.adder"), ed = closest(t, "form.qty-edit");
+    if (t.name === "variety_pick" || t.name === "qvariety_pick") {
+      var root = form || ed;
+      if (root) { syncVariety(root); refreshSentence(root); }
+      return;
+    }
     if (form && t.name === "mode") { setMode(form, t.value, true); if (t.value === "qty") refreshSentence(form); loadSuggestions(form); return; }
     if (form && t.name === "unit") { syncMinus(form); refreshSentence(form); return; }
     if (ed && t.name === "qmode") { ed.setAttribute("data-mode", t.value); refreshSentence(ed); return; }
@@ -262,8 +321,9 @@
     if (change) {
       var form = closest(change, "form.adder");
       form.querySelector('input[name="article"]').value = "";
-      var p = form.querySelector(".picked");
-      if (p) p.parentNode.removeChild(p);
+      var p = form.querySelector(".picked, .variety-more");
+      while (p) { p.parentNode.removeChild(p); p = form.querySelector(".picked, .variety-more"); }
+      dropTyped(form);
       var field = form.querySelector("#text");
       field.focus();
       loadSuggestions(form);

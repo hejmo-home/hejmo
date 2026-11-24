@@ -262,20 +262,37 @@ func (s *server) handleLibrary(w http.ResponseWriter, r *http.Request) {
 // listLink is a list an article currently stands on.
 type listLink struct{ ID, Name string }
 
-// listsWith returns the lists that have an entry of this text.
-func (s *server) listsWith(p principal, name string, includeDone bool) ([]listLink, error) {
+// listsWith returns the lists that have an entry of the article: one stored
+// with it, or a free-text one that resolves to it (exact name first, own
+// articles before shipped ones), so a name of one article never claims
+// another's ("Beeren" is not "Beer", "Ei" not "Eis").
+func (s *server) listsWith(p principal, st libState, articleID string, includeDone bool) ([]listLink, error) {
 	lists, err := s.db.Lists(p.household.ID)
 	if err != nil {
 		return nil, err
 	}
-	want := library.Fold(name)
+	var all []library.Article
+	for _, it := range st.items() {
+		if !it.handHidden { // a name typed as text never finds an article hidden by hand (as when adding)
+			all = append(all, it.Article)
+		}
+	}
 	var out []listLink
 	for _, l := range lists {
 		es, err := s.db.Entries(p.household.ID, l.ID)
 		if err != nil {
 			return nil, err
 		}
-		if slices.ContainsFunc(es, func(e list.Entry) bool { return (includeDone || !e.Done) && library.Fold(e.Text) == want }) {
+		if slices.ContainsFunc(es, func(e list.Entry) bool {
+			if !includeDone && e.Done {
+				return false
+			}
+			if e.ArticleID != "" {
+				return e.ArticleID == articleID
+			}
+			a, ok := library.Resolve(e.Text, all)
+			return ok && a.ID == articleID
+		}) {
 			out = append(out, listLink{l.ID, l.Name})
 		}
 	}
@@ -388,7 +405,7 @@ func (s *server) renderShipped(w http.ResponseWriter, r *http.Request, p princip
 	data["HideOn"] = s.i18n.Format(lang, i18n.Msg("art.hide.on", "name", name))
 	data["HideOff"] = off
 	data["HideAria"] = s.i18n.Format(lang, i18n.Msg("art.hide.aria", "name", name))
-	lists, err := s.listsWith(p, name, false)
+	lists, err := s.listsWith(p, st, it.ID, false)
 	if err != nil {
 		s.fail(w, "lists", err)
 		return

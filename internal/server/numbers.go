@@ -54,27 +54,19 @@ type kidsPage struct {
 	sections []knSection
 }
 
-// kidsPageFor sorts the contacts for the person who looks. A child never sees their own contact; parents see
-// everyone, the children included. photoBase is where the photos are served ("" for the address of the address book).
-func (s *server) kidsPageFor(w http.ResponseWriter, r *http.Request, p principal, photoBase string, link bool) (kidsPage, bool) {
-	e, ok := s.contactEnv(w, r, p)
-	if !ok {
-		return kidsPage{}, false
-	}
-	all, err := s.db.Contacts(p.household.ID)
-	if err != nil {
-		s.fail(w, "contacts", err)
-		return kidsPage{}, false
-	}
+// kidSectionIDs is the one place that sorts the contacts into the sections for the person who looks, for the web
+// page and for REST alike: the group keys, the person's own contact, the candidates and the collation of the language.
+// byID holds every contact for the lookup of the ids.
+func kidSectionIDs(all []store.Contact, groups []store.ContactGroup, who store.Person, lang string) (map[string]store.Contact, contact.KidSectionIDs) {
 	groupKey := map[string]string{}
-	for _, g := range e.groups {
+	for _, g := range groups {
 		if g.ShippedKey != "" {
 			groupKey[g.ID] = g.ShippedKey
 		}
 	}
 	own := ""
-	if p.person.Role == store.RoleChild {
-		own = p.person.ID
+	if who.Role == store.RoleChild {
+		own = who.ID
 	}
 	var cands []contact.KidCandidate
 	byID := map[string]store.Contact{}
@@ -87,8 +79,23 @@ func (s *server) kidsPageFor(w http.ResponseWriter, r *http.Request, p principal
 		}
 		cands = append(cands, k)
 	}
-	coll := collate.New(textlang.Make(e.lang))
-	ids := contact.KidSections(cands, own, coll.CompareString)
+	coll := collate.New(textlang.Make(lang))
+	return byID, contact.KidSections(cands, own, coll.CompareString)
+}
+
+// kidsPageFor sorts the contacts for the person who looks. A child never sees their own contact; parents see
+// everyone, the children included. photoBase is where the photos are served ("" for the address of the address book).
+func (s *server) kidsPageFor(w http.ResponseWriter, r *http.Request, p principal, photoBase string, link bool) (kidsPage, bool) {
+	e, ok := s.contactEnv(w, r, p)
+	if !ok {
+		return kidsPage{}, false
+	}
+	all, err := s.db.Contacts(p.household.ID)
+	if err != nil {
+		s.fail(w, "contacts", err)
+		return kidsPage{}, false
+	}
+	byID, ids := kidSectionIDs(all, e.groups, p.person, e.lang)
 	kp := kidsPage{e: e, all: all, ids: ids}
 	for _, sec := range []struct {
 		key, id string
@@ -169,12 +176,14 @@ func (s *server) handleNumbersPhoto(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	s.serveKidsPhoto(w, r, p, func(msg string) { http.NotFound(w, r) })
+	s.serveKidsPhoto(w, r, p, false, func(msg string) { http.NotFound(w, r) })
 }
 
-func (s *server) serveKidsPhoto(w http.ResponseWriter, r *http.Request, p principal, notFound func(string)) {
+// serveKidsPhoto serves the photo of a contact on the children's page. Only a request that may read the address book
+// (allContacts) gets the photo of a contact that is not on the page; the others get what the children get.
+func (s *server) serveKidsPhoto(w http.ResponseWriter, r *http.Request, p principal, allContacts bool, notFound func(string)) {
 	c, err := s.db.Contact(p.household.ID, r.PathValue("id"))
-	if errors.Is(err, store.ErrNotFound) || (err == nil && p.person.Role != store.RoleParent && !kidsPhotoVisible(c)) {
+	if errors.Is(err, store.ErrNotFound) || (err == nil && !allContacts && !kidsPhotoVisible(c)) {
 		notFound("not found")
 		return
 	} else if err != nil {
@@ -285,27 +294,7 @@ func (s *server) apiNumbers(w http.ResponseWriter, r *http.Request, p principal)
 		s.fail(w, "contact groups", err)
 		return
 	}
-	groupKey := map[string]string{}
-	for _, g := range groups {
-		groupKey[g.ID] = g.ShippedKey
-	}
-	own := ""
-	if p.person.Role == store.RoleChild {
-		own = p.person.ID
-	}
-	var cands []contact.KidCandidate
-	byID := map[string]store.Contact{}
-	for _, c := range all {
-		byID[c.ID] = c
-		k := contact.KidCandidate{ID: c.ID, Name: c.HejmoName, Person: c.IsPerson(), Visible: c.ForChildren, Numbers: len(c.Numbers)}
-		for _, g := range c.GroupIDs {
-			k.Notfall = k.Notfall || groupKey[g] == "notfall"
-			k.Familie = k.Familie || groupKey[g] == store.FamilyGroup
-		}
-		cands = append(cands, k)
-	}
-	coll := collate.New(textlang.Make(s.langOf(r)))
-	ids := contact.KidSections(cands, own, coll.CompareString)
+	byID, ids := kidSectionIDs(all, groups, p.person, s.langOf(r))
 	out := struct {
 		Sections []numberSectionJSON `json:"sections"`
 	}{Sections: []numberSectionJSON{}}
@@ -331,5 +320,5 @@ func (s *server) apiNumbers(w http.ResponseWriter, r *http.Request, p principal)
 }
 
 func (s *server) apiNumbersPhoto(w http.ResponseWriter, r *http.Request, p principal) {
-	s.serveKidsPhoto(w, r, p, func(msg string) { writeError(w, http.StatusNotFound, msg) })
+	s.serveKidsPhoto(w, r, p, p.may(auth.Perm("contacts", auth.Read)), func(msg string) { writeError(w, http.StatusNotFound, msg) })
 }

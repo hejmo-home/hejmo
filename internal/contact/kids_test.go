@@ -23,7 +23,7 @@ func TestKidSectionsAssignEachContactOnceInTheFirstSectionThatFits(t *testing.T)
 	}
 	got := contact.KidSections(in, "", byName)
 	if want := []string{"papa", "notruf", "gift"}; !slices.Equal(got.Emergency, want) {
-		t.Errorf("Emergency = %v, want %v (persons first, then creation order)", got.Emergency, want)
+		t.Errorf("Emergency = %v, want %v (the order of the input is kept)", got.Emergency, want)
 	}
 	if want := []string{"mama", "oma"}; !slices.Equal(got.Family, want) {
 		t.Errorf("Family = %v, want %v", got.Family, want)

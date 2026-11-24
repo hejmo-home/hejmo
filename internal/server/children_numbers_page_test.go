@@ -86,7 +86,7 @@ func TestChildrenPageHasThreeSectionsInOrderEachContactOnceAndNeverTheChildsOwn(
 		t.Fatalf("GET /numbers = %d\n%s", r.status, r.body)
 	}
 	page := r.body
-	ctHas(t, "page", page, "<h1>Wichtige Nummern</h1>", `<p class="lead">Tippe auf einen Knopf, dann ruft dein Handy an.</p>`,
+	ctHas(t, "page", page, "<h1>Wichtige Nummern</h1>", `<p class="lead">Tippe auf einen Knopf, dann ruft dein Telefon an.</p>`,
 		`<h2 id="s-sos">`, "Im Notfall</h2>", `<h2 id="s-fam">`, "Familie</h2>", `<h2 id="s-other">`, "Weitere Nummern</h2>")
 	order := []string{"Im Notfall</h2>", "<span>Notruf</span>", "<span>Giftnotruf München</span>", "Familie</h2>",
 		">Mama</span>", ">Sebastian</span>", "<span>Oma Gerda</span>", "<span>Opa Heinz</span>", "Weitere Nummern</h2>",
@@ -287,4 +287,41 @@ func TestParentsSeeTheChildrensPageWithNamesToContactsAndEveryHiddenContactByNam
 	empty := e.page("/contacts/for-children", "de").body
 	ctHas(t, "empty", empty, "Die Kinder sehen noch keine Nummer.", "schalte „Bei den Kindern zeigen“ ein", `<div class="kn-off"><h2>Nicht für Kinder sichtbar</h2>`, ">Kinderarzt</a>", ">Mama</a>")
 	ctHasNot(t, "empty", empty, "kn-sec")
+}
+
+// Acceptance (#301): a relation alone does not make a contact visible. "Freundin von Mia" has a number and a
+// relation to Mia, but the switch is off, so Mia's device sees nothing of her.
+func TestARelationToAChildAloneDoesNotMakeAContactVisibleToTheChildren(t *testing.T) {
+	t.Parallel()
+	k := newNumbersBox(t)
+	mia := k.personID(t, "Mia")
+	f := withRels(contactForm("Lenas Freundin", "", [][3]string{{"cell", "", "0151 4040 5050"}}, nil), relLine{word: "Freundin", people: []string{mia}})
+	id := k.add(t, f)
+	_, got, _ := k.api.call(http.MethodGet, "/contacts/"+id, nil)
+	if rels, _ := got["relations"].([]any); len(rels) != 1 || got["for_children"] != false {
+		t.Fatalf("the contact has relations %v and for_children %v, want one relation and false", got["relations"], got["for_children"])
+	}
+	scr, child := k.device(t, "Mia", uaIPhone)
+	if page := scr.get("/numbers", "").body; strings.Contains(page, "Lenas Freundin") || strings.Contains(page, "0151 4040 5050") {
+		t.Errorf("the page shows the contact because of its relation")
+	}
+	if _, list, _ := child.call(http.MethodGet, "/numbers", nil); strings.Contains(sectionNames(list), "Lenas Freundin") {
+		t.Errorf("GET /api/numbers lists the contact: %s", sectionNames(list))
+	}
+}
+
+// A token with only the scope numbers reads what the children read, photos included: not the photo of a hidden contact.
+func TestANumbersTokenGetsNoPhotoOfAHiddenContactButAContactsTokenDoes(t *testing.T) {
+	t.Parallel()
+	k := newNumbersBox(t)
+	hidden := k.addFor(t, "Versteckt", false, [][3]string{{"cell", "", "0151 1"}})
+	if r := k.photoPost("/contacts/"+hidden+"/edit", formWith("Versteckt", map[string][]string{"number": {"0151 111"}, "number_label": {"cell"}, "number_own": {""}}), "x.jpg", testJPEG(t, 300, 300)); r.status != http.StatusSeeOther {
+		t.Fatalf("photo = %d", r.status)
+	}
+	if _, status, _ := k.api.withToken(k.api.newToken("numbers")).callRaw(http.MethodGet, "/numbers/"+hidden+"/photo", nil); status != http.StatusNotFound {
+		t.Errorf("numbers token, hidden contact's photo = %d, want 404", status)
+	}
+	if _, status, _ := k.api.withToken(k.api.newToken("read")).callRaw(http.MethodGet, "/numbers/"+hidden+"/photo", nil); status != http.StatusOK {
+		t.Errorf("read token, hidden contact's photo = %d, want 200", status)
+	}
 }

@@ -59,7 +59,7 @@ var crumbTrails = map[string][]crumb{
 	"session.html": {crumbSettings, crumbSessions},
 
 	"pause.html":   {crumbTasks},
-	"recipes.html": {crumbMeals}, "recipe.html": {crumbMeals, crumbRecipes},
+	"recipes.html": {crumbMeals}, "recipe.html": {crumbMeals, crumbRecipes}, "recipe_gone.html": {crumbMeals, crumbRecipes},
 	"meal_template.html":    {crumbMeals, crumbMealTemplates},
 	"routine_template.html": {crumbTasks, crumbRoutineTemplates},
 	"reward_form.html":      {crumbTasks, crumbRewards}, "reward.html": {crumbTasks, crumbRewards}, "reward_goal.html": {crumbTasks, crumbRewards},

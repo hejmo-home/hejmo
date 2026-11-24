@@ -211,7 +211,7 @@ func (s *server) handleRecipePage(w http.ResponseWriter, r *http.Request) {
 		"PortionsText": strconv.Itoa(rec.Portions), "IngsFor": c.t("recipes.ings.for.other", "n", strconv.Itoa(rec.Portions)),
 		"Tags": rec.Tags, "Tips": rec.Tips, "Source": rec.Source, "SourceLink": recipe.SourceLink(rec.Source),
 		"Steps": rec.Steps, "Warns": c.warnLines(c.warnings(rec.Recipe)), "HasWarn": len(c.warnings(rec.Recipe)) > 0,
-		"FreeText": s.freeText(c.st), "EditHref": recipesPath + "/" + rec.ID + "/edit",
+		"FreeText": s.freeText(c.st), "EditHref": recipesPath + "/" + rec.ID + "/edit", "CookHref": recipesPath + "/" + rec.ID + "/cook",
 	}
 	if rec.Portions == 1 {
 		data["IngsFor"] = c.t("recipes.ings.for.one")

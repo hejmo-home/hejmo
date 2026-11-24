@@ -429,6 +429,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /meals/recipes/suggest", s.handleRecipeSuggest)
 	mux.HandleFunc("POST /meals/recipes", s.handleRecipeCreate)
 	mux.HandleFunc("GET /meals/recipes/{id}", s.handleRecipePage)
+	mux.HandleFunc("GET /meals/recipes/{id}/cook", s.handleRecipeCook)
 	mux.HandleFunc("GET /meals/recipes/{id}/edit", s.handleRecipeEdit)
 	mux.HandleFunc("POST /meals/recipes/{id}", s.handleRecipeSave)
 	mux.HandleFunc("POST /meals/recipes/{id}/delete", s.handleRecipeDelete)

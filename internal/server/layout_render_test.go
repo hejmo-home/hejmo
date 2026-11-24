@@ -535,6 +535,7 @@ var notRendered = map[string]string{
 	"/personal-devices/join/{code}": "one-time pairing link of a personal device",
 	"/display/saver/photos":         "JSON",
 	"/display/photo/{id}":           "image",
+	"/numbers/{id}/photo":           "the photo of a contact on the children's page, an image",
 
 	"/articles/{id}/picture":                  "an image",
 	"/tasks/rewards/{id}/picture":             "the photo of a reward, an image",
@@ -597,6 +598,10 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	add(kid, "/lists")
 	add(kid, "/lists/"+f.lists[0])
 	add(kid, "/lists/"+f.lists[1])
+	add(kid, "/numbers") // the children's important numbers (ticket 301): buttons on a phone ...
+	tablet := pairedPersonalDeviceAs(t, f.box, f.people["Anna-Lena"], "Tablet von Anna-Lena", uaIPad)
+	add(siteOf("child tablet", f.box, tablet.client), "/numbers") // ... and the numbers as text on a tablet
+	add(parent, "/contacts/for-children")
 	add(parent, "/lists/"+f.lists[0]+"?qty="+f.longVariety) // the editor with the Sorte row and the long variety as its pill
 	// The display: the family view and the personal views of two people.
 	display := siteOf("display", f.box, f.display.client)
@@ -1393,8 +1398,11 @@ func (f *layoutFixture) addContacts(t *testing.T) {
 			BdayDay: 14, BdayMonth: 3, Note: long, GroupIDs: []string{f.contactGroups[0], f.contactGroups[3]},
 			Numbers: []contact.Line{{Kind: contact.Cell, Value: "+49 (0) 171 3456 789 12 34"}, {Kind: contact.Home, Value: "08031 87 65 43"}, {Kind: contact.Custom, Label: "Gartenhaus im Urlaub", Value: "0160 111 2223"}, {Kind: contact.Work, Value: "089 4455 6677-12"}},
 			Emails:  []contact.Line{{Kind: contact.Home, Value: "gerda.mueller-schulze@gartenfreunde-am-erlenbach-rosenheim.example"}, {Kind: contact.Custom, Label: "Gartenfreundeverein", Value: "gerda@example.de"}}},
-		{HejmoName: "Kinderarztpraxis Yılmaz-Hoffmann", FullName: "Kinderarztpraxis Dr. Elif Yılmaz-Hoffmann und Kollegen", Numbers: []contact.Line{{Kind: contact.Work, Value: "089 1234 5670"}}, BdayDay: 2, BdayMonth: 9, BdayYear: 1950, GroupIDs: []string{f.contactGroups[2]}},
-		{HejmoName: "Ärztlicher Bereitschaftsdienst", GroupIDs: []string{f.contactGroups[2], f.contactGroups[3]}, NewGroup: "Fußball-Eltern der U11 am Erlenweg"},
+		{HejmoName: "Kinderarztpraxis Yılmaz-Hoffmann", ForChildren: true, FullName: "Kinderarztpraxis Dr. Elif Yılmaz-Hoffmann und Kollegen", Numbers: []contact.Line{{Kind: contact.Work, Value: "089 1234 5670"}}, BdayDay: 2, BdayMonth: 9, BdayYear: 1950, GroupIDs: []string{f.contactGroups[2]}},
+		// On the children's page (ticket 301): a long name, a photo, a long own kind and the longest numbers that fit a button at 375 px.
+		{HejmoName: "Oma Käthe und Opa Heinrich am Waldrand", ForChildren: true, PhotoChange: store.SetPicture, Photo: &store.ContactPhoto{JPEG: testJPEG(t, 512, 512)}, GroupIDs: []string{f.contactGroups[0]},
+			Numbers: []contact.Line{{Kind: contact.Cell, Value: "+49 (0) 171 3456 789"}, {Kind: contact.Custom, Label: "Gartenhaus im Urlaub am See", Value: "08031 87 65 43"}}},
+		{HejmoName: "Ärztlicher Bereitschaftsdienst", ForChildren: true, Numbers: []contact.Line{{Kind: contact.Other, Value: "116 117"}}, GroupIDs: []string{f.contactGroups[2], f.contactGroups[3]}, NewGroup: "Fußball-Eltern der U11 am Erlenweg"},
 	} {
 		c, err := db.CreateContact(h, by, in)
 		if err != nil {
@@ -1406,7 +1414,7 @@ func (f *layoutFixture) addContacts(t *testing.T) {
 	}
 	// The people have contact data too.
 	for i, id := range f.ids[:3] {
-		if _, err := db.UpdateContact(h, id, by, store.ContactInput{FullName: layoutNames[i] + " Maier-Schmidt-Wöllenstein", Numbers: []contact.Line{{Kind: contact.Cell, Value: "0176 2345 6789"}}, BdayDay: 21, BdayMonth: 6, BdayYear: 2018}); err != nil {
+		if _, err := db.UpdateContact(h, id, by, store.ContactInput{ForChildren: true, FullName: layoutNames[i] + " Maier-Schmidt-Wöllenstein", Numbers: []contact.Line{{Kind: contact.Cell, Value: "0176 2345 6789"}}, BdayDay: 21, BdayMonth: 6, BdayYear: 2018}); err != nil {
 			t.Fatal(err)
 		}
 	}

@@ -317,3 +317,31 @@ func TestMinutesInWords(t *testing.T) {
 		}
 	}
 }
+
+// Ticket 286 (ADR 0021): quantities scale with the portions and are rounded to
+// one decimal, never up to whole numbers.
+func TestScaledQuantitiesHaveOneDecimalAndAreNeverRoundedToWholeNumbers(t *testing.T) {
+	for _, c := range []struct {
+		amount     float64
+		base, want int
+		wantAmount float64
+	}{
+		{600, 4, 6, 900},   // exact
+		{3, 4, 6, 4.5},     // 4.5 stays 4.5, not 5
+		{1, 3, 4, 1.3},     // 1.333 is 1.3, not 1
+		{2, 3, 2, 1.3},     // 1.333 is 1.3
+		{1, 4, 1, 0.3},     // 0.25 is 0.3 (one decimal), not 0 and not 1
+		{0.5, 4, 1, 0.1},   // 0.125 is 0.1
+		{0.01, 4, 1, 0.1},  // a quantity never scales to nothing
+		{2.35, 4, 4, 2.35}, // the same portions: as stored
+		{400, 4, 99, 9900}, // large
+		{1.5, 2, 3, 2.3},   // 2.25 -> 2.3
+		{7, 4, 1, 1.8},     // 1.75 -> 1.8
+		{250, 4, 3, 187.5}, // 187.5
+		{0.2, 2, 5, 0.5},
+	} {
+		if got := recipe.ScaleAmount(c.amount, c.base, c.want); got != c.wantAmount {
+			t.Errorf("ScaleAmount(%v, %d, %d) = %v, want %v", c.amount, c.base, c.want, got, c.wantAmount)
+		}
+	}
+}

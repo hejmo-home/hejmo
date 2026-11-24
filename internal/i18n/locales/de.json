@@ -4809,6 +4809,7 @@
   "recipes.err.ing.article": "Diesen Artikel gibt es nicht mehr. Tippe den Namen der Zutat noch einmal.",
   "recipes.err.step.long": "Ein Schritt darf höchstens 2000 Zeichen lang sein.",
   "recipes.err.tips": "Die Tipps dürfen höchstens 2000 Zeichen lang sein.",
+  "recipes.err.mealtimes": "Wähle die Essenszeiten aus der Liste.",
   "recipes.err.source": "Die Quelle darf höchstens 300 Zeichen lang sein.",
   "recipes.err.tags": "Ein Schlagwort darf höchstens 30 Zeichen lang sein, und es sind höchstens 30 Schlagwörter möglich.",
   "recipes.err.ings.many": "Ein Rezept hat höchstens 100 Zutaten.",

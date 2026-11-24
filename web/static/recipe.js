@@ -16,11 +16,10 @@ function rcpSuggestUrl(base, typed) {
   return base + "?q=" + encodeURIComponent(q);
 }
 
-// rcpOptionText is what a chosen suggestion writes into the name field: the name, and after a middle dot the variety.
-function rcpOptionText(name, variety) {
-  name = String(name || "").trim();
-  variety = String(variety || "").trim();
-  return variety ? name + " · " + variety : name;
+// rcpOptionText is what a chosen suggestion writes into the name field: the name only. The variety lives in its own
+// field, the one place it is edited.
+function rcpOptionText(name) {
+  return String(name || "").trim();
 }
 
 // rcpOptionFields is what choosing a suggestion writes into the line: the text of the name field, the article and
@@ -29,14 +28,34 @@ function rcpOptionText(name, variety) {
 function rcpOptionFields(opt) {
   if (opt.free) return { article: "", variety: "" };
   var variety = String(opt.variety || "").trim();
-  return { text: rcpOptionText(opt.name, variety), article: opt.article || "", variety: variety };
+  return { text: rcpOptionText(opt.name), article: opt.article || "", variety: variety };
 }
 
-// rcpKeepsVariety says whether a line keeps its variety when its name changes from `was` to `now`: yes while
-// the name before the middle dot is still the same one (ignoring case and spaces), and for a line that had no name.
+// rcpSplitVariety splits a typed name at the first middle dot: the name before it and the variety after it, which
+// belongs in the variety field. Without a dot, with nothing after it, or on a line that is not a library article
+// (isArticle false: free text has no variety), the text stays as it is (variety null).
+function rcpSplitVariety(text, isArticle) {
+  var t = String(text || ""), i = t.indexOf("·");
+  if (!isArticle || i < 0) return { name: t, variety: null };
+  var variety = t.slice(i + 1).replace(/\s+/g, " ").trim();
+  if (variety === "") return { name: t, variety: null };
+  return { name: t.slice(0, i).trim(), variety: variety };
+}
+
+// rcpKeepsVariety says whether a line keeps its variety (held in its own field, not in the name) when its name
+// changes from `was` to `now`: yes while the name before a middle dot is still the same one (ignoring case and
+// spaces), and for a line that had no name.
 function rcpKeepsVariety(was, now) {
   var key = function (t) { return String(t || "").split("·")[0].replace(/\s+/g, " ").trim().toLowerCase(); };
   return key(was) === "" || key(was) === key(now);
+}
+
+// rcpSplitLine decides what a changed name field becomes: the line's variety field takes what follows a middle dot
+// only while the line is still the library article it was (its variety field is visible, `was` is the name at
+// load or when chosen, `now` the typed text). A line retyped to something else is free text, which has no variety,
+// so its text stays as typed.
+function rcpSplitLine(was, now, varietyVisible) {
+  return rcpSplitVariety(now, varietyVisible && rcpKeepsVariety(was, now));
 }
 
 // rcpStep moves a number one step up or down within 1 and 99 (portions).
@@ -196,6 +215,16 @@ function rcpFocusAfter(count, removed) { return Math.min(removed, count - 1); }
       timer = setTimeout(function () { ask(li, el.value); }, 200);
     }
     dirty();
+  });
+  form.addEventListener("change", function (e) {
+    var el = e.target;
+    if (!(el.matches && el.matches("input.in"))) return;
+    var li = el.closest("li.ing"), vi = li && li.querySelector('input[name="ing_variety"]');
+    var parts = rcpSplitLine(el.getAttribute("data-was"), el.value, !!vi && vi.type !== "hidden");
+    if (!vi || parts.variety === null) return;
+    el.value = parts.name; // what was typed after the dot is the variety, edited in its own field
+    vi.value = parts.variety;
+    el.setAttribute("data-was", el.value);
   });
   form.addEventListener("click", function (e) {
     var opt = e.target && e.target.closest ? e.target.closest('li[role="option"]') : null;

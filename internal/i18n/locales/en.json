@@ -2155,7 +2155,7 @@
   "mcp.area.tasks": "Tasks (with routines and stars)",
   "mcp.area.tasks.desc": "Everyone's tasks, routines, templates and stars",
   "mcp.area.meals": "Meal plan",
-  "mcp.area.meals.desc": "What there is to eat and when",
+  "mcp.area.meals.desc": "What there is to eat and when, with templates and recipes",
   "mcp.level.none": "No",
   "mcp.level.read": "Read only",
   "mcp.level.write": "Read and change",

@@ -720,3 +720,15 @@ func mustList(t *testing.T, rb recipeBox) string {
 	}
 	return l.ID
 }
+
+// The trail of the preview: "Essen › Rezepte › Name", and "› Rezept ändern" below a recipe.
+func TestTheTrailLeadsFromMealsThroughTheRecipes(t *testing.T) {
+	t.Parallel()
+	rb := newRecipeBox(t)
+	r := rb.curry(t)
+	wantTrail(t, "list", rb.b.do(http.MethodGet, "/meals/recipes", nil, rcpDE).body, part("Essen", "/meals"), part("Rezepte", ""))
+	wantTrail(t, "recipe", rb.b.do(http.MethodGet, "/meals/recipes/"+r.ID, nil, rcpDE).body, part("Essen", "/meals"), part("Rezepte", "/meals/recipes"), part("Erdnuss-Curry mit Süßkartoffeln", ""))
+	wantTrail(t, "new", rb.b.do(http.MethodGet, "/meals/recipes/new", nil, rcpDE).body, part("Essen", "/meals"), part("Rezepte", "/meals/recipes"), part("Neues Rezept", ""))
+	wantTrail(t, "edit", rb.b.do(http.MethodGet, "/meals/recipes/"+r.ID+"/edit", nil, rcpDE).body, part("Essen", "/meals"), part("Rezepte", "/meals/recipes"), part("Erdnuss-Curry mit Süßkartoffeln", "/meals/recipes/"+r.ID), part("Rezept ändern", ""))
+	wantTrail(t, "child", rb.child.do(http.MethodGet, "/meals/recipes/"+r.ID, nil, rcpDE).body, part("Essen", "/meals"), part("Rezepte", "/meals/recipes"), part("Erdnuss-Curry mit Süßkartoffeln", ""))
+}

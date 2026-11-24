@@ -85,12 +85,6 @@ func (c *itemCtx) recipeIngredient(in recipe.IngredientInput) (recipe.Ingredient
 	return ing, art, err
 }
 
-// recipeView is a recipe with everything the pages and the API show of it.
-type recipeView struct {
-	store.Recipe
-	articles []library.Article // the articles of the ingredients, once each
-}
-
 // lookup finds the article of an ingredient.
 func (c *itemCtx) lookup(id string) (library.Article, bool) {
 	it, ok := c.article(id)

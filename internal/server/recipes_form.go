@@ -182,14 +182,13 @@ type formError struct {
 
 // rcpIssues is what the checking of a form found.
 type rcpIssues struct {
-	Errors      []formError
-	Name        template.HTML // the error at the name field, with a link when the name is taken
-	Portions    string
-	Minutes     string
-	More        map[string]string // tips, source, tags
-	ManyIngs    string
-	ManySteps   string
-	hasLineProb bool
+	Errors    []formError
+	Name      template.HTML // the error at the name field, with a link when the name is taken
+	Portions  string
+	Minutes   string
+	More      map[string]string // tips, source, tags
+	ManyIngs  string
+	ManySteps string
 }
 
 func (is *rcpIssues) add(anchor, link string) {

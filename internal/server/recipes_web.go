@@ -185,13 +185,6 @@ func (c *itemCtx) qtyText(in recipe.Ingredient) string {
 	return n + " " + c.unitWord(in.Unit, recipe.FormatAmountNumber(in.Amount) != 1)
 }
 
-type rcpChipView struct {
-	Slot  int
-	Shape string
-	Name  string
-	Text  string
-}
-
 func (s *server) handleRecipePage(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.memberPage(w, r)
 	if !ok {

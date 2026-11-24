@@ -55,7 +55,7 @@
           <p class="hint">{{t "recipes.f.source.hint"}}</p></div>
       {{template "moreClose"}}
     </fieldset>
-    <div class="savebar"><button class="button" type="submit">{{.Save}}</button><a class="cancel" href="{{.CancelHref}}">{{t "recipes.cancel"}}</a></div>
+    <div class="savebar"><button class="button" type="submit">{{.Save}}</button><span class="dirty" hidden>{{t "recipes.dirty"}}</span><a class="cancel" href="{{.CancelHref}}">{{t "recipes.cancel"}}</a></div>
   </form>
   <script src="/static/recipe.js" defer></script>
 {{template "foot"}}

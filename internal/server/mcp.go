@@ -23,7 +23,7 @@ import (
 // every scope check of the REST API applies unchanged. Nothing that manages
 // tokens, settings, people, displays or personal devices is a tool.
 
-const mcpInstructions = "These tools read and change the family's shared Hejmo box: calendar events, lists, tasks with routines and stars, and the meal plan. " +
+const mcpInstructions = "These tools read and change the family's shared Hejmo box: calendar events, lists, tasks with routines and stars, the meal plan and the recipes. " +
 	"You act as the parent who created your token. Tools you cannot see are not allowed for your token."
 
 // mcpParam is one argument of a tool. Arguments named in the path of the

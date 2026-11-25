@@ -161,18 +161,35 @@ test('a passkey the box no longer knows leads to the page that says why', async 
   const f = setup({ kind: 'signin', get: async () => asserted, script: pageScript(), replies: [{ status: 200, data: { ceremony: 'c2', options: requestFromBox } }, { status: 401, data: { error: 'passkey_gone' } }] });
   f.click();
   await flush();
-  assert.deepEqual(f.assigned, ['/login?passkey=gone']);
+  assert.deepEqual(f.assigned, ['/login?passkey=gone&next=%2Ftasks']);
 });
 
 test('another refusal says the sign-in did not work, and a cancelled window says cancelled', async () => {
   let f = setup({ kind: 'signin', get: async () => asserted, script: pageScript(), replies: [{ status: 200, data: { ceremony: 'c2', options: requestFromBox } }, { status: 401, data: { error: 'passkey_failed' } }] });
   f.click();
   await flush();
-  assert.deepEqual(f.assigned, ['/login?passkey=failed']);
+  assert.deepEqual(f.assigned, ['/login?passkey=failed&next=%2Ftasks']);
   f = setup({ kind: 'signin', get: async () => { const e = new Error('no'); e.name = 'NotAllowedError'; throw e; }, script: pageScript(), replies: [{ status: 200, data: { ceremony: 'c2', options: requestFromBox } }] });
   f.click();
   await flush();
-  assert.deepEqual(f.assigned, ['/login?passkey=cancelled']);
+  assert.deepEqual(f.assigned, ['/login?passkey=cancelled&next=%2Ftasks']);
+});
+
+test('every failed sign-in keeps the page to come back to on the way to the login page', async () => {
+  const cases = [
+    [{ status: 401, data: { error: 'passkey_gone' } }, 'gone'],
+    [{ status: 401, data: { error: 'passkey_failed' } }, 'failed'],
+  ];
+  for (const [reply, why] of cases) {
+    const f = setup({ kind: 'signin', get: async () => asserted, script: pageScript(), replies: [{ status: 200, data: { ceremony: 'c2', options: requestFromBox } }, reply] });
+    f.click();
+    await flush();
+    assert.deepEqual(f.assigned, ['/login?passkey=' + why + '&next=%2Ftasks']);
+  }
+  const f = setup({ kind: 'signin', get: async () => { const e = new Error('no'); e.name = 'NotAllowedError'; throw e; }, script: pageScript(), replies: [{ status: 200, data: { ceremony: 'c2', options: requestFromBox } }] });
+  f.click();
+  await flush();
+  assert.deepEqual(f.assigned, ['/login?passkey=cancelled&next=%2Ftasks']);
 });
 
 test('confirming with a passkey adds the answer to the form and sends it', async () => {

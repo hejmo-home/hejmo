@@ -32,6 +32,9 @@ type ctForm struct {
 	Gone         bool
 	HideBirthday bool // "keep out of the Birthdays calendar"
 	ForChildren  bool // "Bei den Kindern zeigen" (ticket 301)
+	// NameDay is the radio of the card "Namenstag" (auto, entry:<id>, name, none; empty when the form has none) and
+	// NameDayName the typed name (ticket 318).
+	NameDay, NameDayName string
 }
 
 // ctRelForm is a relation line as the form holds it. Whole is "no person chosen": the whole family stores no
@@ -100,6 +103,7 @@ func parseContactForm(r *http.Request) ctForm {
 		Rels: parseRels(r), For: r.PostFormValue("for"),
 		Token: r.PostFormValue("picture_token"), Gone: r.PostFormValue("photo_gone") != "",
 		HideBirthday: r.PostFormValue("hide_birthday") != "", ForChildren: r.PostFormValue("for_children") != "",
+		NameDay: r.PostFormValue("name_day"), NameDayName: r.PostFormValue("name_day_name"),
 	}
 	return f
 }
@@ -155,6 +159,7 @@ func (f ctForm) draft(isPerson bool) ctDraft {
 // ctFormOf is the form of a stored contact.
 func ctFormOf(c store.Contact) ctForm {
 	f := ctForm{Name: c.HejmoName, Full: c.FullName, Street: c.Street, Postcode: c.Postcode, City: c.City, Country: c.Country, Note: c.Note, Groups: c.GroupIDs, HideBirthday: c.HideBirthday, ForChildren: c.ForChildren}
+	f.NameDay, f.NameDayName = ndFormValue(c)
 	for _, l := range c.Numbers {
 		f.Numbers = append(f.Numbers, lineFormOf(l))
 	}
@@ -324,6 +329,9 @@ func (e ctEnv) problemText(pr ctProblem, d ctDraft) string {
 	case "groups.gone":
 		return e.t("contact.error.group.gone")
 	}
+	if pr.Anchor == "nameday" {
+		return e.nameDayProblemText(pr)
+	}
 	return pr.String()
 }
 
@@ -362,6 +370,8 @@ func (e ctEnv) anchorText(pr ctProblem) string {
 		return e.t("contact.link.note")
 	case pr.Field == "groups":
 		return e.t("contact.f.groups")
+	case pr.Anchor == "nameday":
+		return e.t("contact.link.nameday")
 	}
 	return e.t("contact.link.group")
 }
@@ -452,6 +462,7 @@ func (s *server) renderContactForm(w http.ResponseWriter, r *http.Request, e ctE
 	card := e.photoCard(f, st.Contact, st.Pend, st.PhotoErr, saveLabel)
 	data["Photo"], data["Dirty"] = card, card.Mode == "new" || card.Mode == "gone"
 	data["Kids"] = e.kidsCard(f, card.View.URL != "")
+	data["ND"] = e.ndCardOf(f, lineErrs)
 	chips, fam := e.groupChoices(f, st.Contact)
 	data["GroupChips"], data["FamChip"] = chips, fam
 	if c := st.Contact; c != nil {
@@ -645,7 +656,16 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 	gone := e.dropVanishedGroups(&f)
 	e.dropVanishedPeople(&f)
 	d := f.draft(cur != nil && cur.IsPerson())
+	curMode := ""
+	if cur != nil {
+		curMode = cur.NameDayMode
+	}
+	if cal, ok := p.household.NameDayCalendar(); ok {
+		_, auto := cal.Resolve(f.Full, f.Name)
+		d.NameDayMode, d.NameDayEntry, d.NameDayName = ndFormChoice(f, auto, curMode)
+	}
 	problems := checkContact(d, s.householdNow(p.household), nameTakenIn(all, id), e.groupTaken)
+	problems = append(problems, e.nameDayProblems(d)...)
 	if gone {
 		problems = append(problems, ctProblem{Anchor: "groups", Field: "groups", Code: "gone"})
 	}

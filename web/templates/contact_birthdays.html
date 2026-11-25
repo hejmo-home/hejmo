@@ -1,0 +1,37 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "nd.title") "Frame" .Frame)}}
+  <h1>{{t "nd.title"}}</h1>
+  <p class="lead">{{t "nd.lead"}}</p>
+  <dl class="facts bd-now"><dt>{{t "nd.now.birthdays"}}</dt><dd>{{.Birthdays}}</dd><dt>{{t "nd.now.namedays"}}</dt><dd>{{.NameDaysNow}}</dd></dl>
+  <form class="steps" method="post" action="/contacts/birthdays">
+    <fieldset class="nd"><legend class="sr">{{t "nd.legend"}}</legend>
+      <div class="card-row"><span class="t"><b>{{t "nd.switch"}}</b><span class="state{{if .On}} is-on{{end}}"><span class="on-text">{{t "nd.switch.on"}}</span><span class="off-text">{{t "nd.switch.off"}}</span></span></span><label class="switch"><input type="checkbox" role="switch" name="name_days" value="1"{{if .On}} checked{{end}} aria-label="{{t "nd.switch"}}"></label></div>
+      <div class="when-on">
+        <fieldset class="choice"{{if .ListErr}} aria-describedby="err-name_day_list"{{end}}><legend>{{t "nd.choice"}}</legend>
+          {{range .Groups}}<p class="grp">{{.Title}}</p>
+          {{range .Lists}}<label><input type="radio" name="name_day_list" value="{{.Value}}"{{if eq $.Selected .Value}} checked{{end}}{{if $.ListErr}} aria-invalid="true"{{end}}><b>{{.Name}}</b><small>{{.Hint}}</small></label>
+          {{end}}{{end}}
+          {{if .ListErr}}<p class="ferr" id="err-name_day_list" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{.ListErr}}</span></p>{{end}}
+        </fieldset>
+        <p class="hint">{{t "nd.hint"}}</p>
+      </div>
+    </fieldset>
+    <button class="button" type="submit">{{t "nd.save"}}</button>
+  </form>
+  {{if .Family}}
+  <section aria-labelledby="fam">
+    <h2 id="fam">{{t "nd.fam.title"}}</h2>
+    <p class="hint">{{.FamHint}}</p>
+    <ul class="list-rows nd-rows">{{range .Family}}
+      <li><a href="{{.Href}}"><span class="t"><b class="who"><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span><span>{{.Name}}</span></b>{{if .None}}<span class="none">{{.None}}</span>{{else}}<span class="meta"><span><b>{{.Date}}</b> · {{.What}}{{with .From}}, {{.}}{{end}}</span></span>{{with .Depends}}<span class="meta"><span>{{.}}</span></span>{{end}}{{end}}</span>{{if .Today}}<span class="tag">{{t "nd.today"}}</span>{{end}}<svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>{{end}}
+    </ul>
+  </section>
+  {{end}}
+  {{if or .Others .HaveOthers}}
+  <section aria-labelledby="miss">
+    {{if .Others}}<h2 id="miss">{{t "nd.others.title"}}</h2>
+    <p class="hint">{{.OthersHint}}</p>
+    <ul class="nd-names">{{range .Others}}<li><a href="{{.Href}}">{{.Name}}</a></li>{{end}}</ul>{{end}}
+    {{if .HaveOthers}}<p class="hint">{{t "nd.others.rest"}}</p>{{end}}
+  </section>
+  {{end}}
+{{template "foot"}}

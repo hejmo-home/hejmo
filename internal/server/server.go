@@ -402,6 +402,8 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /contacts/groups", s.handleContactGroupCreate)
 	mux.HandleFunc("POST /contacts/groups/{id}/delete", s.handleContactGroupDelete)
 	mux.HandleFunc("GET /contacts/for-children", s.handleKidsParents)
+	mux.HandleFunc("GET /contacts/birthdays", s.handleBirthdays)
+	mux.HandleFunc("POST /contacts/birthdays", s.handleBirthdaysSave)
 	mux.HandleFunc("GET /contacts/{id}", s.handleContact)
 	mux.HandleFunc("GET /numbers", s.handleNumbers)
 	mux.HandleFunc("GET /numbers/{id}/photo", s.handleNumbersPhoto)

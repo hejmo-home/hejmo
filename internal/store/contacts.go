@@ -53,6 +53,9 @@ type Contact struct {
 	// CreatedFile, UpdatedFile and PhotoFile name the contact file (ticket 300) the contact was taken over
 	// from, the last change completed it from, and its photo came from; empty for what a person did by hand.
 	CreatedFile, UpdatedFile, PhotoFile string
+	// Extra holds the lines of a card a phone saved that Hejmo does not model (organisation, web address, ...), so
+	// they come back to the phone unchanged (ticket 299); empty for a contact no phone has saved.
+	Extra string
 }
 
 // Where a contact photo came from.
@@ -292,6 +295,10 @@ type ContactInput struct {
 	// ImportFile is the name of the contact file this save takes the contact over from (a new contact) or
 	// completes it from (ticket 300); empty for a save by hand.
 	ImportFile string
+	// ID is the id of a new contact when a phone chose the name of its card (ticket 299); empty for a made-up one.
+	ID string
+	// Extra, when set, replaces what a phone saved that Hejmo does not model; nil keeps it.
+	Extra *string
 }
 
 func (in *ContactInput) clean() error {

@@ -618,3 +618,7 @@ func readPhoto(c *Card, p prop) {
 		c.Photo = b
 	}
 }
+
+// ParseBirthday reads the value of a BDAY property (see parseBirthday): the day, the month and the year, which is 0
+// when it is not known. omitYear says the property carries Apple's X-APPLE-OMIT-YEAR mark.
+func ParseBirthday(v string, omitYear bool) (day, month, year int) { return parseBirthday(v, omitYear) }

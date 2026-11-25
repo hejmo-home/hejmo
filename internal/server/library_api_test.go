@@ -69,7 +69,7 @@ func TestTheLibraryListsShippedAndOwnArticlesAndSearchesByName(t *testing.T) {
 	t.Parallel()
 	c, _ := newArticleAPI(t)
 	status, _, list := c.call(http.MethodGet, "/articles", nil)
-	if status != http.StatusOK || len(list) != 248 {
+	if status != http.StatusOK || len(list) != 254 {
 		t.Fatalf("list = %d, %d articles", status, len(list))
 	}
 	status, a, _ := c.call(http.MethodGet, "/articles/peanut-butter", nil)
@@ -130,7 +130,7 @@ func TestAnArticleThatBreaksTheRulesIsRefusedWithItsField(t *testing.T) {
 	if status != http.StatusUnprocessableEntity || body["field"] != "kind" {
 		t.Errorf("no kind names its field: %v", body)
 	}
-	if _, _, list := c.call(http.MethodGet, "/articles", nil); len(list) != 248 {
+	if _, _, list := c.call(http.MethodGet, "/articles", nil); len(list) != 254 {
 		t.Errorf("a refused article was stored (%d)", len(list))
 	}
 }

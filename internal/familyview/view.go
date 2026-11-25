@@ -265,6 +265,7 @@ type StripItem struct {
 	DayCount        int
 	ContinuesBefore bool
 	ContinuesAfter  bool
+	Vary            bool // the day depends on moon sighting: "or 1 day later" (ticket 339)
 }
 
 // Line kinds of a footer tile: a plain line (the meal tile) has no kind.
@@ -424,7 +425,7 @@ func Build(in Input) View {
 			}
 			continue
 		}
-		item := StripItem{Kind: KindEvent, Title: o.Title, AllDay: o.AllDay}
+		item := StripItem{Kind: KindEvent, Title: o.Title, AllDay: o.AllDay, Vary: o.VarySighting}
 		if !whole {
 			audience := audienceOf(in, o)
 			if len(audience) == 0 {
@@ -455,7 +456,7 @@ func Build(in Input) View {
 				continue
 			}
 			if wholeHousehold(in, o) {
-				item := StripItem{Kind: KindEvent, Title: o.Title, AllDay: o.AllDay}
+				item := StripItem{Kind: KindEvent, Title: o.Title, AllDay: o.AllDay, Vary: o.VarySighting}
 				if !o.AllDay {
 					item.Time = clock(o, loc, in.TimeFormat)
 				}

@@ -37,8 +37,8 @@ function element(attrs = {}, label = '') {
 }
 
 // The page: a scope with the hooks of the offer, one button, and the script run against fakes.
-function setup({ kind = 'add', supported = true, create, get, replies = [], script = null } = {}) {
-  const scope = element({ 'data-next': '/tasks', 'data-redirect': '/account' });
+function setup({ kind = 'add', supported = true, create, get, replies = [], script = null, next = '/tasks' } = {}) {
+  const scope = element({ 'data-next': next, 'data-redirect': '/account' });
   scope.hooks = { waiting: element(), fail: element(), have: element(), continue: element(), skip: element() };
   for (const h of Object.values(scope.hooks)) h.hidden = true;
   scope.nameInput = { value: 'Mac' };
@@ -161,18 +161,25 @@ test('a passkey the box no longer knows leads to the page that says why', async 
   const f = setup({ kind: 'signin', get: async () => asserted, script: pageScript(), replies: [{ status: 200, data: { ceremony: 'c2', options: requestFromBox } }, { status: 401, data: { error: 'passkey_gone' } }] });
   f.click();
   await flush();
-  assert.deepEqual(f.assigned, ['/login?passkey=gone']);
+  assert.deepEqual(f.assigned, ['/login?passkey=gone&next=%2Ftasks']);
 });
 
 test('another refusal says the sign-in did not work, and a cancelled window says cancelled', async () => {
   let f = setup({ kind: 'signin', get: async () => asserted, script: pageScript(), replies: [{ status: 200, data: { ceremony: 'c2', options: requestFromBox } }, { status: 401, data: { error: 'passkey_failed' } }] });
   f.click();
   await flush();
-  assert.deepEqual(f.assigned, ['/login?passkey=failed']);
+  assert.deepEqual(f.assigned, ['/login?passkey=failed&next=%2Ftasks']);
   f = setup({ kind: 'signin', get: async () => { const e = new Error('no'); e.name = 'NotAllowedError'; throw e; }, script: pageScript(), replies: [{ status: 200, data: { ceremony: 'c2', options: requestFromBox } }] });
   f.click();
   await flush();
-  assert.deepEqual(f.assigned, ['/login?passkey=cancelled']);
+  assert.deepEqual(f.assigned, ['/login?passkey=cancelled&next=%2Ftasks']);
+});
+
+test('a sign-in without a page to come back to keeps the redirect as it is', async () => {
+  const f = setup({ kind: 'signin', next: '', get: async () => asserted, script: pageScript(), replies: [{ status: 200, data: { ceremony: 'c2', options: requestFromBox } }, { status: 401, data: { error: 'passkey_failed' } }] });
+  f.click();
+  await flush();
+  assert.deepEqual(f.assigned, ['/login?passkey=failed']);
 });
 
 test('confirming with a passkey adds the answer to the form and sends it', async () => {

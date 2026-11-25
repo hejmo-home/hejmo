@@ -1,7 +1,7 @@
 {
  "list": "protestant",
  "sources": {
-  "enk": "Evangelischer Namenkalender (Evangelische Kirche in Deutschland)"
+  "enk": "Evangelischer Namenkalender (Evangelische Kirche in Deutschland), Anhang zu: Das Kirchenjahr, Evangelischer Sonn- und Feiertagskalender 2026/2027, Liturgische Konferenz, S. 58 bis 62 (ekd.de); Epiphanias und Lichtmess nach kirchenjahr-evangelisch.de"
  },
  "entries": [
   {
@@ -13,16 +13,14 @@
    ],
    "saint": "Kaspar, einer der Weisen aus dem Morgenland",
    "day": "01-06",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "melchior-01-06",
    "name": "Melchior",
    "saint": "Melchior, einer der Weisen aus dem Morgenland",
    "day": "01-06",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "balthasar-01-06",
@@ -32,8 +30,7 @@
    ],
    "saint": "Balthasar, einer der Weisen aus dem Morgenland",
    "day": "01-06",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "antonius-01-17",
@@ -46,16 +43,7 @@
    ],
    "saint": "Antonius der Große",
    "day": "01-17",
-   "source": "enk",
-   "unchecked": true
-  },
-  {
-   "id": "fabian-01-20",
-   "name": "Fabian",
-   "saint": "Fabian",
-   "day": "01-20",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "sebastian-01-20",
@@ -65,19 +53,7 @@
    ],
    "saint": "Sebastian",
    "day": "01-20",
-   "source": "enk",
-   "unchecked": true
-  },
-  {
-   "id": "agnes-01-21",
-   "name": "Agnes",
-   "variants": [
-    "Agnese"
-   ],
-   "saint": "Agnes",
-   "day": "01-21",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "vinzenz-01-22",
@@ -88,8 +64,7 @@
    ],
    "saint": "Vinzenz",
    "day": "01-22",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "paul-01-25",
@@ -101,8 +76,7 @@
    ],
    "saint": "Bekehrung des Paulus",
    "day": "01-25",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "timotheus-01-26",
@@ -113,16 +87,14 @@
    ],
    "saint": "Timotheus",
    "day": "01-26",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "titus-01-26",
    "name": "Titus",
    "saint": "Titus",
    "day": "01-26",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "simeon-02-02",
@@ -132,31 +104,7 @@
    ],
    "saint": "Simeon im Tempel",
    "day": "02-02",
-   "source": "enk",
-   "unchecked": true
-  },
-  {
-   "id": "hanna-02-02",
-   "name": "Hanna",
-   "variants": [
-    "Hannah",
-    "Anna"
-   ],
-   "saint": "Hanna, die Prophetin",
-   "day": "02-02",
-   "source": "enk",
-   "unchecked": true
-  },
-  {
-   "id": "valentin-02-14",
-   "name": "Valentin",
-   "variants": [
-    "Valentino"
-   ],
-   "saint": "Valentin",
-   "day": "02-14",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "matthias-02-24",
@@ -168,8 +116,7 @@
    ],
    "saint": "Matthias, Apostel",
    "day": "02-24",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "gregor-03-12",
@@ -179,22 +126,7 @@
    ],
    "saint": "Gregor der Große",
    "day": "03-12",
-   "source": "enk",
-   "unchecked": true
-  },
-  {
-   "id": "josef-03-19",
-   "name": "Josef",
-   "variants": [
-    "Joseph",
-    "Sepp",
-    "Jupp",
-    "José"
-   ],
-   "saint": "Josef, Mann der Maria",
-   "day": "03-19",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "benedikt-03-21",
@@ -204,8 +136,7 @@
    ],
    "saint": "Benedikt von Nursia",
    "day": "03-21",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "maria-03-25",
@@ -217,8 +148,7 @@
    ],
    "saint": "Verkündigung an Maria",
    "day": "03-25",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "dietrich-04-09",
@@ -229,8 +159,7 @@
    ],
    "saint": "Dietrich Bonhoeffer",
    "day": "04-09",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "georg-04-23",
@@ -244,8 +173,7 @@
    ],
    "saint": "Georg",
    "day": "04-23",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "markus-04-25",
@@ -258,11 +186,10 @@
    ],
    "saint": "Markus, Evangelist",
    "day": "04-25",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
-   "id": "philipp-05-01",
+   "id": "philipp-05-03",
    "name": "Philipp",
    "variants": [
     "Philippus",
@@ -270,12 +197,11 @@
     "Filip"
    ],
    "saint": "Philippus, Apostel",
-   "day": "05-01",
-   "source": "enk",
-   "unchecked": true
+   "day": "05-03",
+   "source": "enk"
   },
   {
-   "id": "jakob-05-01",
+   "id": "jakob-05-03",
    "name": "Jakob",
    "variants": [
     "Jakobus",
@@ -283,17 +209,8 @@
     "James"
    ],
    "saint": "Jakobus der Jüngere, Apostel",
-   "day": "05-01",
-   "source": "enk",
-   "unchecked": true
-  },
-  {
-   "id": "florian-05-04",
-   "name": "Florian",
-   "saint": "Florian",
-   "day": "05-04",
-   "source": "enk",
-   "unchecked": true
+   "day": "05-03",
+   "source": "enk"
   },
   {
    "id": "bonifatius-06-05",
@@ -303,27 +220,14 @@
    ],
    "saint": "Bonifatius",
    "day": "06-05",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "barnabas-06-11",
    "name": "Barnabas",
    "saint": "Barnabas, Apostel",
    "day": "06-11",
-   "source": "enk",
-   "unchecked": true
-  },
-  {
-   "id": "vitus-06-15",
-   "name": "Vitus",
-   "variants": [
-    "Veit"
-   ],
-   "saint": "Vitus",
-   "day": "06-15",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "johannes-06-24",
@@ -344,8 +248,7 @@
    "saint": "Johannes der Täufer",
    "day": "06-24",
    "usual": true,
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "petrus-06-29",
@@ -358,8 +261,7 @@
    ],
    "saint": "Petrus, Apostel",
    "day": "06-29",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "paul-06-29",
@@ -371,8 +273,7 @@
    ],
    "saint": "Paulus, Apostel",
    "day": "06-29",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "maria-07-02",
@@ -384,8 +285,7 @@
    ],
    "saint": "Maria Heimsuchung",
    "day": "07-02",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "ulrich-07-04",
@@ -395,21 +295,7 @@
    ],
    "saint": "Ulrich von Augsburg",
    "day": "07-04",
-   "source": "enk",
-   "unchecked": true
-  },
-  {
-   "id": "elias-07-20",
-   "name": "Elias",
-   "variants": [
-    "Elija",
-    "Elia",
-    "Elijah"
-   ],
-   "saint": "Elija, Prophet",
-   "day": "07-20",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "maria-magdalena-07-22",
@@ -421,8 +307,7 @@
    ],
    "saint": "Maria Magdalena",
    "day": "07-22",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "jakobus-07-25",
@@ -435,25 +320,7 @@
    ],
    "saint": "Jakobus der Ältere, Apostel",
    "day": "07-25",
-   "source": "enk",
-   "unchecked": true
-  },
-  {
-   "id": "anna-07-26",
-   "name": "Anna",
-   "variants": [
-    "Anne",
-    "Hanna",
-    "Hannah",
-    "Anni",
-    "Anja",
-    "Annika",
-    "Annette"
-   ],
-   "saint": "Anna, Mutter Marias",
-   "day": "07-26",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "johann-sebastian-07-28",
@@ -463,19 +330,7 @@
    ],
    "saint": "Johann Sebastian Bach",
    "day": "07-28",
-   "source": "enk",
-   "unchecked": true
-  },
-  {
-   "id": "martha-07-29",
-   "name": "Martha",
-   "variants": [
-    "Marta"
-   ],
-   "saint": "Martha von Betanien",
-   "day": "07-29",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "laurentius-08-10",
@@ -487,8 +342,7 @@
    ],
    "saint": "Laurentius",
    "day": "08-10",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "klara-08-11",
@@ -500,8 +354,7 @@
    ],
    "saint": "Klara von Assisi",
    "day": "08-11",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "bartholomaus-08-24",
@@ -511,8 +364,7 @@
    ],
    "saint": "Bartholomäus, Apostel",
    "day": "08-24",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "augustinus-08-28",
@@ -523,30 +375,7 @@
    ],
    "saint": "Augustinus",
    "day": "08-28",
-   "source": "enk",
-   "unchecked": true
-  },
-  {
-   "id": "agidius-09-01",
-   "name": "Ägidius",
-   "variants": [
-    "Egidius"
-   ],
-   "saint": "Ägidius",
-   "day": "09-01",
-   "source": "enk",
-   "unchecked": true
-  },
-  {
-   "id": "kreuz-09-14",
-   "name": "Kreuz",
-   "variants": [
-    "Kreuzerhöhung"
-   ],
-   "saint": "Kreuzerhöhung",
-   "day": "09-14",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "matthaus-09-21",
@@ -556,8 +385,7 @@
    ],
    "saint": "Matthäus, Apostel und Evangelist",
    "day": "09-21",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "michael-09-29",
@@ -571,30 +399,7 @@
    ],
    "saint": "Michael, Erzengel",
    "day": "09-29",
-   "source": "enk",
-   "unchecked": true
-  },
-  {
-   "id": "gabriel-09-29",
-   "name": "Gabriel",
-   "variants": [
-    "Gabriele"
-   ],
-   "saint": "Gabriel, Erzengel",
-   "day": "09-29",
-   "source": "enk",
-   "unchecked": true
-  },
-  {
-   "id": "raphael-09-29",
-   "name": "Raphael",
-   "variants": [
-    "Rafael"
-   ],
-   "saint": "Raphael, Erzengel",
-   "day": "09-29",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "hieronymus-09-30",
@@ -604,11 +409,10 @@
    ],
    "saint": "Hieronymus",
    "day": "09-30",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
-   "id": "franz-10-04",
+   "id": "franz-10-03",
    "name": "Franz",
    "variants": [
     "Franziskus",
@@ -616,17 +420,15 @@
     "Francis"
    ],
    "saint": "Franz von Assisi",
-   "day": "10-04",
-   "source": "enk",
-   "unchecked": true
+   "day": "10-03",
+   "source": "enk"
   },
   {
    "id": "gallus-10-16",
    "name": "Gallus",
    "saint": "Gallus",
    "day": "10-16",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "lukas-10-18",
@@ -638,16 +440,7 @@
    ],
    "saint": "Lukas, Evangelist",
    "day": "10-18",
-   "source": "enk",
-   "unchecked": true
-  },
-  {
-   "id": "ursula-10-21",
-   "name": "Ursula",
-   "saint": "Ursula",
-   "day": "10-21",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "simon-10-28",
@@ -657,8 +450,7 @@
    ],
    "saint": "Simon, Apostel",
    "day": "10-28",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "judas-10-28",
@@ -669,21 +461,7 @@
    ],
    "saint": "Judas Thaddäus, Apostel",
    "day": "10-28",
-   "source": "enk",
-   "unchecked": true
-  },
-  {
-   "id": "karl-11-04",
-   "name": "Karl",
-   "variants": [
-    "Carl",
-    "Charles",
-    "Carlo"
-   ],
-   "saint": "Karl Borromäus",
-   "day": "11-04",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "martin-11-11",
@@ -695,8 +473,7 @@
    ],
    "saint": "Martin von Tours",
    "day": "11-11",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "elisabeth-11-19",
@@ -718,8 +495,7 @@
    ],
    "saint": "Elisabeth von Thüringen",
    "day": "11-19",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "cacilia-11-22",
@@ -732,8 +508,7 @@
    ],
    "saint": "Cäcilia",
    "day": "11-22",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "katharina-11-25",
@@ -753,8 +528,7 @@
    ],
    "saint": "Katharina von Alexandrien",
    "day": "11-25",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "andreas-11-30",
@@ -768,8 +542,7 @@
    ],
    "saint": "Andreas, Apostel",
    "day": "11-30",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "barbara-12-04",
@@ -779,8 +552,7 @@
    ],
    "saint": "Barbara",
    "day": "12-04",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "nikolaus-12-06",
@@ -799,31 +571,17 @@
    ],
    "saint": "Nikolaus von Myra",
    "day": "12-06",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
-   "id": "ambrosius-12-07",
+   "id": "ambrosius-04-04",
    "name": "Ambrosius",
    "variants": [
     "Ambros"
    ],
-   "saint": "Ambrosius",
-   "day": "12-07",
-   "source": "enk",
-   "unchecked": true
-  },
-  {
-   "id": "luzia-12-13",
-   "name": "Luzia",
-   "variants": [
-    "Lucia",
-    "Lucie"
-   ],
-   "saint": "Luzia von Syrakus",
-   "day": "12-13",
-   "source": "enk",
-   "unchecked": true
+   "saint": "Ambrosius von Mailand",
+   "day": "04-04",
+   "source": "enk"
   },
   {
    "id": "thomas-12-21",
@@ -834,27 +592,7 @@
    ],
    "saint": "Thomas, Apostel",
    "day": "12-21",
-   "source": "enk",
-   "unchecked": true
-  },
-  {
-   "id": "adam-12-24",
-   "name": "Adam",
-   "saint": "Adam, der erste Mensch",
-   "day": "12-24",
-   "source": "enk",
-   "unchecked": true
-  },
-  {
-   "id": "eva-12-24",
-   "name": "Eva",
-   "variants": [
-    "Eve"
-   ],
-   "saint": "Eva, die erste Frau",
-   "day": "12-24",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "stephanus-12-26",
@@ -868,8 +606,7 @@
    ],
    "saint": "Stephanus, erster Märtyrer",
    "day": "12-26",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   },
   {
    "id": "johannes-12-27",
@@ -889,20 +626,7 @@
    ],
    "saint": "Johannes, Apostel und Evangelist",
    "day": "12-27",
-   "source": "enk",
-   "unchecked": true
-  },
-  {
-   "id": "silvester-12-31",
-   "name": "Silvester",
-   "variants": [
-    "Sylvester",
-    "Sylvestre"
-   ],
-   "saint": "Silvester",
-   "day": "12-31",
-   "source": "enk",
-   "unchecked": true
+   "source": "enk"
   }
  ]
 }

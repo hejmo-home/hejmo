@@ -301,3 +301,17 @@ func TestRemoteStateIsKeptWithASuccessfulRun(t *testing.T) {
 		t.Fatalf("RemoteState = %+v, want cleared", st)
 	}
 }
+
+// Microsoft's delta baseline (when the delta link began) has its own column, so
+// it is not mixed up with a CTag (ticket 226).
+func TestRemoteStateKeepsTheDeltaBaselineApartFromTheCTag(t *testing.T) {
+	f := newDAVFixture(t)
+	next := t0.Add(5 * time.Minute)
+	want := store.RemoteState{Token: "t1", DeltaBaseline: "2026-11-20T10:00:00Z"}
+	if _, err := f.db.CompleteObjectSyncWithState(f.h.ID, f.a.ID, want, nil, nil, nil, t0, next); err != nil {
+		t.Fatal(err)
+	}
+	if st, _ := f.db.RemoteState(f.a.ID); st != want {
+		t.Fatalf("RemoteState = %+v, want %+v", st, want)
+	}
+}

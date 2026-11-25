@@ -242,17 +242,19 @@ func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []Objec
 	return db.completeObjectSync(householdID, calendarID, nil, changed, deleted, notes, at, next)
 }
 
-// RemoteState is what a CalDAV server said about the version of a calendar
-// when the last run read it: the CTag and the RFC 6578 sync token. Either is
-// empty where the server offers none.
+// RemoteState is what a calendar's provider said about its version when the
+// last run read it. A CalDAV server gives the CTag and the RFC 6578 sync
+// token; either is empty where the server offers none. DeltaBaseline is
+// Microsoft Graph's own: the time (RFC 3339, UTC) when the current delta link
+// began.
 type RemoteState struct {
-	CTag, Token string
+	CTag, Token, DeltaBaseline string
 }
 
 // RemoteState returns the state kept by the last successful run.
 func (db *DB) RemoteState(calendarID string) (RemoteState, error) {
 	var st RemoteState
-	err := db.sql.QueryRow(`SELECT remote_ctag, remote_sync_token FROM calendar_sync WHERE calendar_id = ?`, calendarID).Scan(&st.CTag, &st.Token)
+	err := db.sql.QueryRow(`SELECT remote_ctag, remote_sync_token, remote_delta_baseline FROM calendar_sync WHERE calendar_id = ?`, calendarID).Scan(&st.CTag, &st.Token, &st.DeltaBaseline)
 	if errors.Is(err, sql.ErrNoRows) {
 		return st, ErrNotFound
 	}
@@ -358,7 +360,7 @@ func (db *DB) completeObjectSync(householdID, calendarID string, state *RemoteSt
 		}
 	}
 	if state != nil {
-		if _, err := tx.Exec(`UPDATE calendar_sync SET remote_ctag = ?, remote_sync_token = ? WHERE calendar_id = ?`, state.CTag, state.Token, calendarID); err != nil {
+		if _, err := tx.Exec(`UPDATE calendar_sync SET remote_ctag = ?, remote_sync_token = ?, remote_delta_baseline = ? WHERE calendar_id = ?`, state.CTag, state.Token, state.DeltaBaseline, calendarID); err != nil {
 			return SyncRun{}, err
 		}
 	}

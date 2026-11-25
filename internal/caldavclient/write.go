@@ -62,7 +62,7 @@ func (c *Client) Put(ctx context.Context, objectURL, raw, etag string) (string, 
 	defer res.Body.Close()
 	_, _ = io.Copy(io.Discard, io.LimitReader(res.Body, 1<<20))
 	if res.StatusCode/100 != 2 {
-		return "", &StatusError{res.StatusCode, res.Status}
+		return "", statusError(res)
 	}
 	if tag := res.Header.Get("ETag"); tag != "" {
 		return unquoteETag(tag), nil
@@ -91,7 +91,7 @@ func (c *Client) Delete(ctx context.Context, objectURL, etag string) error {
 	defer res.Body.Close()
 	_, _ = io.Copy(io.Discard, io.LimitReader(res.Body, 1<<20))
 	if res.StatusCode/100 != 2 {
-		return &StatusError{res.StatusCode, res.Status}
+		return statusError(res)
 	}
 	return nil
 }

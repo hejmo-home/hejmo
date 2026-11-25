@@ -144,7 +144,8 @@ func outlookMessage(err error) i18n.Message {
 }
 
 func outlookAborts(err error) bool {
-	return errors.Is(err, graph.ErrReauth) || errors.Is(err, errNoApp) || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
+	var throttled *throttledError
+	return errors.As(err, &throttled) || errors.Is(err, graph.ErrReauth) || errors.Is(err, errNoApp) || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
 }
 
 func (s *Service) syncOutlook(ctx context.Context, cal store.SyncedCalendar, h store.Household, at time.Time, run *runInfo, fail func(i18n.Message, error) error) error {
@@ -213,7 +214,7 @@ func (s *Service) importOutlook(ctx context.Context, sess *graph.Session, cal st
 	}
 	from, to := at.AddDate(-1, 0, 0), at.AddDate(outlookFutureYears, 0, 0)
 
-	baseline, _ := time.Parse(time.RFC3339, prev.CTag)
+	baseline, _ := time.Parse(time.RFC3339, prev.DeltaBaseline)
 	link := prev.Token
 	if baseline.IsZero() || at.Sub(baseline) > outlookRebaseline || len(discard) > 0 {
 		link = ""
@@ -340,8 +341,8 @@ func (s *Service) importOutlook(ctx context.Context, sess *graph.Session, cal st
 	run.listed, run.fetched = len(known)+len(changes)-len(deleted), len(changes)
 	run.skipped = skipped(notes)
 	interval := time.Duration(cal.Sync.IntervalMinutes) * time.Minute
-	// The baseline time travels in the CTag column: when the delta link began.
-	done, err := s.db.CompleteObjectSyncWithState(h.ID, cal.ID, store.RemoteState{CTag: baseline.UTC().Format(time.RFC3339), Token: res.Link}, changes, deleted, notes, at, at.Add(interval))
+	// The baseline is when the delta link began.
+	done, err := s.db.CompleteObjectSyncWithState(h.ID, cal.ID, store.RemoteState{DeltaBaseline: baseline.UTC().Format(time.RFC3339), Token: res.Link}, changes, deleted, notes, at, at.Add(interval))
 	if err != nil {
 		return st(fmt.Errorf("could not store the events: %w", err))
 	}

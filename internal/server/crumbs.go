@@ -31,6 +31,7 @@ var (
 	crumbContactGroups   = crumb{"/contacts/groups", "contact.groups.title", ""}
 	crumbAccount         = crumb{"/account", "hub.otp", ""}
 	crumbSessions        = crumb{"/sessions", "hub.sessions", ""}
+	crumbImport          = crumb{recipeImportPath, "recipes.import.title", ""}
 
 	crumbMealTemplates    = crumb{"/meals/templates", "meals.tpl.title", ""}
 	crumbRoutineTemplates = crumb{"/routines/templates", "routine.tpl.title", ""}
@@ -43,7 +44,7 @@ var (
 var crumbTrails = map[string][]crumb{
 	"calendars.html": {crumbSettings}, "caldav.html": {crumbSettings}, "displays.html": {crumbSettings}, "photos.html": {crumbSettings}, "settings_lists.html": {crumbSettings}, "personal_devices.html": {crumbSettings},
 	"mcp.html": {crumbSettings}, "people.html": {crumbSettings}, "household.html": {crumbSettings}, "account.html": {crumbSettings}, "sessions.html": {crumbSettings},
-	"licences.html": {crumbSettings}, "connections_outside.html": {crumbSettings}, "https_settings.html": {crumbSettings},
+	"licences.html": {crumbSettings}, "religious_holidays.html": {crumbSettings}, "connections_outside.html": {crumbSettings}, "https_settings.html": {crumbSettings},
 	"offline_on.html": {crumbSettings, crumbOutside}, "offline_off.html": {crumbSettings, crumbOutside},
 	"update_upload.html": {crumbSettings, crumbOutside}, "update_install.html": {crumbSettings, crumbOutside, crumbUpload},
 
@@ -76,11 +77,21 @@ func crumbsFor(name string, data map[string]any) []crumb {
 			return []crumb{crumbSettings, crumbPeople, {Href: "/people/" + id, Name: who}}
 		}
 		return []crumb{crumbSettings, crumbPeople}
+	case "recipe_import.html":
+		if crumbed, _ := data["Crumb"].(bool); crumbed {
+			return []crumb{crumbMeals, crumbRecipes, crumbImport}
+		}
+		return []crumb{crumbMeals, crumbRecipes}
 	case "recipe_form.html":
+		if data["Web"] != nil {
+			return []crumb{crumbMeals, crumbRecipes, crumbImport}
+		}
 		if id, name := lookup(data, "RecipeID"), lookup(data, "RecipeName"); id != "" {
 			return []crumb{crumbMeals, crumbRecipes, {Href: recipesPath + "/" + id, Name: name}}
 		}
 		return []crumb{crumbMeals, crumbRecipes}
+	case "recipe_photos.html":
+		return []crumb{crumbMeals, crumbRecipes, {Href: recipesPath + "/" + lookup(data, "RecipeID"), Name: lookup(data, "RecipeName")}}
 	case "contact_form.html":
 		if id, who := lookup(data, "CT", "ID"), lookup(data, "CT", "Name"); id != "" {
 			return []crumb{crumbSettings, crumbContacts, {Href: "/contacts/" + id, Name: who}}

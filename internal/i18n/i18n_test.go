@@ -191,7 +191,22 @@ var wholeFamilyTexts = map[string]bool{
 	"meals.rcp.you_are":                        true, // "ihr seid 4": the people at the table, the whole family (ticket 281)
 	"meals.rcp.error.portions":                 true,
 	"meals.rcp.error.portions.empty":           true,
+	"rph.none":                                 true, // "wenn ihr das Gericht kocht": the family cooking together (ticket 280)
+	"rph.none.page":                            true, // "bis ihr eins hinzufügt": the family
+	"recipes.starter.note.photos":              true, // "sie bleiben bei euch": the photos stay with the family
 	"meals.sugg.unchecked":                     true, // "Prüft Hejmo nicht:" is no imperative: Hejmo is the subject (ticket 281)
+	"recipes.import.again":                     true, // the household as a whole (ticket 289)
+	"recipes.import.again.anon":                true, // the household as a whole (ticket 289)
+	"recipes.import.newart.title":              true, // the household as a whole (ticket 289)
+	"recipes.import.pic.on":                    true, // the household as a whole (ticket 289)
+	"recipes.import.pick.own.sub":              true, // the household as a whole (ticket 289)
+	"recipes.import.privacy":                   true, // the household as a whole (ticket 289)
+	"recipes.import.source.hint":               true, // the household as a whole (ticket 289)
+	"recipes.import.steps.hint":                true, // the household as a whole (ticket 289)
+	"recipes.import.yield.none":                true, // the household as a whole (ticket 289)
+	// The religious holidays are for the whole household: "eurer Religion", "Welche Religionen feiert ihr?" (ticket 339).
+	"hub.religious_holidays.hint": true, "rh.lead": true, "rh.legal.region": true, "rh.choice.legend": true, "rh.rel.christian.hint": true,
+	"rh.rel.hindu.hint": true, "rh.err.hindu": true, "rh.note.hindu": true, "rh.moved.hindu": true, "rh.source.panchang": true, "rh.orthodox.legend": true,
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

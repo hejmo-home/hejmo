@@ -40,6 +40,14 @@ type rcpIngLine struct {
 	VarLabel                             string        // "Variety of Flour"
 	StateHTML                            template.HTML // "From the library: Flour · Type 405", with the name in bold
 	FreeState                            string        // "Free text: Hejmo does not know ..."
+	// The import of a web page (ticket 289): From is the number of the page's line this one was made from ("" for a
+	// line typed in the form), Pick what was chosen for it (art:<id>|<variety>, own or free).
+	From, Pick string
+	Web        *webLine
+	WebVariety bool // the variety is the one the page said
+	Needs      bool // Hejmo does not know the line: a choice is asked
+	PickV      *pickView
+	PickErr    string
 }
 
 // Num is the number of the line as the page writes it; a line made for the script's template says {n}.
@@ -76,6 +84,8 @@ type rcpForm struct {
 	NewTag, Tips, Source              string
 	Ings                              []rcpIngLine
 	Steps                             []rcpStepLine
+	// Web is set while a recipe read from a web page is checked (ticket 289).
+	Web *webForm
 }
 
 const (
@@ -127,7 +137,11 @@ func readRcpForm(r *http.Request) rcpForm {
 		return ""
 	}
 	for i := range v["ing_name"] {
-		f.Ings = append(f.Ings, rcpIngLine{Amount: at("ing_amount", i), Unit: at("ing_unit", i), Name: at("ing_name", i), Variety: at("ing_variety", i), Article: at("ing_article", i)})
+		line := rcpIngLine{Amount: at("ing_amount", i), Unit: at("ing_unit", i), Name: at("ing_name", i), Variety: at("ing_variety", i), Article: at("ing_article", i), From: at("ing_from", i)}
+		if line.From != "" {
+			line.Pick = v.Get("pick_" + line.From)
+		}
+		f.Ings = append(f.Ings, line)
 	}
 	for _, st := range v["step"] {
 		f.Steps = append(f.Steps, rcpStepLine{Text: st})
@@ -408,6 +422,9 @@ func (c *itemCtx) formPage(w http.ResponseWriter, r *http.Request, id, name stri
 		f.Category = string(recipe.Main)
 	}
 	c.resolveLines(&f, true)
+	if f.Web != nil {
+		c.decorateWeb(&f)
+	}
 	for i := range f.Steps {
 		f.Steps[i].N, f.Steps[i].Blank = i+1, strings.TrimSpace(f.Steps[i].Text) == ""
 	}
@@ -467,8 +484,15 @@ func (c *itemCtx) formPage(w http.ResponseWriter, r *http.Request, id, name stri
 		data["CancelHref"] = recipesPath + "/" + id
 		data["RecipeName"] = name
 		title, lead, save = c.t("recipes.edit.title"), c.t("recipes.edit.lead"), c.t("recipes.save")
+		if imp, ok, err := c.s.db.RecipeImport(c.p.household.ID, id); err == nil && ok {
+			data["SrcLine"] = c.srcLine(imp)
+		}
 	} else {
 		title = c.t("recipes.new")
+	}
+	if f.Web != nil {
+		title, lead, save = c.t("recipes.import.review.title"), c.t("recipes.import.review.lead"), c.t("recipes.import.save")
+		c.webData(data, &f, is)
 	}
 	data["Title"], data["Lead"], data["Save"] = title, lead, save
 	if is != nil && len(is.Errors) > 0 {
@@ -542,6 +566,9 @@ func (s *server) handleRecipeNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	f := rcpForm{Name: strings.Join(strings.Fields(r.URL.Query().Get("name")), " "), Category: string(recipe.Main), Portions: strconv.Itoa(c.householdPortions())}
+	if src := strings.TrimSpace(r.URL.Query().Get("source")); recipe.SourceLink(src) != "" && utf8.RuneCountInString(src) <= recipe.MaxSource { // "write it yourself, with this link as the source" (ticket 289)
+		f.Source = src
+	}
 	c.formPage(w, r, "", "", f, nil, http.StatusOK, known)
 }
 
@@ -589,6 +616,11 @@ func (s *server) saveRecipePage(w http.ResponseWriter, r *http.Request, id strin
 		name = rec.Name
 	}
 	f := readRcpForm(r)
+	if id != "" { // an imported recipe keeps the link of its page as the source, whatever is sent
+		if imp, ok, err := s.db.RecipeImport(p.household.ID, id); err == nil && ok {
+			f.Source = imp.URL
+		}
+	}
 	if f.act(r.PostFormValue("act")) {
 		c.formPage(w, r, id, name, f, nil, http.StatusOK, known)
 		return

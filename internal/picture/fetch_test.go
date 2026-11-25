@@ -370,3 +370,93 @@ func TestADownloadCanAskForALargerMaximum(t *testing.T) {
 		t.Errorf("Fetch result %d x %d, want 512 x 256", w, h)
 	}
 }
+
+// Ticket 289: the picture of a recipe page is fetched as the connection "recipes", from names only.
+
+// switchedOff is a Policy that refuses one connection and allows the rest.
+type switchedOff struct{ off outbound.Service }
+
+func (p switchedOff) Verdict(s outbound.Service) outbound.Verdict {
+	if s == p.off {
+		return outbound.VerdictSwitchedOff
+	}
+	return outbound.VerdictAllowed
+}
+
+type pathLedger struct {
+	mu      sync.Mutex
+	targets []string
+}
+
+func (l *pathLedger) Refused(time.Time, outbound.Service, string) {}
+func (l *pathLedger) Contacted(_ time.Time, _ outbound.Service, target string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.targets = append(l.targets, target)
+}
+
+func TestTheServiceDecidesWhichSwitchStopsTheDownload(t *testing.T) {
+	srv := serve(t, jpegHandler(t))
+	for _, c := range []struct {
+		name    string
+		service outbound.Service // the zero value is the web images
+		off     outbound.Service
+		refused bool
+	}{
+		{"web images, images off", "", outbound.Images, true},
+		{"web images, recipes off", "", outbound.Recipes, false},
+		{"recipe picture, recipes off", outbound.Recipes, outbound.Recipes, true},
+		{"recipe picture, images off", outbound.Recipes, outbound.Images, false},
+	} {
+		f := loopbackIsPublic()
+		f.Gate = outbound.New(switchedOff{c.off}, nil)
+		f.Service = c.service
+		_, err := f.Fetch(context.Background(), srv.URL+"/a.jpg")
+		if got := errors.Is(err, outbound.ErrRefused); got != c.refused || (!c.refused && err != nil) {
+			t.Errorf("%s: err = %v, want refused = %v", c.name, err, c.refused)
+		}
+	}
+}
+
+func TestNumberAddressesAreRefusedWhenAskedTo(t *testing.T) {
+	srv := serve(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/hop" {
+			http.Redirect(w, r, "http://93.184.216.34/pic.jpg", http.StatusFound)
+			return
+		}
+		jpegHandler(t)(w, r)
+	})
+	f := loopbackIsPublic()
+	f.NoIPLiteral = true
+	f.Public = func(netip.Addr) bool { return true } // a public number address: only the rule against numbers stops it
+	var priv *picture.PrivateError
+	for _, u := range []string{srv.URL + "/a.jpg", "http://93.184.216.34/a.jpg", "http://[2606:2800:220:1::1]/a.jpg", srv.URL + "/hop"} {
+		if _, err := f.Fetch(context.Background(), u); !errors.As(err, &priv) {
+			t.Errorf("%s: err = %v, want PrivateError", u, err)
+		}
+	}
+	// the zero Fetcher keeps taking public number addresses (the library's picture field)
+	g := loopbackIsPublic()
+	if _, err := g.Fetch(context.Background(), srv.URL+"/a.jpg"); err != nil {
+		t.Errorf("without the rule: %v", err)
+	}
+}
+
+func TestARecipePictureLeavesNoPathInTheLedger(t *testing.T) {
+	srv := serve(t, jpegHandler(t))
+	for _, c := range []struct {
+		service  outbound.Service
+		wantPath bool
+	}{{"", true}, {outbound.Recipes, false}} {
+		l := &pathLedger{}
+		f := loopbackIsPublic()
+		f.Gate = outbound.New(switchedOff{"none"}, l)
+		f.Service = c.service
+		if _, err := f.Fetch(context.Background(), srv.URL+"/secret/pic.jpg"); err != nil {
+			t.Fatal(err)
+		}
+		if got := len(l.targets) == 1 && strings.Contains(l.targets[0], "/secret/pic.jpg"); got != c.wantPath {
+			t.Errorf("service %q: ledger %v, path recorded = %v, want %v", c.service, l.targets, got, c.wantPath)
+		}
+	}
+}

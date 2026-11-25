@@ -343,6 +343,17 @@ _Avoid_: cooked on, last made
 One of the 200 recipes that ship with the box in German and English (the starter collection). It is shown in the language of the person viewing it, names its source ("Ingredients after: Chefkoch") with a link, is read-only for everyone and is not part of a family's own recipes. Its id starts with `starter-`.
 _Avoid_: sample recipe, default recipe, template recipe
 
+**Recipe import**:
+Reading a recipe from a web page (its schema.org/Recipe) into a **recipe draft**, checking it in the recipe form and saving it. Two steps, nothing is saved unchecked. The page and its picture are read through the connection "recipes" (the Gate); offline mode or a switched-off connection replaces the form with a notice. The imported recipe keeps the page's link as its source for good, the picture as its cover and the nutrition values the page stated (until someone changes its ingredients or portions).
+_Avoid_: scraping, crawl, web clipper
+
+**Recipe draft**:
+What the box read from a web page while a parent checks it: it belongs to the parent who read the page, lives one hour and is then gone (the recipe was never saved). The page's picture waits in it as the stored JPEG.
+_Avoid_: pending recipe, preview
+**Recipe photo**:
+A family's own photo of a recipe, own or starter (each household has its own photos of a starter recipe). Stored as files on the box at most 1600 px wide with location and camera data removed, plus a 640 px and a 168 px file for lists and the grid; at most 12 per recipe. The first becomes the **cover** (Titelbild), which stays until a parent chooses another or removes it (then the newest remaining photo takes over). The cover shows at the top of the recipe, in the recipe list and in the meal plan; parents add and remove photos, everyone sees them.
+_Avoid_: recipe picture (a picture is what an article or a reward has), image
+
 **Ingredient**:
 One line of a recipe: an article, optionally with a variety, or free text, with a quantity for the recipe's portions.
 _Avoid_: component, item
@@ -479,6 +490,14 @@ _Avoid_: avatar, profile picture
 **Birthdays calendar**:
 The generated, read-only calendar of the birthdays in the address book: one yearly all-day event per contact, titled with the Hejmo name and, when the year of birth is known, the age ("Mia (7)"). 29 February repeats on the last day of February in years without one. Every contact can be switched out of it; it is made when the first birthday is saved. With the household's **name days** switched on it also holds one yearly all-day event per contact with a name day (ticket 318).
 _Avoid_: birthday list, anniversary calendar
+
+**Religious holiday**:
+A day or festival of a religion the household chose, such as Pessach (8 days, one event), Ramadan, Zuckerfest, Diwali, Vesak or Vaisakhi: an all-day event in the **Religious holidays calendar**, for the whole family, with no person chip. Dates come from a library or a table with a source; where the day depends on moon sighting it says "oder 1 Tag später", where communities differ it says so in words. A day that is a public holiday in the household's region is never added twice. Jewish festivals add an event "<Fest> beginnt am Abend" on the day before (ticket 339).
+_Avoid_: feast day, holiday (alone: it means a **public holiday**)
+
+**Religious holidays calendar**:
+The generated, read-only calendar "Religiöse Feiertage": one all-day event per religious holiday of the religions a household chose (Settings, Religiöse Feiertage), from last year to nine years ahead as far as the tables reach, written again when the choice, the region or the home location changes and at every start. Off by default: Hejmo never guesses a faith. Switching it off removes the events and keeps the choice (ticket 339).
+_Avoid_: faith calendar, holiday calendar
 
 **Name day**:
 The yearly feast of the saint a contact's first name belongs to, from the **name day list** the household chose. An all-day event in the Birthdays calendar titled "Namenstag <Hejmo name>", with the name of the name day in brackets when it differs ("Namenstag Mama (Katharina)"). The name comes from the first given name of the full name, otherwise the Hejmo name; a contact can choose another day of the list, another name or none. A name the list does not know gets no name day; nothing is guessed. Off by default.

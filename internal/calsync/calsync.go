@@ -276,10 +276,22 @@ func (s *Service) sync(ctx context.Context, householdID, calendarID string, run 
 		run.result, run.failure = "paused", "sync.paused"
 		return err
 	}
+	if throttled(cal, at) {
+		run.result, run.failure = "throttled", "sync.fail.throttled"
+		// A calendar that fell due during the wait (added meanwhile, or
+		// reconnected) would be due on every tick: move it to the end.
+		err := stillThrottled(cal, at)
+		if cal.Sync.NextAttempt.Before(cal.ThrottledUntil) {
+			if derr := s.db.DeferSync(cal.ID, cal.ThrottledUntil); derr != nil {
+				return errors.Join(err, derr)
+			}
+		}
+		return err
+	}
 	fail := func(msg i18n.Message, cause error) error {
+		msg, err := s.recordFailure(cal, msg, cause, at)
 		run.result, run.failure = "failed", msg.Key
-		next := at.Add(Backoff(interval, cal.Sync.Failures+1))
-		if err := s.db.FailSync(householdID, calendarID, msg, at, next); err != nil {
+		if err != nil {
 			return errors.Join(cause, err)
 		}
 		return cause

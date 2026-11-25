@@ -41,7 +41,11 @@ import (
 	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/passkey/passkeytest"
 	"github.com/hejmo-home/hejmo/internal/recipe"
+	"github.com/hejmo-home/hejmo/internal/recipeimport"
+	"github.com/hejmo-home/hejmo/internal/recipephoto"
+	rh "github.com/hejmo-home/hejmo/internal/religiousholiday"
 	"github.com/hejmo-home/hejmo/internal/reward"
+	"github.com/hejmo-home/hejmo/internal/starter"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/streak"
 	"github.com/hejmo-home/hejmo/internal/task"
@@ -136,6 +140,8 @@ type layoutFixture struct {
 	omaID         string   // the contact with a photo (ticket 297)
 	longVariety   string   // the entry of an article with a very long variety, on the first list
 	contactGroups []string // the ids of the contact groups in their order
+	photoRecipe   string   // the recipe with three photos (ticket 280)
+	fullRecipe    string   // a starter recipe with twelve photos
 	nutriRecipe   string   // the recipe whose nutrition card names what is not counted and what is missing (ticket 288)
 	foodArticle   string   // the own article with a chosen food
 	inviteToken   string   // the invitation of Maximilian, a parent without account
@@ -144,6 +150,8 @@ type layoutFixture struct {
 	recipes       []string // recipe IDs: the long one with twelve steps, then the plain one
 	rewards       []string // reward IDs (#291): redeemed, never redeemed, archived by hand, archived because its person left
 	recipeIDs     []string // recipe IDs (#279): the long Käsespätzle, then the Gurkensalat
+	importDraft   string   // the draft of a recipe read from a web page (#289): long names, lines Hejmo does not know, a picture, values
+	importedID    string   // the recipe imported from a web page, with its cover and the values of the page (#289)
 }
 
 func newLayoutFixture(t *testing.T) *layoutFixture {
@@ -299,6 +307,19 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 		f.recipes = append(f.recipes, got.ID)
 	}
 
+	f.addImport(t)
+	// Own photos of recipes (ticket 280): the long Käsespätzle with a cover and two more, a starter recipe with all twelve.
+	f.photoRecipe, f.fullRecipe = f.recipes[0], starter.All()[0].Recipe("de").ID
+	for ref, n := range map[string]int{f.photoRecipe: 3, f.fullRecipe: store.MaxRecipePhotos} {
+		for i := 0; i < n; i++ {
+			set, err := recipephoto.Prepare(context.Background(), bytes.NewReader(testJPEG(t, 1200+i, 900)))
+			must(err)
+			ph, err := db.AddRecipePhoto(h, ref, store.NewRecipePhoto{PersonID: f.ids[i%2], FileName: "IMG.jpg", Width: set.Width, Height: set.Height})
+			must(err)
+			must(recipephoto.NewFiles(filepath.Join(f.box.photoDir, "recipe-photos")).Put(ph.ID, set))
+		}
+	}
+
 	// Nutrition values (ticket 288): two of the five children see them, the card of a recipe that cannot count
 	// everything (a long free-text line, a unit without weight, an own article without a food, a value the food lacks),
 	// and an own article with a chosen food.
@@ -360,6 +381,10 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	f.rewards = f.addRewards(t)
 	f.addRequests(t)
 	f.addBadges(t)
+	// Religious holidays (ticket 339): all nine religions on, so the page lists every kind of row and the calendar has the festivals.
+	if _, err := db.SaveReligiousHolidays(h, store.ReligiousInput{On: true, Religions: rh.Religions(), Islamic: rh.UmmAlQura, Orthodox: rh.Julian}, "Religiöse Feiertage", "de"); err != nil {
+		t.Fatal(err)
+	}
 	if r := f.post("/caldav/tokens", url.Values{"name": {"iPhone von Friedrich mit langem Gerätenamen"}}); r.status != http.StatusOK {
 		t.Fatalf("CalDAV token = %d\n%s", r.status, r.body)
 	}
@@ -505,7 +530,7 @@ var (
 	uuidRe     = regexp.MustCompile(`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`)
 	isoDayRe   = regexp.MustCompile(`\d{4}-\d{2}-\d{2}`)
 	// Links that are no framed pages: downloads, the API, assets, fragments.
-	notPageRe = regexp.MustCompile(`^/(static/|api/|healthz|manifest|sw\.js|logout|display(/|$|\?)|ca/|update/|\.well-known|i/|personal-devices/join/)|\.(ics|crt|mobileconfig)(\?|$)`)
+	notPageRe = regexp.MustCompile(`^/(static/|api/|healthz|manifest|sw\.js|logout|display(/|$|\?)|ca/|update/|\.well-known|i/|personal-devices/join/|meals/recipes/[^/]+/photos/[^/]+)|\.(ics|crt|mobileconfig)(\?|$)`)
 )
 
 // shape reduces a path to the page it is: IDs and days become placeholders.
@@ -518,11 +543,15 @@ func pageShape(path string) string {
 	if libraryNotArticle[p] {
 		return p
 	}
+	p = shippedStarterRe.ReplaceAllString(p, "$1/{starter}$2")
 	return shippedArticleRe.ReplaceAllString(p, "$1/{article}")
 }
 
 // shippedArticleRe is the page of an article Hejmo ships: 248 pages of one kind, rendered once (ticket 164).
 var shippedArticleRe = regexp.MustCompile(`^(/settings/lists/library)/(?:[a-z0-9]+-)*[a-z0-9]+$`)
+
+// shippedStarterRe is the page of a starter recipe Hejmo ships (about 100 of one kind) and its cook view.
+var shippedStarterRe = regexp.MustCompile(`^(/meals/recipes)/starter-[a-z0-9-]+(/cook)?$`)
 
 // libraryNotArticle are the paths under the library that the shape above would take for an article.
 var libraryNotArticle = map[string]bool{"/settings/lists/library/new": true, "/settings/lists/library/suggest": true}
@@ -587,31 +616,32 @@ func htmlRoutes(t *testing.T) []string {
 
 // notRendered are GET routes the check does not render, each with its reason.
 var notRendered = map[string]string{
-	"/healthz":                      "plain text",
-	"/static/":                      "assets",
-	"/api/v1/openapi.yaml":          "API document",
-	"/ca/hejmo-ca.crt":              "download",
-	"/ca/hejmo.mobileconfig":        "download",
-	"/manifest.webmanifest":         "JSON",
-	"/sw.js":                        "script",
-	"/display/state":                "JSON",
-	"/display/view":                 "fragment of /display, rendered inside it",
-	"/display/lists":                "redirect to the first list",
-	"/display/lists/{id}/view":      "fragment of a list, rendered inside it",
-	"/lists/{id}/suggest":           "fragment: the suggestions under the add card, rendered inside it",
-	"/lists/{id}/quantity":          "fragment: the quantity part of the add card, rendered inside it",
-	"/display/lists/{id}/suggest":   "fragment: the suggestions under the add card, rendered inside it",
-	"/display/lists/{id}/quantity":  "fragment: the quantity part of the add card, rendered inside it",
-	"/display/events":               "event stream",
-	"/display/person/{id}/view":     "fragment of the personal view, rendered inside it",
-	"/otp":                          "redirect",
-	"/i/{token}":                    "redirect",
-	"/setup/https/check":            "answers a fragment for the setup page's script",
-	"/places":                       "JSON list of places for the home location picker",
-	"/personal-devices/join/{code}": "one-time pairing link of a personal device",
-	"/display/saver/photos":         "JSON",
-	"/display/photo/{id}":           "image",
-	"/numbers/{id}/photo":           "the photo of a contact on the children's page, an image",
+	"/healthz":                               "plain text",
+	"/static/":                               "assets",
+	"/api/v1/openapi.yaml":                   "API document",
+	"/ca/hejmo-ca.crt":                       "download",
+	"/ca/hejmo.mobileconfig":                 "download",
+	"/manifest.webmanifest":                  "JSON",
+	"/sw.js":                                 "script",
+	"/display/state":                         "JSON",
+	"/display/view":                          "fragment of /display, rendered inside it",
+	"/display/lists":                         "redirect to the first list",
+	"/display/lists/{id}/view":               "fragment of a list, rendered inside it",
+	"/lists/{id}/suggest":                    "fragment: the suggestions under the add card, rendered inside it",
+	"/lists/{id}/quantity":                   "fragment: the quantity part of the add card, rendered inside it",
+	"/display/lists/{id}/suggest":            "fragment: the suggestions under the add card, rendered inside it",
+	"/display/lists/{id}/quantity":           "fragment: the quantity part of the add card, rendered inside it",
+	"/display/events":                        "event stream",
+	"/display/person/{id}/view":              "fragment of the personal view, rendered inside it",
+	"/otp":                                   "redirect",
+	"/i/{token}":                             "redirect",
+	"/setup/https/check":                     "answers a fragment for the setup page's script",
+	"/places":                                "JSON list of places for the home location picker",
+	"/personal-devices/join/{code}":          "one-time pairing link of a personal device",
+	"/display/saver/photos":                  "JSON",
+	"/display/photo/{id}":                    "image",
+	"/numbers/{id}/photo":                    "the photo of a contact on the children's page, an image",
+	"/meals/recipes/{id}/{action}/{rest...}": "the photos of a recipe, images (ticket 280), behind the recipe dispatcher",
 
 	"/articles/{id}/picture":                  "an image",
 	"/tasks/rewards/{id}/picture":             "the photo of a reward, an image",
@@ -626,6 +656,8 @@ var notRendered = map[string]string{
 	"/settings/lists/always/plan":             "fragment: the sentence under the holiday, rendered inside its page",
 	"/meals/recipes/suggest":                  "fragment: the suggestions under an ingredient line, rendered inside the recipe form",
 	"/meals/suggest":                          "fragment: the suggestions under a meal field, rendered inside the week form (mealRecipePages)",
+	"/meals/recipes/import/{id}/picture":      "the picture of a draft read from a web page, an image",
+	"/meals/recipes/import/{id}/cancel":       "discards a draft and redirects to the list",
 }
 
 // matches reports whether a request path is served by a route pattern.
@@ -685,6 +717,24 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 			add(parent, p)
 		}
 	}
+	// Importing a recipe from a web page (#289): the page with its errors (a POST answer), the check of a long recipe with
+	// lines Hejmo does not know, a choice made, the errors at the lines, and the recipe page with its cover.
+	for _, p := range []string{"/meals/recipes/import/" + f.importDraft, "/meals/recipes/" + f.importedID, "/meals/recipes/" + f.importedID + "/edit"} {
+		if !have[p] {
+			add(parent, p)
+		}
+	}
+	pages = append(pages, importPages(t, f)...)
+	// Own photos of recipes (#280): the recipe page with a cover and the section Fotos, the page Fotos (with a photo just
+	// uploaded, and full), a recipe without photo, a child's view and a starter recipe with twelve photos.
+	for _, p := range []string{"/meals/recipes/" + f.photoRecipe, "/meals/recipes/" + f.photoRecipe + "/photos", "/meals/recipes/" + f.photoRecipe + "/photos?new=x",
+		"/meals/recipes/" + f.fullRecipe, "/meals/recipes/" + f.fullRecipe + "/photos", "/meals/recipes/" + f.recipes[1], "/meals/recipes", "/meals/recipes/starter"} {
+		if !have[p] { // the crawl renders the list and the starter page already: each page counts 20 renders of the budget
+			add(parent, p)
+		}
+	}
+	add(siteOf("child personal device", f.box, f.kid.client), "/meals/recipes/"+f.photoRecipe)
+	add(siteOf("child personal device", f.box, f.kid.client), "/meals/recipes")
 	// The badges of three children (#295): six of them two new, all ten, none. The crawl renders only the first
 	// person's page, so the others are added by hand.
 	for _, id := range []string{f.ids[3], f.ids[2], f.ids[4]} {
@@ -705,6 +755,7 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	tablet := pairedPersonalDeviceAs(t, f.box, f.people["Anna-Lena"], "Tablet von Anna-Lena", uaIPad)
 	add(siteOf("child tablet", f.box, tablet.client), "/numbers") // ... and the numbers as text on a tablet
 	add(parent, "/contacts/for-children")
+	pages = append(pages, religiousPages(t, f, parent, add)...)
 	add(parent, "/contacts/birthdays")                      // the Birthdays calendar page with name days off (ticket 318)
 	add(parent, "/lists/"+f.lists[0]+"?qty="+f.longVariety) // the editor with the Sorte row and the long variety as its pill
 	// The display: the family view and the personal views of two people.
@@ -1497,6 +1548,23 @@ func TestTheFormAndAShippedArticleAreDifferentPages(t *testing.T) {
 	}
 }
 
+// The starter recipes Hejmo ships are pages of one kind, like the shipped
+// articles: rendering each of about 100 of them, its cook view too, in two
+// languages at five widths took more than the 15 minutes of the check on CI.
+func TestShippedStarterRecipesAreOneKindOfPage(t *testing.T) {
+	t.Parallel()
+	a, cook := pageShape("/meals/recipes/starter-haehnchen-nuggets"), pageShape("/meals/recipes/starter-haehnchen-nuggets/cook")
+	if a == cook {
+		t.Errorf("a recipe and its cook view share the shape %q", a)
+	}
+	if pageShape("/meals/recipes/starter-wraps-mit-avocado-und-feta") != a || pageShape("/meals/recipes/starter-wraps-mit-avocado-und-feta/cook") != cook {
+		t.Error("two starter recipes are two pages of one kind")
+	}
+	if pageShape("/meals/recipes/new") == a {
+		t.Error("the new-recipe form is no starter recipe")
+	}
+}
+
 // A name wider than the line breaks inside the word at the line's edge, in
 // every heading, whatever the heading's layout (#175): headings that are grid
 // items (the wizard's) or flex containers (the personal view's, the child's
@@ -1928,6 +1996,49 @@ func contactPhotoPages(t *testing.T, f *layoutFixture) []layoutPage {
 	return pages
 }
 
+// religiousPages returns the pages of ticket 339 that the crawl does not reach: the weeks of the Mawlid (a long name
+// with the sighting note), of Rosh Hashanah (the eve) and of the Opferfest (four days), all before the fixture's meal plan, the page of a festival of each kind, and the form
+// with its error and its success line, which only a POST reaches.
+func religiousPages(t *testing.T, f *layoutFixture, parent layoutSite, add func(layoutSite, string)) []layoutPage {
+	t.Helper()
+	var pages []layoutPage
+	href := regexp.MustCompile(`href="(/calendar/events/[^"]+)">([^<]+)</a>`)
+	seen := map[string]bool{}
+	for _, week := range []string{"/calendar?week=2026-08-24", "/calendar?week=2026-09-07", "/calendar?week=2026-05-25"} {
+		add(parent, week)
+		for _, m := range href.FindAllStringSubmatch(f.do(http.MethodGet, week, nil, nil).body, -1) {
+			if title := m[2]; !seen[title] && (strings.HasPrefix(title, "Geburtstag") || strings.HasPrefix(title, "Rosch") || strings.HasPrefix(title, "Opferfest")) {
+				seen[title] = true
+				add(parent, strings.ReplaceAll(m[1], "&amp;", "&"))
+			}
+		}
+	}
+	add(parent, "/calendar/search?q=Propheten")
+	for _, lang := range []string{"de", "en"} {
+		hdr := map[string]string{"Accept-Language": lang}
+		refused := f.do(http.MethodPost, "/settings/religious-holidays", url.Values{"religious_holidays": {"on"}}, hdr)
+		if refused.status != http.StatusUnprocessableEntity {
+			t.Fatalf("religious holidays, nothing chosen = %d\n%s", refused.status, refused.body)
+		}
+		all := url.Values{"religious_holidays": {"on"}, "islamic_calendar": {"diyanet"}, "orthodox_calendar": {"revised_julian"}}
+		for _, r := range rh.Religions() {
+			all.Add("religions", string(r))
+		}
+		saved := f.do(http.MethodPost, "/settings/religious-holidays", all, hdr)
+		if saved.status != http.StatusOK {
+			t.Fatalf("religious holidays, saved = %d\n%s", saved.status, saved.body)
+		}
+		pages = append(pages,
+			layoutPage{site: parent, path: "/settings/religious-holidays#refused", html: map[string]string{lang: refused.body}},
+			layoutPage{site: parent, path: "/settings/religious-holidays#saved", html: map[string]string{lang: saved.body}})
+	}
+	// Back to the state the fixture started in (Umm al-Qura, old Orthodox calendar), as the other pages expect it.
+	if _, err := f.db.SaveReligiousHolidays(f.householdID, store.ReligiousInput{On: true, Religions: rh.Religions(), Islamic: rh.UmmAlQura, Orthodox: rh.Julian}, "Religiöse Feiertage", "de"); err != nil {
+		t.Fatal(err)
+	}
+	return mergeCardPages(pages)
+}
+
 // mealShopPages returns the tick lists of ticket 283 that the crawl does not reach: one meal and the week, and
 // the week page after a send with nothing ticked (the error at the count sentence).
 func mealShopPages(t *testing.T, f *layoutFixture) []layoutPage {
@@ -1949,4 +2060,70 @@ func mealShopPages(t *testing.T, f *layoutFixture) []layoutPage {
 		bad[lang] = r.body
 	}
 	return append(pages, layoutPage{site: parent, path: "/meals/shop?week=2026-11-16#no-list", html: bad})
+}
+
+// addImport reads a long recipe of a web page into a draft and imports another one, with a cover.
+func (f *layoutFixture) addImport(t *testing.T) {
+	t.Helper()
+	h, db, by := f.householdID, f.db, f.ids[0]
+	float := func(v float64) *float64 { return &v }
+	cand := recipeimport.Found{Name: "Omas schwäbische Käsespätzle mit Röstzwiebeln und Bergkäse aus dem Allgäu für den ganzen Sonntag", Portions: 6, PortionsGiven: true, YieldText: "6 Portionen", Minutes: 50,
+		Category: "main", CategoryWord: "Hauptspeise Schwäbische Küche", Keywords: []string{"Sonntagsessen", "Kinder mögen es", "schwäbisch"}, Lang: "en", ImageURL: "/a.jpg",
+		Steps:     []string{"Mehl, Eier und Salz verrühren.", "Für den Teig: Alles kneten, bis er Blasen wirft und sich vom Löffel löst, und eine halbe Stunde ruhen lassen."},
+		Nutrition: &recipeimport.Nutrition{KCal: float(380), KJ: float(1590), Fat: float(17), Saturates: float(9.6), Carbs: float(38), Sugars: float(8.2), Protein: float(17)}}
+	for _, l := range []string{"500 g Weizenmehl (Type 405)", "1–2 TL Harissa (scharfe Paste)", "1 Dose Dinkel-Vollkorn-Haferflocken-Mischung „Frühstückszauber“ aus dem Bioladen, fein vermahlen", "150 g Naturjoghurt",
+		"0 g Backpulver", "etwas Salz", "1 1/2 TL Zimt", "2 große Eier", "1.000 g Äpfel, säuerlich (z. B. Boskop)"} {
+		cand.Ingredients = append(cand.Ingredients, recipeimport.ParseLine(l))
+	}
+	raw, err := json.Marshal(map[string]any{"candidates": []recipeimport.Found{cand}, "pictures": map[int][]byte{0: testJPEG(t, 600, 400)}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := db.AddRecipeDraft(h, by, "https://www.beispiel-kochseite.de/rezepte/omas-schwaebische-kaesespaetzle-mit-roestzwiebeln-und-bergkaese-aus-dem-allgaeu", "www.beispiel-kochseite.de", raw, f.box.now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.importDraft = d.ID
+	got, err := db.CreateImportedRecipe(h, by, recipe.Recipe{Name: "Rote Linsensuppe mit Harissa aus dem Kochbuch einer sehr langen Webseite", Category: recipe.Main, Portions: 4, Minutes: 35,
+		Ingredients: []recipe.Ingredient{{Amount: 250, Unit: "g", Text: "Linsen", ArticleID: "lentils", Variety: "rot"}, {Amount: 1, Text: "Harissa"}}, Steps: []string{"Kochen."}},
+		store.Imported{URL: "https://www.beispielrezepte.de/rezepte/1187/rote-linsensuppe-mit-harissa.html", Host: "www.beispielrezepte.de", Lang: "de",
+			Nutrition: &store.PageNutrition{KCal: float(380), KJ: float(1590), Fat: float(17), Saturates: float(9.6), Carbs: float(38), Sugars: float(8.2), Protein: float(17)}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.importedID = got.ID
+	// The picture of the page is the cover of the recipe, a photo of origin web (ticket 280).
+	set, err := recipephoto.Prepare(context.Background(), bytes.NewReader(testJPEG(t, 600, 400)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ph, err := db.AddRecipePhoto(h, got.ID, store.NewRecipePhoto{Origin: store.PhotoFromWeb, Width: set.Width, Height: set.Height})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := recipephoto.NewFiles(filepath.Join(f.box.photoDir, "recipe-photos")).Put(ph.ID, set); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// importPages are the pages of the import that only a form reaches: the import page with an error and the check with
+// the errors at the lines.
+func importPages(t *testing.T, f *layoutFixture) []layoutPage {
+	t.Helper()
+	var pages []layoutPage
+	site := siteOf("recipe import", f.box, f.client)
+	for _, lang := range []string{"de", "en"} {
+		bad := f.do(http.MethodPost, "/meals/recipes/import", url.Values{"url": {"http://192.168.178.20/rezepte/suppe-mit-einem-sehr-langen-namen"}}, map[string]string{"Accept-Language": lang})
+		if bad.status != http.StatusUnprocessableEntity {
+			t.Fatalf("import page with an error = %d\n%s", bad.status, bad.body)
+		}
+		pages = append(pages, layoutPage{site: site, path: "/meals/recipes/import#errors", html: map[string]string{lang: bad.body}})
+		review := f.do(http.MethodPost, "/meals/recipes/import/"+f.importDraft, url.Values{"name": {"Käsespätzle"}, "portions": {"6"}, "ing_name": {"Naturjoghurt", "Harissa"}, "ing_amount": {"150", "1"}, "ing_unit": {"g", "tsp"}, "ing_article": {"", ""},
+			"ing_variety": {"", ""}, "ing_from": {"3", "1"}, "which": {"0"}, "pick_1": {"free"}}, map[string]string{"Accept-Language": lang})
+		if review.status != http.StatusUnprocessableEntity {
+			t.Fatalf("the check with errors = %d\n%s", review.status, review.body)
+		}
+		pages = append(pages, layoutPage{site: site, path: "/meals/recipes/import/" + f.importDraft + "#errors", html: map[string]string{lang: review.body}})
+	}
+	return mergeCardPages(pages)
 }

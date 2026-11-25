@@ -5886,6 +5886,7 @@
   "nd.src.bor": "Kalender der Rumänischen Orthodoxen Kirche",
   "nd.src.eoc": "Kalender der Kirche von Griechenland",
   "nd.hint": "Die Kirche gilt für alle Kontakte. Bei einem einzelnen Kontakt wählst du unter „Kontakt ändern“ einen anderen Namen oder Tag.",
+  "nd.err.style": "Wähle den neuen oder den alten Kalender.",
   "nd.err.list": "Wähle eine Kirche. Sonst weiß Hejmo nicht, an welchen Tagen eure Namenstage sind.",
   "nd.save": "Speichern",
   "flash.nd_off": "Namenstage aus. Die Geburtstage bleiben im Kalender.",

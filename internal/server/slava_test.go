@@ -131,6 +131,17 @@ func TestTheSlavaErrorsAppearAtTheirFieldsAndKeepWhatWasTyped(t *testing.T) {
 	ctHasNot(t, "name days", c.page("/contacts/birthdays", "de").body, `name="name_day_list" value="catholic" checked`)
 }
 
+func TestAnUnknownCalendarStyleIsRefusedAtItsFieldAndSavesNothing(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	r := postBirthdays(c, url.Values{"name_days": {"1"}, "name_day_list": {"catholic"}, "orthodox_calendar": {"gregorian"}})
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("unknown style = %d, want 422 as PATCH /settings answers", r.status)
+	}
+	ctHas(t, "unknown style", r.body, `class="ferr" id="err-orthodox_calendar"`, `Wähle den neuen oder den alten Kalender.`, `<details class="more nd-style" open>`, `aria-describedby="err-orthodox_calendar"`)
+	ctHasNot(t, "name days", c.page("/contacts/birthdays", "de").body, `name="name_day_list" value="catholic" checked`)
+}
+
 func TestAnOwnSlavaIsSavedWithItsNameAndDay(t *testing.T) {
 	t.Parallel()
 	c := newCtBox(t)

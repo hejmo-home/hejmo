@@ -35,11 +35,11 @@ func splitBold(text string) (pre, word, post string) {
 func (e ctEnv) styleData(data map[string]any, pg ndPage) {
 	style := nameday.ParseStyle(string(pg.Style))
 	data["Style"], data["StyleSum"] = string(style), e.t("nd.style.sum."+string(style))
-	open := style == nameday.Julian
+	open := style == nameday.Julian || pg.StyleErr != ""
 	if want, ok := nameday.List(pg.List).Calendar(); ok && want != style {
 		open = true // the church follows the other calendar: the notice and the way to change it stay in sight
 	}
-	data["StyleOpen"] = open
+	data["StyleOpen"], data["StyleErr"] = open, pg.StyleErr
 	type notice struct{ List, Pre, Bold, Post string }
 	var notices []notice
 	for _, l := range ndMismatchOrder {

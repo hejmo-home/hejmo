@@ -5886,6 +5886,7 @@
   "nd.src.bor": "Calendar of the Romanian Orthodox Church",
   "nd.src.eoc": "Calendar of the Church of Greece",
   "nd.hint": "The church applies to all contacts. For a single contact you choose another name or day under “Change contact”.",
+  "nd.err.style": "Choose the new or the old calendar.",
   "nd.err.list": "Choose a church. Otherwise Hejmo does not know on which days your name days are.",
   "nd.save": "Save",
   "flash.nd_off": "Name days off. The birthdays stay in the calendar.",

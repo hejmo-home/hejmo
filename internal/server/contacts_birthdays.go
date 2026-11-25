@@ -212,6 +212,7 @@ type ndPage struct {
 	Slava                           string // the saint that is selected: an id of the list, nameday.OwnID or ""
 	SlavaName, SlavaDay, SlavaMonth string // what is typed for an own Slava (day and month as numbers)
 	SlavaErr, NameErr, DayErr       string
+	StyleErr                        string // an unknown calendar style was posted
 }
 
 // ndPageOf is the page as the household stored it.
@@ -352,8 +353,13 @@ func (s *server) handleBirthdaysSave(w http.ResponseWriter, r *http.Request) {
 	if !on { // the church stays selected while name days are off
 		pg.List = p.household.NameDayList
 	}
-	if st := nameday.Style(r.PostFormValue("orthodox_calendar")); st.Valid() {
-		pg.Style = st
+	styleBad := false
+	if v := r.PostFormValue("orthodox_calendar"); v != "" {
+		if st := nameday.Style(v); st.Valid() {
+			pg.Style = st
+		} else {
+			styleBad = true
+		}
 	}
 	pg.SlavaOn = r.PostFormValue("slava_on") != ""
 	if pg.SlavaOn || r.PostFormValue("slava") != "" {
@@ -362,6 +368,12 @@ func (s *server) handleBirthdaysSave(w http.ResponseWriter, r *http.Request) {
 	}
 	// Everything is checked before anything is saved, and every error appears at its field.
 	bad := false
+	if styleBad { // the same refusal as PATCH /settings, shown at its field
+		var fe *store.FieldError
+		if err := store.ValidateOrthodoxCalendar(nameday.Style(r.PostFormValue("orthodox_calendar"))); errors.As(err, &fe) && fe.Field == "orthodox_calendar" {
+			pg.StyleErr, bad = e.t("nd.err.style"), true
+		}
+	}
 	if err := store.ValidateNameDays(on, list); err != nil {
 		pg.ListErr, bad = e.t("nd.err.list"), true
 	}

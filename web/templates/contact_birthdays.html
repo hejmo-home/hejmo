@@ -15,9 +15,10 @@
         <p class="hint">{{t "nd.hint"}}</p>
         {{range .Mismatches}}<p class="notice nd-mismatch" data-list="{{.List}}" role="status"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg><span>{{.Pre}}<b>{{.Bold}}</b>{{.Post}}</span></p>
         {{end}}<details class="more nd-style"{{if .StyleOpen}} open{{end}}><summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><span>{{t "nd.style.more"}}</span><span class="sum">{{.StyleSum}}</span></summary>
-          <div><fieldset class="choice"><legend>{{t "nd.style.legend"}}</legend>
+          <div><fieldset class="choice"{{if .StyleErr}} aria-describedby="err-orthodox_calendar"{{end}}><legend>{{t "nd.style.legend"}}</legend>
             <label><input type="radio" name="orthodox_calendar" value="revised_julian"{{if eq .Style "revised_julian"}} checked{{end}}><b>{{t "nd.style.revised_julian"}}</b><small>{{t "nd.style.revised_julian.hint"}}</small></label>
             <label><input type="radio" name="orthodox_calendar" value="julian"{{if eq .Style "julian"}} checked{{end}}><b>{{t "nd.style.julian"}}</b><small>{{t "nd.style.julian.hint"}}</small></label>
+            {{template "ctErr" (dict "ID" "orthodox_calendar" "Text" .StyleErr)}}
           </fieldset>
           <p class="hint">{{.StyleHintBefore}}<a href="/settings/religious-holidays">{{.StyleHintLink}}</a>{{.StyleHintAfter}}</p></div>
         </details>

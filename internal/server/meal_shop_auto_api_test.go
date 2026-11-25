@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"bytes"
 	"net/http"
 	"testing"
 )
@@ -43,18 +44,43 @@ func TestTheShoppingListIsByHandInTheSettingsUntilChosenOtherwise(t *testing.T) 
 func TestTheShoppingSettingRefusesWhatIsWrong(t *testing.T) {
 	t.Parallel()
 	c := signedInAPI(t)
+	// a list without suggestions: the web form does not offer it, so the API refuses it too (ADR 0015)
+	status, plain, _ := c.call(http.MethodPost, "/lists", map[string]any{"name": "Pinnwand", "color": "blue", "symbol": "circle-filled", "sort": "manual", "suggestions": false})
+	if status != http.StatusCreated {
+		t.Fatalf("create list = %d %v", status, plain)
+	}
 	for name, body := range map[string]map[string]any{
-		"unknown mode":  {"mode": "sometimes"},
-		"no days":       {"days": 0},
-		"too many days": {"days": 15},
-		"unknown list":  {"list_id": "nope"},
+		"unknown mode":          {"mode": "sometimes"},
+		"no days":               {"days": 0},
+		"too many days":         {"days": 15},
+		"unknown list":          {"list_id": "nope"},
+		"list without suggests": {"mode": "automatic", "list_id": plain["id"]},
 	} {
-		if status, _, _ := c.call(http.MethodPatch, "/settings", map[string]any{"meal_shopping": body}); status != http.StatusUnprocessableEntity && status != http.StatusBadRequest {
+		if status, _, _ := c.call(http.MethodPatch, "/settings", map[string]any{"meal_shopping": body}); status != http.StatusUnprocessableEntity {
 			t.Errorf("%s = %d, want 422", name, status)
 		}
 	}
 	_, s, _ := c.call(http.MethodGet, "/settings", nil)
-	if m := s["meal_shopping"].(map[string]any); m["mode"] != "manual" || m["days"] != float64(7) {
+	if m := s["meal_shopping"].(map[string]any); m["mode"] != "manual" || m["days"] != float64(7) || m["list_id"] != nil {
 		t.Errorf("nothing was saved: %v", m)
+	}
+}
+
+// Days as a word cannot go through the contract-checked client (the request
+// would violate openapi.yaml); the server answers it with 400, as for any body
+// of the wrong type.
+func TestTheShoppingSettingRefusesDaysAsAWordWith400(t *testing.T) {
+	t.Parallel()
+	c := signedInAPI(t)
+	req, _ := http.NewRequest(http.MethodPatch, c.b.srv.URL+"/api/v1/settings", bytes.NewReader([]byte(`{"meal_shopping":{"days":"seven"}}`)))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", c.b.srv.URL)
+	res, err := c.b.client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res.Body.Close()
+	if res.StatusCode != http.StatusBadRequest {
+		t.Errorf("days as a word = %d, want 400", res.StatusCode)
 	}
 }

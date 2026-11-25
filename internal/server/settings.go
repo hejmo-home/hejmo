@@ -263,6 +263,7 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 				a.ListID = *id
 			}
 		}
+		a.Lang = s.langOf(r)
 		if err := s.db.CheckMealShopAuto(p.household.ID, a); err != nil {
 			writeError(w, http.StatusUnprocessableEntity, "meal_shopping: "+err.Error())
 			return

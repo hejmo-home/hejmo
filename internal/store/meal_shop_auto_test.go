@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -47,5 +48,35 @@ func TestTheDaysAndTheListAreChecked(t *testing.T) {
 	}
 	if err := db.SetMealShopAuto(other.ID, store.MealShopAuto{On: true, Days: 7, ListID: l.ID}); !errors.Is(err, store.ErrInvalid) {
 		t.Errorf("another household's list = %v, want ErrInvalid", err)
+	}
+}
+
+// The run writes the entries in the language of the parent who saved the setting.
+func TestTheLanguageOfTheParentWhoSavedTheSettingIsKept(t *testing.T) {
+	db, h, l := shopping(t)
+	if got, _ := db.MealShopAuto(h.ID); got.Lang != "" {
+		t.Errorf("before the first save: lang = %q", got.Lang)
+	}
+	if err := db.SetMealShopAuto(h.ID, store.MealShopAuto{On: true, Days: 7, ListID: l.ID, Lang: "en"}); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := db.MealShopAuto(h.ID); got.Lang != "en" {
+		t.Errorf("lang = %q, want en", got.Lang)
+	}
+}
+
+// ADR 0015 parity: the web form offers only lists with suggestions, so the API refuses the others.
+func TestAListWithoutSuggestionsIsRefused(t *testing.T) {
+	db, h, _ := shopping(t)
+	plain, err := db.CreateList(h.ID, list.List{Name: "Pinnwand", Color: "blue", Symbol: "circle-filled", Sort: list.Manual})
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := store.MealShopAuto{On: true, Days: 7, ListID: plain.ID}
+	if err := db.CheckMealShopAuto(h.ID, a); !errors.Is(err, store.ErrInvalid) {
+		t.Errorf("check = %v, want ErrInvalid", err)
+	}
+	if err := db.SetMealShopAuto(h.ID, a); !errors.Is(err, store.ErrInvalid) {
+		t.Errorf("set = %v, want ErrInvalid", err)
 	}
 }

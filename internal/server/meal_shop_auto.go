@@ -19,7 +19,11 @@ func (a *AlwaysRunner) shopAuto(h store.Household) error {
 	if err != nil || !set.On {
 		return err
 	}
-	c, err := a.s.itemContext(principal{household: h}, i18n.Default)
+	lang := set.Lang // the parent who saved it, as the rules of "always on the list" do
+	if lang == "" {
+		lang = i18n.Default
+	}
+	c, err := a.s.itemContext(principal{household: h}, lang)
 	if err != nil {
 		return err
 	}
@@ -27,8 +31,17 @@ func (a *AlwaysRunner) shopAuto(h store.Household) error {
 	if err != nil {
 		return err
 	}
-	if pg.ListID == "" || pg.Ticked == 0 {
-		return nil // no list to put it on, or nothing to add
+	if pg.ListID == "" {
+		// The chosen list is not offered any more (suggestions switched off): another
+		// list is not guessed, so say why nothing comes. Without a choice and without
+		// a list with suggestions there is nothing to say.
+		if set.ListID != "" {
+			a.opts.Logger.Warn("meal plan not put on the list: the chosen list no longer offers suggestions", "list", set.ListID)
+		}
+		return nil
+	}
+	if pg.Ticked == 0 {
+		return nil // nothing to add
 	}
 	if _, err := c.addShop(pg); err != nil && !errors.Is(err, store.ErrShopStale) {
 		return err

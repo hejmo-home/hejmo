@@ -1,12 +1,19 @@
 package server_test
 
 import (
+	"bytes"
+	"context"
+	"log/slog"
+	"net/http"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/always"
+	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/internal/recipe"
+	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -135,17 +142,13 @@ func TestARunnerThatRunsAgainNeverAddsAMealTwice(t *testing.T) {
 	}
 }
 
-func TestAMealAlreadyOnTheListByHandIsNotAddedAgain(t *testing.T) {
+// The next day's run knows the meals of the first (idempotency over several days).
+func TestAMealThatWasAddedTheDayBeforeIsNotAddedAgainTheNextDay(t *testing.T) {
 	t.Parallel()
 	f := newAutoShopFixture(t)
-	f.plan(t, "2026-11-23")
+	f.plan(t, "2026-11-24")
 	f.auto(t, store.MealShopAuto{On: true, Days: 7, ListID: f.shop.ID})
 	f.tick(monday3)
-	// someone puts the same meal on again by hand in the meantime: the contributions say it is there
-	on, _ := f.db.ShopMeals(f.h.ID, "2026-11-23", "2026-11-23")
-	if len(on) != 1 || on[0].Portions != 2 {
-		t.Fatalf("on the list = %+v", on)
-	}
 	f.tick(monday3.Add(24 * time.Hour))
 	if base, _ := f.potatoes(t); base != 300 {
 		t.Errorf("a meal on the list is not added again: %v g", base)
@@ -185,5 +188,75 @@ func TestWithoutAChosenListTheLastListOfARunIsUsedElseTheFirstWithSuggestions(t 
 	f.tick(monday3)
 	if base, _ := f.potatoes(t); base != 300 {
 		t.Errorf("first list with suggestions: %v g", base)
+	}
+}
+
+// The entries are written in the language of the parent who saved the setting
+// (like the rules of "always on the list"), not in the default language.
+func TestTheEntriesAreWrittenInTheLanguageOfTheParentWhoSavedTheSetting(t *testing.T) {
+	t.Parallel()
+	f := newAutoShopFixture(t)
+	f.auto(t, store.MealShopAuto{On: true, Days: 7, ListID: f.shop.ID, Lang: "en"})
+	f.plan(t, "2026-11-24")
+	f.tick(monday3)
+	es := f.entries(t)
+	if len(es) != 1 || es[0].Text != "Sweet potatoes" {
+		t.Fatalf("entries = %+v, want one in English: Sweet potatoes", es)
+	}
+}
+
+// A chosen list that no longer offers suggestions is not silently replaced by
+// another one: nothing is added, and the log says why.
+func TestAChosenListThatNoLongerOffersSuggestionsIsLoggedAndNothingIsAdded(t *testing.T) {
+	t.Parallel()
+	f := newAutoShopFixture(t)
+	var logs bytes.Buffer
+	f.runner = server.NewAlwaysRunner(server.AlwaysOptions{DB: f.db, Now: func() time.Time { return f.now }, Logger: slog.New(slog.NewTextHandler(&logs, nil))})
+	other, err := f.db.CreateList(f.h.ID, list.List{Name: "Drogerie", Color: "blue", Symbol: "circle-filled", Sort: list.Manual, Suggestions: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.auto(t, store.MealShopAuto{On: true, Days: 7, ListID: other.ID})
+	other.Suggestions = false
+	if _, err := f.db.UpdateList(f.h.ID, other); err != nil {
+		t.Fatal(err)
+	}
+	f.plan(t, "2026-11-24")
+	f.tick(monday3)
+	if got := f.entries(t); len(got) != 0 {
+		t.Errorf("nothing goes to another list: %+v", got)
+	}
+	if es, _ := f.db.Entries(f.h.ID, other.ID); len(es) != 0 {
+		t.Errorf("nothing goes to the list without suggestions: %+v", es)
+	}
+	if !strings.Contains(logs.String(), "meal plan not put on the list") || !strings.Contains(logs.String(), other.ID) {
+		t.Errorf("log = %q, want a line naming the list", logs.String())
+	}
+}
+
+// A meal tapped onto the list by hand before the run is not added again.
+func TestAMealTappedOntoTheListByHandIsNotAddedAgainByTheRun(t *testing.T) {
+	t.Parallel()
+	sb := newShopBox(t)
+	if r := addMeal(t, sb, sb.shopPage(t, "meal="+shopMeal)); r.status != http.StatusSeeOther {
+		t.Fatalf("tap = %d", r.status)
+	}
+	before, err := sb.b.db.Entries(sb.hid, sb.list.ID)
+	if err != nil || len(before) == 0 {
+		t.Fatalf("the tap put %d entries on the list: %v", len(before), err)
+	}
+	if err := sb.b.db.SetMealShopAuto(sb.hid, store.MealShopAuto{On: true, Days: 7, ListID: sb.list.ID}); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)
+	server.NewAlwaysRunner(server.AlwaysOptions{DB: sb.b.db, Now: func() time.Time { return now }}).Tick(context.Background())
+	after, _ := sb.b.db.Entries(sb.hid, sb.list.ID)
+	if len(after) != len(before) {
+		t.Fatalf("entries %d -> %d", len(before), len(after))
+	}
+	for i := range after {
+		if after[i].Qty != before[i].Qty {
+			t.Errorf("%s: %v -> %v, the meal is on the list already", after[i].Text, before[i].Qty, after[i].Qty)
+		}
 	}
 }

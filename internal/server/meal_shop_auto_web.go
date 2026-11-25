@@ -122,7 +122,7 @@ func (s *server) handleShopAutoSave(w http.ResponseWriter, r *http.Request) {
 		s.renderShopAuto(w, r, p, http.StatusUnprocessableEntity, &form, errs)
 		return
 	}
-	if err := s.db.SetMealShopAuto(p.household.ID, store.MealShopAuto{On: form.On, Days: days, ListID: form.ListID}); err != nil {
+	if err := s.db.SetMealShopAuto(p.household.ID, store.MealShopAuto{On: form.On, Days: days, ListID: form.ListID, Lang: lang}); err != nil {
 		s.fail(w, "save meal shop settings", err)
 		return
 	}

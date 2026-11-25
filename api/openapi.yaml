@@ -2629,7 +2629,7 @@ paths:
           description: The preview with its counts
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/MealShoppingSetting" }
+              schema: { $ref: "#/components/schemas/MealShopping" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
@@ -7004,7 +7004,7 @@ components:
       properties:
         mode: { type: string, enum: [manual, automatic] }
         days: { type: integer, minimum: 1, maximum: 14, default: 7 }
-        list_id: { type: string, nullable: true, description: "The list the automatic run uses; null: the list of the last run, else the first list with suggestions. A deleted list sets it back to null" }
+        list_id: { type: string, nullable: true, description: "A list with suggestions (else 422). The list the automatic run uses; null: the list of the last run, else the first list with suggestions. A deleted list sets it back to null" }
     ReligiousHolidays:
       type: object
       description: "Whether the holidays of the chosen religions are in the generated calendar of kind `religious` (ticket 339). Off by default: Hejmo never guesses a faith. Switching off keeps the religions and the two calendar choices. A holiday that is a public holiday of the household's region is not added again."

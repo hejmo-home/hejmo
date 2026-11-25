@@ -52,6 +52,14 @@ type Object struct {
 type StatusError struct {
 	Code   int
 	Status string
+	// RetryAfter is the server's Retry-After header (seconds or an HTTP date),
+	// empty when it sent none.
+	RetryAfter string
+}
+
+// statusError is the StatusError for an answer.
+func statusError(res *http.Response) *StatusError {
+	return &StatusError{Code: res.StatusCode, Status: res.Status, RetryAfter: res.Header.Get("Retry-After")}
 }
 
 func (e *StatusError) Error() string { return "the server answered " + e.Status }
@@ -237,7 +245,7 @@ func (a *authClient) Do(req *http.Request) (*http.Response, error) {
 	}
 	if res.StatusCode == http.StatusUnauthorized || res.StatusCode == http.StatusForbidden {
 		res.Body.Close()
-		return nil, &StatusError{res.StatusCode, res.Status}
+		return nil, statusError(res)
 	}
 	return res, nil
 }
@@ -324,7 +332,7 @@ func (c *Client) findHref(ctx context.Context, from *url.URL, prop string) (*url
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusMultiStatus {
-		return nil, &StatusError{res.StatusCode, res.Status}
+		return nil, statusError(res)
 	}
 	var ms multistatus
 	if err := xml.NewDecoder(res.Body).Decode(&ms); err != nil {
@@ -480,7 +488,7 @@ func (c *Client) report(ctx context.Context, dir, body, what string) (*reportAns
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusMultiStatus {
-		return nil, nil, &StatusError{res.StatusCode, res.Status}
+		return nil, nil, statusError(res)
 	}
 	var ans reportAnswer
 	if err := xml.NewDecoder(res.Body).Decode(&ans); err != nil {
@@ -660,7 +668,7 @@ func (c *Client) multiget(ctx context.Context, calendarURL string, objectURLs []
 		)
 		refused := func(status string) {
 			if code := statusCode(status); code/100 != 2 && other == nil {
-				other = &StatusError{code, strings.TrimSpace(strings.TrimPrefix(status, "HTTP/1.1 "))}
+				other = &StatusError{Code: code, Status: strings.TrimSpace(strings.TrimPrefix(status, "HTTP/1.1 "))}
 			}
 		}
 		// Only the status of the whole response says the object is gone. A
@@ -755,7 +763,7 @@ func (c *Client) fetchEach(ctx context.Context, objectURLs []string) ([]Object, 
 		case res.StatusCode == http.StatusNotFound || res.StatusCode == http.StatusGone:
 			continue
 		case res.StatusCode/100 != 2:
-			return nil, &StatusError{res.StatusCode, res.Status}
+			return nil, statusError(res)
 		default:
 			if _, err := ical.NewDecoder(bytes.NewReader(data)).Decode(); err != nil {
 				obj.Err = err
@@ -809,7 +817,7 @@ func (c *Client) State(ctx context.Context, calendarURL string) (State, error) {
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusMultiStatus {
-		return State{}, &StatusError{res.StatusCode, res.Status}
+		return State{}, statusError(res)
 	}
 	var ans struct {
 		Responses []struct {
@@ -893,7 +901,7 @@ func (c *Client) Changes(ctx context.Context, calendarURL, token string) (Change
 		if code := res.StatusCode; code >= 400 && code < 500 && code != http.StatusUnauthorized && code != http.StatusRequestTimeout && code != http.StatusTooManyRequests || code == http.StatusNotImplemented {
 			return Changes{}, fmt.Errorf("%w: %s", ErrSyncUnavailable, res.Status)
 		}
-		return Changes{}, &StatusError{res.StatusCode, res.Status}
+		return Changes{}, statusError(res)
 	}
 	var ans struct {
 		reportAnswer

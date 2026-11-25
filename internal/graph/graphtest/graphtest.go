@@ -56,6 +56,8 @@ type Server struct {
 	Bodies map[string][]map[string]any
 	// FailWrites makes POST, PATCH and DELETE on events answer this status.
 	FailWrites int
+	// RetryAfter is sent as the Retry-After header with every FailWrites answer.
+	RetryAfter string
 
 	// zone is the time zone the current request asked for with the Prefer
 	// header outlook.timezone; like real Graph, the fake answers in UTC
@@ -304,6 +306,9 @@ func (s *Server) graph(w http.ResponseWriter, r *http.Request) {
 		s.view(w, r, parts[2])
 	case len(parts) == 4 && parts[1] == "calendars" && parts[3] == "events" && r.Method == http.MethodPost:
 		if s.FailWrites != 0 {
+			if s.RetryAfter != "" {
+				w.Header().Set("Retry-After", s.RetryAfter)
+			}
 			writeJSON(w, s.FailWrites, map[string]any{"error": map[string]any{"code": "ErrorAccessDenied"}})
 			return
 		}
@@ -435,6 +440,9 @@ func (s *Server) eventCall(w http.ResponseWriter, r *http.Request, id string) {
 		writeJSON(w, 200, s.shown(ev))
 	case http.MethodPatch, http.MethodDelete:
 		if s.FailWrites != 0 {
+			if s.RetryAfter != "" {
+				w.Header().Set("Retry-After", s.RetryAfter)
+			}
 			writeJSON(w, s.FailWrites, map[string]any{"error": map[string]any{"code": "ErrorAccessDenied"}})
 			return
 		}

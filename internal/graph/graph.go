@@ -56,6 +56,9 @@ var (
 type StatusError struct {
 	Code int
 	Body string
+	// RetryAfter is Graph's Retry-After header (seconds or an HTTP date), empty
+	// when it sent none.
+	RetryAfter string
 }
 
 func (e *StatusError) Error() string { return fmt.Sprintf("graph: %d %s", e.Code, e.Body) }
@@ -333,7 +336,7 @@ func (s *Session) do(ctx context.Context, method, target string, in, out any) er
 	case res.StatusCode == http.StatusUnauthorized:
 		return fmt.Errorf("%w: Graph refused the token", ErrReauth)
 	case res.StatusCode >= 300:
-		return &StatusError{Code: res.StatusCode, Body: truncate(string(data), 200)}
+		return &StatusError{Code: res.StatusCode, Body: truncate(string(data), 200), RetryAfter: res.Header.Get("Retry-After")}
 	}
 	if out != nil && len(data) > 0 {
 		return json.Unmarshal(data, out)

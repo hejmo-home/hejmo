@@ -3326,6 +3326,7 @@
   "outside.stale.text_noversion": "The box was last updated on {date}. New versions bring security fixes; in offline mode you bring them to the box yourself.",
   "sync.fail.offline": "Offline mode is on: no sync.",
   "sync.fail.switched_off": "This connection is switched off: no sync.",
+  "sync.fail.throttled": "The calendar server asked the box to wait. Changes not yet sent stay queued and go out at the next sync.",
   "outside.onbox.until": "until {date}",
   "outside.fact.sync": "Sync",
   "outside.fact.last": "Last sync",

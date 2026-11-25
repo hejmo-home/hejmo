@@ -67,23 +67,23 @@ func names(list []recipe.Recipe) []string {
 
 func TestSuggestionsMatchAnywhereInTheNameIgnoringCaseAndUmlauts(t *testing.T) {
 	list := named("Hähnchen-Curry mit Reis", "Erdnuss-Curry", "Kichererbsen-CURRY", "Nudelauflauf", "Gemüsesuppe")
-	got := recipe.SuggestRecipes(list, "curry", "", 5)
+	got := recipe.SuggestRecipes(list, "curry", "", 5, nil)
 	if want := []string{"Erdnuss-Curry", "Hähnchen-Curry mit Reis", "Kichererbsen-CURRY"}; !reflect.DeepEqual(names(got), want) {
 		t.Errorf("curry = %v, want %v (A to Z)", names(got), want)
 	}
-	if got := names(recipe.SuggestRecipes(list, "haehn", "", 5)); len(got) != 0 {
+	if got := names(recipe.SuggestRecipes(list, "haehn", "", 5, nil)); len(got) != 0 {
 		t.Errorf("ae is no umlaut spelling here: %v", got)
 	}
-	if got := names(recipe.SuggestRecipes(list, "HAHN", "", 5)); !reflect.DeepEqual(got, []string{"Hähnchen-Curry mit Reis"}) {
+	if got := names(recipe.SuggestRecipes(list, "HAHN", "", 5, nil)); !reflect.DeepEqual(got, []string{"Hähnchen-Curry mit Reis"}) {
 		t.Errorf("umlaut ignored: %v", got)
 	}
-	if got := names(recipe.SuggestRecipes(list, "gemuse", "", 5)); !reflect.DeepEqual(got, []string{"Gemüsesuppe"}) {
+	if got := names(recipe.SuggestRecipes(list, "gemuse", "", 5, nil)); !reflect.DeepEqual(got, []string{"Gemüsesuppe"}) {
 		t.Errorf("gemuse: %v", got)
 	}
-	if got := recipe.SuggestRecipes(list, "e", "", 5); len(got) != 0 {
+	if got := recipe.SuggestRecipes(list, "e", "", 5, nil); len(got) != 0 {
 		t.Errorf("one letter suggests nothing: %v", names(got))
 	}
-	if got := recipe.SuggestRecipes(list, "  r ", "", 5); len(got) != 0 {
+	if got := recipe.SuggestRecipes(list, "  r ", "", 5, nil); len(got) != 0 {
 		t.Errorf("spaces are no letters: %v", names(got))
 	}
 }
@@ -98,12 +98,12 @@ func TestSuggestionsPutRecipesThatFitTheMealtimeFirstAndStopAtFive(t *testing.T)
 		{ID: "f", Name: "Fenchel-Pfanne", Category: recipe.Main, Mealtimes: []string{"lunch"}},
 		{ID: "g", Name: "Gnocchi-Pfanne", Category: recipe.Main, Mealtimes: []string{"dinner"}},
 	}
-	got := names(recipe.SuggestRecipes(list, "pfann", meal.Dinner, 5))
+	got := names(recipe.SuggestRecipes(list, "pfann", meal.Dinner, 5, nil))
 	want := []string{"Bohnen-Pfanne", "Champignon-Pfanne", "Dinkel-Pfanne", "Gnocchi-Pfanne", "Apfel-Pfannkuchen"}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("dinner = %v, want %v", got, want)
 	}
-	got = names(recipe.SuggestRecipes(list, "pfann", meal.Breakfast, 5))
+	got = names(recipe.SuggestRecipes(list, "pfann", meal.Breakfast, 5, nil))
 	want = []string{"Apfel-Pfannkuchen", "Champignon-Pfanne", "Eier-Pfanne", "Bohnen-Pfanne", "Dinkel-Pfanne"}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("breakfast = %v, want %v", got, want)
@@ -140,13 +140,10 @@ func TestSuggestionsPutFavouritesFirstThenTheMealtimeThenAToZ(t *testing.T) {
 		{ID: "e", Name: "Curry E"},
 	}
 	liked := map[string]bool{"c": true, "d": true}
-	if got := names(recipe.SuggestRecipesLiked(list, "curry", meal.Dinner, 5, liked)); !reflect.DeepEqual(got, []string{"Curry D", "Curry C", "Curry A", "Curry E", "Curry B"}) {
+	if got := names(recipe.SuggestRecipes(list, "curry", meal.Dinner, 5, liked)); !reflect.DeepEqual(got, []string{"Curry D", "Curry C", "Curry A", "Curry E", "Curry B"}) {
 		t.Errorf("dinner = %v: favourites first (those that fit dinner, then the rest), then the others the same way", got)
 	}
-	if got := names(recipe.SuggestRecipesLiked(list, "curry", meal.Dinner, 2, liked)); !reflect.DeepEqual(got, []string{"Curry D", "Curry C"}) {
+	if got := names(recipe.SuggestRecipes(list, "curry", meal.Dinner, 2, liked)); !reflect.DeepEqual(got, []string{"Curry D", "Curry C"}) {
 		t.Errorf("limit 2 = %v: the limit cuts after the ordering, so favourites are never cut for others", got)
-	}
-	if got, want := names(recipe.SuggestRecipesLiked(list, "curry", meal.Dinner, 5, nil)), names(recipe.SuggestRecipes(list, "curry", meal.Dinner, 5)); !reflect.DeepEqual(got, want) {
-		t.Errorf("without favourites = %v, want %v", got, want)
 	}
 }

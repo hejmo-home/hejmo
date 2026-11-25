@@ -101,7 +101,7 @@ func (s *server) handleMealSuggest(w http.ResponseWriter, r *http.Request) {
 	}
 	people := c.householdPortions()
 	view := mealSuggView{Cell: cell, Typed: typed, KeepName: c.t("meals.sugg.keep", "q", typed), KeepSub: c.t("meals.sugg.keep.hint")}
-	for _, x := range recipe.SuggestRecipesLiked(plain, typed, mt, recipe.MaxSuggestedRecipes, liked) {
+	for _, x := range recipe.SuggestRecipes(plain, typed, mt, recipe.MaxSuggestedRecipes, liked) {
 		rec := all[byID[x.ID]]
 		row := mealSuggRecipe{mealRecipe: c.mealRecipe(rec, day, string(mt), people, people), Likes: c.likes(rec)}
 		if hasCell {

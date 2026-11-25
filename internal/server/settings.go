@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/hejmo-home/hejmo/internal/nameday"
 	"math"
 	"net/http"
 	"net/url"
@@ -43,6 +44,18 @@ type settingsJSON struct {
 	BelowZero bool `json:"below_zero"`
 	// NameDays says whether the name days of the contacts are in the calendar Birthdays and after which church (ticket 318).
 	NameDays nameDaysJSON `json:"name_days"`
+	// OrthodoxCalendar is the calendar style of the household's Orthodox church, shared with the Orthodox holidays
+	// (tickets 338 and 339): revised_julian (default) or julian.
+	OrthodoxCalendar string `json:"orthodox_calendar"`
+	// Slava is the household's Serbian Slava (ticket 338).
+	Slava slavaJSON `json:"slava"`
+}
+
+type slavaJSON struct {
+	On      bool    `json:"on"`
+	Saint   *string `json:"saint"`    // an id of the Slava list or "own"; null until one was chosen
+	OwnName string  `json:"own_name"` // the name of an own Slava
+	OwnDay  string  `json:"own_day"`  // its fixed day as MM-DD in our calendar
 }
 
 type nameDaysJSON struct {
@@ -53,7 +66,8 @@ type nameDaysJSON struct {
 func settingsOf(h store.Household) settingsJSON {
 	out := settingsJSON{DateFormat: h.DateFormat, TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, AutoUpdate: h.AutoUpdate, HomeName: h.HomeName,
 		MealCutoffs: cutoffsToJSON(h.MealCutoffs), FirstStepsHidden: h.FirstStepsHidden, FirstStepsSkipped: skippedOrEmpty(h.FirstStepsSkipped), BelowZero: h.BelowZero,
-		NameDays: nameDaysJSON{On: h.NameDaysOn, List: strPtr(h.NameDayList)}}
+		NameDays: nameDaysJSON{On: h.NameDaysOn, List: strPtr(h.NameDayList)}, OrthodoxCalendar: string(nameday.ParseStyle(string(h.OrthodoxCalendar))),
+		Slava: slavaJSON{On: h.SlavaOn, Saint: strPtr(h.Slava), OwnName: h.SlavaOwnName, OwnDay: h.SlavaOwnDay}}
 	if h.Latitude != 0 || h.Longitude != 0 {
 		out.Latitude, out.Longitude = &h.Latitude, &h.Longitude
 	}
@@ -110,6 +124,15 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 			On   *bool   `json:"on"`
 			List *string `json:"list"`
 		} `json:"name_days"`
+		// OrthodoxCalendar chooses the calendar style: revised_julian or julian.
+		OrthodoxCalendar *string `json:"orthodox_calendar"`
+		// Slava switches the Serbian Slava on or off and chooses the saint; omitted parts stay as they are.
+		Slava *struct {
+			On      *bool   `json:"on"`
+			Saint   *string `json:"saint"`
+			OwnName *string `json:"own_name"`
+			OwnDay  *string `json:"own_day"`
+		} `json:"slava"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
@@ -167,6 +190,33 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 			return
 		}
 	}
+	style := p.household.OrthodoxCalendar
+	if in.OrthodoxCalendar != nil {
+		style = nameday.Style(*in.OrthodoxCalendar)
+		if err := store.ValidateOrthodoxCalendar(style); err != nil {
+			writeError(w, http.StatusUnprocessableEntity, err.Error())
+			return
+		}
+	}
+	sl := store.SlavaInput{On: p.household.SlavaOn, Choice: p.household.Slava, OwnName: p.household.SlavaOwnName, OwnDay: p.household.SlavaOwnDay}
+	if v := in.Slava; v != nil {
+		if v.On != nil {
+			sl.On = *v.On
+		}
+		if v.Saint != nil {
+			sl.Choice = *v.Saint
+		}
+		if v.OwnName != nil {
+			sl.OwnName = *v.OwnName
+		}
+		if v.OwnDay != nil {
+			sl.OwnDay = *v.OwnDay
+		}
+		if err := store.ValidateSlava(sl); err != nil { // before anything is saved
+			writeError(w, http.StatusUnprocessableEntity, err.Error())
+			return
+		}
+	}
 	if err := s.saveSettings(p.household, store.HouseholdSettings{DateFormat: d, TimeFormat: f, TemperatureUnit: u, AutoUpdate: a, MealCutoffs: c, FirstStepsHidden: in.FirstStepsHidden, FirstStepsSkipped: in.FirstStepsSkipped, Home: home}); err != nil {
 		var unknown *store.UnknownStepError
 		if errors.As(err, &unknown) {
@@ -193,6 +243,21 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 				writeError(w, http.StatusUnprocessableEntity, err.Error())
 				return
 			}
+			s.fail(w, "update settings", err)
+			return
+		}
+	}
+	if in.OrthodoxCalendar != nil || in.Slava != nil {
+		lang := s.langOf(r)
+		cname := s.i18n.T(lang, "birthdays.calendar_name")
+		var err error
+		if in.OrthodoxCalendar != nil {
+			err = s.db.SetOrthodoxCalendar(p.household.ID, style, cname)
+		}
+		if err == nil && in.Slava != nil {
+			err = s.db.SetSlava(p.household.ID, sl, cname)
+		}
+		if err != nil {
 			s.fail(w, "update settings", err)
 			return
 		}

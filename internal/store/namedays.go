@@ -40,6 +40,10 @@ func (h Household) NameDayStyle() nameday.Style {
 	return nameday.RevisedJulian
 }
 
+// NameDayStyleApplies reports whether the calendar style matters for the household's list: only the Orthodox lists
+// follow it.
+func (h Household) NameDayStyleApplies() bool { return nameday.List(h.NameDayList).Orthodox() }
+
 // SetOrthodoxCalendar saves the calendar style of the household's Orthodox church (ticket 338; the Orthodox holidays
 // of ticket 339 share it) and writes the name days again, whose dates follow it. Anything but the two styles is a
 // *FieldError at orthodox_calendar.

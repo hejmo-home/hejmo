@@ -56,8 +56,8 @@ func OwnSlavaDay(s string) (month, day int, ok bool) {
 // saves any other part of it. Switching off needs nothing. A *FieldError names the field: slava (nothing or an unknown
 // saint chosen), slava_name (an own Slava without a name or with more than 60 characters) or slava_day.
 func ValidateSlava(in SlavaInput) error {
-	if !in.On {
-		return nil
+	if !in.On && in.Choice == "" {
+		return nil // switching off needs nothing; a saint given while off is checked like any other
 	}
 	switch in.Choice {
 	case "":
@@ -78,8 +78,8 @@ func ValidateSlava(in SlavaInput) error {
 	return nil
 }
 
-// SetSlava switches the Slava on or off and chooses the saint. Switching off keeps the saint, the own name and the
-// own day; switching on needs a valid choice (*FieldError). The event is written, replaced when the saint changed,
+// SetSlava switches the Slava on or off and chooses the saint. Switching off without a choice keeps the saint, the own
+// name and the own day; a choice given while off is saved for later; switching on needs a valid choice (*FieldError). The event is written, replaced when the saint changed,
 // or removed.
 func (db *DB) SetSlava(householdID string, in SlavaInput, calendarName string) error {
 	if err := ValidateSlava(in); err != nil {
@@ -90,13 +90,14 @@ func (db *DB) SetSlava(householdID string, in SlavaInput, calendarName string) e
 		return err
 	}
 	defer tx.Rollback()
-	if !in.On {
+	switch {
+	case in.Choice == "": // switching off: everything stays as it is
 		err = expectOne(tx.Exec(`UPDATE households SET slava_on = 0, updated_at = ? WHERE id = ?`, now(), householdID))
-	} else if in.Choice == nameday.OwnID {
-		err = expectOne(tx.Exec(`UPDATE households SET slava_on = 1, slava = ?, slava_own_name = ?, slava_own_day = ?, updated_at = ? WHERE id = ?`,
-			nameday.OwnID, strings.TrimSpace(in.OwnName), in.OwnDay, now(), householdID))
-	} else {
-		err = expectOne(tx.Exec(`UPDATE households SET slava_on = 1, slava = ?, updated_at = ? WHERE id = ?`, in.Choice, now(), householdID))
+	case in.Choice == nameday.OwnID:
+		err = expectOne(tx.Exec(`UPDATE households SET slava_on = ?, slava = ?, slava_own_name = ?, slava_own_day = ?, updated_at = ? WHERE id = ?`,
+			in.On, nameday.OwnID, strings.TrimSpace(in.OwnName), in.OwnDay, now(), householdID))
+	default:
+		err = expectOne(tx.Exec(`UPDATE households SET slava_on = ?, slava = ?, updated_at = ? WHERE id = ?`, in.On, in.Choice, now(), householdID))
 	}
 	if err != nil {
 		return err

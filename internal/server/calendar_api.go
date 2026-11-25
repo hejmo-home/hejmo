@@ -122,6 +122,10 @@ type occurrenceJSON struct {
 	People       []string             `json:"people"`
 	Groups       []string             `json:"groups"`
 	Invitation   *eventInvitationJSON `json:"invitation,omitempty"`
+	// ReadOnly says the box never changes the event: it is in a read-only calendar such as the generated Birthdays.
+	ReadOnly bool `json:"read_only"`
+	// Generated says what the box makes the event from: "name_day" or "slava" (tickets 318 and 338); absent for every other event.
+	Generated string `json:"generated,omitempty"`
 }
 
 func (s *server) apiListEvents(w http.ResponseWriter, r *http.Request, p principal) {
@@ -148,14 +152,30 @@ func (s *server) apiListEvents(w http.ResponseWriter, r *http.Request, p princip
 			return
 		}
 	}
+	cals, err := s.db.Calendars(p.household.ID)
+	if err != nil {
+		s.fail(w, "load calendars", err)
+		return
+	}
+	readOnly := map[string]bool{}
+	for _, c := range cals {
+		readOnly[c.ID] = c.ReadOnly
+	}
 	out := make([]occurrenceJSON, 0, len(occs))
 	for _, o := range occs {
+		generated := ""
+		switch {
+		case o.NameDayContact != "":
+			generated = "name_day"
+		case o.Slava:
+			generated = "slava"
+		}
 		rec := ""
 		if o.SeriesID != "" {
 			rec = formatTime(o.RecurrenceID, false, loc)
 		}
 		out = append(out, occurrenceJSON{o.EventID, o.SeriesID, rec, o.CalendarID, s.title(r, o.Title), o.Description, o.Location, o.AllDay,
-			formatTime(o.Start, o.AllDay, loc), formatTime(o.End, o.AllDay, loc), nonNil(o.People), nonNil(o.Groups), eventInvitationOf(o.Invitation)})
+			formatTime(o.Start, o.AllDay, loc), formatTime(o.End, o.AllDay, loc), nonNil(o.People), nonNil(o.Groups), eventInvitationOf(o.Invitation), readOnly[o.CalendarID], generated})
 	}
 	writeJSON(w, http.StatusOK, out)
 }

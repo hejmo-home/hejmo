@@ -6717,7 +6717,7 @@ components:
         region_code: { type: string, description: "ISO 3166-2 code of the state or canton, one of the regions of the setup form", example: DE-BY }
     Settings:
       type: object
-      required: [date_format, time_format, temperature_unit, auto_update, home_name, home_place_id, latitude, longitude, below_zero, first_steps_hidden, first_steps_skipped, meal_cutoffs, name_days]
+      required: [date_format, time_format, temperature_unit, auto_update, home_name, home_place_id, latitude, longitude, below_zero, first_steps_hidden, first_steps_skipped, meal_cutoffs, name_days, orthodox_calendar, slava]
       properties:
         date_format: { type: string, enum: [dmy, mdy], description: "Day first DD.MM.YYYY (default) or month first MM/DD/YYYY. Only how the web interface writes dates in numbers; this API, CalDAV and iCalendar stay ISO 8601" }
         home_name: { type: string, description: "The name of the home place; the name of the place picked from the list" }
@@ -6735,13 +6735,28 @@ components:
         auto_update: { type: string, enum: [on, off, notify], description: "Auto-update (ADR 0018; has no effect unless GET /update says managed): on (default) installs new published versions at 03:30, off never checks, notify only tells parents that an update is available" }
         meal_cutoffs: { $ref: "#/components/schemas/MealCutoffs" }
         name_days: { $ref: "#/components/schemas/NameDays" }
+        orthodox_calendar: { $ref: "#/components/schemas/OrthodoxCalendar" }
+        slava: { $ref: "#/components/schemas/Slava" }
+    OrthodoxCalendar:
+      type: string
+      enum: [revised_julian, julian]
+      description: "The calendar style of the household's Orthodox church (ticket 338): `revised_julian` (default; fixed feasts on our dates, so Christmas is on 25 December) or `julian` (fixed feasts 13 days later until 28/02/2100, then 14). One value for the Orthodox name days (they follow it while the list is an Orthodox one) and the Orthodox holidays (ticket 339). Days that follow Orthodox Easter are the same in both. The Slava does not follow it: it always follows the Serbian Orthodox Church (Julian)."
+    Slava:
+      type: object
+      description: "The Serbian Slava (ticket 338): the Krsna Slava, the feast of the household's patron saint, one yearly all-day event of the whole family in the generated read-only calendar `birthdays`. Off by default and independent of name days. Switching off keeps the saint."
+      required: [on, saint, own_name, own_day]
+      properties:
+        on: { type: boolean }
+        saint: { type: string, nullable: true, description: "The id of a saint of the compiled list of the Serbian Orthodox Church (for example `nikola` for Nikoljdan, `djordje`, `jovan`, `sava`, `spas`, `trojica`), `own` for a saint that is not in the list, or null until one was chosen" }
+        own_name: { type: string, maxLength: 60, description: "The name of an own Slava; empty unless `saint` is `own`" }
+        own_day: { type: string, pattern: '^([0-9]{2}-[0-9]{2})?$', description: "The fixed day of an own Slava as MM-DD in our calendar (it is the same in every calendar style); empty unless `saint` is `own`", example: "05-25" }
     NameDays:
       type: object
       description: "Whether the name days of the contacts are in the generated calendar `birthdays` (ticket 318), and after which church. Off by default: Hejmo chooses no church. Switching off keeps the church and every contact's choice."
       required: [on, list]
       properties:
         on: { type: boolean }
-        list: { type: string, nullable: true, enum: [catholic, protestant, romanian_orthodox, greek_orthodox, null], description: "The name-day list: catholic (Regionalkalender for Germany, Austria and Switzerland), protestant, romanian_orthodox or greek_orthodox; null until a church was chosen. More values may follow." }
+        list: { type: string, nullable: true, enum: [catholic, protestant, bulgarian_orthodox, greek_orthodox, romanian_orthodox, russian_orthodox, ukrainian_orthodox, null], description: "The name-day list: catholic (Regionalkalender for Germany, Austria and Switzerland), protestant, bulgarian_orthodox, greek_orthodox, romanian_orthodox, russian_orthodox or ukrainian_orthodox; null until a church was chosen. The Orthodox lists keep the days as the church numbers them and follow `orthodox_calendar`. More values may follow." }
     MealCutoffs:
       type: object
       description: "Per mealtime, the time of day (hh:mm, 24-hour) from which it is no longer shown on displays (ADR 0016). Empty means no cut-off: shown for the rest of the day. Defaults: breakfast 10:00, lunch 13:30, snack 16:30, dinner none."
@@ -6774,7 +6789,16 @@ components:
           description: "Switch name days on or off and choose the church; omitted parts stay as they are. `on: true` needs a church (the stored one or `list`), else 422; an unknown list is 422. Changing the church sets contacts whose `entry` or `name` the new list does not have back to `auto`."
           properties:
             on: { type: boolean }
-            list: { type: string, description: "catholic, protestant, romanian_orthodox or greek_orthodox" }
+            list: { type: string, description: "catholic, protestant, bulgarian_orthodox, greek_orthodox, romanian_orthodox, russian_orthodox or ukrainian_orthodox" }
+        orthodox_calendar: { type: string, description: "revised_julian or julian; anything else is 422. Name days are written again on the new dates." }
+        slava:
+          type: object
+          description: "Switch the Slava on or off and choose the saint; omitted parts stay as they are. The result must be valid, else 422 and nothing is saved: `on: true` needs a `saint` (an id of the list or `own`); an unknown id is 422; `own` needs `own_name` (1 to 60 characters) and `own_day` (MM-DD, a day that exists, 29 February included). A `saint` given while `on` is false is saved for later."
+          properties:
+            on: { type: boolean }
+            saint: { type: string }
+            own_name: { type: string }
+            own_day: { type: string }
         meal_cutoffs:
           type: object
           description: "Only the mealtimes given change; a time outside hh:mm refuses the whole request with 422"
@@ -7208,7 +7232,7 @@ components:
         groups: { type: array, items: { type: string, format: uuid } }
     Occurrence:
       type: object
-      required: [event_id, series_id, recurrence_id, calendar_id, title, description, location, all_day, start, end, people, groups]
+      required: [event_id, series_id, recurrence_id, calendar_id, title, description, location, all_day, start, end, people, groups, read_only]
       properties:
         event_id: { type: string, format: uuid }
         series_id: { type: string, description: "Series master id, empty for single events" }
@@ -7223,6 +7247,8 @@ components:
         people: { type: array, items: { type: string, format: uuid } }
         groups: { type: array, items: { type: string, format: uuid } }
         invitation: { $ref: "#/components/schemas/EventInvitation" }
+        read_only: { type: boolean, description: "True when the box never changes the event: it is in a read-only calendar, such as the generated Birthdays (birthdays, name days, the Slava)" }
+        generated: { type: string, enum: [name_day, slava], description: "What the box makes the event from: a contact's name day (ticket 318) or the household's Slava (ticket 338). Absent for every other event; the event cannot be changed or deleted through the API" }
     Screensaver:
       type: object
       description: |

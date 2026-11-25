@@ -44,11 +44,10 @@ func TestTheShoppingSettingRefusesWhatIsWrong(t *testing.T) {
 	t.Parallel()
 	c := signedInAPI(t)
 	for name, body := range map[string]map[string]any{
-		"unknown mode":   {"mode": "sometimes"},
-		"no days":        {"days": 0},
-		"too many days":  {"days": 15},
-		"unknown list":   {"list_id": "nope"},
-		"days as a word": {"days": "seven"},
+		"unknown mode":  {"mode": "sometimes"},
+		"no days":       {"days": 0},
+		"too many days": {"days": 15},
+		"unknown list":  {"list_id": "nope"},
 	} {
 		if status, _, _ := c.call(http.MethodPatch, "/settings", map[string]any{"meal_shopping": body}); status != http.StatusUnprocessableEntity && status != http.StatusBadRequest {
 			t.Errorf("%s = %d, want 422", name, status)

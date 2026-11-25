@@ -2629,7 +2629,7 @@ paths:
           description: The preview with its counts
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/MealShopping" }
+              schema: { $ref: "#/components/schemas/MealShoppingSetting" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
@@ -6996,8 +6996,8 @@ components:
         auto_update: { type: string, enum: [on, off, notify], description: "Auto-update (ADR 0018; has no effect unless GET /update says managed): on (default) installs new published versions at 03:30, off never checks, notify only tells parents that an update is available" }
         meal_cutoffs: { $ref: "#/components/schemas/MealCutoffs" }
         religious_holidays: { $ref: "#/components/schemas/ReligiousHolidays" }
-        meal_shopping: { $ref: "#/components/schemas/MealShopping" }
-    MealShopping:
+        meal_shopping: { $ref: "#/components/schemas/MealShoppingSetting" }
+    MealShoppingSetting:
       type: object
       description: "How the ingredients of the meal plan get on a shopping list (ticket 285, ADR 0021): by hand (default; `POST /meal-shopping`) or automatic: every day at the household's time of day (03:00 unless changed, see `GET /library/always`) the ingredients of the meals with a recipe of the next `days` days, today included, go on the list through the same adding rule, pantry articles left out. A meal that is on a list already is never added again, only portions that are missing; nothing is added during the holiday (`GET /library/always`) and nothing is caught up afterwards. Each run is recorded like one made by hand, so its meals show their notes and `POST /meal-shopping/runs/{id}/undo` applies."
       required: [mode, days, list_id]

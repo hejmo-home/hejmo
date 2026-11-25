@@ -39,6 +39,8 @@ type entryJSON struct {
 	// Amount and Unit are the quantity of an entry of a list with suggestions.
 	Amount *float64 `json:"amount,omitempty"`
 	Unit   string   `json:"unit,omitempty"`
+	// Sources are the meals that brought quantities to the entry (ticket 283); absent for none.
+	Sources []shopSourceJSON `json:"sources,omitempty"`
 }
 
 // qtyJSON is a quantity: the number as shown, in its unit.
@@ -107,6 +109,24 @@ func (s *server) entriesToJSON(p principal, es []list.Entry) ([]entryJSON, error
 			}
 		}
 		out = append(out, j)
+	}
+	var ids []string
+	for _, e := range es {
+		ids = append(ids, e.ID)
+	}
+	src, err := s.db.EntrySources(p.household.ID, ids)
+	if err != nil {
+		return nil, err
+	}
+	for i, e := range es {
+		for _, part := range src[e.ID].Parts {
+			sj := shopSourceJSON{Date: part.Day, Mealtime: string(part.Mealtime), RecipeID: part.RecipeID, RecipeName: part.RecipeName, Portions: part.Portions}
+			if !part.Qty.None() {
+				a := formatJSONAmount(part.Qty)
+				sj.Amount, sj.Unit = &a, part.Qty.Unit
+			}
+			out[i].Sources = append(out[i].Sources, sj)
+		}
 	}
 	return out, nil
 }

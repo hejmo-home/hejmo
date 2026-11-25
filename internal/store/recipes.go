@@ -20,6 +20,13 @@ type Recipe struct {
 	CreatedAt                time.Time
 	UpdatedBy, UpdatedByName string
 	UpdatedAt                time.Time
+	// FavouriteOf are the people who like the recipe (ticket 287), in the
+	// order of the household.
+	FavouriteOf []string
+	// LastCooked is the latest planned day (YYYY-MM-DD) of the recipe that is
+	// over, empty for none. The store does not fill it: the caller sets it from
+	// RecipesLastCooked, which needs today.
+	LastCooked string
 }
 
 // RecipeNameTakenError says the name is in use already, by the recipe
@@ -83,6 +90,25 @@ func loadRecipeParts(q interface {
 		}
 		if i, ok := at[id]; ok {
 			list[i].Ingredients = append(list[i].Ingredients, in)
+		}
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	rows, err = q.Query(`SELECT f.recipe_id, f.person_id FROM recipe_favourites f
+		JOIN recipes r ON r.id = f.recipe_id JOIN household_members m ON m.person_id = f.person_id AND m.household_id = r.household_id
+		WHERE r.household_id = ? AND (? = '' OR r.id = ?) ORDER BY f.recipe_id, m.sort_order, f.person_id`, householdID, onlyID, onlyID)
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		var id, person string
+		if err := rows.Scan(&id, &person); err != nil {
+			rows.Close()
+			return err
+		}
+		if i, ok := at[id]; ok {
+			list[i].FavouriteOf = append(list[i].FavouriteOf, person)
 		}
 	}
 	if err := rows.Close(); err != nil {
@@ -273,6 +299,12 @@ func (db *DB) UpdateRecipe(householdID, personID string, r recipe.Recipe, o Meal
 // renameInPlan makes every meal plan entry that is the recipe say its new
 // name, in the layers and in the plan rows with their calendar events.
 func renameInPlan(tx *sql.Tx, householdID, id, name string, o MealOptions) error {
+	if _, err := tx.Exec(`UPDATE meal_template_entries SET text = ? WHERE recipe_id = ? AND template_id IN (SELECT id FROM meal_templates WHERE household_id = ?)`, name, id, householdID); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`UPDATE meal_plan SET template_dish = ? WHERE household_id = ? AND recipe_id = ? AND source = 'template'`, name, householdID, id); err != nil {
+		return err
+	}
 	for _, t := range []string{"meal_manual", "meal_adjustments"} {
 		if _, err := tx.Exec(`UPDATE `+t+` SET text = ? WHERE household_id = ? AND recipe_id = ?`, name, householdID, id); err != nil {
 			return err
@@ -304,8 +336,8 @@ func renameInPlan(tx *sql.Tx, householdID, id, name string, o MealOptions) error
 }
 
 // DeleteRecipe removes a recipe with its ingredients, steps and tags. Meal
-// plan entries that are the recipe stay as free text with its name, without
-// portions.
+// plan entries and template slots that are the recipe stay as free text with
+// its name, without portions.
 func (db *DB) DeleteRecipe(householdID, id string) error {
 	tx, err := db.sql.Begin()
 	if err != nil {
@@ -320,6 +352,10 @@ func (db *DB) DeleteRecipe(householdID, id string) error {
 		if _, err := tx.Exec(`UPDATE `+t+` SET text = ?, recipe_id = '', portions = 0 WHERE household_id = ? AND recipe_id = ?`, name, householdID, id); err != nil {
 			return err
 		}
+	}
+	// A template slot that was the recipe is its name in free text from now on.
+	if _, err := tx.Exec(`UPDATE meal_template_entries SET text = ?, recipe_id = '' WHERE recipe_id = ? AND template_id IN (SELECT id FROM meal_templates WHERE household_id = ?)`, name, id, householdID); err != nil {
+		return err
 	}
 	if err := expectOne(tx.Exec(`DELETE FROM recipes WHERE household_id = ? AND id = ?`, householdID, id)); err != nil {
 		return err
@@ -402,6 +438,58 @@ func (db *DB) RecipesWithArticle(householdID, articleID string) ([]RecipeRef, er
 			return nil, err
 		}
 		out = append(out, r)
+	}
+	return out, rows.Err()
+}
+
+// SetRecipeFavourites makes the recipe a favourite of exactly these people
+// (ticket 287); nil clears the marks. A person who is not a member of the
+// household is ErrInvalid, a recipe the household does not have ErrNotFound;
+// either way nothing changes.
+func (db *DB) SetRecipeFavourites(householdID, recipeID string, personIDs []string) error {
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := recipeName(tx, householdID, recipeID); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM recipe_favourites WHERE recipe_id = ?`, recipeID); err != nil {
+		return err
+	}
+	for _, id := range personIDs {
+		var n int
+		if err := tx.QueryRow(`SELECT COUNT(*) FROM household_members WHERE household_id = ? AND person_id = ?`, householdID, id).Scan(&n); err != nil {
+			return err
+		}
+		if n == 0 {
+			return &FieldError{Field: "person_ids", Msg: "not a person of the household"}
+		}
+		if _, err := tx.Exec(`INSERT OR IGNORE INTO recipe_favourites (recipe_id, person_id) VALUES (?, ?)`, recipeID, id); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// RecipesLastCooked maps each recipe of the household to the latest day it
+// was planned that is over (before today, YYYY-MM-DD); a recipe never planned
+// or only planned for today and later is missing (ticket 287). A recipe that
+// was deleted leaves the plan as free text and is not listed.
+func (db *DB) RecipesLastCooked(householdID, today string) (map[string]string, error) {
+	rows, err := db.sql.Query(`SELECT recipe_id, MAX(day) FROM meal_plan WHERE household_id = ? AND recipe_id <> '' AND day < ? GROUP BY recipe_id`, householdID, today)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]string{}
+	for rows.Next() {
+		var id, day string
+		if err := rows.Scan(&id, &day); err != nil {
+			return nil, err
+		}
+		out[id] = day
 	}
 	return out, rows.Err()
 }

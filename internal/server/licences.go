@@ -3,8 +3,10 @@ package server
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/nameday"
 	rh "github.com/hejmo-home/hejmo/internal/religiousholiday"
 )
 
@@ -16,8 +18,30 @@ func (s *server) handleLicences(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.render(w, r, http.StatusOK, "licences.html", map[string]any{
-		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "PlacesDate": s.places.Date(), "RHLines": s.religiousLicences(s.langOf(r)),
+		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "PlacesDate": s.places.Date(), "NameDaySources": s.nameDaySources(s.langOf(r)), "RHLines": s.religiousLicences(s.langOf(r)),
 	})
+}
+
+// nameDaySources names the source of every name-day list, in the order of the settings page (ticket 318): the line of
+// the licences page that credits the calendars of the churches.
+func (s *server) nameDaySources(lang string) string {
+	var out []string
+	for _, l := range nameday.Lists() {
+		cal, ok := nameday.Get(l)
+		if !ok {
+			continue
+		}
+		var names []string
+		seen := map[string]bool{}
+		for _, e := range cal.Entries {
+			if n := cal.Sources[e.Source]; !seen[e.Source] {
+				seen[e.Source] = true
+				names = append(names, n)
+			}
+		}
+		out = append(out, s.i18n.T(lang, "nd.list."+string(l))+": "+strings.Join(names, "; ")+".")
+	}
+	return strings.Join(out, " ")
 }
 
 // licenceLine is a line of a licences card; Unchecked marks a table that was not yet checked against its source.

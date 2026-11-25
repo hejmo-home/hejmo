@@ -48,6 +48,9 @@ type Event struct {
 	Religious, ReligiousKey string
 	ReligiousEve            bool
 	VarySighting            bool
+	// NameDayContact is the id of the contact a generated name-day event is made from (ticket 318); empty for
+	// every other event. It is set by the store, not stored from the event.
+	NameDayContact string
 }
 
 // Invitation says who invited and what the family's account answered, with a
@@ -79,6 +82,8 @@ type Occurrence struct {
 	Religious, ReligiousKey string
 	ReligiousEve            bool
 	VarySighting            bool
+	// NameDayContact is the id of the contact a generated name-day event is made from; empty for every other event.
+	NameDayContact string
 }
 
 // ValidateRRule checks an RRULE value.
@@ -149,7 +154,7 @@ func withAge(o *Occurrence, startYear int) bool {
 }
 
 func seriesStarts(e Event, after, before time.Time) ([]time.Time, error) {
-	opt, err := rrule.StrToROption(e.RRule)
+	opt, err := ParseRule(e.RRule, e.Start.Location())
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +176,7 @@ func occurrence(e Event, start, recurrenceID time.Time, seriesID string) Occurre
 	return Occurrence{
 		EventID: e.ID, SeriesID: seriesID, RecurrenceID: recurrenceID, CalendarID: e.CalendarID,
 		Title: e.Title, Description: e.Description, Location: e.Location, AllDay: e.AllDay,
-		Start: start, End: end, People: e.People, Groups: e.Groups, Invitation: e.Invitation,
+		Start: start, End: end, People: e.People, Groups: e.Groups, Invitation: e.Invitation, NameDayContact: e.NameDayContact,
 		Religious: e.Religious, ReligiousKey: e.ReligiousKey, ReligiousEve: e.ReligiousEve, VarySighting: e.VarySighting,
 	}
 }

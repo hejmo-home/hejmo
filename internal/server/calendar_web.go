@@ -130,7 +130,8 @@ func eventHref(o calendar.Occurrence) string {
 func (c *calendarContext) item(o calendar.Occurrence) eventItem {
 	it := eventItem{Title: c.s.title(c.r, o.Title), Location: o.Location, ReadOnly: c.readOnly[o.CalendarID] && o.Religious == "", Repeats: o.SeriesID != ""}
 	it.Vary = o.VarySighting
-	if !it.ReadOnly || o.Religious != "" { // a religious holiday has a page of its own that says where it comes from (ticket 339)
+	// a name day (ticket 318) and a religious holiday (ticket 339) have a page of their own that says where they come from
+	if !it.ReadOnly || o.NameDayContact != "" || o.Religious != "" {
 		it.Href = eventHref(o)
 	}
 	if !o.AllDay {
@@ -469,7 +470,7 @@ func (c *calendarContext) newEvent(f *eventForm) (calendar.Event, error) {
 	if f.Repeat == "" {
 		f.Repeat = string(calendar.RepeatNone)
 	}
-	rule, err := calendar.RepeatRule(calendar.Repeat(f.Repeat), until)
+	rule, err := calendar.RepeatRule(calendar.Repeat(f.Repeat), until, f.AllDay)
 	if err != nil || f.Repeat == string(calendar.RepeatCustom) {
 		return e, badField("repeat")
 	}
@@ -557,7 +558,7 @@ func formOf(series []calendar.Event, o calendar.Occurrence, occRaw string) event
 	if o.AllDay {
 		f.EndDate = end.AddDate(0, 0, -1).Format(dateLayout)
 	}
-	rep, until := calendar.RepeatOf(master.RRule)
+	rep, until := calendar.RepeatOf(master.RRule, loc)
 	f.Repeat = string(rep)
 	if !until.IsZero() {
 		f.Until = until.In(loc).Format(dateLayout)
@@ -592,6 +593,11 @@ func (s *server) renderEventPage(w http.ResponseWriter, r *http.Request, c *cale
 		"CalendarName": c.calendarName(occ.CalendarID), "Zone": master.Start.Location().String(), "CurrentRepeat": f.Repeat}
 	if inv := master.Invitation; inv != nil {
 		extra["Invite"] = s.outlookInvite(r, c, master, occ)
+	}
+	if master.NameDayContact != "" {
+		if pg, ok := s.nameDayEventPage(r, c.p, master.NameDayContact, extra["CalendarName"].(string), occ); ok {
+			extra["Gen"] = pg
+		}
 	}
 	if master.Religious != "" {
 		occ.Religious, occ.ReligiousKey, occ.ReligiousEve = master.Religious, master.ReligiousKey, master.ReligiousEve
@@ -692,10 +698,13 @@ func (c *calendarContext) patch(series []calendar.Event, occ calendar.Occurrence
 		groups = []string{}
 	}
 	p = calendar.Patch{Title: &f.Title, Description: &f.Description, Location: &f.Location, Start: &start, End: &end, People: &people, Groups: &groups}
-	if scope == calendar.ScopeThis || f.Repeat == "" || f.Repeat == string(calendar.RepeatCustom) {
+	if scope == calendar.ScopeThis {
 		return p, nil
 	}
-	curRepeat, curUntil := calendar.RepeatOf(master.RRule)
+	if f.Repeat == "" || f.Repeat == string(calendar.RepeatCustom) {
+		return p, nil
+	}
+	curRepeat, curUntil := calendar.RepeatOf(master.RRule, loc)
 	// The form shows the end of the series as a date. A series cut by "this and
 	// following" ends a second before the cut, so only a changed date counts as
 	// a new end: otherwise the cut-off occurrences would come back.
@@ -710,7 +719,7 @@ func (c *calendarContext) patch(series []calendar.Event, occ calendar.Occurrence
 	if untouchedEnd {
 		until = curUntil
 	}
-	rule, err := calendar.RepeatRule(calendar.Repeat(f.Repeat), until)
+	rule, err := calendar.RepeatRule(calendar.Repeat(f.Repeat), until, occ.AllDay)
 	if err != nil {
 		return p, badField("repeat")
 	}

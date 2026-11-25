@@ -386,6 +386,7 @@ func (s *server) handleContact(w http.ResponseWriter, r *http.Request) {
 	}
 	data["Address"] = adr
 	data["Birthday"] = e.birthday(c, true)
+	data["NameDay"] = e.nameDayFact(c, s.householdNow(p.household))
 	var groups []string
 	for _, id := range c.GroupIDs {
 		if g, ok := e.groupByID(id); ok {

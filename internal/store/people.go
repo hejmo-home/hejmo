@@ -53,6 +53,10 @@ type Household struct {
 	MealCutoffs meal.Cutoffs
 	// MCPEnabled is whether the MCP server answers (ticket 7.7); off by default.
 	MCPEnabled bool
+	// NameDaysOn puts the name days of the contacts into the calendar Birthdays, after the list NameDayList
+	// (ticket 318). Off by default; the list is kept while name days are off.
+	NameDaysOn  bool
+	NameDayList string
 	// FirstStepsHidden is set when a parent hid the first steps card on the start page.
 	FirstStepsHidden bool
 	// BelowZero says unticking a task may take a star balance below zero (ticket 292); on by default.
@@ -340,7 +344,7 @@ func (db *DB) CreateHousehold(h Household) (Household, error) {
 // Household loads a household by id.
 func (db *DB) Household(id string) (Household, error) {
 	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(home_place_id, 0), COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, date_format, time_format, temperature_unit, auto_update, update_ack,
-		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled, below_zero,
+		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled, below_zero, name_days_on, COALESCE(name_day_list, ''),
 		religious_holidays_on, religious_holidays, islamic_calendar, orthodox_calendar, religious_holidays_lang
 		FROM households WHERE id = ?`, id))
 }
@@ -348,7 +352,7 @@ func (db *DB) Household(id string) (Household, error) {
 // HomeHousehold returns the household this box serves (V1: exactly one).
 func (db *DB) HomeHousehold() (Household, error) {
 	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(home_place_id, 0), COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, date_format, time_format, temperature_unit, auto_update, update_ack,
-		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled, below_zero,
+		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled, below_zero, name_days_on, COALESCE(name_day_list, ''),
 		religious_holidays_on, religious_holidays, islamic_calendar, orthodox_calendar, religious_holidays_lang
 		FROM households ORDER BY created_at, rowid LIMIT 1`))
 }
@@ -357,7 +361,7 @@ func (db *DB) scanHousehold(row *sql.Row) (Household, error) {
 	var h Household
 	var skipped, religions string
 	err := row.Scan(&h.ID, &h.Name, &h.HomeName, &h.HomePlaceID, &h.Latitude, &h.Longitude, &h.Region, &h.Timezone, &h.DateFormat, &h.TimeFormat, &h.TemperatureUnit, &h.AutoUpdate, &h.UpdateAck,
-		&h.MealCutoffs.Breakfast, &h.MealCutoffs.Lunch, &h.MealCutoffs.Snack, &h.MealCutoffs.Dinner, &h.FirstStepsHidden, &skipped, &h.MCPEnabled, &h.BelowZero,
+		&h.MealCutoffs.Breakfast, &h.MealCutoffs.Lunch, &h.MealCutoffs.Snack, &h.MealCutoffs.Dinner, &h.FirstStepsHidden, &skipped, &h.MCPEnabled, &h.BelowZero, &h.NameDaysOn, &h.NameDayList,
 		&h.ReligiousHolidaysOn, &religions, &h.IslamicCalendar, &h.OrthodoxCalendar, &h.ReligiousLang)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Household{}, ErrNotFound

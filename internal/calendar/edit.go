@@ -3,8 +3,6 @@ package calendar
 import (
 	"errors"
 	"time"
-
-	"github.com/teambition/rrule-go"
 )
 
 // Scope says which occurrences of a series an edit or delete touches.
@@ -65,6 +63,17 @@ func (ed Editor) Edit(events []Event, occStart time.Time, scope Scope, p Patch) 
 	}
 	if scope == ScopeFollowing && occStart.Equal(master.Start) {
 		scope = ScopeAll
+	}
+	if scope != ScopeThis && master.AllDay && p.RRule == nil {
+		// An old all-day series with a date-time UNTIL is written again with
+		// a date on the next edit that reaches it.
+		rule, err := AllDayRule(master.RRule, master.Start.Location())
+		if err != nil {
+			return Change{}, err
+		}
+		if rule != master.RRule {
+			p.RRule = &rule
+		}
 	}
 	switch scope {
 	case ScopeThis:
@@ -300,16 +309,22 @@ func countBefore(master Event, occStart time.Time) (int, error) {
 // splitRule ends the old rule before occStart and returns the rule for the
 // new series. A COUNT is divided between both.
 func splitRule(master Event, occStart time.Time, before int) (oldRule, newRule string, err error) {
-	oldOpt, err := rrule.StrToROption(master.RRule)
+	oldOpt, err := ParseRule(master.RRule, master.Start.Location())
 	if err != nil {
 		return "", "", err
 	}
-	newOpt := *oldOpt
 	if oldOpt.Count > 0 {
+		newOpt := *oldOpt
 		newOpt.Count = oldOpt.Count - before
 		oldOpt.Count = before
-	} else {
-		oldOpt.Until = occStart.Add(-time.Second).UTC()
+		return oldOpt.RRuleString(), newOpt.RRuleString(), nil
 	}
-	return oldOpt.RRuleString(), newOpt.RRuleString(), nil
+	// The old part ends the day before the split (all-day) or a second before
+	// it (timed), written in the value type of DTSTART.
+	end := occStart.Add(-time.Second)
+	if master.AllDay {
+		end = occStart.In(master.Start.Location()).AddDate(0, 0, -1)
+	}
+	oldOpt.Until = time.Time{}
+	return withUntil(oldOpt.RRuleString(), end, master.AllDay), master.RRule, nil
 }

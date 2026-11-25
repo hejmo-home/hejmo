@@ -37,6 +37,7 @@ type rcpRow struct {
 	Tags             []string
 	Warns            []template.HTML
 	Unchecked        string
+	Pic              *rphPic // the small cover; nil shows the symbol of the category
 }
 
 func (c *itemCtx) t(key string, kv ...string) string {
@@ -84,7 +85,7 @@ func (c *itemCtx) dietWord(mark string) string { return c.t("recipes.diet." + ma
 func (c *itemCtx) names(list []string) string { return c.s.joinWords(c.lang, list) }
 
 func (c *itemCtx) row(r store.Recipe) rcpRow {
-	out := rcpRow{ID: r.ID, Symbol: r.Category.Symbol(), Name: r.Name, Tags: r.Tags}
+	out := rcpRow{ID: r.ID, Symbol: r.Category.Symbol(), Name: r.Name, Tags: r.Tags, Pic: c.smallCover(r.ID)}
 	out.Meta = append(out.Meta, c.categoryName(r.Category))
 	if r.Minutes > 0 {
 		out.Meta = append(out.Meta, c.minutesShort(r.Minutes))
@@ -246,8 +247,15 @@ func (s *server) handleRecipePage(w http.ResponseWriter, r *http.Request) {
 		"Steps": rec.Steps, "Warns": c.warnLines(c.warnings(rec.Recipe)), "HasWarn": len(c.warnings(rec.Recipe)) > 0,
 		"FreeText": s.freeText(c.st), "EditHref": recipesPath + "/" + rec.ID + "/edit", "CookHref": recipesPath + "/" + rec.ID + "/cook",
 	}
+	if err := s.recipePhotoView(c, storeRecipeRef{rec.ID, rec.Name}, data); err != nil {
+		s.fail(w, "recipe photos", err)
+		return
+	}
 	if entry != nil {
 		data["Starter"] = c.t("recipes.starter.note")
+		if photoParent(p) {
+			data["Starter"] = c.t("recipes.starter.note.photos")
+		}
 		data["SourceName"] = c.t("recipes.starter.credit", "site", entry.Site)
 	}
 	if rec.Portions == 1 {
@@ -291,6 +299,11 @@ func (s *server) handleRecipePage(w http.ResponseWriter, r *http.Request) {
 	if parent {
 		data["Who"] = c.whoText(rec)
 		data["DeleteExplain"] = c.t("recipes.delete.explain", "name", rec.Name)
+		if n := len(data["PhotoItems"].([]rphItem)); n == 1 {
+			data["DeleteExplain"] = c.t("recipes.delete.explain.photo.one", "name", rec.Name)
+		} else if n > 1 {
+			data["DeleteExplain"] = c.t("recipes.delete.explain.photo.other", "name", rec.Name, "n", strconv.Itoa(n))
+		}
 		data["DeleteConfirm"] = c.t("recipes.delete.confirm", "name", rec.Name)
 		planned, err := s.plannedText(c, p, lang, rec)
 		if err != nil {
@@ -416,10 +429,12 @@ func (s *server) handleRecipeDelete(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "recipe", err)
 		return
 	}
-	if err := s.db.DeleteRecipe(p.household.ID, rec.ID); err != nil && !errors.Is(err, store.ErrNotFound) {
+	ids, err := s.db.DeleteRecipeWithPhotos(p.household.ID, rec.ID)
+	if err != nil && !errors.Is(err, store.ErrNotFound) {
 		s.fail(w, "delete recipe", err)
 		return
 	}
+	s.removeRecipePhotoFiles(ids)
 	s.redirectSavedNamed(w, r, recipesPath, "flash.recipe_deleted", rec.Name)
 }
 

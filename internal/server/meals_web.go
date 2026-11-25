@@ -40,10 +40,11 @@ type mealCell struct {
 // for children, a suggestion's box.
 type mealRecipe struct {
 	ID, Symbol, Name string
-	Meta             string // "Recipe · Main dish · 45 min"
-	Href             string // the recipe with this entry's portions
-	Portions         string // as typed
-	For              string // "for all 4" or "you are 4"
+	Pic              *rphPic // the small cover instead of the symbol
+	Meta             string  // "Recipe · Main dish · 45 min"
+	Href             string  // the recipe with this entry's portions
+	Portions         string  // as typed
+	For              string  // "for all 4" or "you are 4"
 	People           int
 	Warns            []template.HTML
 	Unchecked        string
@@ -159,7 +160,7 @@ func (s *server) attachRecipes(c *itemCtx, days []mealDay, recipes map[string]st
 
 // mealRecipe is the recipe of an entry of the plan with n portions for a day and mealtime.
 func (c *itemCtx) mealRecipe(rec store.Recipe, day, mealtime string, n, people int) *mealRecipe {
-	out := &mealRecipe{ID: rec.ID, Symbol: rec.Category.Symbol(), Name: rec.Name, People: people, Portions: strconv.Itoa(n),
+	out := &mealRecipe{ID: rec.ID, Symbol: rec.Category.Symbol(), Name: rec.Name, Pic: c.smallCover(rec.ID), People: people, Portions: strconv.Itoa(n),
 		Href: recipesPath + "/" + rec.ID + "?portions=" + strconv.Itoa(n) + "&plan=" + day + "/" + mealtime}
 	meta := []string{c.t("meals.rcp.kind"), c.categoryName(rec.Category)}
 	if rec.Minutes > 0 {

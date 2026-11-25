@@ -335,6 +335,10 @@ _Avoid_: dish (alone), cooking instructions
 One of the 200 recipes that ship with the box in German and English (the starter collection). It is shown in the language of the person viewing it, names its source ("Ingredients after: Chefkoch") with a link, is read-only for everyone and is not part of a family's own recipes. Its id starts with `starter-`.
 _Avoid_: sample recipe, default recipe, template recipe
 
+**Recipe photo**:
+A family's own photo of a recipe, own or starter (each household has its own photos of a starter recipe). Stored as files on the box at most 1600 px wide with location and camera data removed, plus a 640 px and a 168 px file for lists and the grid; at most 12 per recipe. The first becomes the **cover** (Titelbild), which stays until a parent chooses another or removes it (then the newest remaining photo takes over). The cover shows at the top of the recipe, in the recipe list and in the meal plan; parents add and remove photos, everyone sees them.
+_Avoid_: recipe picture (a picture is what an article or a reward has), image
+
 **Ingredient**:
 One line of a recipe: an article, optionally with a variety, or free text, with a quantity for the recipe's portions.
 _Avoid_: component, item

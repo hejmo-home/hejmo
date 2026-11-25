@@ -1,0 +1,49 @@
+{{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
+  <h1>{{t "rph.title"}}</h1>
+  <p class="lead">{{t "rph.lead"}}</p>
+  {{template "error" .}}
+  {{with .Refused}}<div class="refused" role="alert"><p>{{.Title}}</p><ul>{{range .List}}<li><b>{{.Name}}</b>{{t "rph.reason_sep"}}{{.Reason}}</li>{{end}}</ul></div>{{end}}
+  <section class="upload rph-upload" data-rph-upload data-texts="{{.Texts}}">
+    <h2>{{t "rph.add.title"}}</h2>{{if .PhotoFull}}<p>{{t "rph.full.page"}}</p>{{end}}
+    <form method="post" action="{{.Action}}" enctype="multipart/form-data" data-rph>{{template "rphPick" (dict "Full" .PhotoFull "Primary" true)}}<noscript><button class="button secondary" type="submit">{{t "rph.send"}}</button></noscript></form>
+    <p class="hint">{{t "rph.hint.rules"}}</p>
+    <div data-upload-progress hidden></div>
+  </section>
+  {{if .Any}}
+  <h2 class="rph-h2">{{.Count}}</h2>
+  <ul class="rph-cards">{{range .Items}}
+    <li class="rph-card{{if .Cover}} is-cover{{end}}{{if .New}} is-new{{end}}"><a class="rph-ph" href="{{.Href}}"><img src="{{.Pic.Src}}" alt="{{.Alt}}" width="{{.Pic.W}}" height="{{.Pic.H}}" loading="lazy" decoding="async"></a><div class="rph-st">
+      {{if .Cover}}<p class="rph-cov"><span class="pill-cover">{{template "rphStarIcon" 16}}{{t "rph.cover"}}</span><span>{{t "rph.cover.note"}}</span></p>
+      {{else}}<form method="post" action="{{.CoverAction}}"><button class="button secondary" type="submit">{{template "rphStarIcon" 18}}{{t "rph.cover.make"}}</button></form>{{end}}
+      {{if .New}}<span class="tag">{{t "rph.new"}}</span>{{end}}<small class="by">{{.By2}}</small>
+      <details class="danger rph-rm"><summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>{{t "rph.remove"}}</summary><p>{{t "rph.remove.explain"}}{{with .RemoveNote}} {{.}}{{end}}</p>
+        <div class="confirm"><form method="post" action="{{.RemoveAction}}"><button class="button danger" type="submit">{{t "rph.remove.confirm"}}</button></form><a href="{{$.ListHref}}">{{t "danger.cancel"}}</a></div></details>
+    </div></li>{{end}}
+  </ul>
+  {{else}}<div class="empty" data-empty><p>{{t "rph.none.page"}}</p></div>{{end}}
+  <script src="/static/photos.js" defer></script>
+  <script src="/static/recipe-photos.js" defer></script>
+{{template "foot"}}
+
+{{define "rphGalleryIcon"}}<svg class="icon" width="{{.}}" height="{{.}}" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M4 17.5l5-5 4 4 2.5-2.5 4.5 4"/></svg>{{end}}
+{{define "rphCameraIcon"}}<svg class="icon" width="{{.}}" height="{{.}}" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5h3l1.6-2.5h6.8L17 8.5h3v10H4z"/><circle cx="12" cy="13" r="3.4"/></svg>{{end}}
+{{define "rphPenIcon"}}<svg class="icon" width="{{.}}" height="{{.}}" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>{{end}}
+{{define "rphUploadIcon"}}<svg class="icon" width="{{.}}" height="{{.}}" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 19h14"/></svg>{{end}}
+{{define "rphStarIcon"}}<svg class="icon" width="{{.}}" height="{{.}}" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>{{end}}
+
+{{/* The buttons that choose photos: touch devices take a photo or choose from the gallery, a computer chooses files. Arguments: Full (no more room: the buttons are disabled and hold no file input) and Primary (the page "Fotos": choosing is the primary button). */}}
+{{define "rphPick"}}{{$accept := "image/jpeg,image/png,image/heic,image/heif"}}<div class="ph-pick">
+  <label class="button secondary touch"{{if .Full}} aria-disabled="true"{{end}}>{{template "rphCameraIcon" 20}}{{t "rph.take"}}{{if not .Full}}<input type="file" name="file" accept="{{$accept}}" capture="environment">{{end}}</label>
+  <label class="button{{if not .Primary}} secondary{{end}} touch"{{if .Full}} aria-disabled="true"{{end}}>{{template "rphGalleryIcon" 20}}{{t "rph.gallery"}}{{if not .Full}}<input type="file" name="file" accept="{{$accept}}" multiple>{{end}}</label>
+  <label class="button{{if not .Primary}} secondary{{end}} mouse"{{if .Full}} aria-disabled="true"{{end}}>{{template "rphUploadIcon" 20}}{{t "rph.choose"}}{{if not .Full}}<input type="file" name="file" accept="{{$accept}}" multiple>{{end}}</label>
+</div>{{end}}
+
+{{/* The section "Fotos" of the recipe page. Argument: the page. */}}
+{{define "rphSection"}}<section class="rcp-photos" id="fotos" aria-labelledby="fot"><h2 id="fot">{{template "rphGalleryIcon" 20}}{{t "rph.title"}}</h2>
+  {{if .PhotoItems}}<p class="hint">{{t "rph.hint.tap"}}</p>
+  <ul class="rph-grid">{{range .PhotoItems}}<li><a class="rph-ph" href="{{.Href}}"><img src="{{.Pic.Src}}" alt="{{.Alt}}" width="{{.Pic.W}}" height="{{.Pic.H}}" loading="lazy" decoding="async"></a>{{if .Cover}}<span class="tag cover-tag">{{t "rph.cover"}}</span>{{end}}<small class="by">{{.By}}</small></li>{{end}}</ul>
+  {{else}}<p class="rph-none">{{t "rph.none"}}</p>{{end}}
+  {{if .PhotoParent}}<form class="rph-add" method="post" action="{{.PhotoAction}}" enctype="multipart/form-data" data-rph>{{if .PhotoFull}}<p class="rph-full">{{t "rph.full.recipe"}}</p>{{end}}{{template "rphPick" (dict "Full" .PhotoFull "Primary" false)}}<noscript><button class="button secondary" type="submit">{{t "rph.send"}}</button></noscript></form>
+  {{if .PhotoItems}}<p class="rph-manage"><a href="{{.PhotosHref}}">{{template "rphPenIcon" 18}}{{t "rph.manage"}}</a></p>{{end}}
+  <p class="hint">{{t "rph.hint.rules"}}</p>{{end}}
+</section>{{end}}

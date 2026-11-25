@@ -153,11 +153,13 @@ func TestAllDayExdateInUTCAcrossDaylightSaving(t *testing.T) {
 // in the series' zone and leaves everything else as it is.
 func TestAllDayRuleWritesUntilAsADate(t *testing.T) {
 	for rule, want := range map[string]string{
-		"FREQ=WEEKLY;UNTIL=20261231T225959Z":          "FREQ=WEEKLY;UNTIL=20261231",
-		"FREQ=WEEKLY;UNTIL=20261231T225959Z;BYDAY=MO": "FREQ=WEEKLY;BYDAY=MO;UNTIL=20261231",
-		"FREQ=WEEKLY;UNTIL=20261231":                  "FREQ=WEEKLY;UNTIL=20261231",
-		"FREQ=WEEKLY;COUNT=4":                         "FREQ=WEEKLY;COUNT=4",
-		"":                                            "",
+		"FREQ=WEEKLY;UNTIL=20261231T225959Z":                        "FREQ=WEEKLY;UNTIL=20261231",
+		"FREQ=WEEKLY;UNTIL=20261231T225959Z;BYDAY=MO":               "FREQ=WEEKLY;UNTIL=20261231;BYDAY=MO",
+		"RRULE:FREQ=WEEKLY;UNTIL=20261231T225959Z":                  "RRULE:FREQ=WEEKLY;UNTIL=20261231",
+		"FREQ=MONTHLY;BYDAY=-1FR;BYSETPOS=1;UNTIL=20261231T225959Z": "FREQ=MONTHLY;BYDAY=-1FR;BYSETPOS=1;UNTIL=20261231",
+		"FREQ=WEEKLY;UNTIL=20261231":                                "FREQ=WEEKLY;UNTIL=20261231",
+		"FREQ=WEEKLY;COUNT=4":                                       "FREQ=WEEKLY;COUNT=4",
+		"":                                                          "",
 	} {
 		got, err := calendar.AllDayRule(rule, berlin)
 		if err != nil || got != want {
@@ -171,5 +173,46 @@ func TestFloatingUntilIsReadInTheZoneOfTheSeries(t *testing.T) {
 	_, u := calendar.RepeatOf("FREQ=WEEKLY;UNTIL=20261231T235959", berlin)
 	if !u.Equal(time.Date(2026, 12, 31, 23, 59, 59, 0, berlin)) {
 		t.Errorf("until = %v, want 31.12.2026 23:59:59 Berlin", u)
+	}
+}
+
+// Ticket 307: any edit of an old all-day series that reaches the series
+// writes its UNTIL again as a date, in the domain, so the REST API gets it too.
+func TestEditingAnOldAllDaySeriesRewritesItsUntilAsADate(t *testing.T) {
+	master := calendar.Event{ID: "m", Title: "Camp", AllDay: true, Start: day(2026, 11, 2), End: day(2026, 11, 3), RRule: "FREQ=WEEKLY;UNTIL=20261231T225959Z"}
+	p := calendar.Patch{Title: str("Camp 2")}
+
+	ch, err := newEditor().Edit([]calendar.Event{master}, day(2026, 11, 16), calendar.ScopeAll, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := ch.Update[0].RRule; got != "FREQ=WEEKLY;UNTIL=20261231" {
+		t.Errorf("all = %q, want FREQ=WEEKLY;UNTIL=20261231", got)
+	}
+
+	ch, err = newEditor().Edit([]calendar.Event{master}, day(2026, 11, 16), calendar.ScopeFollowing, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := ch.Update[0].RRule; got != "FREQ=WEEKLY;UNTIL=20261115" {
+		t.Errorf("following, old part = %q, want FREQ=WEEKLY;UNTIL=20261115", got)
+	}
+	if got := ch.Create[0].RRule; got != "FREQ=WEEKLY;UNTIL=20261231" {
+		t.Errorf("following, new part = %q, want FREQ=WEEKLY;UNTIL=20261231", got)
+	}
+
+	// An edit of one occurrence leaves the series alone, and so does a rule
+	// the patch brings itself.
+	ch, err = newEditor().Edit([]calendar.Event{master}, day(2026, 11, 16), calendar.ScopeThis, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := ch.Create[0].RRule; got != "" {
+		t.Errorf("this = %q, want no rule", got)
+	}
+	own := "FREQ=DAILY"
+	ch, err = newEditor().Edit([]calendar.Event{master}, day(2026, 11, 16), calendar.ScopeAll, calendar.Patch{RRule: &own})
+	if err != nil || ch.Update[0].RRule != own {
+		t.Errorf("own rule = %q, %v; want %q", ch.Update[0].RRule, err, own)
 	}
 }

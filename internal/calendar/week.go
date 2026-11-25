@@ -117,22 +117,22 @@ func untilValue(until time.Time, allDay bool) string {
 }
 
 // AllDayRule writes the UNTIL of an RRULE value of an all-day series in loc,
-// the zone of the series, as a date naming its last day. A rule without a
-// date-time UNTIL is returned as it is.
+// the zone of the series, as a date naming its last day. Only the UNTIL value
+// changes; the rest of the text stays as it is. A rule without a date-time
+// UNTIL is returned as it is.
 func AllDayRule(rule string, loc *time.Location) (string, error) {
-	if !dateTimeUntil.MatchString(rule) {
+	m := dateTimeUntil.FindStringSubmatchIndex(rule)
+	if m == nil {
 		return rule, nil
 	}
 	opt, err := ParseRule(rule, loc)
 	if err != nil {
 		return "", err
 	}
-	until := opt.Until.In(loc)
-	opt.Until = time.Time{}
-	return withUntil(opt.RRuleString(), until, true), nil
+	return rule[:m[2]] + untilValue(opt.Until.In(loc), true) + rule[m[3]:], nil
 }
 
-var dateTimeUntil = regexp.MustCompile(`(?i)UNTIL=\d{8}T`)
+var dateTimeUntil = regexp.MustCompile(`(?i)UNTIL=(\d{8}T[0-9]{6}Z?)`)
 
 // withUntil appends UNTIL to a rule that has none.
 func withUntil(rule string, until time.Time, allDay bool) string {

@@ -689,17 +689,6 @@ func (c *calendarContext) patch(series []calendar.Event, occ calendar.Occurrence
 	if scope == calendar.ScopeThis {
 		return p, nil
 	}
-	// An old all-day series with a date-time UNTIL is written again with a
-	// date on its next edit, whatever that edit changes.
-	if occ.AllDay {
-		legacy, err := calendar.AllDayRule(master.RRule, loc)
-		if err != nil {
-			return p, err
-		}
-		if legacy != master.RRule {
-			p.RRule = &legacy
-		}
-	}
 	if f.Repeat == "" || f.Repeat == string(calendar.RepeatCustom) {
 		return p, nil
 	}

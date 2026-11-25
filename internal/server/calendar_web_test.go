@@ -4,6 +4,7 @@ import (
 	"html"
 	"net/http"
 	"net/url"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -579,13 +580,18 @@ func TestEditingAnOldAllDaySeriesRewritesItsUntilAsADate(t *testing.T) {
 			t.Fatalf("%s: edit = %d\n%s", scope, r.status, r.body)
 		}
 		events, _ = f.db.CalendarEvents(h.ID, f.family.ID)
+		got := map[string]string{}
 		for _, e := range events {
-			if e.SeriesID == "" && strings.HasSuffix(e.RRule, "Z") {
-				t.Errorf("%s: %q still has a date-time UNTIL: %q", scope, e.Title, e.RRule)
+			if e.SeriesID == "" {
+				got[e.Title] = e.RRule
 			}
-			if e.SeriesID == "" && e.Title == "School trip week 2" && e.RRule != "FREQ=WEEKLY;UNTIL=20261231" {
-				t.Errorf("%s: rule = %q, want FREQ=WEEKLY;UNTIL=20261231", scope, e.RRule)
-			}
+		}
+		want := map[string]string{"School trip week 2": "FREQ=WEEKLY;UNTIL=20261231"}
+		if scope == "following" {
+			want["School trip week"] = "FREQ=WEEKLY;UNTIL=20261115"
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("%s: rules = %v, want %v", scope, got, want)
 		}
 	}
 }

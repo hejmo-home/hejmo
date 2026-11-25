@@ -64,6 +64,17 @@ func (ed Editor) Edit(events []Event, occStart time.Time, scope Scope, p Patch) 
 	if scope == ScopeFollowing && occStart.Equal(master.Start) {
 		scope = ScopeAll
 	}
+	if scope != ScopeThis && master.AllDay && p.RRule == nil {
+		// An old all-day series with a date-time UNTIL is written again with
+		// a date on the next edit that reaches it.
+		rule, err := AllDayRule(master.RRule, master.Start.Location())
+		if err != nil {
+			return Change{}, err
+		}
+		if rule != master.RRule {
+			p.RRule = &rule
+		}
+	}
 	switch scope {
 	case ScopeThis:
 		return ed.editThis(master, overrides, occStart, p), nil
@@ -315,11 +326,5 @@ func splitRule(master Event, occStart time.Time, before int) (oldRule, newRule s
 		end = occStart.In(master.Start.Location()).AddDate(0, 0, -1)
 	}
 	oldOpt.Until = time.Time{}
-	newRule = master.RRule
-	if master.AllDay {
-		if newRule, err = AllDayRule(newRule, master.Start.Location()); err != nil {
-			return "", "", err
-		}
-	}
-	return withUntil(oldOpt.RRuleString(), end, master.AllDay), newRule, nil
+	return withUntil(oldOpt.RRuleString(), end, master.AllDay), master.RRule, nil
 }

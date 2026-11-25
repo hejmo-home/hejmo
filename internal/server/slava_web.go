@@ -208,12 +208,18 @@ func (s *server) birthdaysSavedText(lang string, v map[string]string) string {
 	return e.t("flash.bd_saved", "what", what, "count", count)
 }
 
-// sourceOf names the source of a name-day list in the reader's language.
-func (e ctEnv) sourceOf(l nameday.List, cal *nameday.Calendar, en nameday.Entry) string {
-	if txt := e.t("nd.list." + string(l) + ".source"); txt != "nd.list."+string(l)+".source" {
+// sourceName names a source of a name-day list in the reader's language: the i18n text of its key, else the name
+// recorded in the data file.
+func (e ctEnv) sourceName(cal *nameday.Calendar, key string) string {
+	if txt := e.t("nd.src." + key); txt != "nd.src."+key {
 		return txt
 	}
-	return cal.Sources[en.Source]
+	return cal.Sources[key]
+}
+
+// sourceOf names the source of one name-day entry in the reader's language.
+func (e ctEnv) sourceOf(cal *nameday.Calendar, en nameday.Entry) string {
+	return e.sourceName(cal, en.Source)
 }
 
 // slavaEventPage describes the Slava event of the household; false when the Slava is gone, so the page falls back to

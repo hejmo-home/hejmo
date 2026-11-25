@@ -394,15 +394,11 @@ func (s *server) handleBirthdaysSave(w http.ResponseWriter, r *http.Request) {
 	}
 	lang := e.lang
 	cname := s.i18n.T(lang, "birthdays.calendar_name")
-	change, err := s.db.SetNameDays(p.household.ID, on, list, cname, s.i18n.T(lang, "nd.ev.word"))
-	if err == nil {
-		if r.PostFormValue("orthodox_calendar") != "" && pg.Style.Valid() && pg.Style != p.household.OrthodoxCalendar {
-			err = s.db.SetOrthodoxCalendar(p.household.ID, pg.Style, cname)
-		}
+	save := store.BirthdaySettings{NameDays: &store.NameDaySetting{On: on, List: list, Word: s.i18n.T(lang, "nd.ev.word")}, Slava: &in}
+	if r.PostFormValue("orthodox_calendar") != "" && pg.Style.Valid() && pg.Style != p.household.OrthodoxCalendar {
+		save.Style = &pg.Style
 	}
-	if err == nil {
-		err = s.db.SetSlava(p.household.ID, in, cname)
-	}
+	change, err := s.db.SetBirthdays(p.household.ID, save, cname)
 	if err != nil {
 		s.fail(w, "name days", err)
 		return
@@ -695,7 +691,7 @@ func (s *server) nameDayEventPage(r *http.Request, p principal, contactID, calen
 	st := p.household.NameDayStyle()
 	o := occurrenceOf(en, occ.Start, st)
 	church := e.churchAdj(p.household.NameDayList)
-	pg := ndEventPage{Title: occ.Title, Calendar: calendarName, Saint: en.Saint, Source: e.sourceOf(cal.List, cal, en), Unchecked: en.Unchecked, ContactHref: contactsPath + "/" + c.ID,
+	pg := ndEventPage{Title: occ.Title, Calendar: calendarName, Saint: en.Saint, Source: e.sourceOf(cal, en), Unchecked: en.Unchecked, ContactHref: contactsPath + "/" + c.ID,
 		Open: e.t("nd.ev.open", "contact", c.HejmoName), Explain: e.t("nd.ev.explain", "contact", c.HejmoName, "church", church)}
 	pg.Lead = e.t("nd.ev.lead", "weekday", e.t("weekday."+strconv.Itoa(int(occ.Start.Weekday()))), "date", datefmt.Date(p.household.DateFormat, occ.Start))
 	switch {

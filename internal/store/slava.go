@@ -82,30 +82,21 @@ func ValidateSlava(in SlavaInput) error {
 // name and the own day; a choice given while off is saved for later; switching on needs a valid choice (*FieldError). The event is written, replaced when the saint changed,
 // or removed.
 func (db *DB) SetSlava(householdID string, in SlavaInput, calendarName string) error {
-	if err := ValidateSlava(in); err != nil {
-		return err
-	}
-	tx, err := db.sql.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
+	_, err := db.SetBirthdays(householdID, BirthdaySettings{Slava: &in}, calendarName)
+	return err
+}
+
+// setSlavaTx saves the Slava choice; the caller writes the events.
+func setSlavaTx(tx *sql.Tx, householdID string, in SlavaInput) error {
 	switch {
 	case in.Choice == "": // switching off: everything stays as it is
-		err = expectOne(tx.Exec(`UPDATE households SET slava_on = 0, updated_at = ? WHERE id = ?`, now(), householdID))
+		return expectOne(tx.Exec(`UPDATE households SET slava_on = 0, updated_at = ? WHERE id = ?`, now(), householdID))
 	case in.Choice == nameday.OwnID:
-		err = expectOne(tx.Exec(`UPDATE households SET slava_on = ?, slava = ?, slava_own_name = ?, slava_own_day = ?, updated_at = ? WHERE id = ?`,
+		return expectOne(tx.Exec(`UPDATE households SET slava_on = ?, slava = ?, slava_own_name = ?, slava_own_day = ?, updated_at = ? WHERE id = ?`,
 			in.On, nameday.OwnID, strings.TrimSpace(in.OwnName), in.OwnDay, now(), householdID))
 	default:
-		err = expectOne(tx.Exec(`UPDATE households SET slava_on = ?, slava = ?, updated_at = ? WHERE id = ?`, in.On, in.Choice, now(), householdID))
+		return expectOne(tx.Exec(`UPDATE households SET slava_on = ?, slava = ?, updated_at = ? WHERE id = ?`, in.On, in.Choice, now(), householdID))
 	}
-	if err != nil {
-		return err
-	}
-	if err := syncBirthdays(tx, householdID, calendarName); err != nil {
-		return err
-	}
-	return tx.Commit()
 }
 
 // slavaEvent is the event of the Slava, before it is written.

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hejmo-home/hejmo/internal/nameday"
 	"math"
 	"net/http"
 	"net/url"
@@ -18,6 +17,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/meal"
+	"github.com/hejmo-home/hejmo/internal/nameday"
 	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/places"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -236,28 +236,23 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 			return
 		}
 	}
-	if in.NameDays != nil {
+	if in.NameDays != nil || in.OrthodoxCalendar != nil || in.Slava != nil {
 		lang := s.langOf(r)
-		if _, err := s.db.SetNameDays(p.household.ID, ndOn, ndList, s.i18n.T(lang, "birthdays.calendar_name"), s.i18n.T(lang, "nd.ev.word")); err != nil {
+		save := store.BirthdaySettings{}
+		if in.NameDays != nil {
+			save.NameDays = &store.NameDaySetting{On: ndOn, List: ndList, Word: s.i18n.T(lang, "nd.ev.word")}
+		}
+		if in.OrthodoxCalendar != nil {
+			save.Style = &style
+		}
+		if in.Slava != nil {
+			save.Slava = &sl
+		}
+		if _, err := s.db.SetBirthdays(p.household.ID, save, s.i18n.T(lang, "birthdays.calendar_name")); err != nil {
 			if errors.Is(err, store.ErrInvalid) {
 				writeError(w, http.StatusUnprocessableEntity, err.Error())
 				return
 			}
-			s.fail(w, "update settings", err)
-			return
-		}
-	}
-	if in.OrthodoxCalendar != nil || in.Slava != nil {
-		lang := s.langOf(r)
-		cname := s.i18n.T(lang, "birthdays.calendar_name")
-		var err error
-		if in.OrthodoxCalendar != nil {
-			err = s.db.SetOrthodoxCalendar(p.household.ID, style, cname)
-		}
-		if err == nil && in.Slava != nil {
-			err = s.db.SetSlava(p.household.ID, sl, cname)
-		}
-		if err != nil {
 			s.fail(w, "update settings", err)
 			return
 		}

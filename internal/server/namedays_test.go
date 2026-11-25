@@ -274,8 +274,21 @@ func TestLicencesCreditTheNameDayCalendars(t *testing.T) {
 	t.Parallel()
 	c := newCtBox(t)
 	page := c.page("/settings/licences", "de").body
-	ctHas(t, "licences", page, `data-licence="namedays"`, `<h2>Namenstage und Slava</h2>`, "nichts ist von Namenstag-Webseiten kopiert", "<li><b>Katholisch</b><span>Regionalkalender für das deutsche Sprachgebiet</span>",
+	ctHas(t, "licences", page, `data-licence="namedays"`, `<h2>Namenstage und Slava</h2>`, "nichts ist von Namenstag-Webseiten kopiert", "<li><b>Katholisch</b>", "<span>Regionalkalender für das deutsche Sprachgebiet</span>", "<span>Martyrologium Romanum</span>", "Patriarhia Română",
 		"<li><b>Evangelisch</b><span>Evangelischer Namenkalender</span>", "<li><b>Rumänisch-orthodox</b><span>Kalender der Rumänischen Orthodoxen Kirche</span>", "<li><b>Griechisch-orthodox</b>")
+}
+
+func TestAMartyrologiumEntryNamesItsOwnSourceOnTheEventPageAndTheLicences(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	c.add(t, contactForm("Papa M", "Maurus Maier", nil, nil))
+	nameDaysOn(t, c, "catholic")
+	page := c.page(nameDayEventHref(t, c, "2027-01-15", "Namenstag Papa M (Maurus)"), "de").body
+	ctHas(t, "event page", page, "<dt>Quelle</dt><dd>", "Martyrologium Romanum")
+	ctHasNot(t, "event page", page, "Regionalkalender")
+	// A Regionalkalender entry keeps its own source.
+	ctHas(t, "licences", c.page("/settings/licences", "de").body, "<li><b>Katholisch</b>", "<span>Regionalkalender für das deutsche Sprachgebiet</span>", "<span>Martyrologium Romanum</span>",
+		"Patriarhia Română", "<span>Православный календарь Русской Православной Церкви (Московский патриархат)</span>")
 }
 
 func TestSettingsAPIHasTheNameDaysOffByDefaultAndTakesAChurch(t *testing.T) {

@@ -46,6 +46,33 @@ func TestOrthodoxCalendarDefaultsToRevisedJulianAndRejectsOthers(t *testing.T) {
 	}
 }
 
+func TestSetBirthdaysSavesAllPartsTogetherOrNone(t *testing.T) {
+	t.Parallel()
+	db, h := bareHousehold(t)
+	julian := nameday.Julian
+	var fe *store.FieldError
+	_, err := db.SetBirthdays(h.ID, store.BirthdaySettings{NameDays: &store.NameDaySetting{On: true, List: "russian_orthodox", Word: "Name day"}, Style: &julian,
+		Slava: &store.SlavaInput{On: true, Choice: "no-such-saint"}}, "Geburtstage")
+	if !errors.As(err, &fe) || fe.Field != "slava" {
+		t.Fatalf("err = %v", err)
+	}
+	got, _ := db.Household(h.ID)
+	if got.NameDaysOn || got.NameDayList != "" || got.OrthodoxCalendar != nameday.RevisedJulian || got.SlavaOn {
+		t.Fatalf("a refused save changed %+v", got)
+	}
+	if _, err := db.SetBirthdays(h.ID, store.BirthdaySettings{NameDays: &store.NameDaySetting{On: true, List: "russian_orthodox", Word: "Name day"}, Style: &julian,
+		Slava: &store.SlavaInput{On: true, Choice: "nikola"}}, "Geburtstage"); err != nil {
+		t.Fatal(err)
+	}
+	got, _ = db.Household(h.ID)
+	if !got.NameDaysOn || got.NameDayList != "russian_orthodox" || got.OrthodoxCalendar != nameday.Julian || !got.SlavaOn || got.Slava != "nikola" {
+		t.Fatalf("saved %+v", got)
+	}
+	if len(slavaEvents(t, db, got, 2026)) != 1 {
+		t.Error("the Slava event is missing")
+	}
+}
+
 func TestChangingTheCalendarStyleWritesTheNameDaysAgain(t *testing.T) {
 	t.Parallel()
 	db, h := bareHousehold(t)

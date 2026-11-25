@@ -48,21 +48,12 @@ func (h Household) NameDayStyleApplies() bool { return nameday.List(h.NameDayLis
 // of ticket 339 share it) and writes the name days again, whose dates follow it. Anything but the two styles is a
 // *FieldError at orthodox_calendar.
 func (db *DB) SetOrthodoxCalendar(householdID string, style nameday.Style, calendarName string) error {
-	if err := ValidateOrthodoxCalendar(style); err != nil {
-		return err
-	}
-	tx, err := db.sql.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-	if err := expectOne(tx.Exec(`UPDATE households SET orthodox_calendar = ?, updated_at = ? WHERE id = ?`, string(style), now(), householdID)); err != nil {
-		return err
-	}
-	if err := syncBirthdays(tx, householdID, calendarName); err != nil {
-		return err
-	}
-	return tx.Commit()
+	_, err := db.SetBirthdays(householdID, BirthdaySettings{Style: &style}, calendarName)
+	return err
+}
+
+func setOrthodoxCalendarTx(tx *sql.Tx, householdID string, style nameday.Style) error {
+	return expectOne(tx.Exec(`UPDATE households SET orthodox_calendar = ?, updated_at = ? WHERE id = ?`, string(style), now(), householdID))
 }
 
 // ValidateOrthodoxCalendar checks a style without writing anything.
@@ -101,22 +92,20 @@ func ValidateNameDays(on bool, list string) error {
 // them; switching off keeps the church and every choice. The calendar is made
 // when it is missing, and every name-day event is written again.
 func (db *DB) SetNameDays(householdID string, on bool, list, calendarName, word string) (NameDayChange, error) {
+	return db.SetBirthdays(householdID, BirthdaySettings{NameDays: &NameDaySetting{On: on, List: list, Word: word}}, calendarName)
+}
+
+// setNameDaysTx saves the name-day choice; the caller writes the events.
+func setNameDaysTx(tx *sql.Tx, householdID string, in NameDaySetting) (NameDayChange, error) {
 	var change NameDayChange
-	if err := ValidateNameDays(on, list); err != nil {
-		return change, err
-	}
-	tx, err := db.sql.Begin()
-	if err != nil {
-		return change, err
-	}
-	defer tx.Rollback()
 	var curList string
 	if err := tx.QueryRow(`SELECT COALESCE(name_day_list, '') FROM households WHERE id = ?`, householdID).Scan(&curList); errors.Is(err, sql.ErrNoRows) {
 		return change, ErrNotFound
 	} else if err != nil {
 		return change, err
 	}
-	newList := curList
+	newList, list := curList, in.List
+	var err error
 	if list != "" { // switching off leaves the church as it is; a church given while off is kept for later
 		newList = list
 	}
@@ -125,8 +114,62 @@ func (db *DB) SetNameDays(householdID string, on bool, list, calendarName, word 
 			return change, err
 		}
 	}
-	if err := expectOne(tx.Exec(`UPDATE households SET name_days_on = ?, name_day_list = ?, name_day_word = CASE WHEN ? <> '' THEN ? ELSE name_day_word END, updated_at = ? WHERE id = ?`, on, nullString(newList), word, word, now(), householdID)); err != nil {
+	err = expectOne(tx.Exec(`UPDATE households SET name_days_on = ?, name_day_list = ?, name_day_word = CASE WHEN ? <> '' THEN ? ELSE name_day_word END, updated_at = ? WHERE id = ?`, in.On, nullString(newList), in.Word, in.Word, now(), householdID))
+	return change, err
+}
+
+// NameDaySetting is the name-day part of BirthdaySettings (see SetNameDays).
+type NameDaySetting struct {
+	On         bool
+	List, Word string
+}
+
+// BirthdaySettings is what the Birthdays calendar page and the settings API save together: the name days, the
+// calendar style of the Orthodox church and the Slava. A nil part stays as it is.
+type BirthdaySettings struct {
+	NameDays *NameDaySetting
+	Style    *nameday.Style
+	Slava    *SlavaInput
+}
+
+// SetBirthdays validates every part, then saves them in one transaction and writes the Birthdays events once: a
+// failure saves nothing.
+func (db *DB) SetBirthdays(householdID string, in BirthdaySettings, calendarName string) (NameDayChange, error) {
+	var change NameDayChange
+	if in.NameDays != nil {
+		if err := ValidateNameDays(in.NameDays.On, in.NameDays.List); err != nil {
+			return change, err
+		}
+	}
+	if in.Style != nil {
+		if err := ValidateOrthodoxCalendar(*in.Style); err != nil {
+			return change, err
+		}
+	}
+	if in.Slava != nil {
+		if err := ValidateSlava(*in.Slava); err != nil {
+			return change, err
+		}
+	}
+	tx, err := db.sql.Begin()
+	if err != nil {
 		return change, err
+	}
+	defer tx.Rollback()
+	if in.NameDays != nil {
+		if change, err = setNameDaysTx(tx, householdID, *in.NameDays); err != nil {
+			return change, err
+		}
+	}
+	if in.Style != nil {
+		if err := setOrthodoxCalendarTx(tx, householdID, *in.Style); err != nil {
+			return change, err
+		}
+	}
+	if in.Slava != nil {
+		if err := setSlavaTx(tx, householdID, *in.Slava); err != nil {
+			return change, err
+		}
 	}
 	if err := syncBirthdays(tx, householdID, calendarName); err != nil {
 		return change, err

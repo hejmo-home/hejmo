@@ -5461,6 +5461,5 @@
   "nd.ev.lead": "{weekday}, {date} · all day",
   "licences.nd.title": "Name days",
   "licences.nd.text": "Hejmo compiled the lists itself from the calendars of the churches. Every name records its source; nothing is copied from name-day websites.",
-  "licences.nd.sources": "Catholic: {catholic}. Protestant: {protestant}. Greek Orthodox: {greek_orthodox}. Romanian Orthodox: {romanian_orthodox}.",
   "nd.word.2": "two"
 }

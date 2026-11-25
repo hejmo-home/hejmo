@@ -41,20 +41,18 @@ type NameDayChange struct {
 	Dropped []DroppedNameDay
 }
 
-// SetNameDays switches name days on or off and chooses the church. Switching on
-// needs a church (a *FieldError at name_day_list). Changing the church sets the
+// SetNameDays switches name days on or off and chooses the church (an empty list
+// leaves it as it is). Switching on needs a church (a *FieldError at name_day_list). Changing the church sets the
 // choices of contacts that the new list does not have back to auto and reports
 // them; switching off keeps the church and every choice. The calendar is made
 // when it is missing, and every name-day event is written again.
 func (db *DB) SetNameDays(householdID string, on bool, list, calendarName, word string) (NameDayChange, error) {
 	var change NameDayChange
-	if on {
-		if list == "" {
-			return change, &FieldError{Field: "name_day_list", Msg: "name_day_list: choose a church"}
-		}
-		if !nameday.List(list).Valid() {
-			return change, &FieldError{Field: "name_day_list", Msg: "name_day_list: unknown list " + list}
-		}
+	if on && list == "" {
+		return change, &FieldError{Field: "name_day_list", Msg: "name_day_list: choose a church"}
+	}
+	if list != "" && !nameday.List(list).Valid() {
+		return change, &FieldError{Field: "name_day_list", Msg: "name_day_list: unknown list " + list}
 	}
 	tx, err := db.sql.Begin()
 	if err != nil {
@@ -68,10 +66,10 @@ func (db *DB) SetNameDays(householdID string, on bool, list, calendarName, word 
 		return change, err
 	}
 	newList := curList
-	if on {
+	if list != "" { // switching off leaves the church as it is; a church given while off is kept for later
 		newList = list
 	}
-	if on && list != curList {
+	if list != "" && list != curList {
 		if change.Dropped, err = dropNameDayChoices(tx, householdID, nameday.List(list)); err != nil {
 			return change, err
 		}

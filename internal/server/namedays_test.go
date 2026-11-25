@@ -266,3 +266,70 @@ func TestOtherReadOnlyEventsKeepNoLink(t *testing.T) {
 	ctHas(t, "week", page, `Oma Gerda`)
 	ctHasNot(t, "week", page, `<a class="title" href="/calendar/events/`+"")
 }
+
+func TestLicencesCreditTheNameDayCalendars(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	page := c.page("/settings/licences", "de").body
+	ctHas(t, "licences", page, `data-licence="namedays"`, `<h2>Namenstage</h2>`, "nichts ist von Namenstag-Webseiten kopiert", "Katholisch: Regionalkalender für das deutsche Sprachgebiet",
+		"Evangelisch: Evangelischer Namenkalender", "Rumänisch-orthodox:", "Griechisch-orthodox:", "Patriarhia Română")
+}
+
+func TestSettingsAPIHasTheNameDaysOffByDefaultAndTakesAChurch(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	status, got, _ := c.api.call(http.MethodGet, "/settings", nil)
+	nd, _ := got["name_days"].(map[string]any)
+	if status != http.StatusOK || nd == nil || nd["on"] != false || nd["list"] != nil {
+		t.Fatalf("settings = %d %v, want name_days off with no list", status, got)
+	}
+	if status, _, _ := c.api.call(http.MethodPatch, "/settings", map[string]any{"name_days": map[string]any{"on": true}}); status != http.StatusUnprocessableEntity {
+		t.Errorf("on without a church = %d, want 422", status)
+	}
+	if status, _, _ := c.api.call(http.MethodPatch, "/settings", map[string]any{"name_days": map[string]any{"on": true, "list": "anglican"}}); status != http.StatusUnprocessableEntity {
+		t.Errorf("an unknown church = %d, want 422", status)
+	}
+	status, got, _ = c.api.call(http.MethodPatch, "/settings", map[string]any{"name_days": map[string]any{"on": true, "list": "protestant"}})
+	nd, _ = got["name_days"].(map[string]any)
+	if status != http.StatusOK || nd["on"] != true || nd["list"] != "protestant" {
+		t.Fatalf("on = %d %v", status, got)
+	}
+	_, got, _ = c.api.call(http.MethodPatch, "/settings", map[string]any{"name_days": map[string]any{"on": false}})
+	if nd, _ = got["name_days"].(map[string]any); nd["on"] != false || nd["list"] != "protestant" {
+		t.Errorf("off keeps the church: %v", got["name_days"])
+	}
+}
+
+func TestContactAPIHasTheNameDay(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	_, made, _ := c.api.call(http.MethodPost, "/contacts", map[string]any{"name": "Oma Gerda", "full_name": "Gerda Müller"})
+	id := made["id"].(string)
+	nd := made["name_day"].(map[string]any)
+	if nd["mode"] != "auto" || nd["entry"] != nil || nd["name"] != nil || nd["resolved"] != nil {
+		t.Fatalf("name_day = %v, want auto without a resolved day while name days are off", nd)
+	}
+	c.api.call(http.MethodPatch, "/settings", map[string]any{"name_days": map[string]any{"on": true, "list": "catholic"}})
+	_, got, _ := c.api.call(http.MethodGet, "/contacts/"+id, nil)
+	if got["name_day"].(map[string]any)["resolved"] != nil {
+		t.Errorf("Gerda is no name in the Catholic list: %v", got["name_day"])
+	}
+	status, got, _ := c.api.call(http.MethodPut, "/contacts/"+id, map[string]any{"name": "Oma Gerda", "full_name": "Gerda Müller", "name_day": map[string]any{"mode": "name", "name": "Gertrud"}})
+	nd = got["name_day"].(map[string]any)
+	res, _ := nd["resolved"].(map[string]any)
+	if status != http.StatusOK || nd["mode"] != "name" || nd["name"] != "Gertrud" || res == nil || !strings.HasSuffix(res["date"].(string), "-03-17") || res["name"] != "Gertrud" || res["saint"] != "Gertrud von Nivelles" {
+		t.Fatalf("PUT = %d %v", status, nd)
+	}
+	for body, why := range map[string]map[string]any{
+		"an unknown name": {"mode": "name", "name": "Mariella"}, "an empty name": {"mode": "name"}, "an unknown entry": {"mode": "entry", "entry": "nope"},
+	} {
+		if status, _, _ := c.api.call(http.MethodPut, "/contacts/"+id, map[string]any{"name": "Oma Gerda", "name_day": why}); status != http.StatusUnprocessableEntity {
+			t.Errorf("%s = %d, want 422", body, status)
+		}
+	}
+	// A PUT without name_day keeps the choice.
+	_, got, _ = c.api.call(http.MethodPut, "/contacts/"+id, map[string]any{"name": "Oma Gerda", "full_name": "Gerda Müller"})
+	if got["name_day"].(map[string]any)["name"] != "Gertrud" {
+		t.Errorf("a PUT without name_day dropped the choice: %v", got["name_day"])
+	}
+}

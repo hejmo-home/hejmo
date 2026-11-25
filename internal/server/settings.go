@@ -41,11 +41,19 @@ type settingsJSON struct {
 	FirstStepsSkipped []string `json:"first_steps_skipped"`
 	// BelowZero is whether unticking a task may take a star balance below zero (ticket 292).
 	BelowZero bool `json:"below_zero"`
+	// NameDays says whether the name days of the contacts are in the calendar Birthdays and after which church (ticket 318).
+	NameDays nameDaysJSON `json:"name_days"`
+}
+
+type nameDaysJSON struct {
+	On   bool    `json:"on"`
+	List *string `json:"list"` // catholic, protestant, romanian_orthodox or greek_orthodox; null until a church was chosen
 }
 
 func settingsOf(h store.Household) settingsJSON {
 	out := settingsJSON{DateFormat: h.DateFormat, TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, AutoUpdate: h.AutoUpdate, HomeName: h.HomeName,
-		MealCutoffs: cutoffsToJSON(h.MealCutoffs), FirstStepsHidden: h.FirstStepsHidden, FirstStepsSkipped: skippedOrEmpty(h.FirstStepsSkipped), BelowZero: h.BelowZero}
+		MealCutoffs: cutoffsToJSON(h.MealCutoffs), FirstStepsHidden: h.FirstStepsHidden, FirstStepsSkipped: skippedOrEmpty(h.FirstStepsSkipped), BelowZero: h.BelowZero,
+		NameDays: nameDaysJSON{On: h.NameDaysOn, List: strPtr(h.NameDayList)}}
 	if h.Latitude != 0 || h.Longitude != 0 {
 		out.Latitude, out.Longitude = &h.Latitude, &h.Longitude
 	}
@@ -97,6 +105,11 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		FirstStepsSkipped *[]string `json:"first_steps_skipped"`
 		// BelowZero allows or forbids a star balance below zero after unticking a task.
 		BelowZero *bool `json:"below_zero"`
+		// NameDays switches name days on or off and chooses the church; omitted parts stay as they are.
+		NameDays *struct {
+			On   *bool   `json:"on"`
+			List *string `json:"list"`
+		} `json:"name_days"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
@@ -156,6 +169,24 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 	}
 	if in.BelowZero != nil {
 		if err := s.db.SetBelowZero(p.household.ID, *in.BelowZero); err != nil {
+			s.fail(w, "update settings", err)
+			return
+		}
+	}
+	if nd := in.NameDays; nd != nil {
+		on, list := p.household.NameDaysOn, p.household.NameDayList
+		if nd.On != nil {
+			on = *nd.On
+		}
+		if nd.List != nil {
+			list = *nd.List
+		}
+		lang := s.langOf(r)
+		if _, err := s.db.SetNameDays(p.household.ID, on, list, s.i18n.T(lang, "birthdays.calendar_name"), s.i18n.T(lang, "nd.ev.word")); err != nil {
+			if errors.Is(err, store.ErrInvalid) {
+				writeError(w, http.StatusUnprocessableEntity, err.Error())
+				return
+			}
 			s.fail(w, "update settings", err)
 			return
 		}

@@ -1,0 +1,199 @@
+{
+  "n": 125,
+  "slug": "bratreis-gemuese-ei",
+  "category": "Hauptgerichte",
+  "servings": 2,
+  "time_minutes": 25,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Soja",
+      "en": "Soy"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/bratreis-mit-gemuese-und-ei-78730",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Langkornreis",
+      "article_en": "Long-grain rice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stange",
+      "article_de": "Lauch",
+      "article_en": "Leek",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zucchino",
+      "article_en": "Zucchini",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Peperoni, rot",
+      "article_en": "Red mild chili pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Schnittlauch",
+      "article_en": "Chives",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Sonnenblumenöl",
+      "article_en": "Sunflower oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Sojasauce",
+      "article_en": "Soy sauce",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Currypulver",
+      "article_en": "Curry powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Bratreis mit Gemüse und Ei",
+    "steps": [
+      "100 g Reis in Salzwasser etwa 12 Minuten kochen. Abgießen und mit einer Gabel auflockern.",
+      "1 Stange Lauch in Ringe schneiden. 2 Möhren, 1 Zucchino und 1 rote Peperoni in Streifen schneiden. 1 Bund Schnittlauch in Röllchen schneiden.",
+      "Das Öl (2 EL) in einer großen Pfanne bei hoher Hitze erhitzen. Lauch und Möhren darin anbraten.",
+      "Zucchino, Peperoni, 3 EL Wasser und 1 EL Sojasauce dazugeben und etwa 2 Minuten braten. Mit Currypulver würzen.",
+      "Den Reis unterrühren und kurz mitbraten.",
+      "3 Eier mit der restlichen Sojasauce und Pfeffer verquirlen.",
+      "Die Eier in die Pfanne gießen und rühren, bis sie gestockt sind.",
+      "Mit Schnittlauch bestreuen und sofort servieren."
+    ]
+  },
+  "en": {
+    "title": "Fried rice with vegetables and egg",
+    "steps": [
+      "Cook 100 g rice in salted water for about 12 minutes. Drain and fluff with a fork.",
+      "Slice 1 leek into rings. Cut 2 carrots, 1 zucchini and 1 red pepper into strips. Snip 1 bunch of chives.",
+      "Heat the oil (2 tbsp) in a large pan over high heat. Fry the leek and carrots in it.",
+      "Add the zucchini, pepper, 3 tbsp water and 1 tbsp soy sauce and fry about 2 minutes. Season with curry powder.",
+      "Stir in the rice and fry briefly.",
+      "Beat 3 eggs with the remaining soy sauce and pepper.",
+      "Pour the eggs into the pan and stir until set.",
+      "Sprinkle with chives and serve immediately."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "stalk"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "bunch"
+      },
+      {
+        "index": 7,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 8,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 10,
+        "amount": 3,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Time from source: 25 min, stated as Aufwand (the only time figure on the page). Page ratingCount 182 (list: Redaktionsküche). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

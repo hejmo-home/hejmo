@@ -1,0 +1,266 @@
+{
+  "n": 3,
+  "slug": "lasagne",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 100,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/745721177147257/Lasagne.html",
+    "site": "Chefkoch",
+    "ratings": 5044
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Petersilie",
+      "article_en": "Parsley",
+      "note_de": "oder TK",
+      "note_en": "or frozen"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Hackfleisch, gemischt",
+      "article_en": "Mixed ground meat (beef and pork)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Tomatenmark",
+      "article_en": "Tomato paste",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Dose",
+      "article_de": "Tomaten, geschält",
+      "article_en": "Peeled tomatoes",
+      "note_de": "800 g",
+      "note_en": "800 g"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Rotwein",
+      "article_en": "Red wine",
+      "note_de": "etwas; alternativ Brühe oder Balsamico, ca. 50-100 ml",
+      "note_en": "a little; alternatively stock or balsamic vinegar, about 50-100 ml"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": "für die Bolognesesauce",
+      "note_en": "for the Bolognese sauce"
+    },
+    {
+      "amount": 30,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "für die Béchamel",
+      "note_en": "for the béchamel"
+    },
+    {
+      "amount": 40,
+      "unit": "g",
+      "article_de": "Mehl Type 405",
+      "article_en": "Plain flour (Type 405)",
+      "note_de": "für die Béchamel",
+      "note_en": "for the béchamel"
+    },
+    {
+      "amount": 0.5,
+      "unit": "Liter",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": "für die Béchamel",
+      "note_en": "for the béchamel"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": "für die Béchamel",
+      "note_en": "for the béchamel"
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Msp.",
+      "article_de": "Muskatnuss",
+      "article_en": "Nutmeg",
+      "note_de": "frisch gerieben",
+      "note_en": "freshly grated"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Fett für die Form",
+      "article_en": "Fat for the dish",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Lasagneplatten",
+      "article_en": "Lasagne sheets",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Käse, gerieben",
+      "article_en": "Grated cheese",
+      "note_de": "z. B. Gouda, Emmentaler oder Mozzarella",
+      "note_en": "e.g. Gouda, Emmental or mozzarella"
+    },
+    {
+      "amount": 20,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "in Flöckchen",
+      "note_en": "in small flakes"
+    }
+  ],
+  "de": {
+    "title": "Lasagne",
+    "steps": [
+      "Vorbereiten: Zwiebel fein würfeln, Knoblauch fein hacken, Petersilie hacken. Den Backofen noch nicht anschalten.",
+      "Einen großen, weiten Topf auf hoher Hitze mit dem Olivenöl heiß werden lassen. Hack hineingeben und 1-2 Minuten ganz in Ruhe lassen, damit es Röstaromen bekommt. Erst dann wenden und zerkrümeln. Insgesamt 5-7 Minuten braten, bis es krümelig ist. Gibt das Hack viel Wasser ab, Hitze erhöhen oder in zwei Portionen braten.",
+      "Die Zwiebel 2-3 Minuten mitbraten, bis sie glasig ist. Knoblauch und Petersilie nur 30-60 Sekunden mitbraten, dann das Tomatenmark dazugeben und 1 Minute anrösten.",
+      "Die Dosentomaten dazugeben und mit dem Löffel zerdrücken. Mit etwas Rotwein (oder Brühe oder Balsamico) ablöschen und den Bratensatz vom Boden lösen. Mit Salz und Pfeffer würzen.",
+      "Das Ragù 30-40 Minuten ohne Deckel köcheln lassen und alle 5-10 Minuten umrühren, damit nichts ansetzt.",
+      "Währenddessen die Béchamel: Butter bei mittlerer Hitze schmelzen, das Mehl einrühren und 1-2 Minuten unter Rühren anschwitzen, ohne dass es Farbe nimmt.",
+      "Die Milch in 3-4 Portionen dazugießen und nach jeder kräftig mit dem Schneebesen verrühren, bis alles glatt ist. Dann bei niedriger Hitze 8-12 Minuten köcheln lassen, bis die Sauce sämig ist. Mit Salz, Pfeffer, Zitronensaft und Muskat abschmecken.",
+      "Den Ofen auf 180 °C Ober-/Unterhitze vorheizen und die Form einfetten.",
+      "Schichten: etwas Ragù auf den Boden, darauf Lasagneplatten (nicht überlappend), dann Ragù, dann Béchamel. So weiter, bis alles aufgebraucht ist. Die oberste Schicht muss Béchamel sein.",
+      "Ist die Béchamel zu dick, rühre 2-4 EL Wasser ein, aber nur am Rand der Form, damit die Platten dort weich werden. Käse darüberstreuen und die Butter in Flöckchen daraufsetzen.",
+      "35-45 Minuten backen, bis die Oberfläche goldbraun ist. Dann 10-15 Minuten ruhen lassen, sonst zerfällt die Lasagne beim Schneiden."
+    ]
+  },
+  "en": {
+    "title": "Lasagne",
+    "steps": [
+      "Prep: Dice the onion finely, chop the garlic finely, chop the parsley. Don't switch the oven on yet.",
+      "Heat the olive oil in a large, wide pot over high heat. Add the mince and leave it alone for 1-2 minutes so it gets some browning. Only then turn it and break it up. Fry for 5-7 minutes in total, until crumbly. If the mince releases a lot of liquid, turn up the heat or brown it in two batches.",
+      "Fry the onion with it for 2-3 minutes until translucent. Add garlic and parsley for only 30-60 seconds, then add the tomato paste and toast it for 1 minute.",
+      "Add the canned tomatoes and crush them with the spoon. Deglaze with a little red wine (or stock or balsamic) and scrape the browned bits off the bottom. Season with salt and pepper.",
+      "Let the ragu simmer for 30-40 minutes without a lid, stirring every 5-10 minutes so nothing sticks.",
+      "Meanwhile make the béchamel: melt the butter over medium heat, stir in the flour and cook for 1-2 minutes, stirring, without letting it colour.",
+      "Pour in the milk in 3-4 portions and whisk hard after each one until smooth. Then simmer on low heat for 8-12 minutes until the sauce is creamy. Season with salt, pepper, lemon juice and nutmeg.",
+      "Preheat the oven to 180 °C top/bottom heat and grease the dish.",
+      "Layer: a little ragu on the bottom, then lasagne sheets (not overlapping), then ragu, then béchamel. Continue until everything is used. The top layer must be béchamel.",
+      "If the béchamel is too thick, stir in 2-4 tbsp water, but only at the edges of the dish so the sheets soften there. Sprinkle the cheese on top and dot with the butter flakes.",
+      "Bake for 35-45 minutes until the top is golden brown. Then let it rest for 10-15 minutes, or the lasagne falls apart when you cut it."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "clove"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "bunch"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "can"
+      },
+      {
+        "index": 11,
+        "amount": 500,
+        "unit": "ml"
+      },
+      {
+        "index": 13,
+        "amount": 2,
+        "unit": "tsp"
+      },
+      {
+        "index": 14,
+        "amount": 1,
+        "unit": "pinch"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

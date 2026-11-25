@@ -1,0 +1,164 @@
+{
+  "n": 97,
+  "slug": "erbsen-pasta-ziegenkaese",
+  "category": "Hauptgerichte",
+  "servings": 3,
+  "time_minutes": 30,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.essen-und-trinken.de/rezepte/58056-rzpt-erbsen-pasta",
+    "site": "Essen & Trinken",
+    "ratings": 36
+  },
+  "ingredients": [
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Zuckerschoten",
+      "article_en": "Sugar snap peas",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Erbsen",
+      "article_en": "Peas",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Rauke",
+      "article_en": "Rocket",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Schalotte",
+      "article_en": "Shallot",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Penne",
+      "article_en": "Penne",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 30,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer, schwarz",
+      "article_en": "Black pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Muskat",
+      "article_en": "Nutmeg",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Crème fraîche",
+      "article_en": "Crème fraîche",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Ziegenfrischkäse",
+      "article_en": "Fresh goat's cheese",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 40,
+      "unit": "g",
+      "article_de": "Parmesan",
+      "article_en": "Parmesan",
+      "note_de": "frisch gehobelt",
+      "note_en": "freshly shaved"
+    }
+  ],
+  "de": {
+    "title": "Erbsen-Pasta mit Ziegenfrischkäse",
+    "steps": [
+      "Setze reichlich Salzwasser für die Nudeln auf. Putze die Zuckerschoten und schneide jede in drei Stücke. Wasche die Rauke, lass sie abtropfen und schneide sie nur grob. Würfle die Schalotte fein.",
+      "Koche Zuckerschoten und Erbsen 2 bis 3 Minuten im kochenden Salzwasser, schrecke sie ab und lass sie sehr gut abtropfen.",
+      "Gare die Penne nach Packungsangabe in 10 bis 11 Minuten bissfest. Schöpfe vor dem Abgießen 150 ml Nudelwasser ab.",
+      "Lass die Butter in einem großen Topf oder einer Pfanne zerlaufen und dünste die Schalotte bei milder Hitze glasig. Gib Zuckerschoten und Erbsen dazu, gare sie kurz mit und würze mit Salz, Pfeffer und Muskat. Rühre Crème fraîche, Ziegenfrischkäse und das Nudelwasser ein und koche die Soße cremig ein.",
+      "Gib die tropfnassen Nudeln in die Soße und koche alles etwa 1 Minute weiter. Hebe die Rauke unter und serviere mit reichlich Pfeffer und frisch gehobeltem Parmesan."
+    ]
+  },
+  "en": {
+    "title": "Pea pasta with fresh goat's cheese",
+    "steps": [
+      "Put a large pan of salted water on for the pasta. Trim the sugar snap peas and cut each into three pieces. Wash the rocket, let it drain and cut it only roughly. Dice the shallot finely.",
+      "Cook the sugar snap peas and peas in the boiling salted water for 2 to 3 minutes, refresh them and drain them very well.",
+      "Cook the penne according to the packet in 10 to 11 minutes until al dente. Scoop out 150 ml of pasta water before draining.",
+      "Melt the butter in a large pot or pan and soften the shallot over gentle heat until translucent. Add the sugar snap peas and peas, cook them briefly and season with salt, pepper and nutmeg. Stir in the crème fraîche, goat's cheese and pasta water and simmer the sauce until creamy.",
+      "Add the dripping-wet pasta to the sauce and cook everything for about 1 minute more. Fold in the rocket and serve with plenty of pepper and freshly shaved Parmesan."
+    ],
+    "amounts_converted": [
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "bunch"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "pinch"
+      }
+    ]
+  },
+  "review_note": "Replacement for missing time in the previous source, approved by the product owner 23/11/2026. Not the same dish: pea pasta with a goat's cheese sauce, no pea pesto (the title of the list entry was Erbsen-Pesto-Pasta). Source says 'italienischer Hartkäse' in the list and Parmesan in the last step; Parmesan used. Source gives servings for 3 (2 to 3 portions in the source footnote).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

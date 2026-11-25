@@ -1,0 +1,256 @@
+{
+  "n": 90,
+  "slug": "gefuellte-pfannkuchen-gemuese",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 40,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/pfannkuchen-mit-gemuesefuellung-30279.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eier (Gr. M)",
+      "article_en": "Eggs (size M)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 400,
+      "unit": "ml",
+      "article_de": "Milch, fettarm",
+      "article_en": "Low-fat milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 125,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Msp.",
+      "article_de": "Backpulver",
+      "article_en": "Baking powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Lauch",
+      "article_en": "Leek",
+      "note_de": "1 Stange",
+      "note_en": "1 stalk"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Blumenkohl",
+      "article_en": "Cauliflower",
+      "note_de": "1 Kopf",
+      "note_en": "1 head"
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": "1 bis 2 Zehen",
+      "note_en": "1 to 2 cloves"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "ml",
+      "article_de": "Gemüsebrühe, instant",
+      "article_en": "Vegetable stock (instant)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Erbsen, tiefgefroren",
+      "article_en": "Frozen peas",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Crème légère",
+      "article_en": "Crème légère (light cream)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Mineralwasser mit Kohlensäure",
+      "article_en": "Sparkling mineral water",
+      "note_de": "2 bis 3 EL",
+      "note_en": "2 to 3 tbsp"
+    },
+    {
+      "amount": 0.5,
+      "unit": "Bund",
+      "article_de": "Petersilie",
+      "article_en": "Parsley",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Butterschmalz",
+      "article_en": "Clarified butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Soßenbinder, hell",
+      "article_en": "Light sauce thickener",
+      "note_de": "3 bis 4 EL",
+      "note_en": "3 to 4 tbsp"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Gefüllte Pfannkuchen mit Gemüse",
+    "steps": [
+      "Teig: Eier, 250 ml Milch, Salz, Mehl und Backpulver glatt rühren und zugedeckt etwa 20 Minuten quellen lassen.",
+      "In der Wartezeit das Gemüse vorbereiten: Lauch in Ringe schneiden, Möhren in Scheiben, den Blumenkohl in Röschen teilen, den Knoblauch klein würfeln. Petersilie hacken, einige ganze Blättchen zum Backen beiseitelegen.",
+      "Die Blumenkohlröschen etwa 5 Minuten in kochendem Salzwasser vorgaren und gut abtropfen lassen.",
+      "Das Öl in einer weiten Pfanne heiß werden lassen, Lauch, Möhren und Knoblauch kurz darin anschwitzen und Brühe sowie 150 ml Milch angießen. Blumenkohl, Erbsen und Crème légère zugeben, aufkochen und rund 8 Minuten sacht köcheln lassen.",
+      "Inzwischen das Mineralwasser in den Teig rühren. Für jeden Pfannkuchen etwas Butterschmalz in der Pfanne heiß machen, einige Petersilienblättchen hineinstreuen, eine Kelle Teig darübergeben und den Pfannkuchen einmal wenden. Auf diese Weise 4 Pfannkuchen backen.",
+      "Soßenbinder ins Ragout rühren und eine Minute sprudelnd durchkochen. Zitronensaft, 1 Prise Zucker, Salz und Pfeffer zum Nachwürzen zugeben, die gehackte Petersilie unterrühren und das Ragout zusammen mit den Pfannkuchen sofort servieren."
+    ]
+  },
+  "en": {
+    "title": "Vegetable-filled crêpes",
+    "steps": [
+      "Batter: whisk the eggs, 250 ml milk, salt, flour and baking powder until smooth and leave covered to swell for about 20 minutes.",
+      "While waiting, prepare the vegetables: cut the leek into rings and the carrots into slices, break the cauliflower into florets and dice the garlic small. Chop the parsley, keeping a few whole leaves aside for the frying.",
+      "Parboil the cauliflower florets in boiling salted water for about 5 minutes and drain well.",
+      "Heat the oil in a pan, briefly sweat the leek, carrots and garlic, and deglaze with the stock and 150 ml milk. Add the cauliflower, peas and crème légère, bring to the boil and let it simmer gently for around 8 minutes.",
+      "Meanwhile, stir the sparkling water into the batter. Heat the clarified butter in a pan, scatter in a few parsley leaves, pour a ladle of batter over them and turn the pancake once. Cook 4 pancakes this way.",
+      "Stir the sauce thickener into the ragout and cook for about 1 minute. Season with salt, pepper, 1 pinch of sugar and lemon juice, stir in the chopped parsley and serve the ragout with the pancakes straight away."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 13,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 14,
+        "amount": 0.5,
+        "unit": "bunch"
+      },
+      {
+        "index": 15,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 16,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 18,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Source ranges (garlic 1-2, sparkling water 2-3 EL, thickener 3-4 EL) use the lower value. Leek 'ca. 250 g' and cauliflower 'ca. 500 g' given as grams. Ratings shown on page: 5; list says Redaktionsküche. Steps restructured (own step division and order of work) after paraphrase spot-check 23/11/2026.",
+  "originality": {
+    "overlap_5gram": 0.0,
+    "checked": "23/11/2026"
+  }
+}

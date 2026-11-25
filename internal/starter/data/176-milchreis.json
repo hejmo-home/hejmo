@@ -1,0 +1,116 @@
+{
+  "n": 176,
+  "slug": "milchreis",
+  "category": "Desserts",
+  "servings": 4,
+  "time_minutes": 45,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/1153081221555008/Der-perfekte-Milchreis-Grundrezept.html",
+    "site": "Chefkoch",
+    "ratings": 1765
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Milchreis",
+      "article_en": "Pudding rice (short-grain rice)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Liter",
+      "article_de": "Vollmilch",
+      "article_en": "Whole milk",
+      "note_de": "zimmerwarm",
+      "note_en": "at room temperature"
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Vanilleschote",
+      "article_en": "Vanilla pod",
+      "note_de": "oder 1 Pck. Vanillezucker",
+      "note_en": "or 1 packet vanilla sugar"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zimtzucker",
+      "article_en": "Cinnamon sugar",
+      "note_de": "nach Belieben zum Servieren; alternativ Apfelmus, Rote Grütze oder frische Früchte",
+      "note_en": "to taste, to serve; alternatively apple sauce, red berry compote or fresh fruit"
+    }
+  ],
+  "de": {
+    "title": "Milchreis",
+    "steps": [
+      "Einen großen Topf mit Deckel nehmen, denn der Reis quillt stark und die Milch schäumt gern hoch. 1 EL Butter darin zerlassen und den Milchreis kurz darin anschwitzen.",
+      "1 Liter zimmerwarme Vollmilch und 4 EL Zucker zugeben, dazu das Mark der aufgeschlitzten Vanilleschote samt Schote. Statt der Schote geht auch 1 Päckchen Vanillezucker. Unter vorsichtigem Rühren einmal aufkochen, damit nichts am Boden ansetzt.",
+      "Die Hitze zurückschalten, sodass es nur noch leicht köchelt. Mit Deckel 30 Minuten ziehen lassen und nach etwa 15 Minuten umrühren.",
+      "Der Milchreis schmeckt warm und kalt. Dazu passen Zimtzucker, Apfelmus, Rote Grütze oder frische Früchte."
+    ]
+  },
+  "en": {
+    "title": "Rice pudding",
+    "steps": [
+      "Use a large pot with a lid, because the rice swells a lot and the milk likes to foam up. Melt 1 tbsp butter in it and briefly sweat the rice.",
+      "Add 1 litre of room-temperature whole milk and 4 tbsp sugar, plus the scraped seeds of the split vanilla pod together with the pod. 1 packet of vanilla sugar works instead of the pod. Bring to the boil once, stirring carefully so nothing sticks to the bottom.",
+      "Turn the heat down so it only simmers gently. Cover and leave for 30 minutes, stirring after about 15 minutes.",
+      "Rice pudding tastes good warm or cold. Cinnamon sugar, apple sauce, red berry compote or fresh fruit go well with it."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 2,
+        "amount": 1000,
+        "unit": "ml"
+      },
+      {
+        "index": 3,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Rating count 1,765 from the list (page JSON-LD shows 1768). Source yield 4 portions. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.0
+  }
+}

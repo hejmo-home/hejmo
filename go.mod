@@ -19,6 +19,7 @@ require (
 	github.com/mholt/acmez/v3 v3.1.7
 	github.com/miekg/dns v1.1.73
 	github.com/modelcontextprotocol/go-sdk v1.8.0
+	github.com/nyaruka/phonenumbers v1.8.1
 	github.com/pquerna/otp v1.5.0
 	github.com/sigstore/protobuf-specs v0.5.3-0.20261112181914-a84bc5ff572a
 	github.com/sigstore/sigstore-go v1.4.1

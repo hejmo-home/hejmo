@@ -1,0 +1,153 @@
+{
+  "n": 55,
+  "slug": "spargel-kartoffel-gratin",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 75,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/spargel-kartoffel-gratin-132876.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Spargel, weiß",
+      "article_en": "White asparagus",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Spargel, grün",
+      "article_en": "Green asparagus",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Packung",
+      "article_de": "Sauce Hollandaise",
+      "article_en": "Hollandaise sauce",
+      "note_de": "250 ml",
+      "note_en": "250 ml"
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Schlagsahne",
+      "article_en": "Whipping cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Chiliflocken",
+      "article_en": "Chilli flakes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 750,
+      "unit": "g",
+      "article_de": "Kartoffeln, vorwiegend festkochend",
+      "article_en": "Waxy potatoes (mostly waxy)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Speckwürfel",
+      "article_en": "Diced bacon",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 5,
+      "unit": "Stk",
+      "article_de": "Schnittlauch",
+      "article_en": "Chives",
+      "note_de": "ca. 5 Halme",
+      "note_en": "about 5 stalks"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Fett",
+      "article_en": "Fat",
+      "note_de": "für die Form",
+      "note_en": "for greasing the dish"
+    }
+  ],
+  "de": {
+    "title": "Spargel-Kartoffel-Gratin",
+    "steps": [
+      "Weißen Spargel schälen, bei beiden Spargelsorten die holzigen Enden abschneiden. Spargel in mundgerechte Stücke schneiden. Ofen auf 180 °C Ober-/Unterhitze (160 °C Umluft) vorheizen.",
+      "Hollandaise und Sahne verrühren, mit Salz, Pfeffer und Chiliflocken würzen.",
+      "Kartoffeln schälen und mit dem Hobel in dünne Scheiben schneiden. Die Scheiben nicht waschen, sonst fehlt die Stärke.",
+      "Eine Form (etwa 20 x 30 cm) einfetten. Die Hälfte der Kartoffeln hineinschichten.",
+      "Den Spargel darauf verteilen. Die restlichen Kartoffelscheiben hochkant dazwischen und obendrauf stellen.",
+      "Die Soße darübergießen und die Speckwürfel darüberstreuen.",
+      "Etwa 45 Minuten backen, bis die Kartoffeln weich sind und die Oberfläche Farbe hat.",
+      "Schnittlauch in Röllchen schneiden und erst nach dem Backen aufstreuen."
+    ]
+  },
+  "en": {
+    "title": "Asparagus and potato gratin",
+    "steps": [
+      "Peel the white asparagus and cut the woody ends off both kinds of asparagus. Cut the asparagus into bite-sized pieces. Preheat the oven to 180 C (160 C fan).",
+      "Mix the hollandaise and cream and season with salt, pepper and chilli flakes.",
+      "Peel the potatoes and slice them thinly with a slicer. Do not rinse the slices, otherwise you lose the starch.",
+      "Grease a dish (about 20 x 30 cm). Layer half of the potatoes in it.",
+      "Spread the asparagus on top. Stand the remaining potato slices upright between and on top of it.",
+      "Pour the sauce over and scatter the diced bacon on top.",
+      "Bake for about 45 minutes until the potatoes are soft and the top has some colour.",
+      "Cut the chives into rings and sprinkle them on only after baking."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "pack"
+      },
+      {
+        "index": 9,
+        "amount": 5,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Contains bacon, so diet_suggested is null (list shows \"–\"). Source rating shows 2 ratings; list says Redaktionsküche. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

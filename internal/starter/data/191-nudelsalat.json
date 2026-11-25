@@ -1,0 +1,179 @@
+{
+  "n": 191,
+  "slug": "nudelsalat",
+  "category": "Snacks und Brotdose",
+  "servings": 4,
+  "time_minutes": 40,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Senf",
+      "en": "Mustard"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/700651172648139/Murmels-Nudelsalat.html",
+    "site": "Chefkoch",
+    "ratings": 1239
+  },
+  "ingredients": [
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Spirelli",
+      "article_en": "Spirelli pasta (short spiral pasta)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Handvoll",
+      "article_de": "Erbsen, TK",
+      "article_en": "Frozen peas",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Fleischwurst",
+      "article_en": "Fleischwurst (German bologna-style sausage)",
+      "note_de": "oder 4 kleine Wiener Würstchen, klein geschnitten",
+      "note_en": "or 4 small Vienna sausages, cut small"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Gouda",
+      "article_en": "Gouda",
+      "note_de": "oder Edamer, gewürfelt",
+      "note_en": "or Edam, diced"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Tomaten",
+      "article_en": "Tomatoes",
+      "note_de": "fest",
+      "note_en": "firm"
+    },
+    {
+      "amount": 6,
+      "unit": "Stk",
+      "article_de": "Gewürzgurken",
+      "article_en": "Pickled gherkins",
+      "note_de": "in Scheiben geschnitten",
+      "note_en": "sliced"
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Salatcreme",
+      "article_en": "Salad cream (Miracel Whip Balance type)",
+      "note_de": "Miracel Whip Balance",
+      "note_en": "Miracel Whip Balance"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Ketchup",
+      "article_en": "Ketchup",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Senf",
+      "article_en": "Mustard",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Paprikapulver, edelsüß",
+      "article_en": "Sweet paprika powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Gurkenflüssigkeit",
+      "article_en": "Pickle liquid",
+      "note_de": "aus dem Gurkenglas, nach Bedarf",
+      "note_en": "from the gherkin jar, as needed"
+    }
+  ],
+  "de": {
+    "title": "Murmels Nudelsalat",
+    "steps": [
+      "Koche 250 g Spirelli in Salzwasser bissfest. Gib in den letzten 3 Minuten 2 Handvoll TK-Erbsen mit in den Topf. Gieße alles ab und schrecke es kalt ab.",
+      "Dressing: Rühre in einer großen Schüssel 250 g Salatcreme mit 1 EL Ketchup, 1 TL Senf, 1/2 TL edelsüßem Paprikapulver, Salz und Pfeffer glatt. Verdünne es mit Gurkenflüssigkeit, bis es wie Buttermilch aussieht. Nimm lieber etwas mehr, denn die Nudeln saugen viel auf.",
+      "Schneide 200 g Fleischwurst klein, würfle 200 g Gouda, 2 feste Tomaten und 6 Gewürzgurken und gib alles ins Dressing.",
+      "Gib Nudeln und Erbsen dazu und rühre alles gut durch.",
+      "Stelle den Salat mindestens 3 Stunden kalt. Am besten schmeckt er, wenn er über Nacht durchgezogen ist. Serviere ihn kalt."
+    ]
+  },
+  "en": {
+    "title": "Pasta salad",
+    "steps": [
+      "Cook 250 g spirelli in salted water until al dente. Add 2 handfuls of frozen peas to the pot for the last 3 minutes. Drain everything and rinse it cold.",
+      "Dressing: in a large bowl, stir 250 g salad cream smooth with 1 tbsp ketchup, 1 tsp mustard, 1/2 tsp sweet paprika, salt and pepper. Thin it with pickle brine until it looks like buttermilk. Rather use a bit more, because the pasta soaks up a lot.",
+      "Cut 200 g sausage small and dice 200 g Gouda, 2 firm tomatoes and 6 gherkins, and add everything to the dressing.",
+      "Add pasta and peas and stir well.",
+      "Chill the salad for at least 3 hours. It tastes best after resting overnight. Serve cold."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "handful"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 6,
+        "unit": "piece"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 9,
+        "amount": 0.5,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "Salatcreme: source names the brand Miracel Whip Balance (kept in note). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

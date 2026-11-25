@@ -1,0 +1,98 @@
+{
+  "n": 183,
+  "slug": "bananeneis",
+  "category": "Desserts",
+  "servings": 4,
+  "time_minutes": 255,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/bananeneis-6909",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Bio-Zitrone",
+      "article_en": "Organic lemon",
+      "note_de": "groß",
+      "note_en": "large"
+    },
+    {
+      "amount": 600,
+      "unit": "g",
+      "article_de": "Bananen",
+      "article_en": "Bananas",
+      "note_de": "sehr reif, Schale mit braunen Flecken",
+      "note_en": "very ripe, with brown spots on the skin"
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Joghurt",
+      "article_en": "Yoghurt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Bananeneis",
+    "steps": [
+      "Wasche die Zitrone heiß ab, reibe die Schale ab und presse den Saft aus.",
+      "Schäle die sehr reifen Bananen (braune Flecken sind gut) und schneide sie in Stücke.",
+      "Püriere Bananen, 100 g Zucker, 400 g Joghurt, 150 g Sahne, Zitronenschale und Zitronensaft in der Küchenmaschine.",
+      "Probiere die Masse. Wenn sie zu süß ist, gib noch etwas Zitronensaft dazu.",
+      "Gieße die Masse in eine gefriertaugliche Schüssel und friere sie etwa 4 Stunden ein. Rühre in der Zeit immer wieder kräftig durch, damit keine großen Eiskristalle entstehen.",
+      "Mit Eismaschine geht es schneller: einfach in der Maschine gefrieren lassen.",
+      "Das Eis ist fertig, wenn die Masse fest durchgefroren ist. Mit dem Löffel Kugeln abstechen und mit Sahne servieren."
+    ]
+  },
+  "en": {
+    "title": "Banana ice cream",
+    "steps": [
+      "Wash the lemon in hot water, grate the zest and squeeze the juice.",
+      "Peel the very ripe bananas (brown spots are good) and cut them into chunks.",
+      "Blend bananas, 100 g sugar, 400 g yoghurt, 150 g cream, lemon zest and lemon juice in the food processor.",
+      "Taste the mixture. If it is too sweet, add a little more lemon juice.",
+      "Pour it into a freezer-safe bowl and freeze for about 4 hours. Stir vigorously every now and then so no large ice crystals form.",
+      "With an ice cream maker it is quicker: just let it freeze in the machine.",
+      "The ice cream is ready when the mixture is frozen firm all the way through. Scoop it out and serve with cream."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Page shows 103 ratings; list says Redaktionsküche. time_minutes is prep 15 + freezing 240 stated in source. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

@@ -24,8 +24,11 @@ func contactPhotoPath(c store.Contact) string {
 	if !c.HasPhoto {
 		return ""
 	}
-	return contactsPath + "/" + c.ID + "/photo?v=" + strconv.FormatInt(c.PhotoAt.UnixNano(), 36)
+	return contactsPath + "/" + c.ID + "/photo?v=" + photoVersion(c)
 }
+
+// photoVersion is the version in the address of a photo: a changed photo is fetched again.
+func photoVersion(c store.Contact) string { return strconv.FormatInt(c.PhotoAt.UnixNano(), 36) }
 
 // ctPhotoView is what a template needs to draw one .ct-photo: the photo, or the initials (or the gallery icon
 // when there are none).
@@ -54,6 +57,10 @@ func (e ctEnv) initialsPhrase(name string) string {
 func (e ctEnv) photoOrigin(c store.Contact) string {
 	when := e.p.dateTimeSeconds(c.PhotoAt)
 	switch {
+	case c.PhotoFile != "" && c.PhotoByName != "":
+		return e.t("contact.photo.file", "file", c.PhotoFile, "name", c.PhotoByName, "when", when)
+	case c.PhotoFile != "":
+		return e.t("contact.photo.file.anon", "file", c.PhotoFile, "when", when)
 	case c.PhotoOrigin == store.PhotoSync:
 		return e.t("contact.photo.sync", "when", when, "device", c.PhotoDevice)
 	case c.PhotoByName == "":
@@ -69,6 +76,10 @@ func (e ctEnv) photoHint(c store.Contact) string {
 	}
 	when := e.p.dateTimeSeconds(c.PhotoAt)
 	switch {
+	case c.PhotoFile != "" && c.PhotoByName != "":
+		return e.t("contact.hint.photo_file", "file", c.PhotoFile, "name", c.PhotoByName, "when", when)
+	case c.PhotoFile != "":
+		return e.t("contact.hint.photo_file.anon", "file", c.PhotoFile, "when", when)
 	case c.PhotoOrigin == store.PhotoSync:
 		return e.t("contact.hint.photo.sync", "when", when, "device", c.PhotoDevice)
 	case c.PhotoByName == "":

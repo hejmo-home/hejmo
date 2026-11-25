@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/badge"
 	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -73,8 +74,23 @@ type starEntryView struct {
 // starLogLines is how many star log entries per person the tasks page shows.
 const starLogLines = 20
 
+// badgeLine is the line under a person's name on the parents' Tasks page: the
+// badges they earned, the new ones first (ticket 295). Names is empty for "none yet".
+type badgeLine struct {
+	Names      []badgeName
+	Href, More string // the link to the person's badges and its text
+}
+
+// badgeName is one name of a badgeLine.
+type badgeName struct {
+	Name      string
+	New, Last bool
+}
+
 type personTasks struct {
 	ID, Name, Color string
+	Slot            int
+	Badges          *badgeLine    // nil: no line (a child's own page, or the person's switch is off)
 	Empty           bool          // a child without tasks: the page suggests a routine template
 	Routines        []routineCard // the routines first (ADR 0018), then the single tasks
 	Tasks           []taskView
@@ -141,6 +157,11 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 		}
 	}
 	var groups []personTasks
+	allBadges, err := s.db.HouseholdBadges(p.household.ID)
+	if err != nil {
+		s.fail(w, "badges", err)
+		return
+	}
 	choices := chipsOf(people)
 	child := p.person.Role == store.RoleChild
 	for _, person := range people {
@@ -156,11 +177,8 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 			}
 			card := s.starCardOf(r, p, person, acc)
 			card.ID, card.Poss = person.ID, possessive(s.langOf(r), person.Name)
-			for _, c := range choices {
-				if c.ID == person.ID {
-					card.Slot, card.Shape = c.Slot, c.Shape
-				}
-			}
+			chip := chipOf(choices, person.ID)
+			card.Slot, card.Shape = chip.Slot, chip.Shape
 			for _, rw := range offered {
 				if !rw.Archived() && rw.MeantFor(person.ID) {
 					card.HasRewards = true
@@ -174,6 +192,17 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 			cards = append(cards, card)
 		}
 		g := personTasks{ID: person.ID, Name: person.Name, Color: person.Color}
+		g.Slot = chipOf(choices, person.ID).Slot
+		if !child && person.StreaksShown {
+			lang := s.langOf(r)
+			line := &badgeLine{Href: "/tasks/badges/" + person.ID, More: s.i18n.Format(lang, i18n.Msg("badge.line.more", "name", person.Name, "possessive", possessive(lang, person.Name)))}
+			items := s.badgeItems(p.household, s.langOf(r), allBadges[person.ID])
+			sort.SliceStable(items, func(i, j int) bool { return items[i].New && !items[j].New }) // the new ones first, each group newest first
+			for i, it := range items {
+				line.Names = append(line.Names, badgeName{Name: it.Name, New: it.New, Last: i == len(items)-1})
+			}
+			g.Badges = line
+		}
 		for _, rt := range routines {
 			if rt.PersonID != person.ID {
 				continue
@@ -213,7 +242,7 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 		"Person": p.person, "Groups": groups, "StarCards": cards, "StarForm": starForm, "StarError": starForm["Error"], "People": choices, "Weekdays": taskWeekdays, "Repeats": []string{"once", "daily", "weekly"}, "Form": form, "Child": child, "MaxStars": task.MaxStars,
 		"SyncStale": s.syncStale(p.household.ID), "Error": form["Error"], "ErrorField": form["ErrorField"],
 		// The success line after saving a goal sits in the stars section (ticket 293).
-		"SuccessInline":     strings.HasPrefix(s.pendingFlashKey(r), "flash.goal_"),
+		"SuccessInline":     strings.HasPrefix(s.pendingFlashKey(r), "flash.goal_") || (child && p.person.StreaksShown && s.pendingFlashKey(r) == "flash.badge_won"),
 		"SuggestedTemplate": s.i18n.T(s.langOf(r), "routine.tpl."+task.Shipped[0].ID),
 	}
 	if child {
@@ -223,12 +252,7 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 			return
 		}
 		parts, progress := childParts(due, routines, p.person.ID, weeks)
-		data["ChildParts"], data["ChildProgress"], data["ChildSlot"] = parts, progress, 0
-		for _, c := range choices {
-			if c.ID == p.person.ID {
-				data["ChildSlot"] = c.Slot
-			}
-		}
+		data["ChildParts"], data["ChildProgress"], data["ChildSlot"] = parts, progress, chipOf(choices, p.person.ID).Slot
 		data["StarsShown"], data["StarsBalance"] = sums[p.person.ID].Shown, sums[p.person.ID].Balance
 		// The way to the rewards appears only when something is meant for the child (ticket 291).
 		offered, err := s.db.HasRewards(p.household.ID, p.person.ID)
@@ -252,6 +276,17 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 				data["RewardSub"] = formatHTML(s.i18n, lang, "rwd.link.goal.enough", "stars", s.starsWords(lang, balance), "name", goal.Reward.Name)
 			} else {
 				data["RewardSub"] = formatHTML(s.i18n, lang, "rwd.link.goal.missing", "stars", s.starsWords(lang, balance), "name", goal.Reward.Name, "left", s.starsWords(lang, goal.Reward.Price-balance))
+			}
+		}
+		if p.person.StreaksShown { // the way to the badges, only while the switch is on (ticket 295)
+			items, err := s.shownBadges(p.household, lang, p.person)
+			if err != nil {
+				s.fail(w, "badges", err)
+				return
+			}
+			data["BadgeLink"], data["BadgeSub"] = true, s.badgeSub(lang, items)
+			if key, arg := s.pendingFlash(r); key == "flash.badge_won" && badge.Key(arg).Valid() {
+				data["BadgeWon"] = arg
 			}
 		}
 		data["Day"] = today
@@ -320,7 +355,9 @@ func (s *server) handleTaskDone(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	switch _, err := s.tickTask(p, r.PathValue("id"), r.PostFormValue("done") == "1"); {
+	done := r.PostFormValue("done") == "1"
+	_, won, err := s.tickTask(p, r.PathValue("id"), done)
+	switch {
 	case errors.Is(err, store.ErrNotFound):
 		http.NotFound(w, r)
 	case errors.Is(err, errNotYourTask):
@@ -330,8 +367,18 @@ func (s *server) handleTaskDone(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		s.fail(w, "tick task", err)
 	default:
-		s.redirectSaved(w, r, "/tasks", doneKey(r))
+		s.redirectSaved(w, r, "/tasks", s.wonKey(p, won, doneKey(r)))
 	}
+}
+
+// wonKey is the success line after a tick: when a child's tick earned a badge
+// they can see (their switch is on) it names the first of them (ticket 295),
+// else it is the given line. The cookie carries only the badge key.
+func (s *server) wonKey(p principal, won []badge.Key, key string) string {
+	if p.person.Role == store.RoleChild && p.person.StreaksShown && len(won) > 0 {
+		return "flash.badge_won:" + string(won[0])
+	}
+	return key
 }
 
 func (s *server) handleTaskDelete(w http.ResponseWriter, r *http.Request) {

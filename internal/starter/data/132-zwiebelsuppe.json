@@ -1,0 +1,200 @@
+{
+  "n": 132,
+  "slug": "zwiebelsuppe",
+  "category": "Suppen",
+  "servings": 4,
+  "time_minutes": 45,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Senf",
+      "en": "Mustard"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/zwiebelsuppe-mit-senf-und-sahne-3617",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Zwiebeln",
+      "article_en": "Onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Senf, mittelscharf",
+      "article_en": "Mustard, medium hot",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Liter",
+      "article_de": "Fleischbrühe",
+      "article_en": "Beef stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Schmand",
+      "article_en": "Sour cream (Schmand)",
+      "note_de": "dicke saure Sahne",
+      "note_en": "thick sour cream"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Apfel, säuerlich",
+      "article_en": "Tart apple",
+      "note_de": "z. B. Boskop, Cox Orange",
+      "note_en": "e.g. Boskop or Cox Orange"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer, frisch gemahlen",
+      "article_en": "Pepper, freshly ground",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Brötchen vom Vortag",
+      "article_en": "Day-old bread roll",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Zwiebelsuppe mit Senf und Sahne",
+    "steps": [
+      "Zwiebeln in feine Streifen schneiden, Knoblauch fein hacken. Vom Brötchen die Rinde abschneiden und das Innere in kleine Würfel schneiden.",
+      "Die Hälfte der Butter im Suppentopf erhitzen und die Zwiebeln ca. 7 Min. braten, bis sie goldgelb sind. Dann den Knoblauch kurz mitbraten, das Mehl darüberstäuben und gut verrühren.",
+      "Den Topf vom Herd ziehen und erst dann den Senf einrühren. Auf der heißen Platte würde er bitter werden.",
+      "Die Brühe zugießen und aufkochen. Gut die Hälfte der Sahne und den Schmand mit dem Schneebesen einrühren.",
+      "Den Apfel waschen und ohne Kerngehäuse direkt in die Suppe reiben. Zugedeckt bei niedriger Hitze ca. 30 Min. köcheln lassen.",
+      "In der Zwischenzeit die restliche Butter in der Pfanne erhitzen und die Brotwürfel rundum goldgelb braten. Auf Küchenpapier abtropfen lassen.",
+      "Die Suppe mit Salz, Pfeffer und einer Prise Zucker abschmecken. Die übrige Sahne halbsteif schlagen und ganz zum Schluss unterheben. Mit den Croûtons servieren."
+    ]
+  },
+  "en": {
+    "title": "Onion soup with mustard and cream",
+    "steps": [
+      "Cut the onions into fine strips and chop the garlic finely. Cut the crust off the bread roll and cut the inside into small cubes.",
+      "Heat half of the butter in the soup pot and fry the onions for about 7 min until golden. Then fry the garlic briefly, dust the flour over the top and stir well.",
+      "Take the pot off the heat and only then stir in the mustard. On a hot hob it would turn bitter.",
+      "Pour in the stock and bring to the boil. Whisk in a good half of the cream and the sour cream.",
+      "Wash the apple and grate it directly into the soup, without the core. Simmer covered over low heat for about 30 min.",
+      "Meanwhile heat the remaining butter in the pan and fry the bread cubes until golden all over. Drain on kitchen paper.",
+      "Season the soup with salt, pepper and a pinch of sugar. Whip the remaining cream until half stiff and fold it in right at the end. Serve with the croutons."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "clove"
+      },
+      {
+        "index": 2,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 1000,
+        "unit": "ml"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 12,
+        "amount": 1,
+        "unit": "piece"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

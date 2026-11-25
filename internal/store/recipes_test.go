@@ -61,7 +61,7 @@ func TestStepsAreAnOrderedListOfTheirOwn(t *testing.T) {
 	}
 	r.Steps = []string{"B", "A", "C"}
 	r.ID = got.ID
-	if _, err := f.db.UpdateRecipe(f.h.ID, f.mama.ID, r); err != nil {
+	if _, err := f.db.UpdateRecipe(f.h.ID, f.mama.ID, r, store.MealOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	back, _ := f.db.Recipe(f.h.ID, got.ID)
@@ -106,11 +106,11 @@ func TestANameIsTakenIgnoringCaseAndSpacesAndTheErrorNamesTheExistingRecipe(t *t
 		t.Fatal(err)
 	}
 	other.Name = "pfannkuchen"
-	if _, err := f.db.UpdateRecipe(f.h.ID, f.mama.ID, other.Recipe); !errors.As(err, &taken) {
+	if _, err := f.db.UpdateRecipe(f.h.ID, f.mama.ID, other.Recipe, store.MealOptions{}); !errors.As(err, &taken) {
 		t.Errorf("renaming onto a taken name: %v", err)
 	}
 	first.Name = "PFANNKUCHEN"
-	if _, err := f.db.UpdateRecipe(f.h.ID, f.mama.ID, first.Recipe); err != nil {
+	if _, err := f.db.UpdateRecipe(f.h.ID, f.mama.ID, first.Recipe, store.MealOptions{}); err != nil {
 		t.Errorf("a recipe may change the case of its own name: %v", err)
 	}
 }
@@ -181,7 +181,7 @@ func TestChangingARecipeReplacesIngredientsStepsTagsAndKeepsWhoMadeIt(t *testing
 	r.Minutes = 0
 	r.Portions = 2
 	r.Category = recipe.Side
-	upd, err := f.db.UpdateRecipe(f.h.ID, f.papa.ID, r)
+	upd, err := f.db.UpdateRecipe(f.h.ID, f.papa.ID, r, store.MealOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,7 +197,7 @@ func TestChangingARecipeReplacesIngredientsStepsTagsAndKeepsWhoMadeIt(t *testing
 		t.Errorf("rows left = %d, want 1 ingredient + 1 step", n)
 	}
 	r.ID = "nope"
-	if _, err := f.db.UpdateRecipe(f.h.ID, f.papa.ID, r); !errors.Is(err, store.ErrNotFound) {
+	if _, err := f.db.UpdateRecipe(f.h.ID, f.papa.ID, r, store.MealOptions{}); !errors.Is(err, store.ErrNotFound) {
 		t.Errorf("unknown recipe: %v", err)
 	}
 }

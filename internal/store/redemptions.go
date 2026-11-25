@@ -333,6 +333,7 @@ func (db *DB) ConfirmRedemption(householdID, id, by string, at time.Time, loc *t
 	if err := tx.Commit(); err != nil {
 		return Redemption{}, err
 	}
+	db.awardAfter(householdID, r.PersonID, at) // the first reward, a reached savings goal (ticket 295)
 	return db.Redemption(householdID, id)
 }
 
@@ -409,6 +410,7 @@ func (db *DB) RedeemNow(householdID, rewardID, personID, by string, at time.Time
 	if err := tx.Commit(); err != nil {
 		return Redemption{}, err
 	}
+	db.awardAfter(householdID, personID, at)
 	return db.Redemption(householdID, id)
 }
 

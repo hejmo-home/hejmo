@@ -445,3 +445,33 @@ func TestSetContactPhotoChangesOnlyThePhotoColumns(t *testing.T) {
 		t.Errorf("unknown contact = %v, want ErrNotFound", err)
 	}
 }
+
+// Ticket 301: the switch "visible for children" is off for every new contact, people included, and is stored.
+func TestContactIsHiddenFromChildrenByDefaultAndTheSwitchIsStored(t *testing.T) {
+	t.Parallel()
+	db, h, f := exampleFamily(t)
+	all, err := db.Contacts(h.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range all {
+		if c.ForChildren {
+			t.Errorf("%s is visible for children from the start", c.HejmoName)
+		}
+	}
+	oma, err := db.CreateContact(h.ID, f["Mama"].ID, store.ContactInput{HejmoName: "Oma"})
+	if err != nil || oma.ForChildren {
+		t.Fatalf("new contact = %+v, %v; want switch off", oma, err)
+	}
+	oma, err = db.UpdateContact(h.ID, oma.ID, f["Mama"].ID, store.ContactInput{HejmoName: "Oma", ForChildren: true})
+	if err != nil || !oma.ForChildren {
+		t.Fatalf("after switching on = %+v, %v", oma, err)
+	}
+	mama, err := db.UpdateContact(h.ID, f["Mama"].ID, f["Mama"].ID, store.ContactInput{ForChildren: true})
+	if err != nil || !mama.ForChildren {
+		t.Fatalf("a person's contact can be switched on too: %+v, %v", mama, err)
+	}
+	if oma, _ = db.UpdateContact(h.ID, oma.ID, f["Mama"].ID, store.ContactInput{HejmoName: "Oma"}); oma.ForChildren {
+		t.Error("a save without the switch leaves it on")
+	}
+}

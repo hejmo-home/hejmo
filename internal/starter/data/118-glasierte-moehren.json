@@ -1,0 +1,98 @@
+{
+  "n": 118,
+  "slug": "glasierte-moehren",
+  "category": "Beilagen",
+  "servings": 4,
+  "time_minutes": 20,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/glasierte-moehren-so-gehts-50399.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "kg",
+      "article_de": "Fingermöhren",
+      "article_en": "Baby carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zitrone",
+      "article_en": "Lemon",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "etwas",
+      "note_en": "a little"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Glasierte Möhren",
+    "steps": [
+      "1 kg Fingermöhren putzen und waschen. Dicke Möhren halbieren.",
+      "In Salzwasser etwa 8 Minuten vorgaren, dann abgießen.",
+      "Die Zitrone auspressen. Wer mag, reibt vorher etwas Schale ab.",
+      "50 g Zucker in der Pfanne schmelzen, bis er goldbraun ist.",
+      "Vorsichtig mit der Hälfte des Zitronensafts und 50 ml Wasser ablöschen, es spritzt und dampft. Einkochen lassen.",
+      "Möhren in die Pfanne geben, etwas Butter zufügen und alles gut schwenken, bis sie glänzen. Die Butter kommt zuletzt.",
+      "Mit Salz abschmecken und servieren."
+    ]
+  },
+  "en": {
+    "title": "Glazed carrots",
+    "steps": [
+      "Trim and wash 1 kg finger carrots. Halve thick ones.",
+      "Parboil in salted water for about 8 minutes, then drain.",
+      "Juice the lemon. If you like, zest a little first.",
+      "Melt 50 g sugar in the pan until golden brown.",
+      "Carefully deglaze with half the lemon juice and 50 ml water, as it spatters and steams. Let it reduce.",
+      "Add the carrots to the pan, add some butter and toss well until glossy. The butter goes in last.",
+      "Season with salt and serve."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "The source method adds 50 ml water (not in the ingredient list); not added as an ingredient line. No rating shown on page (list: Redaktionsküche). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

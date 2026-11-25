@@ -1,0 +1,113 @@
+{
+  "n": 112,
+  "slug": "kartoffelpueree",
+  "category": "Beilagen",
+  "servings": 4,
+  "time_minutes": 60,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/3405341507187439/Kartoffelpueree.html",
+    "site": "Chefkoch",
+    "ratings": 258
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "kg",
+      "article_de": "Kartoffeln, mehligkochend",
+      "article_en": "Floury potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 120,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 120,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Muskatnuss",
+      "article_en": "Nutmeg",
+      "note_de": "frisch gerieben",
+      "note_en": "freshly grated"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zweig",
+      "article_de": "Rosmarin",
+      "article_en": "Rosemary",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Kartoffelpüree",
+    "steps": [
+      "1 kg mehligkochende Kartoffeln schälen und halbieren.",
+      "In einem Topf mit Dämpfeinsatz 20–25 Minuten dämpfen, bis sie durch und durch gar sind.",
+      "Währenddessen 120 ml Milch und 120 g Butter in einem kleinen Topf erwärmen. 1 Zweig Rosmarin, 1 Prise frisch geriebene Muskatnuss sowie Salz und Pfeffer dazugeben.",
+      "Den Rosmarinzweig vor dem Mischen unbedingt herausnehmen.",
+      "Die heißen Kartoffeln mit dem Stampfer zerdrücken. Die Milch-Butter-Mischung dazugießen und kräftig schlagen, bis das Püree locker und fluffig ist.",
+      "Abschmecken und sofort servieren."
+    ]
+  },
+  "en": {
+    "title": "Mashed potatoes",
+    "steps": [
+      "Peel 1 kg floury potatoes and halve them.",
+      "Steam them in a pot with a steamer insert for 20-25 minutes, until cooked all the way through.",
+      "Meanwhile warm 120 ml milk and 120 g butter in a small pot. Add 1 sprig of rosemary, 1 pinch of freshly grated nutmeg, plus salt and pepper.",
+      "Be sure to remove the rosemary sprig before mixing.",
+      "Mash the hot potatoes with a masher. Pour in the milk-butter mixture and beat vigorously until the puree is light and fluffy.",
+      "Taste and serve straight away."
+    ],
+    "amounts_converted": [
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "sprig"
+      }
+    ]
+  },
+  "review_note": "Page ratingCount 258. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

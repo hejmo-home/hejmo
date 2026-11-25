@@ -1,0 +1,176 @@
+{
+  "n": 30,
+  "slug": "linsen-bolognese",
+  "category": "Hauptgerichte",
+  "servings": 3,
+  "time_minutes": 35,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/819391186467176/Linsenbolognese-mit-Pasta-und-Fruehlingszwiebeln.html",
+    "site": "Chefkoch",
+    "ratings": 488
+  },
+  "ingredients": [
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Linsen, rot",
+      "article_en": "Red lentils",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": "gewürfelt",
+      "note_en": "diced"
+    },
+    {
+      "amount": 1,
+      "unit": "Dose",
+      "article_de": "Tomaten, stückig",
+      "article_en": "Chopped tomatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "ml",
+      "article_de": "Hühnerbrühe",
+      "article_en": "Chicken stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Frühlingszwiebeln",
+      "article_en": "Spring onions",
+      "note_de": "in feine Ringe geschnitten",
+      "note_en": "cut into fine rings"
+    },
+    {
+      "amount": 50,
+      "unit": "ml",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Schuss",
+      "article_de": "Balsamico",
+      "article_en": "Balsamic vinegar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": "durchgepresst",
+      "note_en": "pressed"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Cayennepfeffer",
+      "article_en": "Cayenne pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Parmesan",
+      "article_en": "Parmesan",
+      "note_de": "frisch gerieben",
+      "note_en": "freshly grated"
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Nudeln",
+      "article_en": "Pasta",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Linsen-Bolognese",
+    "steps": [
+      "Koche die Nudeln in Salzwasser bissfest. Das läuft nebenher, während du die Soße machst.",
+      "Brate die Zwiebel in einem Topf bei mittlerer Hitze an. Gib die roten Linsen dazu und dünste sie kurz mit an.",
+      "Gieße die heiße Hühnerbrühe dazu. Sie sollte heiß sein, damit nichts abkühlt. Bringe alles zum Kochen.",
+      "Lass die Linsen 10 bis 15 Minuten bei mittlerer Hitze köcheln, bis sie weich sind.",
+      "Rühre die stückigen Tomaten, Frühlingszwiebeln, Knoblauch und Sahne ein.",
+      "Schmecke mit Salz, Pfeffer, einem Schuss Balsamico und Cayennepfeffer ab. Serviere die Soße auf den Nudeln mit frisch geriebenem Parmesan."
+    ]
+  },
+  "en": {
+    "title": "Lentil bolognese",
+    "steps": [
+      "Cook the pasta in salted water until al dente. This runs in the background while you make the sauce.",
+      "Fry the onion in a pot over medium heat. Add the red lentils and sweat them briefly with it.",
+      "Pour in the hot chicken stock. It should be hot so nothing cools down. Bring everything to the boil.",
+      "Simmer the lentils for 10 to 15 minutes over medium heat, until tender.",
+      "Stir in the chunky tomatoes, spring onions, garlic and cream.",
+      "Season with salt, pepper, a splash of balsamic vinegar and cayenne pepper. Serve the sauce on the pasta with freshly grated parmesan."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "can"
+      },
+      {
+        "index": 4,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "dash"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "clove"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Not vegetarian as written because of the chicken stock; vegetable stock would make it vegetarian. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

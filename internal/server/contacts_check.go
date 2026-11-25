@@ -22,6 +22,7 @@ type ctDraft struct {
 	GroupIDs                        []string
 	IsPerson                        bool
 	HideBirthday                    bool         // keep the birthday out of the Birthdays calendar
+	ForChildren                     bool         // show the contact on the children's page "Wichtige Nummern" (ticket 301)
 	Rels                            []ctRelDraft // the relation lines in the order of the form (ticket 298)
 }
 
@@ -177,6 +178,6 @@ func (d ctDraft) input(today time.Time, calendarName string) store.ContactInput 
 		HejmoName: d.Name, FullName: d.Full, Street: d.Street, Postcode: d.Postcode, City: d.City, Country: d.Country,
 		BdayDay: d.Day, BdayMonth: d.Month, BdayYear: d.Year, Note: d.Note,
 		Numbers: d.Numbers, Emails: d.Emails, GroupIDs: d.GroupIDs, NewGroup: d.NewGroup, Today: today,
-		HideBirthday: d.HideBirthday, CalendarName: calendarName,
+		HideBirthday: d.HideBirthday, ForChildren: d.ForChildren, CalendarName: calendarName,
 	}
 }

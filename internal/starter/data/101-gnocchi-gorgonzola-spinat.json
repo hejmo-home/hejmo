@@ -1,0 +1,188 @@
+{
+  "n": 101,
+  "slug": "gnocchi-gorgonzola-spinat",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 25,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Nüsse",
+      "en": "Tree nuts"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/gnocchi-mit-gorgonzolaspinat-22106",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "TK-Blattspinat",
+      "article_en": "Frozen leaf spinach",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Gorgonzola",
+      "article_en": "Gorgonzola",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Gemüsebrühe",
+      "article_en": "Vegetable stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Gnocchi",
+      "article_en": "Gnocchi",
+      "note_de": "aus dem Kühlregal",
+      "note_en": "chilled, from the refrigerated aisle"
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Walnusskerne",
+      "article_en": "Walnut kernels",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Chilipulver",
+      "article_en": "Chili powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": "1 bis 2 TL, frisch gepresst",
+      "note_en": "1 to 2 tsp, freshly squeezed"
+    }
+  ],
+  "de": {
+    "title": "Gnocchi mit Gorgonzola-Spinat",
+    "steps": [
+      "Spinat antauen lassen. Was noch gefroren ist, taut später im Topf auf. Zwiebel und Knoblauch fein würfeln, Gorgonzola in kleine Würfel schneiden, Walnüsse hacken. Einen großen Topf Wasser mit Salz aufsetzen.",
+      "Olivenöl in einem Topf erhitzen und Zwiebel und Knoblauch glasig dünsten. Spinat dazugeben und unter Rühren auftauen lassen.",
+      "Brühe, Sahne und Gorgonzola zugeben. Bei niedriger Hitze etwa 5 Minuten rühren, bis der Käse geschmolzen ist. Nicht aufkochen lassen.",
+      "Das Wasser soll nur sieden, nicht sprudeln. Gnocchi darin nach Packungsanleitung garen und abgießen.",
+      "Sauce mit Salz, Pfeffer, Chilipulver und Zitronensaft abschmecken.",
+      "Gnocchi unterheben und mit den Walnüssen bestreuen."
+    ]
+  },
+  "en": {
+    "title": "Gnocchi with gorgonzola spinach",
+    "steps": [
+      "Let the spinach thaw partially. Anything still frozen will thaw in the pot later. Finely dice the onion and garlic, cut the gorgonzola into small cubes and chop the walnuts. Put a large pot of salted water on.",
+      "Heat the olive oil in a pot and sweat the onion and garlic until glassy. Add the spinach and let it thaw while stirring.",
+      "Add stock, cream and gorgonzola. Stir over low heat for about 5 minutes until the cheese has melted. Do not let it boil.",
+      "The water should only simmer, not bubble hard. Cook the gnocchi in it according to the packet instructions and drain.",
+      "Season the sauce with salt, pepper, chilli powder and lemon juice.",
+      "Fold in the gnocchi and sprinkle with the walnuts."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 9,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 12,
+        "amount": 1,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "Time from source: 25 min, stated as Aufwand (the only time figure on the page). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

@@ -1,0 +1,143 @@
+{
+  "n": 116,
+  "slug": "honig-karotten-ofen",
+  "category": "Beilagen",
+  "servings": 4,
+  "time_minutes": 40,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/honig-karotten-aus-dem-ofen-das-highlight-zum-osteressen-132878.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "kg",
+      "article_de": "Bundmöhren",
+      "article_en": "Bunched carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Honig, flüssig",
+      "article_en": "Liquid honey",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": "1 bis 2 EL",
+      "note_en": "1 to 2 tbsp"
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Paprikapulver, geräuchert",
+      "article_en": "Smoked paprika powder",
+      "note_de": "laut Methode ca. 1/2 TL",
+      "note_en": "per the method, about 1/2 tsp"
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": "laut Methode ca. 1/2 TL",
+      "note_en": "per the method, about 1/2 tsp"
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": "laut Methode ca. 1/2 TL",
+      "note_en": "per the method, about 1/2 tsp"
+    }
+  ],
+  "de": {
+    "title": "Honig-Karotten aus dem Ofen",
+    "steps": [
+      "Backofen auf 200 °C Ober-/Unterhitze (180 °C Umluft) vorheizen. Blech mit Backpapier auslegen.",
+      "1 kg Bundmöhren schälen, etwas vom Grün dranlassen. Dicke Möhren der Länge nach halbieren.",
+      "Für die Marinade 1 Knoblauchzehe pressen und mit 2 EL Honig, 2 EL Olivenöl, 1 EL Zitronensaft, je 1/2 TL geräuchertem Paprikapulver, Salz und Pfeffer verrühren.",
+      "Die Möhren in der Marinade wenden, bis alle überzogen sind, und auf das Blech legen.",
+      "25–30 Minuten rösten, bis sie schön gebräunt sind."
+    ]
+  },
+  "en": {
+    "title": "Honey-roasted carrots",
+    "steps": [
+      "Preheat the oven to 200 °C top/bottom heat (180 °C fan). Line a tray with baking paper.",
+      "Peel 1 kg bunch carrots, leaving a little of the green. Halve thick carrots lengthwise.",
+      "For the marinade, press 1 garlic clove and mix with 2 tbsp honey, 2 tbsp olive oil, 1 tbsp lemon juice, and 1/2 tsp each of smoked paprika, salt and pepper.",
+      "Turn the carrots in the marinade until coated and lay them on the tray.",
+      "Roast 25-30 minutes, until nicely browned."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 6,
+        "amount": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 7,
+        "amount": 0.5,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "Salt and pepper amounts (1/2 tsp each) come from the source method text. Page ratingCount 1 (list: Redaktionsküche). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

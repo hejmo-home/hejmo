@@ -1,0 +1,153 @@
+{
+  "n": 158,
+  "slug": "schokomuffins",
+  "category": "Backen",
+  "servings": 6,
+  "time_minutes": 35,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/chocolate-muffins",
+    "site": "BBC Good Food",
+    "ratings": 209
+  },
+  "ingredients": [
+    {
+      "amount": 125,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Plain flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 25,
+      "unit": "g",
+      "article_de": "Kakaopulver",
+      "article_en": "Cocoa powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Backpulver",
+      "article_en": "Baking powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Ei, Größe L",
+      "article_en": "Egg, large",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 60,
+      "unit": "g",
+      "article_de": "Zucker, fein (Caster Sugar)",
+      "article_en": "Caster sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Pflanzenöl",
+      "article_en": "Vegetable oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Vollmilch",
+      "article_en": "Whole milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Schokotröpfchen",
+      "article_en": "Chocolate chips",
+      "note_de": "optional",
+      "note_en": "optional"
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Puderzucker",
+      "article_en": "Icing sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Wasser",
+      "article_en": "Water",
+      "note_de": "0,5 bis 1 EL für den Guss",
+      "note_en": "1/2 to 1 tbsp for the icing"
+    }
+  ],
+  "de": {
+    "title": "Schokomuffins",
+    "steps": [
+      "Ein Muffinblech mit 6 Papierförmchen auslegen. Den Ofen auf 180 °C Ober-/Unterhitze (160 °C Umluft) vorheizen.",
+      "Mehl, Kakao und Backpulver durch ein Sieb in eine Schüssel geben.",
+      "In einem Krug Ei, Zucker, Öl und Milch verrühren. Nach und nach zur Mehlmischung gießen und nur so lange rühren, bis alles verbunden ist. Wer Doppel-Schoko mag, gibt jetzt die Schokotröpfchen dazu.",
+      "Den Teig gleichmäßig auf die 6 Förmchen verteilen und 20 bis 25 Minuten backen, bis ein Holzstäbchen in der Mitte sauber herauskommt. Dann auskühlen lassen.",
+      "Puderzucker nach und nach mit ½ bis 1 EL Wasser verrühren, bis ein Guss entsteht, der zähflüssig, aber nicht zu dünn ist. Erst auf die abgekühlten Muffins träufeln."
+    ]
+  },
+  "en": {
+    "title": "Chocolate muffins",
+    "steps": [
+      "Put 6 paper cases in a muffin tin. Preheat the oven to 180 °C top/bottom heat (160 °C fan).",
+      "Put the cocoa, flour and baking powder through a sieve into a bowl.",
+      "In a jug, beat the egg with the milk, oil and sugar. Pour into the flour mixture bit by bit and stir only until combined. If you like double chocolate, add the chocolate chips now.",
+      "Spoon the batter evenly into the 6 cases and bake 20 to 25 minutes, until a wooden skewer comes out clean from the middle. Then let cool.",
+      "Stir ½ to 1 tbsp of water bit by bit into the icing sugar, aiming for a thick but pourable icing. Drizzle over the muffins only once they have cooled."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Rating count from the list. Servings: 6 muffins. Source steps not copied. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.0
+  }
+}

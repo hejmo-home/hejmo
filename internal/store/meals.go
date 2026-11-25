@@ -8,18 +8,23 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/meal"
+	"github.com/hejmo-home/hejmo/internal/recipe"
 )
 
 // mealCalendarColor is the colour of the generated calendar in the web
 // interface's calendar views.
 const mealCalendarColor = "#9A7420"
 
-// Meal is one entry of the meal plan: free text for a day and a mealtime.
-// Setting an entry with empty Text removes it.
+// Meal is one entry of the meal plan for a day and a mealtime: free text, or a
+// recipe of the household with portions (1 to 99). Setting an entry with empty
+// Text and no recipe removes it. For a recipe, Text is ignored when it is set
+// (the entry shows the recipe's name) and holds that name when it is read.
 type Meal struct {
 	Day      string // YYYY-MM-DD, in the household's time zone
 	Mealtime meal.Mealtime
 	Text     string
+	RecipeID string
+	Portions int
 }
 
 // MealOptions says how the entries are written into the generated calendar.
@@ -35,6 +40,18 @@ type MealOptions struct {
 	// Title is the event title of an entry ("Dinner: Pasta bake"), in the
 	// language of whoever saves it.
 	Title func(meal.Mealtime, string) string
+}
+
+// recipeName is the name of a recipe of the household, ErrNotFound if it has none with that id.
+func recipeName(q interface {
+	QueryRow(string, ...any) *sql.Row
+}, householdID, id string) (string, error) {
+	var name string
+	err := q.QueryRow(`SELECT name FROM recipes WHERE household_id = ? AND id = ?`, householdID, id).Scan(&name)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrNotFound
+	}
+	return name, err
 }
 
 func invalidMeal(field, msg string) error {
@@ -63,10 +80,13 @@ func (db *DB) MealCalendar(householdID string) (Calendar, error) {
 // appears twice, the later one counts. An entry whose text did not change
 // leaves its event untouched, so CalDAV clients do not fetch it again.
 //
-// Where a meal plan template fills a day from today on, the text is that
+// An entry is free text or a recipe of the household with portions from 1 to
+// 99 (else ErrInvalid); a recipe entry shows the recipe's name as its text.
+//
+// Where a meal plan template fills a day from today on, the entry is that
 // week's adjustment: typing the template's own dish removes it, an empty text
-// is an adjustment too (nothing this week). Days before today are written as
-// they are.
+// is an adjustment too (nothing this week), a recipe is always one. Days before
+// today are written as they are.
 func (db *DB) SetMeals(householdID string, changes []Meal, o MealOptions) error {
 	last := map[cell]Meal{}
 	var order []cell
@@ -78,6 +98,11 @@ func (db *DB) SetMeals(householdID string, changes []Meal, o MealOptions) error 
 			return invalidMeal(bad.Field, bad.Msg)
 		}
 		c.Text = text
+		if c.RecipeID == "" {
+			c.Portions = 0
+		} else if c.Portions < 1 || c.Portions > 99 {
+			return invalidMeal("portions", "portions are a whole number from 1 to 99")
+		}
 		if !c.Mealtime.Valid() {
 			return invalidMeal("mealtime", "unknown mealtime")
 		}
@@ -102,20 +127,30 @@ func (db *DB) SetMeals(householdID string, changes []Meal, o MealOptions) error 
 	w := &planWriter{tx: tx, householdID: householdID, o: o}
 	for _, key := range order {
 		c := last[key]
+		if c.RecipeID != "" {
+			name, err := recipeName(tx, householdID, c.RecipeID)
+			if errors.Is(err, ErrNotFound) {
+				return invalidMeal("recipe_id", "unknown recipe")
+			}
+			if err != nil {
+				return err
+			}
+			c.Text = name
+		}
 		if key.day < o.Today {
 			old, err := w.existing(key)
 			if err != nil {
 				return err
 			}
-			if old.exists && old.Text == c.Text {
+			if old.exists && old.Text == c.Text && old.RecipeID == c.RecipeID && old.Portions == c.Portions {
 				continue
 			}
-			if err := w.write(PlanMeal{Day: c.Day, Mealtime: c.Mealtime, Text: c.Text, Source: SourceManual}); err != nil {
+			if err := w.write(PlanMeal{Day: c.Day, Mealtime: c.Mealtime, Text: c.Text, Source: SourceManual, RecipeID: c.RecipeID, Portions: c.Portions}); err != nil {
 				return err
 			}
 			continue
 		}
-		if err := layers.set(tx, householdID, key, c.Text); err != nil {
+		if err := layers.set(tx, householdID, key, layerEntry{c.Text, c.RecipeID, c.Portions}); err != nil {
 			return err
 		}
 		if err := w.write(layers.resolve(key)); err != nil {
@@ -174,8 +209,8 @@ type planRow struct {
 
 func (w *planWriter) existing(c cell) (planRow, error) {
 	r := planRow{PlanMeal: PlanMeal{Day: c.day, Mealtime: c.mealtime}}
-	err := w.tx.QueryRow(`SELECT text, event_id, source, template_id, template_dish FROM meal_plan WHERE household_id = ? AND day = ? AND mealtime = ?`,
-		w.householdID, c.day, c.mealtime).Scan(&r.Text, &r.eventID, &r.Source, &r.TemplateID, &r.TemplateDish)
+	err := w.tx.QueryRow(`SELECT text, event_id, source, template_id, template_dish, recipe_id, portions FROM meal_plan WHERE household_id = ? AND day = ? AND mealtime = ?`,
+		w.householdID, c.day, c.mealtime).Scan(&r.Text, &r.eventID, &r.Source, &r.TemplateID, &r.TemplateDish, &r.RecipeID, &r.Portions)
 	switch {
 	case err == nil:
 		r.exists = true
@@ -205,11 +240,11 @@ func (w *planWriter) write(m PlanMeal) error {
 		_, err := tx.Exec(`DELETE FROM meal_plan WHERE household_id = ? AND day = ? AND mealtime = ?`, householdID, m.Day, m.Mealtime)
 		return err
 	case old.exists && m.Text == old.Text:
-		if old.Source == m.Source && old.TemplateID == m.TemplateID && old.TemplateDish == m.TemplateDish {
+		if old.Source == m.Source && old.TemplateID == m.TemplateID && old.TemplateDish == m.TemplateDish && old.RecipeID == m.RecipeID && old.Portions == m.Portions {
 			return nil
 		}
-		_, err := tx.Exec(`UPDATE meal_plan SET source = ?, template_id = ?, template_dish = ? WHERE household_id = ? AND day = ? AND mealtime = ?`,
-			m.Source, m.TemplateID, m.TemplateDish, householdID, m.Day, m.Mealtime)
+		_, err := tx.Exec(`UPDATE meal_plan SET source = ?, template_id = ?, template_dish = ?, recipe_id = ?, portions = ? WHERE household_id = ? AND day = ? AND mealtime = ?`,
+			m.Source, m.TemplateID, m.TemplateDish, m.RecipeID, m.Portions, householdID, m.Day, m.Mealtime)
 		return err
 	}
 	if w.calID == "" {
@@ -226,16 +261,16 @@ func (w *planWriter) write(m PlanMeal) error {
 		if err := updateEventRow(tx, householdID, ev); err != nil {
 			return err
 		}
-		_, err = tx.Exec(`UPDATE meal_plan SET text = ?, source = ?, template_id = ?, template_dish = ?, updated_at = ? WHERE household_id = ? AND day = ? AND mealtime = ?`,
-			m.Text, m.Source, m.TemplateID, m.TemplateDish, now(), householdID, m.Day, m.Mealtime)
+		_, err = tx.Exec(`UPDATE meal_plan SET text = ?, source = ?, template_id = ?, template_dish = ?, recipe_id = ?, portions = ?, updated_at = ? WHERE household_id = ? AND day = ? AND mealtime = ?`,
+			m.Text, m.Source, m.TemplateID, m.TemplateDish, m.RecipeID, m.Portions, now(), householdID, m.Day, m.Mealtime)
 		return err
 	}
 	ev.ID = newID()
 	if err := insertEventRow(tx, householdID, ev); err != nil {
 		return err
 	}
-	_, err = tx.Exec(`INSERT INTO meal_plan (household_id, day, mealtime, text, event_id, updated_at, source, template_id, template_dish) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		householdID, m.Day, m.Mealtime, m.Text, ev.ID, now(), m.Source, m.TemplateID, m.TemplateDish)
+	_, err = tx.Exec(`INSERT INTO meal_plan (household_id, day, mealtime, text, event_id, updated_at, source, template_id, template_dish, recipe_id, portions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		householdID, m.Day, m.Mealtime, m.Text, ev.ID, now(), m.Source, m.TemplateID, m.TemplateDish, m.RecipeID, m.Portions)
 	return err
 }
 
@@ -283,7 +318,7 @@ func (db *DB) CountMeals(householdID string) (n int, err error) {
 // entries only, without templates or adjustments; the API and pages use
 // MealPlan. Kept on purpose for the tests of the plain entries.
 func (db *DB) Meals(householdID, from, to string) ([]Meal, error) {
-	rows, err := db.sql.Query(`SELECT day, mealtime, text FROM meal_plan WHERE household_id = ? AND day >= ? AND day <= ?
+	rows, err := db.sql.Query(`SELECT day, mealtime, text, recipe_id, portions FROM meal_plan WHERE household_id = ? AND day >= ? AND day <= ?
 		ORDER BY day, CASE mealtime WHEN 'breakfast' THEN 1 WHEN 'lunch' THEN 2 WHEN 'snack' THEN 3 ELSE 4 END`, householdID, from, to)
 	if err != nil {
 		return nil, err
@@ -292,10 +327,60 @@ func (db *DB) Meals(householdID, from, to string) ([]Meal, error) {
 	var out []Meal
 	for rows.Next() {
 		var m Meal
-		if err := rows.Scan(&m.Day, &m.Mealtime, &m.Text); err != nil {
+		if err := rows.Scan(&m.Day, &m.Mealtime, &m.Text, &m.RecipeID, &m.Portions); err != nil {
 			return nil, err
 		}
 		out = append(out, m)
+	}
+	return out, rows.Err()
+}
+
+// PlannedMeal is a day and mealtime of the meal plan.
+type PlannedMeal struct {
+	Day      string
+	Mealtime meal.Mealtime
+}
+
+// PlannedMealsOfRecipe lists every meal from today on that is the recipe, by
+// day and then in the order of the day.
+func (db *DB) PlannedMealsOfRecipe(householdID, recipeID, today string) ([]PlannedMeal, error) {
+	rows, err := db.sql.Query(`SELECT day, mealtime FROM meal_plan WHERE household_id = ? AND recipe_id = ? AND day >= ?
+		ORDER BY day, CASE mealtime WHEN 'breakfast' THEN 1 WHEN 'lunch' THEN 2 WHEN 'snack' THEN 3 ELSE 4 END`, householdID, recipeID, today)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []PlannedMeal
+	for rows.Next() {
+		var m PlannedMeal
+		if err := rows.Scan(&m.Day, &m.Mealtime); err != nil {
+			return nil, err
+		}
+		out = append(out, m)
+	}
+	return out, rows.Err()
+}
+
+// earlierDishRows is how many different earlier dishes are read at most.
+const earlierDishRows = 2000
+
+// EarlierDishes lists the free-text meals of days up to today, each text with
+// the last day it was planned, the most recent first. Recipe entries are left
+// out; so are days to come.
+func (db *DB) EarlierDishes(householdID, today string) ([]recipe.Dish, error) {
+	rows, err := db.sql.Query(`SELECT text, MAX(day) AS last FROM meal_plan WHERE household_id = ? AND recipe_id = '' AND text <> '' AND day <= ?
+		GROUP BY text ORDER BY last DESC, text LIMIT ?`, householdID, today, earlierDishRows)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []recipe.Dish
+	for rows.Next() {
+		var d recipe.Dish
+		if err := rows.Scan(&d.Text, &d.Day); err != nil {
+			return nil, err
+		}
+		out = append(out, d)
 	}
 	return out, rows.Err()
 }

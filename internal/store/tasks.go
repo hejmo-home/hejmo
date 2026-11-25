@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/badge"
 	"github.com/hejmo-home/hejmo/internal/reward"
 	"github.com/hejmo-home/hejmo/internal/task"
 )
@@ -209,21 +210,30 @@ func (db *DB) DeleteTask(householdID, id string) error {
 // unticking a done task unticks all of them (an open task keeps its single
 // subtask ticks). by is the person who ticked, empty for a display.
 func (db *DB) SetTaskDone(householdID, id, day string, done bool, by string, at time.Time) error {
+	_, err := db.TickTask(householdID, id, day, done, by, at)
+	return err
+}
+
+// TickTask is SetTaskDone that also returns the badges the tick awarded the
+// task's person (ticket 295), in catalogue order. Every way to tick goes
+// through here, so a badge is awarded the same on a display, the web pages,
+// the API, MCP and CalDAV.
+func (db *DB) TickTask(householdID, id, day string, done bool, by string, at time.Time) ([]badge.Key, error) {
 	t, err := db.Task(householdID, id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if !t.DueOn(day) {
-		return fmt.Errorf("%w: task is not due on %s", ErrInvalid, day)
+		return nil, fmt.Errorf("%w: task is not due on %s", ErrInvalid, day)
 	}
 	tx, err := db.sql.Begin()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer tx.Rollback()
 	changed, _, err := setTaskDoneTx(tx, t, day, done, by, at)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if done {
 		_, err = tx.Exec(`INSERT INTO subtask_done (subtask_id, day, completed_at, completed_by)
@@ -233,9 +243,15 @@ func (db *DB) SetTaskDone(householdID, id, day string, done bool, by string, at 
 		_, err = tx.Exec(`DELETE FROM subtask_done WHERE day = ? AND subtask_id IN (SELECT id FROM subtasks WHERE task_id = ?)`, day, id)
 	}
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	if done && changed { // unticking never takes a badge away, and nothing new can be earned by it
+		return db.awardAfter(householdID, t.PersonID, at), nil
+	}
+	return nil, nil
 }
 
 // setTaskDoneTx ticks a task for a day inside a transaction and books its

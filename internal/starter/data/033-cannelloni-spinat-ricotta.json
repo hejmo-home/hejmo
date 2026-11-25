@@ -1,0 +1,238 @@
+{
+  "n": 33,
+  "slug": "cannelloni-spinat-ricotta",
+  "category": "Hauptgerichte",
+  "servings": 10,
+  "time_minutes": 90,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/spinach-ricotta-cannelloni",
+    "site": "BBC Good Food",
+    "ratings": 133
+  },
+  "ingredients": [
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 8,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": "zerdrückt",
+      "note_en": "crushed"
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Feinzucker (Caster Sugar)",
+      "article_en": "Caster sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Rotweinessig",
+      "article_en": "Red wine vinegar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Dose",
+      "article_de": "Tomaten, gehackt",
+      "article_en": "Chopped tomatoes",
+      "note_de": "à 400 g",
+      "note_en": "400 g each"
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Basilikumblätter",
+      "article_en": "Basil leaves",
+      "note_de": "klein",
+      "note_en": "small"
+    },
+    {
+      "amount": 2,
+      "unit": "Becher",
+      "article_de": "Mascarpone",
+      "article_en": "Mascarpone",
+      "note_de": "à 250 g",
+      "note_en": "250 g each"
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 85,
+      "unit": "g",
+      "article_de": "Parmesan (oder vegetarische Alternative), gerieben",
+      "article_en": "Parmesan (or vegetarian alternative), grated",
+      "note_de": "für die Mascarpone-Soße",
+      "note_en": "for the mascarpone sauce"
+    },
+    {
+      "amount": 2,
+      "unit": "Kugel",
+      "article_de": "Mozzarella, in Scheiben",
+      "article_en": "Mozzarella, sliced",
+      "note_de": "à 125 g",
+      "note_en": "125 g each"
+    },
+    {
+      "amount": 1,
+      "unit": "kg",
+      "article_de": "Spinat",
+      "article_en": "Spinach",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Parmesan (oder vegetarische Alternative), gerieben",
+      "article_en": "Parmesan (or vegetarian alternative), grated",
+      "note_de": "für die Füllung",
+      "note_en": "for the filling"
+    },
+    {
+      "amount": 3,
+      "unit": "Becher",
+      "article_de": "Ricotta",
+      "article_en": "Ricotta",
+      "note_de": "à 250 g",
+      "note_en": "250 g each"
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Muskatnuss, gerieben",
+      "article_en": "Grated nutmeg",
+      "note_de": "große Prise",
+      "note_en": "large pinch"
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Cannelloni, trocken",
+      "article_en": "Dried cannelloni",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Cannelloni mit Spinat und Ricotta",
+    "steps": [
+      "Erhitze das Olivenöl in einem großen Topf und brate den zerdrückten Knoblauch 1 Minute an. Gib Zucker, Rotweinessig und die gehackten Tomaten dazu und lass die Soße 20 Minuten köcheln, bis sie dick ist.",
+      "Rühre die Basilikumblätter unter. Verteile die Soße auf zwei flache ofenfeste Formen. Heize den Backofen auf 200 °C Ober-/Unterhitze (180 °C Umluft, Gasstufe 6) vor.",
+      "Verrühre den Mascarpone mit der Milch glatt und stelle ihn beiseite.",
+      "Gib den Spinat in ein großes Sieb und übergieße ihn mit kochendem Wasser aus dem Wasserkocher, bis er zusammenfällt. Lass ihn etwas abkühlen. Drücke ihn dann mit den Händen kräftig aus. Der Spinat muss richtig trocken sein, sonst wird die Füllung wässrig.",
+      "Mische den Spinat mit 100 g Parmesan und dem Ricotta. Würze mit Muskat, Salz und Pfeffer.",
+      "Fülle die Masse in einen Spritzbeutel oder einen Gefrierbeutel mit abgeschnittener Ecke. Spritze sie in die trockenen Cannelloni-Röhren und lege diese dicht nebeneinander auf die Tomatensoße.",
+      "Verteile die Mascarpone-Soße über den Cannelloni. Streue 85 g Parmesan darüber und lege die Mozzarellascheiben obenauf.",
+      "Backe 30 bis 35 Minuten, bis alles goldbraun ist und blubbert. Lass die Cannelloni 5 Minuten ruhen. Du kannst sie roh oder gebacken einfrieren."
+    ]
+  },
+  "en": {
+    "title": "Spinach and ricotta cannelloni",
+    "steps": [
+      "Heat the olive oil in a large pot and fry the crushed garlic for 1 minute. Add the sugar, red wine vinegar and chopped tomatoes and let the sauce simmer for 20 minutes until thick.",
+      "Stir in the basil leaves. Divide the sauce between two shallow ovenproof dishes. Preheat the oven to 200 °C top/bottom (180 °C fan, gas 6).",
+      "Beat the mascarpone with the milk until smooth and set it aside.",
+      "Put the spinach in a large colander and pour boiling water from the kettle over it until it wilts. Let it cool a little. Then squeeze it firmly with your hands. The spinach must be really dry, otherwise the filling gets watery.",
+      "Mix the spinach with 100 g of parmesan and the ricotta. Season with nutmeg, salt and pepper.",
+      "Fill the mixture into a piping bag or a freezer bag with a corner snipped off. Pipe it into the dry cannelloni tubes and lay them close together on the tomato sauce.",
+      "Spread the mascarpone sauce over the cannelloni. Sprinkle 85 g of parmesan over it and lay the mozzarella slices on top.",
+      "Bake for 30 to 35 minutes, until everything is golden and bubbling. Let the cannelloni rest for 5 minutes. You can freeze them raw or baked."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 1,
+        "amount": 8,
+        "unit": "clove"
+      },
+      {
+        "index": 2,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 4,
+        "unit": "can"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "bunch"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "tub"
+      },
+      {
+        "index": 7,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 9,
+        "amount": 2,
+        "unit": "ball"
+      },
+      {
+        "index": 12,
+        "amount": 3,
+        "unit": "tub"
+      },
+      {
+        "index": 13,
+        "amount": 1,
+        "unit": "pinch"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Source says it makes 10 servings (split over two or more dishes; freezable); servings copied from source. The source gives no amounts for salt and pepper. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

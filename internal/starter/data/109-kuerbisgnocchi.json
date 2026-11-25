@@ -1,0 +1,129 @@
+{
+  "n": 109,
+  "slug": "kuerbisgnocchi",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 70,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/kuerbisgnocchi-1012",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1200,
+      "unit": "g",
+      "article_de": "Hokkaido-Kürbis",
+      "article_en": "Hokkaido pumpkin",
+      "note_de": "geputzt gewogen",
+      "note_en": "weighed after trimming"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eigelbe",
+      "article_en": "Egg yolks",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 120,
+      "unit": "g",
+      "article_de": "Parmesan, gerieben",
+      "article_en": "Grated Parmesan",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Prise",
+      "article_de": "Muskatnuss",
+      "article_en": "Nutmeg",
+      "note_de": "frisch gerieben",
+      "note_en": "freshly grated"
+    }
+  ],
+  "de": {
+    "title": "Kürbisgnocchi",
+    "steps": [
+      "Backofen auf 200 °C Ober-/Unterhitze (180 °C Umluft) vorheizen. Ein Blech mit Backpapier auslegen.",
+      "1200 g geputzten Hokkaido-Kürbis in Spalten schneiden, auf das Blech legen und 35–40 Minuten im Ofen rösten.",
+      "Das Fruchtfleisch noch heiß mit einer Gabel oder dem Mixer zu Püree verarbeiten. Kurz warten, aber nicht auskühlen lassen.",
+      "Jetzt in einem großen Topf Salzwasser zum Kochen bringen. Das geht gut, während der Kürbis fertig wird.",
+      "Zum noch warmen Püree 200 g Mehl, 2 Eigelbe, 120 g Parmesan, Pfeffer und 2 Prisen frisch geriebene Muskatnuss geben. Mit den Knethaken des Handmixers zu einem Teig kneten, solange das Püree warm ist.",
+      "Mit zwei Teelöffeln kleine Nocken abstechen und in das Wasser gleiten lassen. Die Hitze reduzieren: Das Wasser darf nur leise simmern, nicht sprudelnd kochen, sonst zerfallen die Gnocchi.",
+      "Etwa 10 Minuten gar ziehen lassen. Fertig sind sie, wenn sie an die Oberfläche steigen.",
+      "Mit dem Schaumlöffel herausheben, gut abtropfen lassen und heiß servieren."
+    ]
+  },
+  "en": {
+    "title": "Pumpkin gnocchi",
+    "steps": [
+      "Preheat the oven to 200 °C top/bottom heat (180 °C fan). Line a baking tray with baking paper.",
+      "Cut 1200 g trimmed Hokkaido squash into wedges, lay them on the tray and roast 35-40 minutes.",
+      "Puree the flesh while still hot, with a fork or a blender. Let it sit briefly, but do not let it cool down.",
+      "Now bring salted water to the boil in a large pot. You can do this while the squash finishes.",
+      "Add 200 g flour, 2 egg yolks, 120 g Parmesan, pepper and 2 pinches of freshly grated nutmeg to the still-warm puree. Knead to a dough with the dough hooks of a hand mixer while the puree is warm.",
+      "Scoop small dumplings with two teaspoons and slide them into the water. Reduce the heat: the water should only simmer gently, not boil rapidly, or the gnocchi fall apart.",
+      "Let them poach about 10 minutes. They are done when they rise to the surface.",
+      "Lift out with a slotted spoon, drain well and serve hot."
+    ],
+    "amounts_converted": [
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "pinch"
+      }
+    ]
+  },
+  "review_note": "Time from source: 30 min prep + 40 min baking = 70 min (Aufwand shown on the page). Hokkaido weight given as 1.2 kg trimmed; expressed as 1200 g. Page ratingCount 121. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

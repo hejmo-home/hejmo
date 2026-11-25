@@ -1,0 +1,155 @@
+{
+  "n": 32,
+  "slug": "mac-and-cheese",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 70,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Senf",
+      "en": "Mustard"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/ultimate-macaroni-cheese",
+    "site": "BBC Good Food",
+    "ratings": 64
+  },
+  "ingredients": [
+    {
+      "amount": 175,
+      "unit": "g",
+      "article_de": "Cheddar, kräftig gereift",
+      "article_en": "Mature cheddar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Gruyère",
+      "article_en": "Gruyère",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Parmesan (oder vegetarische Alternative)",
+      "article_en": "Parmesan (or vegetarian alternative)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Weißbrot, Rinde entfernt",
+      "article_en": "White bread, crusts cut off",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Tomaten, mittelgroß",
+      "article_en": "Medium tomatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 280,
+      "unit": "g",
+      "article_de": "Makkaroni, gute Qualität",
+      "article_en": "Good-quality macaroni",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 700,
+      "unit": "ml",
+      "article_de": "Vollmilch",
+      "article_en": "Full-fat milk",
+      "note_de": "plus etwas mehr",
+      "note_en": "plus a little extra"
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Weizenmehl Type 405",
+      "article_en": "Plain flour (Type 405)",
+      "note_de": "minus 1 TL",
+      "note_en": "minus 1 tsp"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Dijon-Senf",
+      "article_en": "Dijon mustard",
+      "note_de": "gehäuft",
+      "note_en": "rounded"
+    }
+  ],
+  "de": {
+    "title": "Mac and Cheese",
+    "steps": [
+      "Heize den Backofen auf 190 °C Ober-/Unterhitze (170 °C Umluft, Gasstufe 5) vor. Reibe Cheddar, Gruyère und Parmesan getrennt voneinander.",
+      "Zerkleinere das Weißbrot im Mixer zu Bröseln. Mische sie mit dem Parmesan und etwas Gruyère. Das sind die Käsebrösel für oben. Schneide die Tomaten in Scheiben und fette eine Form (30 × 20 × 5,5 cm) mit etwas von der Butter ein.",
+      "Koche die Makkaroni 8 Minuten in Salzwasser. Erwärme währenddessen die 700 ml Milch, sie muss nicht kochen.",
+      "Schmelze die restliche Butter in einem Topf, rühre das Mehl ein und rühre 1 Minute. Nimm den Topf vom Herd. Gieße die Milch in drei Portionen dazu und schlage nach jeder Portion mit dem Schneebesen glatt.",
+      "Gieße die Makkaroni ab und spüle sie unter sehr heißem Wasser ab. Dann kleben sie nicht zusammen. Lass sie gut abtropfen.",
+      "Stelle den Topf zurück auf den Herd und rühre, bis die Soße andickt. Lass sie dann ca. 4 Minuten köcheln, bis sie glänzt. Nimm den Topf vom Herd und rühre Cheddar, den übrigen Gruyère und den Senf unter.",
+      "Lockere die Soße mit etwa 5 EL Milch auf und schmecke ab. Salz braucht sie nur wenig, der Käse ist schon salzig. Rühre die Makkaroni unter, bis die Soße sie dick umhüllt.",
+      "Fülle alles in die Form. Streue die Käsebrösel darüber und lege die Tomatenscheiben obenauf. Backe 12 bis 15 Minuten, bis es an den Rändern blubbert.",
+      "Schalte den Grill an und bräune die Oberfläche 3 bis 5 Minuten, bis die Brösel goldbraun sind. Lass den Auflauf 1 bis 2 Minuten ruhen, bevor du ihn anrichtest."
+    ]
+  },
+  "en": {
+    "title": "Mac and cheese",
+    "steps": [
+      "Preheat the oven to 190 °C top/bottom (170 °C fan, gas 5). Grate the cheddar, gruyère and parmesan separately.",
+      "Blitz the white bread into crumbs in a food processor. Mix them with the parmesan and some of the gruyère. These are the cheesy crumbs for the top. Slice the tomatoes and grease a dish (30 × 20 × 5.5 cm) with a little of the butter.",
+      "Cook the macaroni for 8 minutes in salted water. In the meantime, warm the 700 ml of milk. It does not need to boil.",
+      "Melt the remaining butter in a pot, stir in the flour and stir for 1 minute. Take the pot off the heat. Pour in the milk in three portions and beat smooth with a whisk after each one.",
+      "Drain the macaroni and rinse it under very hot water. That stops it sticking together. Let it drain well.",
+      "Put the pot back on the hob and stir until the sauce thickens. Then let it simmer for about 4 minutes, until glossy. Take the pot off the heat and stir in the cheddar, the remaining gruyère and the mustard.",
+      "Loosen the sauce with about 5 tbsp of milk and taste. It needs only a little salt, because the cheese is already salty. Stir in the macaroni until the sauce coats it thickly.",
+      "Fill everything into the dish. Sprinkle the cheesy crumbs over it and lay the tomato slices on top. Bake for 12 to 15 minutes, until it bubbles at the edges.",
+      "Turn on the grill and brown the top for 3 to 5 minutes, until the crumbs are golden. Let the bake rest for 1 to 2 minutes before serving."
+    ],
+    "amounts_converted": [
+      {
+        "index": 4,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Source yield: serves 4 generously, with enough for seconds. Source says plain flour, mapped here to Type 405. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

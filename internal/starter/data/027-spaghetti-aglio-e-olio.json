@@ -1,0 +1,183 @@
+{
+  "n": 27,
+  "slug": "spaghetti-aglio-e-olio",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 25,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/2659071417547506/Spaghetti-aglio-olio-e-peperoncino.html",
+    "site": "Chefkoch",
+    "ratings": 1818
+  },
+  "ingredients": [
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Spaghetti (Hartweizengrieß)",
+      "article_en": "Spaghetti (durum wheat semolina)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 40,
+      "unit": "g",
+      "article_de": "Hartkäse (z. B. Grana Padano, 1 Jahr gereift)",
+      "article_en": "Hard cheese (e.g. Grana Padano, aged 1 year)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Tomate",
+      "article_en": "Tomato",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 5,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Peperoni",
+      "article_en": "Chilli peppers (peperoni)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 5,
+      "unit": "EL",
+      "article_de": "Petersilie, gehackt",
+      "article_en": "Chopped parsley",
+      "note_de": "ca. 10 Stängel",
+      "note_en": "about 10 stalks"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Basilikum, gerebelt",
+      "article_en": "Rubbed dried basil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Oregano, gerebelt",
+      "article_en": "Rubbed dried oregano",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Gemüsebrühepulver",
+      "article_en": "Vegetable stock powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Olivenöl, nativ",
+      "article_en": "Virgin olive oil",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Spaghetti Aglio e Olio",
+    "steps": [
+      "Setze einen großen Topf mit Salzwasser auf und koche die Spaghetti darin. Schöpfe gegen Ende 2 Kellen Nudelwasser ab, bevor du abgießt. Das Wasser ist stärkehaltig und wird später gebraucht.",
+      "Reibe den Hartkäse und würfle die Tomate. Streue die 1/2 TL Salz auf den Knoblauch und zerdrücke ihn mit der Messerklinge oder Gabel zu einer Paste. Entkerne die Peperoni und schneide sie in Ringe.",
+      "Gib Knoblauchpaste, Tomate, Peperoni, Petersilie, Basilikum, Oregano und Gemüsebrühepulver in eine große Schüssel. Gieße etwas heißes Nudelwasser dazu und lass die Mischung 2 Minuten ziehen. Sie darf jetzt ruhig eine Spur zu salzig schmecken.",
+      "Gieße die Spaghetti ab und gib sie in eine heiße Pfanne. Gib die Würzmischung dazu und schwenke alles höchstens 1 Minute.",
+      "Rühre den Käse unter. Er bindet die Soße an die Nudeln.",
+      "Gib zum Schluss die 100 ml Olivenöl kalt dazu und rühre sie unter. Das Öl wird nicht erhitzt. Streue noch etwas Käse darüber und serviere sofort."
+    ]
+  },
+  "en": {
+    "title": "Spaghetti aglio e olio",
+    "steps": [
+      "Put a large pot of salted water on and cook the spaghetti in it. Towards the end, scoop out 2 ladles of pasta water before draining. The water is starchy and you need it later.",
+      "Grate the hard cheese and dice the tomato. Sprinkle the 1/2 tsp of salt over the garlic and mash it to a paste with the flat of a knife or a fork. Deseed the peperoni and slice it into rings.",
+      "Put the garlic paste, tomato, peperoni, parsley, basil, oregano and vegetable bouillon powder in a large bowl. Add a little hot pasta water and let the mix steep for 2 minutes. It may taste slightly too salty at this point, and that is fine.",
+      "Drain the spaghetti and put it into a hot pan. Add the seasoning mix and toss everything for 1 minute at most.",
+      "Stir in the cheese. It binds the sauce to the pasta.",
+      "At the end, stir in the 100 ml of olive oil cold. The oil is not heated. Sprinkle a bit more cheese on top and serve right away."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 5,
+        "unit": "clove"
+      },
+      {
+        "index": 4,
+        "amount": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 5,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 9,
+        "amount": 2,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "The source uses 2 peperoni; reduce or deseed for young children. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

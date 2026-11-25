@@ -60,6 +60,7 @@
   --fs-label-large: 15px; --fw-label-large: 400;
   --fs-meta: 13px;        --fw-meta: 400;
   --fs-title-phone: 28px; /* h1 under 600 px */
+  --fs-emergency-number: 28px; --fw-emergency-number: 700; /* phone numbers read across the room (ticket 303) */
   --fs-secret: 19px;      /* a secret shown once, monospace */
   --fs-cook-step: 28px; --fw-cook-step: 500;                 /* the step of the cooking view, read at arm's length (ticket 286) */
   --fs-cook-step-phone: 24px;
@@ -4060,6 +4061,238 @@ fieldset.choice.goals { max-width: 640px; }
 .cards.stars .st-head .stars-balance::before { content: "\2605\00a0" / ""; color: var(--pc); }
 [data-theme="bw"] .cards.stars .st-head .stars-balance::before { color: var(--text); }
 
+/* ---- ticket 303: layout block "Emergency numbers" (preview docs/design/preview-303.html; new type token emergency-number) ---- */
+/* The tile always takes a footer row of its own, in its place in the layout order. */
+.fv-footer .tile.sos { flex: 1 1 100%; display: grid; gap: 8px; align-content: start; }
+.fv-footer .tile.sos .lab { display: flex; align-items: center; gap: 6px; }
+.fv-footer .tile.sos .lab .icon { stroke: var(--accent); flex: none; }
+[data-theme="bw"] .fv-footer .tile.sos { border: 2px solid var(--text); padding: calc(var(--pad-column) - 2px); }
+/* Contacts side by side: 3 in a row on 1024 x 768, 2 on 768 x 1024, 1 on a phone. */
+.sos-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 14px var(--gap); align-items: start; }
+.sos-ct { display: grid; grid-template-columns: var(--photo-row) minmax(0, 1fr); column-gap: 12px; align-items: start; align-content: start; min-width: 0; }
+.sos-ct > .ct-photo { grid-row: 1 / span 2; }
+.sos-ct .nm { display: flex; align-items: center; gap: 6px; min-width: 0; margin: 0; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); line-height: 1.2; overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; }
+.sos-ct .nm .marker { flex: none; }
+.sos-ct .nm > span:last-child { min-width: 0; }
+.sos-nums { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 4px; min-width: 0; }
+.sos-nums li { display: grid; min-width: 0; }
+.sos-nums .no { font-size: var(--fs-emergency-number); font-weight: var(--fw-emergency-number); line-height: 1.1; font-variant-numeric: tabular-nums; overflow-wrap: normal; }
+.sos-nums .no > span { white-space: nowrap; }
+/* A number breaks only between its digit groups, and only when the line is too narrow for it. */
+
+/* Never cut: with the tile on, the columns keep at least their name, one entry and the progress block (200 px);
+   when the footer needs more, the family view grows past the screen and scrolls as one page. */
+/* Wall displays only; phones (#208) already scroll as one page. */
+@media (min-width: 600px) and (min-height: 501px) {
+  .family-page:has(.tile.sos), .family-page:has(.tile.sos) > [data-view] { height: auto; }
+  .fv:has(.tile.sos) { height: auto; min-height: calc(100vh - 2 * var(--margin)); min-height: calc(100dvh - 2 * var(--margin)); }
+  .fv:has(.tile.sos) .fv-grid { flex: 1 1 0; min-height: 200px; }
+}
+.sos-nums .kind { font-size: var(--fs-label-large); line-height: 1.25; color: var(--text-secondary); min-width: 0; overflow-wrap: break-word; }
+
+/* Settings: what the block will show, in words, under its row. */
+.sub.sos-sub { font-size: var(--fs-label-large); }
+.sub.sos-sub p { margin: 0; overflow-wrap: break-word; }
+.sos-sub .sos-link { display: inline-flex; align-items: center; gap: 6px; min-height: var(--touch-target); font-weight: 600; color: var(--accent); }
+.sos-sub .sos-link .icon { stroke: currentColor; flex: none; }
+[data-theme="bw"] .sos-sub .sos-link { color: var(--text); text-decoration-thickness: 2px; }
+.sub .flag.many { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 8px 10px; border-radius: var(--radius-card); font-size: var(--fs-label); font-weight: 400; overflow-wrap: break-word; }
+.flag.many .icon { flex: none; stroke: currentColor; }
+[data-theme="bw"] .flag.many { background: var(--surface); border: 2px solid var(--text); }
+.why.nosos { margin: 0 0 8px; font-size: var(--fs-label); }
+.why.nosos .icon { flex: none; stroke: var(--accent); }
+.why.nosos a { font-weight: 700; color: var(--accent); }
+[data-theme="bw"] .why.nosos { border: 2px solid var(--text); }
+[data-theme="bw"] .why.nosos a { color: var(--text); }
+
+/* Miniature: the tile as a row of its own with one square per contact. */
+.m-foot { flex-wrap: wrap; }
+.m-tile.m-sos { flex: 1 1 100%; }
+.m-sos .m-row { display: flex; flex-wrap: wrap; gap: 3px 8px; }
+.m-sos .m-row span { display: flex; align-items: center; gap: 3px; }
+.m-sos .m-row b { width: 9px; height: 9px; border-radius: 2px; background: var(--border); flex: none; }
+.m-sos .m-row s { width: 26px; height: 5px; border-radius: 2px; background: var(--text-secondary); }
+[data-theme="bw"] .m-sos .m-row b { background: none; border: 1.5px solid var(--text); box-sizing: border-box; }
+.layout:has(input[name="b_emergency"]:not(:checked)) .m-sos { display: none; }
+
+/* ---- ticket 301: important numbers for children (preview docs/design/preview-301.html; builds on #296 contacts and #297 .ct-photo; no new tokens) ---- */
+/* Child view "Wichtige Nummern": sections, then one card per contact: big photo beside the Hejmo name, below it one full-width call button per number (so a number never has to wrap, at any column width). */
+.kn-sec { margin: 0 0 var(--gap-section); }
+.kn-sec > h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font-size: var(--fs-key-figure); }
+.kn-sec > h2 .icon { flex: none; stroke: var(--accent); }
+.kn-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: var(--gap); align-items: start; max-width: 1100px; }
+.kn { display: grid; grid-template-columns: var(--photo-kid) minmax(0, 1fr); grid-template-areas: "ph name" "calls calls"; column-gap: 16px; row-gap: 12px; align-content: start; align-items: center; padding: 14px; background: var(--surface); border-radius: var(--radius-tile); box-sizing: border-box; min-width: 0; }
+.kn > .ct-photo { grid-area: ph; }
+.kn > h3 { grid-area: name; margin: 0; display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); line-height: 1.2; overflow-wrap: break-word; hyphens: manual; }
+.kn > h3 > span:last-child { min-width: 0; }
+.kn > h3 .marker { flex: none; }
+.kn > h3 a { color: inherit; }
+.kn-calls { grid-area: calls; list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; min-width: 0; }
+/* The call button: a 64 px outlined card, the handset in a filled square (never a circle: circles are person markers), what it calls in words, the number below. */
+.kn-call { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px 14px 8px 8px; box-sizing: border-box; border: 2px solid var(--accent); border-radius: var(--radius-card); background: var(--surface); color: var(--text); text-decoration: none; }
+.kn-call .ic { flex: none; display: grid; place-items: center; width: var(--touch-target); height: var(--touch-target); border-radius: var(--radius-field); background: var(--accent); }
+.kn-call .ic .icon { stroke: var(--accent-text); }
+.kn-call .tx { display: grid; gap: 2px; min-width: 0; }
+.kn-call b { font-size: var(--fs-event-title); color: var(--accent); overflow-wrap: break-word; hyphens: manual; }
+.kn-call .no { font-size: var(--fs-person-name); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kn-call:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+/* A device that cannot call (a tablet): the numbers as large plain text to read out or type into a phone. */
+.kn-nums { grid-area: calls; margin: 0; display: grid; gap: 2px; min-width: 0; }
+.kn-nums dt { font-size: var(--fs-label-large); color: var(--text-secondary); }
+.kn-nums dd { margin: 0 0 8px; font-size: var(--fs-key-figure); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; user-select: all; }
+.kn-nums dd:last-child { margin: 0; }
+.kn-why { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 var(--gap-section); }
+.kn-why p { margin: 0; }
+.kn-why .icon { flex: none; stroke: currentColor; margin-top: 1px; }
+/* No number for the children yet. */
+.kn-empty { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: start; max-width: 560px; padding: 16px; border: 1.5px dashed var(--border); border-radius: var(--radius-tile); }
+.kn-empty .icon { stroke: var(--accent); }
+.kn-empty p { margin: 0 0 6px; }
+.kn-empty p.kid { font-size: var(--fs-key-figure); font-weight: 700; }
+/* Parents: the tag on contact rows, the fact on the contact page, the switch card in the form and the parents' look at the children's page. */
+.tag.kid { gap: 5px; }
+.tag.kid .icon { stroke: currentColor; }
+.tag.kid.wait { border-style: dashed; border-color: var(--notice-text); color: var(--notice-text); background: var(--notice-bg); }
+.kn-off.wait { background: var(--notice-bg); color: var(--notice-text); }
+.kn-off.wait a { color: inherit; font-weight: 700; }
+.facts .kid-fact { display: inline-flex; align-items: center; gap: 6px; }
+.facts .kid-fact .icon { flex: none; stroke: var(--accent); }
+.kid-card .kid-sees { margin: 4px 0 0; font-size: var(--fs-label-large); overflow-wrap: break-word; }
+.kid-card .notice { margin: 8px 0 0; display: flex; gap: 8px; align-items: flex-start; }
+.kid-card .notice .icon { flex: none; stroke: currentColor; margin-top: 2px; }
+.kn-parent { max-width: 1100px; }
+.kn-off { max-width: 560px; padding: 14px 16px; margin: 0 0 var(--gap-section); background: var(--surface); border-radius: var(--radius-tile); }
+.kn-off h2 { margin: 0 0 6px; font-size: var(--fs-event-title); }
+.kn-off p { margin: 0; overflow-wrap: break-word; }
+.kn-off .nm { white-space: nowrap; }
+.grp-link a + a { margin-left: 18px; }
+[data-theme="bw"] .kn { border: 2px solid var(--text); }
+[data-theme="bw"] .kn-call { border: 2px solid var(--text); }
+[data-theme="bw"] .kn-call:focus-visible { outline-color: var(--text); }
+[data-theme="bw"] .kn-call .ic { background: var(--text); }
+[data-theme="bw"] .kn-call .ic .icon { stroke: var(--surface); }
+[data-theme="bw"] .kn-call b, [data-theme="bw"] .kn-sec > h2 .icon, [data-theme="bw"] .kn-empty .icon, [data-theme="bw"] .facts .kid-fact .icon { color: var(--text); stroke: var(--text); }
+[data-theme="bw"] .kn-empty { border: 2px dashed var(--text); }
+[data-theme="bw"] .kn-off { border: 2px solid var(--text); }
+[data-theme="bw"] .tag.kid.wait { border: 2px dashed var(--text); color: var(--text); background: none; }
+[data-theme="bw"] .kn-off.wait { border-style: dashed; background: var(--surface); color: var(--text); }
+/* Found while designing #301: a child's personal device has no Sign out, so the narrow-bar rule of #125 never applied and "Hejmo" broke into two lines at 375 px. Under 480 px both chips drop their word on every bar. */
+@media (max-width: 479px) {
+  .frame-tools .lang-name, .frame-tools .theme-name { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+}
+/* Contacts from a vCard file (issue #300, preview docs/design/preview-300.html).
+   Builds on the contact rows (296), the contact photos (297), the how-to card (221),
+   the picture rules (164) and the ADR 0017 patterns. No new tokens. */
+.ct-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 10px var(--gap); margin: 0 0 var(--gap); max-width: 560px; }
+.empty .button > .icon { stroke: currentColor; }
+.imp-how .imp-form { display: grid; gap: 12px; justify-items: start; justify-self: stretch; }
+.imp-how .imp-form .f { justify-self: stretch; }
+.imp-ways { margin: 0; padding-left: 20px; display: grid; gap: 8px; font-size: var(--fs-label-large); overflow-wrap: anywhere; }
+
+/* Summary: the file and what is in it, every line in words and a jump link. */
+.imp-sum { box-sizing: border-box; max-width: 560px; margin: 0 0 var(--gap-section); padding: 14px 16px; background: var(--surface); border-radius: var(--radius-tile); display: grid; gap: 10px; }
+[data-theme="bw"] .imp-sum { border: 2px solid var(--text); }
+.imp-file { display: flex; gap: 10px; align-items: flex-start; margin: 0; }
+.imp-file .icon { flex: none; stroke: var(--accent); margin-top: 1px; }
+.imp-file > span { display: grid; gap: 2px; min-width: 0; }
+.imp-file small { font-size: var(--fs-label); color: var(--text-secondary); }
+.imp-sum ul.plain { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border-top: 1px solid var(--border); }
+.imp-sum ul.plain li { border-bottom: 1px solid var(--border); }
+.imp-sum ul.plain li:last-child { border-bottom: 0; }
+.imp-sum ul.plain a, .imp-sum ul.plain li:not(:has(a)) { display: block; padding: 10px 0; min-height: 24px; color: var(--text); text-decoration: none; overflow-wrap: break-word; }
+.imp-sum ul.plain a b { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+[data-theme="bw"] .imp-sum ul.plain a b { color: var(--text); }
+[data-theme="bw"] .imp-sum ul.plain li { border-color: var(--text); }
+
+.imp-sec { max-width: 560px; }
+.imp-sec > h2 { margin-bottom: 4px; }
+
+/* A possible duplicate: the card from the file, the reason, the contact in Hejmo,
+   three choice cards and, while "merge" is chosen, what merging adds and keeps. */
+ul.imp-dups, ul.imp-rows, ul.imp-skip { list-style: none; margin: 0 0 var(--gap-section); padding: 0; display: grid; gap: var(--gap-cards); }
+.imp-dup { display: grid; gap: 10px; padding: 16px; background: var(--surface); border-radius: var(--radius-tile); min-width: 0; }
+[data-theme="bw"] .imp-dup { border: 2px solid var(--text); }
+.imp-dup.invalid { outline: 2px solid var(--error-text); outline-offset: -2px; }
+[data-theme="bw"] .imp-dup.invalid { outline: 0; border: 3px solid var(--text); }
+.imp-k { margin: 0; font-size: var(--fs-label); font-weight: 700; color: var(--text-secondary); }
+.imp-k + .imp-who { margin-top: -4px; }
+.imp-who { display: flex; gap: 14px; align-items: flex-start; min-width: 0; }
+.imp-who .t, .imp-rows .t { display: grid; gap: 4px; min-width: 0; flex: 1; }
+.imp-who b, .imp-rows .t > b { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); overflow-wrap: break-word; hyphens: manual; }
+.imp-who b.who { display: flex; align-items: center; gap: 8px; }
+.imp-who b.who .marker { flex: none; }
+.imp-who .meta, .imp-rows .meta, .imp-rows .more-l { font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: anywhere; }
+.imp-who .nums, .imp-rows .nums { display: flex; flex-wrap: wrap; gap: 2px 16px; font-size: var(--fs-label); color: var(--text); font-variant-numeric: tabular-nums; }
+.imp-who .nums > span, .imp-rows .nums > span { white-space: nowrap; }
+.imp-who .nums.mails > span, .imp-rows .nums.mails > span { white-space: normal; overflow-wrap: anywhere; }
+.imp-who .nums .lab, .imp-rows .nums .lab, .imp-rows .none, .imp-who .none { color: var(--text-secondary); font-size: var(--fs-label); }
+@media (max-width: 479px) { .imp-who .nums > span, .imp-rows .nums > span { white-space: normal; } }
+.imp-dup .imp-why { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 8px 10px; border-radius: var(--radius-field); background: var(--background); font-size: var(--fs-label-large); overflow-wrap: anywhere; }
+.imp-dup .imp-why .icon { flex: none; stroke: var(--accent); margin-top: 2px; }
+[data-theme="bw"] .imp-dup .imp-why { background: none; border: 1.5px solid var(--text); }
+[data-theme="bw"] .imp-dup .imp-why .icon { stroke: var(--text); }
+.imp-need { margin: 0; }
+.imp-pick { margin-top: 4px; }
+.imp-pick legend { font-size: var(--fs-label-large); color: var(--text); font-weight: 700; overflow-wrap: break-word; }
+.imp-dup .choice b { overflow-wrap: break-word; hyphens: manual; }
+.imp-dup.invalid .choice label { border-color: var(--error-text); }
+.merge-out { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
+@supports selector(:has(a)) {
+  .merge-out { display: none; }
+  .imp-dup:has(input[value="merge"]:checked) .merge-out { display: grid; }
+}
+.merge-out .mh { margin: 0; font-weight: 700; }
+.merge-out > div { display: grid; gap: 4px; font-size: var(--fs-label-large); }
+.merge-out > div > b { font-size: var(--fs-label); color: var(--text-secondary); }
+.merge-out ul.plain { margin: 0; padding-left: 20px; display: grid; gap: 4px; overflow-wrap: anywhere; }
+.merge-out .mo-add ul.plain { list-style: "+  "; }
+.merge-out .mo-keep ul.plain { list-style: "=  "; }
+.merge-out .hint { margin: 0; }
+[data-theme="bw"] .merge-out { border-top: 1.5px solid var(--text); }
+/* Both have a photo: choose which one stays (keeping is preselected). */
+fieldset.choice.ph-choose { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+fieldset.choice.ph-choose legend { font-size: var(--fs-label-large); color: var(--text); font-weight: 700; grid-column: 1 / -1; float: none; overflow-wrap: break-word; }
+.ph-choose label { display: flex; gap: 12px; align-items: center; }
+.ph-choose label input { flex: none; }
+.ph-choose label > span:last-child { display: grid; gap: 2px; min-width: 0; }
+.ph-choose label b, .ph-choose label small { grid-column: 1; }
+
+/* A new contact: the whole row is the label of its "take it" checkbox. */
+.imp-bulk { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 var(--gap); }
+.imp-rows > li > label { display: flex; gap: 14px; align-items: flex-start; padding: 12px 16px; background: var(--surface); border: 1.5px solid transparent; border-radius: var(--radius-tile); color: var(--text); font-size: var(--fs-body); cursor: pointer; min-width: 0; }
+[data-theme="bw"] .imp-rows > li > label { border: 2px solid var(--text); }
+.imp-rows input[type="checkbox"] { flex: none; width: 22px; height: 22px; margin: 17px 0 0; accent-color: var(--accent); }
+.imp-rows label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.imp-rows .st { font-size: var(--fs-label); font-weight: 700; color: var(--accent); }
+[data-theme="bw"] .imp-rows .st { color: var(--text); }
+.imp-rows .flag { justify-self: start; }
+.imp-rows label:has(input:not(:checked)) { background: var(--background); border: 1.5px dashed var(--text-secondary); }
+.imp-rows label:has(input:not(:checked)) .st { color: var(--text-secondary); }
+.imp-rows label:has(input:not(:checked)) .ct-photo img { filter: grayscale(1); }
+[data-theme="bw"] .imp-rows label:has(input:not(:checked)) { border: 2px dashed var(--text); background: var(--background); }
+.imp-grp { max-width: 560px; margin: 0 0 var(--gap-section); }
+.imp-grp fieldset.chips legend { float: none; }
+
+/* Already the same in Hejmo, and cards Hejmo cannot read. */
+.imp-same { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 var(--gap-section); padding: 12px 16px; background: var(--surface); border-radius: var(--radius-tile); overflow-wrap: break-word; }
+.imp-same .icon { flex: none; stroke: var(--accent); margin-top: 3px; }
+[data-theme="bw"] .imp-same { border: 2px solid var(--text); }
+[data-theme="bw"] .imp-same .icon { stroke: var(--text); }
+.imp-skip li { display: flex; gap: 10px; align-items: flex-start; padding: 12px 16px; border: 1.5px dashed var(--border); border-radius: var(--radius-tile); overflow-wrap: anywhere; }
+.imp-skip li .icon { flex: none; stroke: var(--text-secondary); margin-top: 2px; }
+.imp-skip li b { display: block; }
+[data-theme="bw"] .imp-skip li { border: 2px dashed var(--text); }
+[data-theme="bw"] .imp-skip li .icon { stroke: var(--text); }
+
+.imp-save { max-width: 560px; }
+.imp-save .dirty { font-weight: 600; flex: 1 1 200px; }
+.imp-save .link { flex: none; }
+@media (max-width: 479px) { .imp-save .link { margin-left: 0; } }
+
+/* Rows just taken over or completed (until the next page load). */
+.tag.fresh { border: 1.5px solid var(--accent); color: var(--accent); background: var(--surface); }
+[data-theme="bw"] .tag.fresh { border: 2px solid var(--text); color: var(--text); background: var(--surface); font-weight: 700; }
+
 /* ===== ticket 279: write and view own recipes (no new tokens) ===== */
 /* Meals page: the way to the recipes. */
 .meal-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; max-width: 560px; margin: 0 0 var(--gap-section); }
@@ -4349,3 +4582,211 @@ ul.cook-ings { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px;
   .cook-ings-part > h2 .cnt { display: none; }
 }
 @supports (hyphenate-limit-chars: 12 5 5) { .cook-title, .cook-text, .cook-tick .t, .cook-next { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }
+/* Recipe on the meal plan (ticket 281). A recipe entry is a framed box in
+   place of the text field: symbol, name (link to the recipe with the entry's
+   portions), "Rezept · category · time", portions stepper with its meaning in
+   words, warnings, "Anderes Gericht". Suggestions span the whole day card. */
+.meal-form .place-list li, .meal-form .mrow li { background: none; border-radius: 0; padding: 6px 8px; }
+.meal-form .mrow span:not(.art-sym):not(.today), .meal-form .mrow small span { color: inherit; font-size: inherit; }
+/* Fix: ".steps .src { display: contents }" (a setup rule) also hit the meal plan's source line. */
+.steps .mrow .src { display: flex; }
+/* A recipe row puts the mealtime word above a full-width box (room for the stepper and warnings). */
+.mrow.has-rcp { grid-template-columns: minmax(0, 1fr); align-items: start; }
+.mrow.has-rcp > .src { grid-column: 1; }
+.meal-form .mrow .art-sym { font-size: 26px; }
+.mrow .rcp-entry { grid-column: 1; display: grid; gap: 8px; justify-items: start; padding: 8px 10px 10px; border: 1.5px solid var(--accent); border-radius: var(--radius-card); background: var(--surface); min-width: 0; }
+.mrow.adjusted .rcp-entry { border: 2px solid var(--notice-text); }
+.mrow.invalid .rcp-entry { border: 2px solid var(--error-text); }
+.rcp-entry .rcp-head { display: flex; gap: 10px; align-items: flex-start; min-width: 0; width: 100%; }
+.rcp-entry .rcp-head > div { display: grid; gap: 2px; min-width: 0; }
+.rcp-entry .rcp-name { font-size: var(--fs-event-title); font-weight: 700; color: var(--text); text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; }
+.rcp-entry small, .art-sugg small { display: flex; align-items: flex-start; gap: 4px; font-size: var(--fs-label); color: var(--text-secondary); }
+.rcp-entry small .icon, .art-sugg small .icon { flex: none; stroke: var(--text-secondary); margin-top: 2px; }
+.rcp-entry .portions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; }
+.rcp-entry .portions > label { font-size: var(--fs-label); font-weight: 700; color: var(--text); }
+.rcp-entry .portions .stepper { gap: 6px; }
+.rcp-entry .portions .stepper input { width: 3em; min-height: var(--touch-target); box-sizing: border-box; padding: 6px 4px; }
+.rcp-entry .portions .for { font-size: var(--fs-label); color: var(--text-secondary); }
+.rcp-entry .portions .ferr { flex: 1 1 100%; }
+.rcp-entry .acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.rcp-entry .acts .button, .mrow .src .button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: var(--fs-label); }
+.rcp-entry .acts .icon { stroke: currentColor; }
+[data-theme="bw"] .mrow .rcp-entry { border: 2px solid var(--text); }
+[data-theme="bw"] .mrow.adjusted .rcp-entry { border: 2px dashed var(--text); }
+[data-theme="bw"] .mrow.invalid .rcp-entry { border: 3px solid var(--text); }
+[data-theme="bw"] .rcp-entry .rcp-name { text-decoration-color: var(--text); }
+/* Suggestions under a meal: full width of the day card. */
+.mrow > .sugg { grid-column: 1 / -1; display: grid; gap: 6px; min-width: 0; margin-top: 2px; }
+.mrow textarea.focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.mrow .place-list.art-sugg li { grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 2px; justify-items: start; }
+.mrow .place-list.art-sugg li > .art-sym { grid-row: 1 / span 2; align-self: start; }
+.mrow .place-list.art-sugg li > :not(.art-sym) { grid-column: 2; }
+.mrow .place-list.art-sugg li + li { border-top: 1px solid var(--border); }
+.mrow .place-list.art-sugg li[aria-selected="true"] { border-radius: var(--radius-field); background: var(--background); outline: 2px solid var(--accent); outline-offset: -2px; }
+.mrow .place-list.art-sugg li b { font-weight: 700; -webkit-hyphens: manual; hyphens: manual; overflow-wrap: break-word; }
+.mrow .art-sugg .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.mrow .art-sugg li.old .art-sym { background: none; border: 1.5px solid var(--border); }
+.mrow .art-sugg li.old .art-sym .icon, .mrow .art-sugg li.free .art-sym .icon { stroke: var(--text-secondary); }
+.mrow .art-sugg li.old b, .mrow .art-sugg li.free b { font-weight: 600; }
+.sugg-none { display: flex; gap: 8px; align-items: flex-start; margin: 0; font-size: var(--fs-label); color: var(--text); }
+.sugg-none .icon { flex: none; stroke: var(--accent); margin-top: 1px; }
+[data-theme="bw"] .mrow .place-list.art-sugg li + li { border-top-color: var(--text); }
+[data-theme="bw"] .mrow .art-sugg li.old .art-sym { border: 2px solid var(--text); }
+[data-theme="bw"] .mrow .place-list.art-sugg li[aria-selected="true"] { outline: 3px solid var(--text); background: var(--surface); }
+[data-theme="bw"] .mrow .place-list { border: 2px solid var(--text); }
+/* The free-text allergies of the family under a week that holds a recipe. */
+.meal-form .meal-unch { margin: var(--gap) 0 0; }
+/* Read view (children): a recipe is a link with its symbol and "Rezept ansehen". */
+.meal-day dd .rcp-link { display: inline-flex; gap: 10px; align-items: flex-start; color: var(--text); text-decoration: none; min-height: var(--touch-target); }
+.meal-day dd .rcp-link .art-sym { width: 36px; height: 36px; font-size: 22px; }
+.meal-day dd .rcp-link > span:last-child { display: grid; gap: 2px; }
+.meal-day dd .rcp-link .nm { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+.meal-day dd .rcp-link small { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-label); font-weight: 600; color: var(--accent); text-decoration: none; }
+.meal-day dd .rcp-link small .icon { width: 16px; height: 16px; stroke: currentColor; }
+.meal-day dd .allergen-warn { margin-top: 6px; font-weight: 600; }
+.meal-day dd { -webkit-hyphens: manual; hyphens: manual; }
+[data-theme="bw"] .meal-day dd .rcp-link small { color: var(--text); }
+[data-theme="bw"] .meal-day dd .rcp-link .nm { text-decoration-color: var(--text); }
+/* Recipe page: portions to view, scaled on the server (links, no script). */
+.portions-view { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0 4px; }
+.portions-view .pv-l { font-size: var(--fs-event-title); font-weight: 600; color: var(--text); }
+.portions-view .pv-n { min-width: 2.2em; text-align: center; font-size: var(--fs-person-name); font-variant-numeric: tabular-nums; }
+.portions-view .step { display: inline-flex; align-items: center; justify-content: center; width: var(--touch-target); height: var(--touch-target); padding: 0; border-radius: var(--radius-field); box-sizing: border-box; }
+.portions-view .step .icon { stroke: currentColor; stroke-width: 2.4; }
+.portions-view .step[aria-disabled="true"] { border-color: var(--border); color: var(--text-secondary); pointer-events: none; }
+[data-theme="bw"] .portions-view .step[aria-disabled="true"] { border: 1px dashed var(--text); color: var(--text); }
+.rcp-part > .pv-hint { margin: 0 0 10px; }
+
+/* ===== ticket 288: nutrition values per portion on the recipe page (no new tokens) ===== */
+.rcp-nutri { max-width: 880px; width: 100%; min-width: 0; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; justify-items: start; padding: 14px 16px; margin: 0 0 var(--gap-section); background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-tile); }
+.rcp-nutri > * { max-width: 100%; }
+.rcp-nutri h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: var(--fs-event-title); }
+.rcp-nutri h2 .icon { flex: none; stroke: currentColor; }
+.rcp-nutri .nut-lead { margin: 0; color: var(--text-secondary); font-size: var(--fs-label-large); }
+.rcp-nutri .none { display: flex; gap: 8px; align-items: flex-start; margin: 0; }
+.rcp-nutri .none .icon { flex: none; stroke: var(--accent); margin-top: 2px; }
+.nut-gap { display: grid; gap: 6px; justify-items: start; margin: 0; padding: 10px 12px; background: var(--notice-bg); color: var(--notice-text); border-radius: var(--radius-card); font-size: var(--fs-label-large); }
+.nut-gap p { margin: 0; }
+.nut-gap ul { margin: 0; padding: 0 0 0 1.1em; display: grid; gap: 4px; }
+.nut-gap li { overflow-wrap: break-word; hyphens: manual; }
+.nut-gap a { color: inherit; font-weight: 600; }
+.nut-gap .flag.warn { padding: 0; background: none; font-size: var(--fs-event-title); }
+.nut-table { border-collapse: collapse; width: 100%; max-width: 30rem; font-variant-numeric: tabular-nums; }
+.nut-table th, .nut-table td { padding: 9px 0; border-top: 1px solid var(--border); vertical-align: baseline; }
+.nut-table tr:first-child th, .nut-table tr:first-child td { border-top: 0; }
+.nut-table th { text-align: left; font-weight: 400; padding-right: 12px; overflow-wrap: break-word; }
+.nut-table td { text-align: right; font-weight: 700; white-space: nowrap; }
+.nut-table tr.nut-sub th { padding-left: 1.25em; color: var(--text-secondary); font-size: var(--fs-label-large); }
+.nut-table tr.nut-sub td { font-weight: 600; }
+.nut-table .kj { display: block; font-size: var(--fs-meta); font-weight: 400; color: var(--text-secondary); }
+.nut-table .kcal { font-size: var(--fs-key-figure); }
+.nut-na { display: inline-block; padding: 1px 8px; border: 1.5px dashed var(--notice-text); border-radius: var(--radius-field); background: var(--notice-bg); color: var(--notice-text); font-size: var(--fs-label); font-weight: 600; white-space: nowrap; }
+.nut-src { margin: 0; }
+.nut-who { margin: 0; padding-top: 10px; border-top: 1px solid var(--border); width: 100%; font-size: var(--fs-label-large); overflow-wrap: break-word; }
+.nut-who .who { display: inline; font-weight: 700; white-space: nowrap; }
+.nut-who .who .marker { display: inline-block; vertical-align: -0.1em; margin-right: 6px; }
+.nut-who a { white-space: nowrap; }
+[data-theme="bw"] .rcp-nutri { border: 2px solid var(--text); }
+[data-theme="bw"] .nut-gap { background: none; color: var(--text); border: 2px dashed var(--text); }
+[data-theme="bw"] .nut-na { background: none; color: var(--text); border: 2px dashed var(--text); }
+[data-theme="bw"] .nut-table th, [data-theme="bw"] .nut-table td { border-top-color: var(--text); }
+[data-theme="bw"] .nut-who { border-top: 2px solid var(--text); }
+[data-theme="bw"] .nut-who .who .marker { vertical-align: -0.15em; }
+/* Own article: the food behind its nutrition values */
+.food-pick { display: grid; gap: 10px; }
+.food-pick .choice small b { font-weight: 600; }
+.food-chosen { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 0; padding: 12px; border: 1.5px solid var(--accent); border-radius: var(--radius-card); }
+.food-chosen > span { flex: 1 1 220px; min-width: 0; display: grid; gap: 2px; }
+.food-chosen b { display: flex; gap: 6px; align-items: flex-start; font-size: var(--fs-event-title); overflow-wrap: break-word; }
+.food-chosen b .icon { flex: none; stroke: var(--accent); margin-top: 2px; }
+.food-chosen small { color: var(--text-secondary); font-size: var(--fs-label); }
+.food-none { margin: 0; padding: 10px 12px; border: 1.5px dashed var(--notice-text); background: var(--notice-bg); color: var(--notice-text); border-radius: var(--radius-card); font-size: var(--fs-label-large); }
+[data-theme="bw"] .food-chosen { border: 2px solid var(--text); }
+[data-theme="bw"] .food-chosen b .icon { stroke: var(--text); }
+[data-theme="bw"] .food-none { background: none; color: var(--text); border: 2px dashed var(--text); }
+[data-theme="bw"] .nut-gap .flag { border: 0; padding: 0; }
+
+/* ---- ticket 295: badges ---- */
+/* Badges (issue #295, preview docs/design/preview-295.html). --pc is the person's colour.
+   The seal is a 12-point rosette, never a circle: circles are person markers. */
+.seal { flex: none; display: block; }
+.seal .bg { fill: var(--pc, var(--accent)); stroke: none; }
+.seal .fg { fill: none; stroke: var(--surface); stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
+.seal text { fill: var(--surface); font-family: Figtree, system-ui, sans-serif; font-weight: 800; font-variant-numeric: tabular-nums; }
+.seal.todo .bg { fill: var(--surface); stroke: var(--text-secondary); stroke-width: 1.6; stroke-dasharray: 4 3; }
+.seal.todo .fg { stroke: var(--text-secondary); }
+.seal.todo text { fill: var(--text-secondary); }
+[data-theme="bw"] .seal .bg { fill: var(--text); }
+[data-theme="bw"] .seal.todo .bg { fill: var(--surface); stroke: var(--text); stroke-width: 2; }
+[data-theme="bw"] .seal.todo .fg { stroke: var(--text); }
+[data-theme="bw"] .seal.todo text { fill: var(--text); }
+.icon.bdg-ic { flex: none; }
+/* "Neu" pill: the person's colour, filled; bw black. */
+.bdg-pill { display: inline-flex; align-items: center; min-height: 22px; padding: 0 9px; border-radius: var(--radius-chip); background: var(--pc, var(--accent)); color: var(--surface); font-size: var(--fs-meta); font-weight: 700; white-space: nowrap; vertical-align: 1px; }
+[data-theme="bw"] .bdg-pill { background: var(--text); color: var(--surface); }
+
+/* Personal view: the events column holds the days (scrolling) and the badges at its foot, like .pv-goal. */
+.pv-days:has(> .pv-badges) { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+.pv-days > .days { flex: 1; min-height: 0; overflow-y: auto; padding: var(--pad-column); }
+.pv-badges { flex: none; max-height: 55%; overflow-y: auto; box-sizing: border-box; display: grid; gap: 10px; padding: 12px var(--pad-column) var(--pad-column); border-top: 1px solid var(--border); }
+.pv-badges .lab { margin: 0; display: flex; align-items: center; gap: 6px; font-size: var(--fs-label); font-weight: 700; color: var(--text-secondary); }
+.pv-badges .lab .icon { stroke: var(--text-secondary); }
+.bdg-new { display: grid; gap: 6px; padding: 10px 12px; background: var(--pc-tint); border-radius: var(--radius-card); }
+.bdg-new .k { margin: 0; font-size: var(--fs-label); font-weight: 700; color: var(--pc-text); }
+.bdg-won { margin: 0; display: flex; align-items: center; gap: 10px; min-width: 0; }
+.bdg-won b { font-size: var(--fs-person-name); line-height: 1.25; overflow-wrap: break-word; hyphens: manual; min-width: 0; }
+[data-theme="bw"] .bdg-new { background: var(--surface); border: 3px solid var(--text); }
+[data-theme="bw"] .bdg-new .k { color: var(--text); }
+.bdg-chips { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.bdg-chip { display: flex; align-items: center; gap: 6px; min-height: 36px; max-width: 100%; padding: 2px 12px 2px 3px; box-sizing: border-box; border: 1.5px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); font-size: var(--fs-label); font-weight: 600; line-height: 1.2; }
+.bdg-chip span { min-width: 0; overflow-wrap: break-word; }
+[data-theme="bw"] .bdg-chip { border: 2px solid var(--text); }
+@media (max-width: 599px) {
+  /* The phone page scrolls as a whole (#208): the badges follow the days instead of sitting at the foot. */
+  .pv-days:has(> .pv-badges) { overflow-y: auto; display: block; }
+  .pv-days > .days { overflow: visible; }
+}
+
+/* Own device: the link under "Belohnungen" uses .reward-link; the new ones are named in the person's text colour. */
+.badge-link .t .new-line { color: var(--pc-text); font-weight: 600; overflow-wrap: break-word; }
+[data-theme="bw"] .badge-link .t .new-line { color: var(--text); }
+.reward-link + .badge-link { margin-top: 0; }
+.msg.bdg-won-msg { align-items: center; border-color: var(--pc, var(--accent)); border-width: 2px; }
+.msg.bdg-won-msg b { display: block; white-space: normal; font-size: var(--fs-event-title); }
+[data-theme="bw"] .msg.bdg-won-msg { border: 3px solid var(--text); }
+
+/* Badges page (/tasks/badges and /tasks/badges/{person}). */
+.bdg-page { display: grid; gap: var(--gap-section); max-width: 880px; }
+.bdg-page > .lead { margin: 0; max-width: 560px; }
+.bdg-group h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: var(--fs-person-name); }
+.bdg-group h2 .icon { flex: none; stroke: var(--pc); }
+[data-theme="bw"] .bdg-group h2 .icon { stroke: var(--text); }
+.bdg-group .hint { margin: -4px 0 10px; max-width: 560px; }
+.bdg-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--gap-cards); }
+.bdg-card { display: flex; gap: 14px; align-items: flex-start; padding: 12px 14px; background: var(--surface); border: 2px solid var(--pc); border-radius: var(--radius-tile); min-width: 0; }
+.bdg-card .b { display: grid; gap: 4px; min-width: 0; flex: 1; justify-items: start; }
+.bdg-card h3 { margin: 0; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); line-height: 1.25; overflow-wrap: break-word; hyphens: manual; }
+.bdg-card .when { margin: 0; font-size: var(--fs-label); font-weight: 600; color: var(--pc-text); }
+.bdg-card .how { margin: 0; font-size: var(--fs-label); color: var(--text-secondary); line-height: 1.35; }
+.bdg-card.todo { background: transparent; border: 1.5px dashed var(--border); }
+.bdg-card.todo h3 { font-weight: 600; }
+[data-theme="bw"] .bdg-card { border: 3px solid var(--text); }
+[data-theme="bw"] .bdg-card .when { color: var(--text); }
+[data-theme="bw"] .bdg-card.todo { border: 2px dashed var(--text); }
+.bdg-empty { margin: 0; padding: 16px; max-width: 560px; box-sizing: border-box; border: 1.5px dashed var(--border); border-radius: var(--radius-card); color: var(--text-secondary); }
+[data-theme="bw"] .bdg-empty { border: 2px dashed var(--text); color: var(--text); }
+@media (max-width: 599px) {
+  .bdg-cards { grid-template-columns: minmax(0, 1fr); }
+  .bdg-card .seal { width: 56px; height: 56px; }
+}
+
+/* Parents' Tasks page: one line per person under the name (only while the person's switch is on). */
+.bdg-line { margin: 0 0 2px; display: flex; gap: 6px; align-items: flex-start; max-width: 560px; font-size: var(--fs-label-large); overflow-wrap: break-word; }
+.bdg-line .icon { stroke: var(--pc); margin-top: 2px; }
+[data-theme="bw"] .bdg-line .icon { stroke: var(--text); }
+.bdg-line .k { color: var(--text-secondary); }
+.bdg-line b { font-weight: 600; }
+a.bdg-more { display: inline-flex; align-items: center; min-height: var(--touch-target); margin: 0 0 6px; }
+.msg.bdg-won-msg > span { min-width: 0; }
+.bdg-chip .seal .fg { stroke-width: 2.6; }
+.bdg-line .nm { display: inline-block; white-space: nowrap; }

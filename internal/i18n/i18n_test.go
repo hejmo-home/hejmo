@@ -170,6 +170,13 @@ var wholeFamilyTexts = map[string]bool{
 	"rwd.link.asked":                           true, // "Wartet auf Mama oder Papa": the request waits, not an order to the child (preview 292)
 	"contact.f.rels.hint":                      true, // "Für wen in eurer Familie": the people of the household (ticket 298)
 	"contact.f.rels.kids":                      true, // "legt ihr extra fest": the family sets what children see (ticket 298)
+	"contact.others.empty":                     true, // "alle, die ihr anrufen wollt": the family's contacts (ticket 300, preview 2)
+	"cimp.keep":                                true, // "eurer Box": the household's box (ticket 300)
+	"cimp.k.hejmo.person":                      true, // "aus eurer Familie": the people of the household (ticket 300)
+	"cimp.name.taken.person":                   true, // "aus eurer Familie": the people of the household (ticket 300)
+	"cimp.keep.locked.name":                    true, // "aus eurer Familie": the people of the household (ticket 300)
+	"cimp.keep.locked.birthday":                true, // "aus eurer Familie": the people of the household (ticket 300)
+	"cimp.keep.locked.emails":                  true, // "aus eurer Familie": the people of the household (ticket 300)
 	"meals.recipes.hint":                       true, // "Eure Gerichte": the recipes belong to the whole family (ticket 279)
 	"meals.recipes.hint.child":                 true,
 	"recipes.lead":                             true,
@@ -177,6 +184,10 @@ var wholeFamilyTexts = map[string]bool{
 	"recipes.units.group.household":            true, // "Eure Einheiten": the household's units
 	"recipes.check.title":                      true, // "Allergien in eurer Familie": the card names the family, not the reader
 	"recipes.check.none":                       true,
+	"meals.rcp.you_are":                        true, // "ihr seid 4": the people at the table, the whole family (ticket 281)
+	"meals.rcp.error.portions":                 true,
+	"meals.rcp.error.portions.empty":           true,
+	"meals.sugg.unchecked":                     true, // "Prüft Hejmo nicht:" is no imperative: Hejmo is the subject (ticket 281)
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

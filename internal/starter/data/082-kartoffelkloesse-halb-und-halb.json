@@ -1,0 +1,110 @@
+{
+  "n": 82,
+  "slug": "kartoffelkloesse-halb-und-halb",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 80,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/kartoffelkloesse-halb-und-halb-3556",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Kartoffeln, mehligkochend, gegart",
+      "article_en": "Floury potatoes, cooked",
+      "note_de": "vom Vortag",
+      "note_en": "from the day before"
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Kartoffeln, mehligkochend, roh",
+      "article_en": "Floury potatoes, raw",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eier (Größe M)",
+      "article_en": "Eggs (size M)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "plus Mehl zum Formen",
+      "note_en": "plus flour for shaping"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Muskatnuss",
+      "article_en": "Nutmeg",
+      "note_de": "frisch gerieben",
+      "note_en": "freshly grated"
+    }
+  ],
+  "de": {
+    "title": "Kartoffelklöße (halb und halb)",
+    "steps": [
+      "Pelle die gekochten Kartoffeln vom Vortag (500 g) und drücke sie durch die Kartoffelpresse in eine große Schüssel.",
+      "Schäle die rohen Kartoffeln (500 g) und reibe sie fein. Gib die Masse in ein sauberes Tuch und presse sie kräftig aus. Fange die Flüssigkeit in einer Schüssel auf und stelle sie beiseite.",
+      "Gib die ausgedrückten Raspel zu den gepressten Kartoffeln. Füge 2 Eier, 100 g Mehl, Salz und frisch geriebene Muskatnuss hinzu und vermenge alles.",
+      "Die aufgefangene Flüssigkeit lässt du kurz stehen. Die Stärke setzt sich am Boden ab. Gieße das Wasser oben ab und gib die Stärke in den Teig. Knete alles gut durch.",
+      "Stelle den Teig 30 Minuten in den Kühlschrank.",
+      "Bestäube die Arbeitsfläche mit Mehl. Rolle den Teig zu einer Rolle und schneide 8 gleich große Stücke ab. Forme daraus mit bemehlten Händen runde Klöße.",
+      "Bringe in einem großen Topf Salzwasser zum Sieden und schalte dann auf niedrige Hitze. Das Wasser darf nicht kochen, sonst zerfallen die Klöße. Lege die Klöße hinein und lass sie 25 Minuten ziehen. Hebe sie mit einer Schaumkelle heraus und lass sie abtropfen."
+    ]
+  },
+  "en": {
+    "title": "Potato dumplings (half-and-half)",
+    "steps": [
+      "Peel the boiled potatoes from the day before (500 g) and press them through the ricer into a large bowl.",
+      "Peel the raw potatoes (500 g) and grate them finely. Put the mass in a clean cloth and squeeze it out firmly. Catch the liquid in a bowl and set it aside.",
+      "Add the squeezed shreds to the pressed potatoes. Add 2 eggs, 100 g flour, salt and freshly grated nutmeg and mix everything.",
+      "Let the collected liquid stand briefly. The starch settles on the bottom. Pour off the water on top and add the starch to the dough. Knead everything well.",
+      "Chill the dough in the fridge for 30 minutes.",
+      "Dust the work surface with flour. Roll the dough into a log and cut off 8 pieces of equal size. With floured hands, shape them into round dumplings.",
+      "Bring salted water to a simmer in a large pot and then turn to low heat. The water must not boil, otherwise the dumplings fall apart. Put the dumplings in and let them simmer for 25 minutes. Lift them out with a slotted spoon and let them drain."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Time from source: 25 min prep + 55 min cooking = 80 min (Aufwand shown on the page). Source shows 629 ratings; list says Redaktionsküche. Steps rewritten in own words on 23/11/2026 from the source steps (times, temperatures and order per source). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

@@ -103,7 +103,7 @@ func (s *server) handleRecipeCook(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "recipe context", err)
 		return
 	}
-	rec, err := s.db.Recipe(p.household.ID, r.PathValue("id"))
+	rec, _, err := c.recipeOrStarter(p.household.ID, r.PathValue("id"))
 	if errors.Is(err, store.ErrNotFound) {
 		s.render(w, r, http.StatusNotFound, "recipe_gone.html", map[string]any{"Title": c.t("cook.gone.crumb"), "RecipesHref": recipesPath})
 		return

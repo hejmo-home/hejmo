@@ -1,0 +1,127 @@
+{
+  "n": 155,
+  "slug": "obstsalat",
+  "category": "Frühstück",
+  "time_minutes": 20,
+  "servings": 2,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/bunter-obstsalat-mit-quarkcreme-8961",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Magerquark",
+      "article_en": "Low-fat quark",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 125,
+      "unit": "ml",
+      "article_de": "Milch, fettarm",
+      "article_en": "Low-fat milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Pck.",
+      "article_de": "Vanillezucker",
+      "article_en": "Vanilla sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Süßstoff, flüssig",
+      "article_en": "Liquid sweetener",
+      "note_de": "zum Abschmecken",
+      "note_en": "to taste"
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Frische Früchte",
+      "article_en": "Fresh fruit",
+      "note_de": "z. B. Orange, Apfel, Pfirsich",
+      "note_en": "e.g. orange, apple, peach"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 6,
+      "unit": "Stk",
+      "article_de": "Zitronenmelisseblätter",
+      "article_en": "Lemon balm leaves",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Wasser",
+      "article_en": "Water",
+      "note_de": "1 bis 2 EL nach Bedarf für die Creme",
+      "note_en": "1 to 2 tbsp as needed for the cream"
+    }
+  ],
+  "de": {
+    "title": "Obstsalat",
+    "steps": [
+      "Quark, Milch und Vanillezucker glatt verrühren und mit flüssigem Süßstoff abschmecken. Ist die Creme zu fest, 1 bis 2 EL Wasser unterrühren.",
+      "Die Orange samt weißer Haut abschälen, die Filets aus den Trennhäuten lösen und halbieren.",
+      "Das übrige Obst, zum Beispiel Apfel und Pfirsich, waschen, putzen und bei Bedarf von Kerngehäuse und Stein befreien. In mundgerechte Stücke schneiden.",
+      "Alle Früchte mit dem Zitronensaft vermengen, auf 2 Schälchen verteilen und die Quarkcreme darübergeben. Mit Zitronenmelisse garnieren."
+    ]
+  },
+  "en": {
+    "title": "Fruit salad",
+    "steps": [
+      "Stir the quark with the milk and vanilla sugar until creamy and sweeten with liquid sweetener. If the cream is too firm, stir in 1 to 2 tbsp water.",
+      "Peel the orange including the white pith, cut out the segments between the membranes and halve them.",
+      "Wash and trim the remaining fruit, for example apple and peach, and remove cores and stones where needed. Cut into bite-sized pieces.",
+      "Toss all the fruit with the lemon juice, divide between 2 bowls and spoon the quark cream over. Garnish with lemon balm."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 0.5,
+        "unit": "packet"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 6,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Time from source: 20 min, stated as Aufwand (the only time figure on the page). Rating count from the list. Source steps not copied. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.0
+  }
+}

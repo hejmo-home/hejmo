@@ -1,0 +1,24 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "cimp.crumb") "Frame" .Frame)}}
+  {{if .FormError}}<p class="error form-error" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{t "cimp.err.lead"}} <a href="#file">{{t "cimp.s2.label"}}</a>{{t "cimp.dot"}}</span></p>{{end}}
+  <h1>{{t "cimp.title"}}</h1>
+  <p class="lead">{{t "cimp.lead"}}</p>
+  <section class="upd imp-how" aria-labelledby="how"><h2 id="how">{{t "cimp.how"}}</h2><ol class="howto">
+    <li><div class="s"><b>{{t "cimp.s1.title"}}</b><p>{{t "cimp.s1.pre"}} <b>{{t "cimp.ext"}}</b> {{t "cimp.s1.post"}}</p>
+      <details class="more imp-where"><summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>{{t "cimp.ways"}}</summary><div><ul class="plain imp-ways">
+        <li><b>{{t "cimp.way.ios.l"}}</b> {{t "cimp.way.ios.t"}}</li>
+        <li><b>{{t "cimp.way.android.l"}}</b> {{t "cimp.way.android.t"}}</li>
+        <li><b>{{t "cimp.way.google.l"}}</b> {{t "cimp.way.google.t"}}</li>
+        <li><b>{{t "cimp.way.icloud.l"}}</b> {{t "cimp.way.icloud.t"}}</li>
+        <li><b>{{t "cimp.way.single.l"}}</b> {{t "cimp.way.single.t"}}</li>
+      </ul></div></details></div></li>
+    <li><div class="s"><b>{{t "cimp.s2.title"}}</b>
+      <form method="post" action="/contacts/import" enctype="multipart/form-data" class="upd-form imp-form" id="file">
+        <div class="f{{if .ErrorField}} invalid{{end}}"><label>{{t "cimp.s2.label"}}<input type="file" name="file" accept="{{.Accept}}"{{if .ErrorField}} aria-invalid="true" aria-describedby="err-file hint-file"{{else}} aria-describedby="hint-file"{{end}}></label>{{if .ErrorField}}
+          <p class="ferr" id="err-file" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{.ErrorText}}</span></p>{{end}}
+          <p class="hint" id="hint-file">{{tf "cimp.s2.hint" "max" (printf "%d" .Max)}}</p></div>
+        <button class="button" type="submit"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 19h14"/></svg>{{t "cimp.s2.button"}}</button>
+      </form></div></li>
+    <li><div class="s"><b>{{t "cimp.s3.title"}}</b><p>{{t "cimp.s3.text"}}</p></div></li>
+  </ol></section>
+  <p class="hint">{{t "cimp.keep"}}</p>
+{{template "foot"}}

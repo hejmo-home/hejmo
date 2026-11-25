@@ -171,6 +171,7 @@ var mcpTools = []mcpTool{
 	{name: "set_routine_template_order", desc: "Put the steps of an own template in a new order.", method: "PUT", path: "/routine-templates/{id}/order", params: []mcpParam{idOf("template"), req("step_ids", "strings", "All step ids, in the new order")}},
 	{name: "get_stars", desc: "Get a person's star balance and star log.", method: "GET", path: "/people/{id}/stars", params: []mcpParam{
 		req("id", "string", "The person id"), opt("limit", "integer", "How many log entries, 1 to 200 (default 50)")}},
+	{name: "get_badges", desc: "Get a person's badges (ten fixed milestones, earned once and never taken away), newest first, with whether each is new and whether the person's switch \"week count and badges\" is on. The list is empty while the switch is off. Read only.", method: "GET", path: "/people/{id}/badges", params: []mcpParam{idOf("person")}},
 	{name: "book_stars", desc: "Book stars by hand with a note: positive adds, negative takes away.", method: "POST", path: "/people/{id}/stars", params: []mcpParam{
 		req("id", "string", "The person id"), req("delta", "integer", "Stars to add (positive) or take away (negative)"), req("note", "string", "Why")}},
 	{name: "get_savings_goal", desc: "Get the reward a person saves for, with their balance and whether it is reached.", method: "GET", path: "/people/{id}/savings-goal", params: []mcpParam{idOf("person")}},
@@ -201,18 +202,24 @@ var mcpTools = []mcpTool{
 	// Meal plan
 	{name: "list_meals", desc: "List the meal plan from one day to another (default: the coming seven days).", method: "GET", path: "/meals", params: []mcpParam{
 		opt("from", "string", "First day, YYYY-MM-DD (give both from and to, or neither)"), opt("to", "string", "Last day, YYYY-MM-DD, at most 62 days after from")}},
-	{name: "set_meal", desc: "Plan a meal, or change the planned one.", method: "PUT", path: "/meals/{date}/{mealtime}", params: []mcpParam{mealDate, mealtime, req("text", "string", "What there is to eat (at most 200 characters)")}},
+	{name: "set_meal", desc: "Plan a meal, or change the planned one: free text, or a recipe with portions.", method: "PUT", path: "/meals/{date}/{mealtime}", params: []mcpParam{mealDate, mealtime,
+		opt("text", "string", "What there is to eat as free text (at most 200 characters); not with recipe_id"),
+		opt("recipe_id", "string", "A recipe of the family (see list_recipes) instead of text"),
+		opt("portions", "integer", "With recipe_id: 1 to 99; the number of people in the household when missing")}},
 	{name: "delete_meal", desc: "Remove a planned meal.", method: "DELETE", path: "/meals/{date}/{mealtime}", params: []mcpParam{mealDate, mealtime}},
 	{name: "restore_meal", desc: "Back to the template: drop this week's change of a meal.", method: "POST", path: "/meals/{date}/{mealtime}/restore", params: []mcpParam{mealDate, mealtime}},
 	{name: "list_diets_and_allergies", desc: "List every person's diet (omnivore, vegetarian, pescatarian, vegan) and allergies: the 14 main EU allergens by key, plus free text that is not checked automatically and cannot be filtered by. Health data, read only.", method: "GET", path: "/food"},
 	{name: "get_diet_and_allergies", desc: "Get one person's diet and allergies. Free-text allergies (other) are not checked automatically and cannot be filtered by. Health data, read only.", method: "GET", path: "/people/{id}/food", params: []mcpParam{idOf("person")}},
 	{name: "list_recipes", desc: "List the household's own recipes from A to Z; q searches name, ingredients and tags.", method: "GET", path: "/recipes", params: []mcpParam{
 		opt("q", "string", "Search text"), opt("category", "string", "main, side, dessert, baking, breakfast or snack")}},
+	{name: "list_starter_recipes", desc: "List the 200 starter recipes that ship with Hejmo (read only, in the language of the request, each with its source); get one with get_recipe by its id, which starts with starter-.", method: "GET", path: "/starter-recipes", params: []mcpParam{
+		opt("q", "string", "Search text"), opt("category", "string", "main, side, dessert, baking, breakfast or snack")}},
 	{name: "get_recipe", desc: "Get one recipe with its ingredients and its steps in order.", method: "GET", path: "/recipes/{id}", params: []mcpParam{idOf("recipe")}},
 	{name: "create_recipe", desc: "Write a recipe. Only the name is required. Warnings about allergies never block it.", method: "POST", path: "/recipes", params: recipeBody},
 	{name: "update_recipe", desc: "Replace a recipe (give all fields): its ingredients, steps and tags are replaced.", method: "PUT", path: "/recipes/{id}", params: append([]mcpParam{idOf("recipe")}, recipeBody...)},
 	{name: "delete_recipe", desc: "Delete a recipe with its ingredients, steps and tips.", method: "DELETE", path: "/recipes/{id}", params: []mcpParam{idOf("recipe")}},
 	{name: "list_recipe_units", desc: "List the units an ingredient can have: the household's, kitchen measures and containers.", method: "GET", path: "/recipe-units"},
+	{name: "get_recipe_nutrition", desc: "The seven nutrition values of the EU declaration (energy, fat, saturated fat, carbohydrate, sugars, protein, salt) per portion of a recipe, calculated from its ingredients (BLS 4.0, USDA). Guide values. A value that is null is unknown, never 0; not_counted lists the ingredients that could not be counted.", method: "GET", path: "/recipes/{id}/nutrition", params: []mcpParam{idOf("recipe")}},
 	{name: "get_recipe_warnings", desc: "Who in the family has to look out for what in a recipe. Health data, read only. Free-text ingredients and free-text allergies are not checked automatically.", method: "GET", path: "/recipes/{id}/warnings", params: []mcpParam{idOf("recipe")}},
 	{name: "list_meal_templates", desc: "List the meal plan templates, by name.", method: "GET", path: "/meal-templates"},
 	{name: "get_meal_template", desc: "Get one meal plan template.", method: "GET", path: "/meal-templates/{id}", params: []mcpParam{idOf("template")}},

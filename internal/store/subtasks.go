@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/badge"
 	"github.com/hejmo-home/hejmo/internal/task"
 )
 
@@ -22,6 +23,8 @@ type SubtaskChange struct {
 	TaskChanged bool
 	TaskDone    bool
 	Stars       int
+	// Badges are the badges the change awarded the task's person (ticket 295).
+	Badges []badge.Key
 }
 
 func invalidSubtask(field, msg string) error {
@@ -213,7 +216,19 @@ func (db *DB) SetSubtaskDone(householdID, taskID, id, day string, done bool, by 
 	if err != nil {
 		return SubtaskChange{}, err
 	}
-	return ch, tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return SubtaskChange{}, err
+	}
+	return db.withBadges(householdID, t, at, ch), nil
+}
+
+// withBadges awards the task's person the badges a change that completed the
+// task earned, and notes them in the change.
+func (db *DB) withBadges(householdID string, t task.Task, at time.Time, ch SubtaskChange) SubtaskChange {
+	if ch.TaskChanged && ch.TaskDone {
+		ch.Badges = db.awardAfter(householdID, t.PersonID, at)
+	}
+	return ch
 }
 
 // settleTask makes the task follow its subtasks after one changed: all ticked
@@ -261,5 +276,8 @@ func (db *DB) DeleteSubtask(householdID, taskID, id, day, by string, at time.Tim
 			}
 		}
 	}
-	return ch, tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return SubtaskChange{}, err
+	}
+	return db.withBadges(householdID, t, at, ch), nil
 }

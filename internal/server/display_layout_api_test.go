@@ -28,7 +28,7 @@ func TestTheLayoutOfADisplayWorksThroughTheAPI(t *testing.T) {
 		m := b.(map[string]any)
 		got = append(got, m["id"].(string)+":"+m["zone"].(string)+":"+map[bool]string{true: "on", false: "off"}[m["enabled"].(bool)])
 	}
-	want := "clock:header:on weather:header:on events:columns:on routines:columns:off tasks:columns:on stars:columns:on meals:footer:on tomorrow:footer:on list:footer:off"
+	want := "clock:header:on weather:header:on events:columns:on routines:columns:off tasks:columns:on stars:columns:on meals:footer:on tomorrow:footer:on list:footer:off emergency:footer:off"
 	if j := join(got); j != want {
 		t.Fatalf("blocks = %s", j)
 	}

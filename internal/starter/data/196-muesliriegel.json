@@ -1,0 +1,116 @@
+{
+  "n": 196,
+  "slug": "muesliriegel",
+  "category": "Snacks und Brotdose",
+  "servings": 25,
+  "time_minutes": 10,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Nüsse",
+      "en": "Tree nuts"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide and sulphites"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/muesliriegel-selber-machen-so-gehts-51083.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Nüsse",
+      "article_en": "Nuts",
+      "note_de": "z. B. Haselnüsse, Cashewkerne oder Mandeln",
+      "note_en": "e.g. hazelnuts, cashews or almonds"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Haferflocken",
+      "article_en": "Rolled oats",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Getrocknete Früchte",
+      "article_en": "Dried fruit",
+      "note_de": "z. B. Aprikosen, Cranberrys oder Kirschen",
+      "note_en": "e.g. apricots, cranberries or cherries"
+    },
+    {
+      "amount": 130,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 120,
+      "unit": "g",
+      "article_de": "Honig, flüssig",
+      "article_en": "Runny honey",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Eiweiß",
+      "article_en": "Egg white",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    }
+  ],
+  "de": {
+    "title": "Müsliriegel selber machen",
+    "steps": [
+      "Den Ofen auf 175 °C vorheizen (Umluft: 150 °C) und ein Blech mit Backpapier auslegen. Die Nüsse und die getrockneten Früchte jeweils grob hacken.",
+      "Nüsse und Haferflocken nacheinander in einer trockenen Pfanne goldgelb anrösten und auf einem Teller auskühlen lassen.",
+      "Butter zerlassen und mit dem Honig in einer großen Schüssel cremig rühren, dann Nüsse, Haferflocken und Früchte untermengen. Das Eiweiß steif schlagen und vorsichtig unter die Masse heben.",
+      "Die Masse auf dem Blech zu einem Rechteck von 30 x 20 cm und 2 cm Höhe andrücken und ca. 25 Minuten im Ofen lassen, bis sie fest ist und leicht Farbe hat. Danach 10 bis 15 Minuten auskühlen und in etwa 20 Riegel von je 4 x 10 cm schneiden."
+    ]
+  },
+  "en": {
+    "title": "Homemade granola bars",
+    "steps": [
+      "Preheat the oven to 175 °C (150 °C fan) and line a baking tray with parchment. Roughly chop the nuts and the dried fruit separately.",
+      "Toast the nuts and then the oats in a dry pan without fat until golden, and let them cool on a plate.",
+      "Melt the butter, stir it with the honey in a large bowl and mix in the nuts, oats and fruit. Whisk the egg white until stiff and fold it gently into the mixture.",
+      "Press the mixture on the tray into a 30 x 20 cm rectangle, 2 cm high, and bake for about 25 minutes until firm and lightly browned. Cool for 10 to 15 minutes and cut into about 20 bars of 4 x 10 cm each."
+    ],
+    "amounts_converted": [
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "time_minutes 10 is the source-stated total (prep only); baking adds about 25 minutes plus cooling. Source states 25 pieces, method says about 20 bars of 4 x 10 cm. Honey is not suitable for infants under 12 months. Page has no rating data. Steps restructured (own step division and order of work) after paraphrase spot-check 23/11/2026.",
+  "originality": {
+    "overlap_5gram": 0.009,
+    "checked": "23/11/2026"
+  }
+}

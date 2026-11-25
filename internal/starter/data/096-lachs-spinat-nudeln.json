@@ -1,0 +1,178 @@
+{
+  "n": 96,
+  "slug": "lachs-spinat-nudeln",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 45,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Fisch",
+      "en": "Fish"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.essen-und-trinken.de/rezepte/39057-rzpt-bandnudeln-mit-lachs-und-spinat",
+    "site": "Essen & Trinken",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Lachsfilet",
+      "article_en": "Salmon fillet",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Blattspinat",
+      "article_en": "Leaf spinach",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Bandnudeln",
+      "article_en": "Ribbon pasta (tagliatelle)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel, weiß",
+      "article_en": "White onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Gemüsebrühe",
+      "article_en": "Vegetable stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "ml",
+      "article_de": "Weißwein",
+      "article_en": "White wine",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "ml",
+      "article_de": "Schlagsahne",
+      "article_en": "Whipping cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Lachs-Spinat-Nudeln",
+    "steps": [
+      "Die Bandnudeln in reichlich Salzwasser al dente garen.",
+      "Während sie kochen: Spinat auftauen und grob hacken. Zwiebel und Knoblauch fein würfeln. Den Lachs würfeln und mit Zitronensaft, Salz und Pfeffer würzen.",
+      "Öl in einer großen Pfanne erhitzen und Zwiebel und Knoblauch glasig anschwitzen. Die Lachswürfel kurz scharf mitbraten und mit dem Weißwein ablöschen.",
+      "Brühe und Sahne angießen und die Soße leicht einkochen lassen.",
+      "Nudeln abgießen, mit dem Spinat in die Pfanne geben und nur kurz in der Soße ziehen lassen. Mit Salz und Pfeffer abschmecken."
+    ]
+  },
+  "en": {
+    "title": "Salmon and spinach pasta",
+    "steps": [
+      "Cook the ribbon pasta in plenty of salted water until al dente.",
+      "While it cooks: defrost the spinach and chop it coarsely. Finely dice the onion and garlic. Cube the salmon and season it with lemon juice, salt and pepper.",
+      "Heat the oil in a large pan and sweat the onion and garlic until translucent. Add the salmon cubes and sear briefly, then deglaze with the white wine.",
+      "Pour in the stock and cream and let the sauce reduce slightly.",
+      "Drain the pasta, add it to the pan with the spinach and let it sit in the sauce only briefly. Season with salt and pepper."
+    ],
+    "amounts_converted": [
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 11,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Ratings shown on page: 113; list says Redaktionsküche. Contains wine; the alcohol cooks off partly, consider for the family flag. Steps rewritten in own words on 23/11/2026 from the source steps (times, temperatures and order per source). Source uses frozen spinach (thawed); ingredient list says Blattspinat. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.037
+  }
+}

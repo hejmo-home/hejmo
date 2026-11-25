@@ -226,8 +226,9 @@ func (db *DB) CreateRecipe(householdID, personID string, r recipe.Recipe) (Recip
 
 // UpdateRecipe replaces the recipe with r.ID (name, details, ingredients,
 // steps and tags) and notes who changed it; who wrote it stays. ErrNotFound
-// when the household has no such recipe.
-func (db *DB) UpdateRecipe(householdID, personID string, r recipe.Recipe) (Recipe, error) {
+// when the household has no such recipe. A new name reaches every meal plan
+// entry that is the recipe, and its calendar event, written as o says.
+func (db *DB) UpdateRecipe(householdID, personID string, r recipe.Recipe, o MealOptions) (Recipe, error) {
 	id := r.ID
 	r, err := checkRecipe(r)
 	if err != nil {
@@ -238,10 +239,8 @@ func (db *DB) UpdateRecipe(householdID, personID string, r recipe.Recipe) (Recip
 		return Recipe{}, err
 	}
 	defer tx.Rollback()
-	var one int
-	if err := tx.QueryRow(`SELECT 1 FROM recipes WHERE household_id = ? AND id = ?`, householdID, id).Scan(&one); errors.Is(err, sql.ErrNoRows) {
-		return Recipe{}, ErrNotFound
-	} else if err != nil {
+	was, err := recipeName(tx, householdID, id)
+	if err != nil {
 		return Recipe{}, err
 	}
 	if err := nameTaken(tx, householdID, r.Name, id); err != nil {
@@ -260,15 +259,72 @@ func (db *DB) UpdateRecipe(householdID, personID string, r recipe.Recipe) (Recip
 	if err := writeRecipeParts(tx, id, r); err != nil {
 		return Recipe{}, err
 	}
+	if r.Name != was {
+		if err := renameInPlan(tx, householdID, id, r.Name, o); err != nil {
+			return Recipe{}, err
+		}
+	}
 	if err := tx.Commit(); err != nil {
 		return Recipe{}, err
 	}
 	return db.Recipe(householdID, id)
 }
 
-// DeleteRecipe removes a recipe with its ingredients, steps and tags.
+// renameInPlan makes every meal plan entry that is the recipe say its new
+// name, in the layers and in the plan rows with their calendar events.
+func renameInPlan(tx *sql.Tx, householdID, id, name string, o MealOptions) error {
+	for _, t := range []string{"meal_manual", "meal_adjustments"} {
+		if _, err := tx.Exec(`UPDATE `+t+` SET text = ? WHERE household_id = ? AND recipe_id = ?`, name, householdID, id); err != nil {
+			return err
+		}
+	}
+	rows, err := tx.Query(`SELECT day, mealtime, source, template_id, template_dish, portions FROM meal_plan WHERE household_id = ? AND recipe_id = ?`, householdID, id)
+	if err != nil {
+		return err
+	}
+	var entries []PlanMeal
+	for rows.Next() {
+		m := PlanMeal{Text: name, RecipeID: id}
+		if err := rows.Scan(&m.Day, &m.Mealtime, &m.Source, &m.TemplateID, &m.TemplateDish, &m.Portions); err != nil {
+			rows.Close()
+			return err
+		}
+		entries = append(entries, m)
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	w := &planWriter{tx: tx, householdID: householdID, o: o}
+	for _, m := range entries {
+		if err := w.write(m); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// DeleteRecipe removes a recipe with its ingredients, steps and tags. Meal
+// plan entries that are the recipe stay as free text with its name, without
+// portions.
 func (db *DB) DeleteRecipe(householdID, id string) error {
-	return expectOne(db.sql.Exec(`DELETE FROM recipes WHERE household_id = ? AND id = ?`, householdID, id))
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	name, err := recipeName(tx, householdID, id)
+	if err != nil {
+		return err
+	}
+	for _, t := range []string{"meal_manual", "meal_adjustments", "meal_plan"} {
+		if _, err := tx.Exec(`UPDATE `+t+` SET text = ?, recipe_id = '', portions = 0 WHERE household_id = ? AND recipe_id = ?`, name, householdID, id); err != nil {
+			return err
+		}
+	}
+	if err := expectOne(tx.Exec(`DELETE FROM recipes WHERE household_id = ? AND id = ?`, householdID, id)); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // RecipeTags are the tags the household uses, most used first (ties in
@@ -324,4 +380,28 @@ func (db *DB) RecipeTags(householdID string) ([]string, error) {
 		out = append(out, best)
 	}
 	return out, nil
+}
+
+// RecipeRef names a recipe.
+type RecipeRef struct{ ID, Name string }
+
+// RecipesWithArticle lists the household's recipes that use an article as an
+// ingredient, by name (ticket 288: the page of an own article says where it is used).
+func (db *DB) RecipesWithArticle(householdID, articleID string) ([]RecipeRef, error) {
+	rows, err := db.sql.Query(`SELECT r.id, r.name FROM recipes r
+		WHERE r.household_id = ? AND EXISTS (SELECT 1 FROM recipe_ingredients i WHERE i.recipe_id = r.id AND i.article_id = ?)
+		ORDER BY r.name_key, r.id`, householdID, articleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []RecipeRef
+	for rows.Next() {
+		var r RecipeRef
+		if err := rows.Scan(&r.ID, &r.Name); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
 }

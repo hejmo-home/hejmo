@@ -1,0 +1,198 @@
+{
+  "n": 25,
+  "slug": "quiche-lorraine",
+  "category": "Hauptgerichte",
+  "servings": 1,
+  "time_minutes": 75,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Senf",
+      "en": "Mustard"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/90981035458983/Quiche-Lorraine.html",
+    "site": "Chefkoch",
+    "ratings": 531
+  },
+  "ingredients": [
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Mehl Type 405",
+      "article_en": "Plain flour (Type 405)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 125,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 80,
+      "unit": "ml",
+      "article_de": "Wasser, eiskalt",
+      "article_en": "Ice-cold water",
+      "note_de": "oder 1 Eigelb + 2 EL eiskaltes Wasser",
+      "note_en": "or 1 egg yolk + 2 tbsp ice-cold water"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Hülsenfrüchte",
+      "article_en": "Dried pulses",
+      "note_de": "zum Blindbacken",
+      "note_en": "for blind baking"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Fett für die Form",
+      "article_en": "Fat for the pan",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Schinkenspeck",
+      "article_en": "Cured ham bacon (Schinkenspeck)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zwiebeln, mittelgroß",
+      "article_en": "Medium onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Petersilie, glatt",
+      "article_en": "Flat-leaf parsley",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "ml",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Gruyère, fein gerieben",
+      "article_en": "Finely grated Gruyère",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Quiche Lorraine",
+    "steps": [
+      "Teig: Mehl und Salz mischen, die Butter in Würfeln daraufgeben, mit einem Messer unterhacken und anschließend zwischen den Fingern zu Krümeln verreiben, bis kein loses Mehl mehr zu sehen ist. 80 ml eiskaltes Wasser einkneten, aber nur so viel, dass ein gleichmäßiger, nicht klebender Teig entsteht; alternativ 1 Eigelb mit 2 EL eiskaltem Wasser in eine Mulde geben und einarbeiten. Rasch zur Kugel formen, in Folie packen und mindestens 1 Stunde, gern auch über Nacht, kalt stellen.",
+      "Während der Teig ruht, den Belag vorbereiten: Schinkenspeck fein würfeln, Zwiebeln hacken, Knoblauch pressen, Petersilie hacken und alles vermengen. Eier, Sahne und Gruyère verquirlen, pfeffern und je nach Würze des Specks sparsam salzen.",
+      "Den Backofen auf 220 °C mit Ober- und Unterhitze vorheizen. Den kalten Teig kurz mit den Händen kneten, zur Scheibe drücken und damit eine gefettete Springform von 28 cm auskleiden; einen etwa 3 cm hohen Rand hochziehen. Den Boden mit der Gabel mehrfach einstechen, mit Backpapier belegen, die Hülsenfrüchte darauf verteilen und auf der unteren Schiene etwa 12 Minuten vorbacken.",
+      "Papier und Hülsenfrüchte abnehmen und den Boden noch einige Minuten backen, bis er zart Farbe annimmt.",
+      "Auf den vorgebackenen Boden die Speckmischung geben, die Eiersahne darübergießen und die Quiche auf mittlerer Schiene mit 250 °C (Ober- und Unterhitze) fertig backen. Wird die Oberfläche zu früh dunkel, mit Alufolie abdecken. Am besten lauwarm mit gemischtem Salat essen."
+    ]
+  },
+  "en": {
+    "title": "Quiche Lorraine",
+    "steps": [
+      "Pastry: mix the flour and salt, scatter the butter cubes on top, chop them in with a knife and then rub between your fingertips into crumbs until no loose flour is left. Knead in 80 ml of ice-cold water, but only as much as gives an even dough that does not stick; alternatively, put 1 egg yolk with 2 tbsp ice-cold water into a well and work it in. Shape quickly into a ball, wrap in film and chill for at least 1 hour, or overnight if you like.",
+      "While the dough rests, prepare the topping: finely dice the bacon, chop the onions, crush the garlic, chop the parsley and mix everything together. Whisk the eggs, cream and Gruyère, season with pepper and go easy on the salt, depending on how salty the bacon is.",
+      "Preheat the oven to 220 °C top and bottom heat. Knead the cold dough briefly, press it flat and line a greased 28 cm springform tin with it, drawing up a rim about 3 cm high. Prick the base several times with a fork, cover with parchment, spread the pulses on top and blind-bake on the lower shelf for about 12 minutes.",
+      "Remove the paper and pulses and bake the base for a few more minutes until it just takes on colour.",
+      "Spread the bacon mixture over the base, pour the egg cream over it and finish baking the quiche on the middle shelf at 250 °C top and bottom heat. If the surface darkens too early, cover with foil. Best eaten lukewarm with a mixed salad."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 7,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 8,
+        "amount": 3,
+        "unit": "clove"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "bunch"
+      },
+      {
+        "index": 10,
+        "amount": 4,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Source states 1 serving (one 28 cm tart pan); servings copied from source. Mustard in the allergen suggestion comes from the list; the source ingredient list has no mustard. Steps restructured (own step division and order of work) after paraphrase spot-check 23/11/2026.",
+  "originality": {
+    "overlap_5gram": 0.009,
+    "checked": "23/11/2026"
+  }
+}

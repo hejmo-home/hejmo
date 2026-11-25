@@ -34,6 +34,8 @@ type Contact struct {
 	Note            string
 	Numbers, Emails []contact.Line
 	GroupIDs        []string
+	// ForChildren shows the contact on the children's page "Wichtige Nummern" (ticket 301); off for every new contact.
+	ForChildren bool
 	// Relations say who the contact is for the family; only further contacts have any (ticket 298).
 	Relations                []Relation
 	CreatedBy, CreatedByName string
@@ -48,6 +50,9 @@ type Contact struct {
 	PhotoBy, PhotoByName string
 	PhotoDevice          string
 	PhotoAt              time.Time
+	// CreatedFile, UpdatedFile and PhotoFile name the contact file (ticket 300) the contact was taken over
+	// from, the last change completed it from, and its photo came from; empty for what a person did by hand.
+	CreatedFile, UpdatedFile, PhotoFile string
 }
 
 // Where a contact photo came from.
@@ -62,6 +67,7 @@ type ContactPhoto struct {
 	JPEG   []byte
 	Origin string
 	Device string // the phone, for PhotoSync
+	File   string // the contact file the photo came from (ticket 300)
 	By     string
 	At     time.Time
 }
@@ -116,9 +122,10 @@ func addPersonContact(tx *sql.Tx, householdID string, p Person, ts string) error
 }
 
 const contactColumns = `c.id, COALESCE(c.person_id, ''), c.hejmo_name, c.full_name, c.street, c.postcode, c.city, c.country,
-	COALESCE(c.bday_day, 0), COALESCE(c.bday_month, 0), COALESCE(c.bday_year, 0), c.hide_birthday, c.note,
+	COALESCE(c.bday_day, 0), COALESCE(c.bday_month, 0), COALESCE(c.bday_year, 0), c.hide_birthday, c.for_children, c.note,
 	COALESCE(c.created_by, ''), COALESCE(cp.name, ''), c.created_at, COALESCE(c.updated_by, ''), COALESCE(up.name, ''), c.updated_at,
-	c.photo IS NOT NULL, c.photo_origin, COALESCE(c.photo_by, ''), COALESCE(pp.name, ''), c.photo_device, c.photo_at`
+	c.photo IS NOT NULL, c.photo_origin, COALESCE(c.photo_by, ''), COALESCE(pp.name, ''), c.photo_device, c.photo_at,
+	c.created_file, c.updated_file, c.photo_file`
 
 const contactFrom = ` FROM contacts c LEFT JOIN people cp ON cp.id = c.created_by LEFT JOIN people up ON up.id = c.updated_by LEFT JOIN people pp ON pp.id = c.photo_by `
 
@@ -126,8 +133,8 @@ func scanContact(sc interface{ Scan(...any) error }) (Contact, error) {
 	var c Contact
 	var created, updated, photoAt string
 	err := sc.Scan(&c.ID, &c.PersonID, &c.HejmoName, &c.FullName, &c.Street, &c.Postcode, &c.City, &c.Country,
-		&c.BdayDay, &c.BdayMonth, &c.BdayYear, &c.HideBirthday, &c.Note, &c.CreatedBy, &c.CreatedByName, &created, &c.UpdatedBy, &c.UpdatedByName, &updated,
-		&c.HasPhoto, &c.PhotoOrigin, &c.PhotoBy, &c.PhotoByName, &c.PhotoDevice, &photoAt)
+		&c.BdayDay, &c.BdayMonth, &c.BdayYear, &c.HideBirthday, &c.ForChildren, &c.Note, &c.CreatedBy, &c.CreatedByName, &created, &c.UpdatedBy, &c.UpdatedByName, &updated,
+		&c.HasPhoto, &c.PhotoOrigin, &c.PhotoBy, &c.PhotoByName, &c.PhotoDevice, &photoAt, &c.CreatedFile, &c.UpdatedFile, &c.PhotoFile)
 	c.PhotoAt, _ = time.Parse(time.RFC3339, photoAt)
 	c.CreatedAt, _ = time.Parse(time.RFC3339, created)
 	c.UpdatedAt, _ = time.Parse(time.RFC3339, updated)
@@ -142,8 +149,8 @@ func (db *DB) loadContactParts(q interface {
 	for i := range list {
 		at[list[i].ID] = i
 	}
-	for _, t := range []struct{ table string }{{"contact_phones"}, {"contact_emails"}} {
-		rows, err := q.Query(`SELECT l.contact_id, l.kind, l.custom_label, l.value FROM `+t.table+` l
+	for _, t := range []struct{ table, e164 string }{{"contact_phones", "l.e164"}, {"contact_emails", "''"}} {
+		rows, err := q.Query(`SELECT l.contact_id, l.kind, l.custom_label, l.value, `+t.e164+` FROM `+t.table+` l
 			JOIN contacts c ON c.id = l.contact_id WHERE c.household_id = ? AND (? = '' OR c.id = ?) ORDER BY l.contact_id, l.position`, householdID, onlyID, onlyID)
 		if err != nil {
 			return err
@@ -151,7 +158,7 @@ func (db *DB) loadContactParts(q interface {
 		for rows.Next() {
 			var id string
 			var l contact.Line
-			if err := rows.Scan(&id, &l.Kind, &l.Label, &l.Value); err != nil {
+			if err := rows.Scan(&id, &l.Kind, &l.Label, &l.Value, &l.E164); err != nil {
 				rows.Close()
 				return err
 			}
@@ -265,6 +272,8 @@ type ContactInput struct {
 	BdayDay, BdayMonth, BdayYear                         int
 	// HideBirthday keeps the birthday out of the generated calendar Birthdays.
 	HideBirthday bool
+	// ForChildren shows the contact on the children's page "Wichtige Nummern".
+	ForChildren bool
 	// CalendarName names that calendar if this change makes it ("Birthdays", in the language of whoever saves).
 	CalendarName    string
 	Note            string
@@ -280,6 +289,9 @@ type ContactInput struct {
 	// PhotoChange says what the save does to the photo: keep it (the zero value), set Photo, or remove it.
 	PhotoChange PictureChange
 	Photo       *ContactPhoto
+	// ImportFile is the name of the contact file this save takes the contact over from (a new contact) or
+	// completes it from (ticket 300); empty for a save by hand.
+	ImportFile string
 }
 
 func (in *ContactInput) clean() error {
@@ -339,7 +351,17 @@ func nullInt(n int) any {
 	return n
 }
 
+// homeCountry is the country of the household's home (ISO 3166-1), the region numbers are read with (ADR 0026);
+// empty when the household has none.
+func homeCountry(tx *sql.Tx, householdID string) string {
+	var region string
+	_ = tx.QueryRow(`SELECT region FROM households WHERE id = ?`, householdID).Scan(&region)
+	country, _, _ := strings.Cut(region, "-")
+	return country
+}
+
 func writeContactParts(tx *sql.Tx, householdID, id string, in ContactInput, isPerson bool, by, ts string) error {
+	country := homeCountry(tx, householdID)
 	for _, t := range []struct {
 		table string
 		lines []contact.Line
@@ -348,7 +370,14 @@ func writeContactParts(tx *sql.Tx, householdID, id string, in ContactInput, isPe
 			return err
 		}
 		for i, l := range t.lines {
-			if _, err := tx.Exec(`INSERT INTO `+t.table+` (contact_id, position, kind, custom_label, value) VALUES (?, ?, ?, ?, ?)`, id, i+1, l.Kind, l.Label, l.Value); err != nil {
+			var err error
+			if t.table == "contact_phones" {
+				_, err = tx.Exec(`INSERT INTO contact_phones (contact_id, position, kind, custom_label, value, e164) VALUES (?, ?, ?, ?, ?, ?)`,
+					id, i+1, l.Kind, l.Label, l.Value, contact.E164(l.Value, country))
+			} else {
+				_, err = tx.Exec(`INSERT INTO `+t.table+` (contact_id, position, kind, custom_label, value) VALUES (?, ?, ?, ?, ?)`, id, i+1, l.Kind, l.Label, l.Value)
+			}
+			if err != nil {
 				return err
 			}
 		}
@@ -395,37 +424,45 @@ func writeContactParts(tx *sql.Tx, householdID, id string, in ContactInput, isPe
 
 // CreateContact stores a contact made by the parent `by`.
 func (db *DB) CreateContact(householdID, by string, in ContactInput) (Contact, error) {
-	if err := in.clean(); err != nil {
-		return Contact{}, err
-	}
-	id, ts := newID(), now()
 	tx, err := db.sql.Begin()
 	if err != nil {
 		return Contact{}, err
 	}
 	defer tx.Rollback()
-	if err := checkContactName(tx, householdID, "", in.HejmoName); err != nil {
-		return Contact{}, err
-	}
-	if _, err := tx.Exec(`INSERT INTO contacts (id, household_id, hejmo_name, full_name, street, postcode, city, country, bday_day, bday_month, bday_year, hide_birthday, note, created_by, created_at, updated_by, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		id, householdID, in.HejmoName, in.FullName, in.Street, in.Postcode, in.City, in.Country, nullInt(in.BdayDay), nullInt(in.BdayMonth), nullInt(in.BdayYear), in.HideBirthday, in.Note,
-		nullString(by), ts, nullString(by), ts); err != nil {
-		return Contact{}, err
-	}
-	if err := writeContactParts(tx, householdID, id, in, false, by, ts); err != nil {
-		return Contact{}, err
-	}
-	if err := writeContactPhoto(tx, id, in, by); err != nil {
-		return Contact{}, err
-	}
-	if err := syncBirthdays(tx, householdID, in.CalendarName); err != nil {
+	id, err := createContact(tx, householdID, by, in)
+	if err != nil {
 		return Contact{}, err
 	}
 	if err := tx.Commit(); err != nil {
 		return Contact{}, err
 	}
 	return db.Contact(householdID, id)
+}
+
+func createContact(tx *sql.Tx, householdID, by string, in ContactInput) (string, error) {
+	if err := in.clean(); err != nil {
+		return "", err
+	}
+	id, ts := newID(), now()
+	if err := checkContactName(tx, householdID, "", in.HejmoName); err != nil {
+		return "", err
+	}
+	if _, err := tx.Exec(`INSERT INTO contacts (id, household_id, hejmo_name, full_name, street, postcode, city, country, bday_day, bday_month, bday_year, hide_birthday, for_children, note, created_by, created_at, updated_by, updated_at, created_file)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		id, householdID, in.HejmoName, in.FullName, in.Street, in.Postcode, in.City, in.Country, nullInt(in.BdayDay), nullInt(in.BdayMonth), nullInt(in.BdayYear), in.HideBirthday, in.ForChildren, in.Note,
+		nullString(by), ts, nullString(by), ts, in.ImportFile); err != nil {
+		return "", err
+	}
+	if err := writeContactParts(tx, householdID, id, in, false, by, ts); err != nil {
+		return "", err
+	}
+	if err := writeContactPhoto(tx, id, in, by); err != nil {
+		return "", err
+	}
+	if err := syncBirthdays(tx, householdID, in.CalendarName); err != nil {
+		return "", err
+	}
+	return id, nil
 }
 
 // writeContactPhoto applies the photo change of a save; the last change wins.
@@ -442,11 +479,11 @@ func applyContactPhoto(tx *sql.Tx, id string, change PictureChange, photo *Conta
 		if photo.Origin == PhotoSync {
 			device, by = photo.Device, ""
 		}
-		_, err := tx.Exec(`UPDATE contacts SET photo = ?, photo_origin = ?, photo_by = ?, photo_device = ?, photo_at = ? WHERE id = ?`,
-			photo.JPEG, photo.Origin, nullString(by), device, time.Now().UTC().Format(time.RFC3339Nano), id)
+		_, err := tx.Exec(`UPDATE contacts SET photo = ?, photo_origin = ?, photo_by = ?, photo_device = ?, photo_at = ?, photo_file = ? WHERE id = ?`,
+			photo.JPEG, photo.Origin, nullString(by), device, time.Now().UTC().Format(time.RFC3339Nano), photo.File, id)
 		return err
 	case RemovePicture:
-		_, err := tx.Exec(`UPDATE contacts SET photo = NULL, photo_origin = '', photo_by = NULL, photo_device = '', photo_at = '' WHERE id = ?`, id)
+		_, err := tx.Exec(`UPDATE contacts SET photo = NULL, photo_origin = '', photo_by = NULL, photo_device = '', photo_at = '', photo_file = '' WHERE id = ?`, id)
 		return err
 	}
 	return nil
@@ -511,39 +548,43 @@ func (db *DB) UpdateContact(householdID, id, by string, in ContactInput) (Contac
 	if err != nil {
 		return Contact{}, err
 	}
-	if cur.IsPerson() {
-		in.HejmoName = cur.HejmoName
-	}
-	if err := in.clean(); err != nil {
-		return Contact{}, err
-	}
-	ts := now()
 	tx, err := db.sql.Begin()
 	if err != nil {
 		return Contact{}, err
 	}
 	defer tx.Rollback()
-	if err := checkContactName(tx, householdID, id, in.HejmoName); err != nil {
-		return Contact{}, err
-	}
-	if _, err := tx.Exec(`UPDATE contacts SET hejmo_name = ?, full_name = ?, street = ?, postcode = ?, city = ?, country = ?, bday_day = ?, bday_month = ?, bday_year = ?, hide_birthday = ?, note = ?, updated_by = ?, updated_at = ?
-		WHERE id = ? AND household_id = ?`,
-		in.HejmoName, in.FullName, in.Street, in.Postcode, in.City, in.Country, nullInt(in.BdayDay), nullInt(in.BdayMonth), nullInt(in.BdayYear), in.HideBirthday, in.Note, nullString(by), ts, id, householdID); err != nil {
-		return Contact{}, err
-	}
-	if err := writeContactParts(tx, householdID, id, in, cur.IsPerson(), by, ts); err != nil {
-		return Contact{}, err
-	}
-	if err := writeContactPhoto(tx, id, in, by); err != nil {
-		return Contact{}, err
-	}
-	if err := syncBirthdays(tx, householdID, in.CalendarName); err != nil {
+	if err := updateContact(tx, householdID, id, by, cur.IsPerson(), cur.HejmoName, in); err != nil {
 		return Contact{}, err
 	}
 	if err := tx.Commit(); err != nil {
 		return Contact{}, err
 	}
 	return db.Contact(householdID, id)
+}
+
+func updateContact(tx *sql.Tx, householdID, id, by string, isPerson bool, curName string, in ContactInput) error {
+	if isPerson {
+		in.HejmoName = curName
+	}
+	if err := in.clean(); err != nil {
+		return err
+	}
+	ts := now()
+	if err := checkContactName(tx, householdID, id, in.HejmoName); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`UPDATE contacts SET hejmo_name = ?, full_name = ?, street = ?, postcode = ?, city = ?, country = ?, bday_day = ?, bday_month = ?, bday_year = ?, hide_birthday = ?, for_children = ?, note = ?, updated_by = ?, updated_at = ?, updated_file = ?
+		WHERE id = ? AND household_id = ?`,
+		in.HejmoName, in.FullName, in.Street, in.Postcode, in.City, in.Country, nullInt(in.BdayDay), nullInt(in.BdayMonth), nullInt(in.BdayYear), in.HideBirthday, in.ForChildren, in.Note, nullString(by), ts, in.ImportFile, id, householdID); err != nil {
+		return err
+	}
+	if err := writeContactParts(tx, householdID, id, in, isPerson, by, ts); err != nil {
+		return err
+	}
+	if err := writeContactPhoto(tx, id, in, by); err != nil {
+		return err
+	}
+	return syncBirthdays(tx, householdID, in.CalendarName)
 }
 
 // DeleteContact removes a contact outside the household. A person's contact

@@ -1,0 +1,211 @@
+{
+  "n": 22,
+  "slug": "kaiserschmarrn",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 30,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/1031841208350942/Kaiserschmarrn-Tiroler-Landgasthofrezept.html",
+    "site": "Chefkoch",
+    "ratings": 2381
+  },
+  "ingredients": [
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Rosinen",
+      "article_en": "Raisins",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 5,
+      "unit": "EL",
+      "article_de": "Rum",
+      "article_en": "Rum",
+      "note_de": "oder Cognac oder Wasser",
+      "note_en": "or cognac or water"
+    },
+    {
+      "amount": 6,
+      "unit": "Stk",
+      "article_de": "Eigelb",
+      "article_en": "Egg yolks",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    },
+    {
+      "amount": 1,
+      "unit": "Pck",
+      "article_de": "Bourbon-Vanillezucker",
+      "article_en": "Bourbon vanilla sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "gehäuft",
+      "note_en": "heaped"
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Mehl Type 405",
+      "article_en": "Plain flour (Type 405)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Butter, flüssig",
+      "article_en": "Melted butter",
+      "note_de": "für den Teig",
+      "note_en": "for the batter"
+    },
+    {
+      "amount": 6,
+      "unit": "Stk",
+      "article_de": "Eiweiß",
+      "article_en": "Egg whites",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    },
+    {
+      "amount": 75,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "zum Braten, ca. 15-25 g je Portion",
+      "note_en": "for frying, about 15-25 g per batch"
+    },
+    {
+      "amount": 6,
+      "unit": "TL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "zum Karamellisieren",
+      "note_en": "for caramelising"
+    },
+    {
+      "amount": 4,
+      "unit": "TL",
+      "article_de": "Puderzucker",
+      "article_en": "Icing sugar",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Kaiserschmarrn",
+    "steps": [
+      "Heize den Backofen auf 80 °C Ober-/Unterhitze vor. Er dient nur zum Warmhalten. Gib die Rosinen mit dem Rum (oder Cognac oder Wasser) in eine Tasse und lass sie mindestens 30 Minuten ziehen.",
+      "Trenne die Eier. Schlage die 6 Eigelbe mit Vanillezucker, 1 gehäuftem EL Zucker und der Prise Salz 2 bis 3 Minuten mit dem Handmixer auf. Die Masse muss hell und schaumig sein.",
+      "Gib abwechselnd etwas Mehl und etwas Milch dazu und rühre jeweils glatt. Rühre am Ende die 50 g flüssige Butter unter. Der Teig ist dünnflüssig, das ist richtig so. Lass ihn 30 Minuten ruhen.",
+      "Schlage in einer fettfreien Schüssel die 6 Eiweiße richtig steif. Rühre den Teig kurz mit dem Mixer wieder auf. Hebe dann den Eischnee mit einem Löffel vorsichtig unter, bis keine weißen Schlieren mehr zu sehen sind. Hebe zuletzt die Rosinen unter.",
+      "Erhitze in einer 24–28 cm großen Pfanne ein Drittel der Bratbutter (ca. 15–25 g). Rühre den Teig vor jedem Eingießen um, denn die Rosinen sinken nach unten. Gieße so viel Teig ein, dass er ca. 1 cm hoch steht, und stelle die Hitze danach kleiner.",
+      "Brate die erste Seite 3 bis 5 Minuten, bis die Unterseite goldgelb ist. Teile den Teig mit dem Pfannenwender in vier Viertel, wende sie und brate die zweite Seite 2 bis 3 Minuten.",
+      "Zerreiße den Schmarrn mit zwei Holzlöffeln in Stücke. Streue 2 TL Zucker darüber, drehe die Hitze höher und karamellisiere die Stücke ca. 30 Sekunden pro Seite, bis alles gleichmäßig glänzt. Eine beschichtete Pfanne macht das leichter.",
+      "Halte die fertige Portion im Ofen bei 80 °C warm. Backe mit dem restlichen Teig und der restlichen Butter noch zwei weitere Pfannen genauso, insgesamt etwa drei. Gesüßt wird erst danach: Bestäube alles mit dem Puderzucker und serviere dazu Pflaumenmus bzw. Zwetschgenkompott."
+    ]
+  },
+  "en": {
+    "title": "Kaiserschmarrn (shredded pancake)",
+    "steps": [
+      "Preheat the oven to 80 °C top/bottom. It is only for keeping things warm. Put the raisins in a cup with the rum (or cognac or water) and let them soak for at least 30 minutes.",
+      "Separate the eggs. Whisk the 6 yolks with the vanilla sugar, 1 heaped tbsp of sugar and the pinch of salt for 2 to 3 minutes with a hand mixer. The mixture must be pale and foamy.",
+      "Add a little flour and a little milk alternately and stir smooth each time. At the end, stir in the 50 g of melted butter. The batter is thin, and that is correct. Let it rest for 30 minutes.",
+      "Whisk the 6 egg whites in a grease-free bowl until really stiff. Give the batter a quick whisk again. Then gently fold in the egg whites with a spoon until there are no white streaks left. Fold in the raisins last.",
+      "Heat one third of the frying butter (about 15–25 g) in a 24–28 cm wide pan. Stir the batter before every pour, because the raisins sink. Pour in enough batter to stand about 1 cm high, then turn the heat down.",
+      "Fry the first side for 3 to 5 minutes, until the underside is golden. Cut the batter into four quarters with the pan turner, flip them and fry the second side for 2 to 3 minutes.",
+      "Tear the pancake into pieces with two wooden spoons. Sprinkle 2 tsp of sugar over it, turn the heat up and caramelise the pieces for about 30 seconds per side, until evenly glossy. A non-stick pan makes this easier.",
+      "Keep the finished portion warm in the oven at 80 °C. Cook two more pans the same way with the remaining batter and butter, about three in total. Sweeten only afterwards: dust everything with the icing sugar and serve with plum compote."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 5,
+        "unit": "tbsp"
+      },
+      {
+        "index": 2,
+        "amount": 6,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "packet"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 9,
+        "amount": 6,
+        "unit": "piece"
+      },
+      {
+        "index": 11,
+        "amount": 6,
+        "unit": "tsp"
+      },
+      {
+        "index": 12,
+        "amount": 4,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

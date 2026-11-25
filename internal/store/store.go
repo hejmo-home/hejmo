@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/secret"
@@ -24,7 +25,7 @@ type DB struct {
 	sql     *sql.DB
 	secrets *secret.Sealer // seals stored credentials; set with SetSecrets
 	// religiousTitle titles the events of the religious holidays calendar (ticket 339); set with SetReligiousTitler.
-	religiousTitle ReligiousTitler
+	religiousTitle atomic.Pointer[ReligiousTitler]
 }
 
 type migration struct {

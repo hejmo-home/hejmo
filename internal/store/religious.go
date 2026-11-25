@@ -42,11 +42,11 @@ var ErrHinduNeedsLocation error = &FieldError{Field: "religions", Msg: "religion
 type ReligiousTitler func(lang, religion, key string, eve bool) string
 
 // SetReligiousTitler sets how events are titled. The server sets it from the locale files before the box syncs.
-func (db *DB) SetReligiousTitler(f ReligiousTitler) { db.religiousTitle = f }
+func (db *DB) SetReligiousTitler(f ReligiousTitler) { db.religiousTitle.Store(&f) }
 
 func (db *DB) titleReligious(lang, religion, key string, eve bool) string {
-	if db.religiousTitle != nil {
-		return db.religiousTitle(lang, religion, key, eve)
+	if f := db.religiousTitle.Load(); f != nil {
+		return (*f)(lang, religion, key, eve)
 	}
 	if eve {
 		return key + " (evening)"

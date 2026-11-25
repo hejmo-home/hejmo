@@ -422,3 +422,21 @@ func TestStartRewritesTheCalendarSoARegionChangeIsNotLost(t *testing.T) {
 		t.Error("Corpus Christi is missing in Saxony")
 	}
 }
+
+func TestAnUnknownCalendarOrReligionIsRefusedAtTheChoiceAndSavesNothing(t *testing.T) {
+	t.Parallel()
+	b := newRhBox(t)
+	f := rhForm("muslim")
+	f.Set("islamic_calendar", "moon")
+	r := b.save(f, "de")
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("unknown calendar = %d\n%s", r.status, r.body)
+	}
+	rhHas(t, "error", r.body, `id="err-religions"`, "Diese Auswahl gibt es nicht. Nichts wurde gespeichert.")
+	if r := b.save(rhForm("muslim", "pastafarian"), "de"); r.status != http.StatusUnprocessableEntity {
+		t.Errorf("unknown religion = %d", r.status)
+	}
+	if h := b.page("/settings", "de").body; !strings.Contains(h, "<b>Aus.</b>") {
+		t.Error("something was saved")
+	}
+}

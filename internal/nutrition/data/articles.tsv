@@ -52,6 +52,7 @@ kohlrabi|bls:G331100|250|
 red-cabbage|bls:G341100|1000|
 white-cabbage|bls:G342100|1200|
 celeriac|bls:G660100|500|
+celery-stalks|bls:G220100|40|
 ginger|bls:R211200||
 parsley|bls:G250100||
 chives|bls:G081100||
@@ -80,6 +81,7 @@ bread-crumbs|bls:B821000||0.5
 milk|bls:M111300||1.03
 oat-drink|bls:C660000||1.03
 soy-drink|bls:H841100||1.03
+smoked-tofu|bls:H861000||
 almond-drink|bls:H800000||1.03
 butter|bls:Q630000||0.95
 margarine|bls:Q400000||0.95
@@ -91,6 +93,8 @@ quark|bls:M713300||1.05
 cream-cheese|bls:M820600||1.0
 mozzarella|bls:M032100|125|
 gouda|bls:M402500||
+mountain-cheese|bls:M302600||
+cheddar|bls:M303600||
 emmental|bls:M304600||
 parmesan|usda:170848||
 feta|bls:M012200||
@@ -158,6 +162,7 @@ chopped-tomatoes|bls:G568900||1.0
 tomato-passata|bls:R161200||1.05
 tomato-paste|bls:R160000||1.1
 olive-oil|bls:Q120000||0.91
+sesame-oil|bls:Q230000||0.92
 vinegar|bls:R121000||1.01
 ketchup|bls:R141100||1.15
 mustard|bls:R132000||1.1
@@ -182,6 +187,7 @@ yeast|bls:R459000|42|
 cornflour|bls:C446000||0.6
 ground-hazelnuts|bls:H130400||0.45
 ground-almonds|bls:H210400||0.45
+flaked-almonds|bls:H210100||
 walnut-pieces|bls:H120100||0.45
 salt|bls:R111000||1.2
 pepper|bls:R258100||0.5

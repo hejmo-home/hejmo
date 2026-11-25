@@ -367,3 +367,48 @@ func TestSpinachUnderAnotherNameResolvesToSpinach(t *testing.T) {
 		t.Errorf("no recipe has the names any more: %v", seen)
 	}
 }
+
+// Ticket 331 (review of #329): lines that carry an allergen had no library
+// article, so the allergy check could not see them. One entry per article:
+// the German names of the files and the allergens the article must carry.
+func TestAllergenLinesWithoutAnArticleBeforeNowResolveToOne(t *testing.T) {
+	cases := []struct {
+		id        string
+		names     []string
+		allergens []string
+	}{
+		{"celery-stalks", []string{"Staudensellerie", "Stangensellerie"}, []string{"celery"}},
+		{"flaked-almonds", []string{"Mandelblättchen"}, []string{"nuts"}},
+		{"mountain-cheese", []string{"Bergkäse"}, []string{"milk"}},
+		{"cheddar", []string{"Cheddar", "Cheddar, kräftig gereift", "Cheddar, kräftig"}, []string{"milk"}},
+		{"sesame-oil", []string{"Sesamöl"}, []string{"sesame"}},
+		{"smoked-tofu", []string{"Räuchertofu"}, []string{"soy"}},
+	}
+	for _, c := range cases {
+		art, ok := library.ShippedByID(c.id)
+		if !ok {
+			t.Errorf("%s is not shipped", c.id)
+			continue
+		}
+		if !slices.Equal(art.Allergens, c.allergens) {
+			t.Errorf("%s allergens = %v, want %v", c.id, art.Allergens, c.allergens)
+		}
+		for _, name := range c.names {
+			seen := 0
+			for _, e := range starter.All() {
+				for _, in := range e.Recipe("de").Ingredients {
+					if strings.SplitN(in.Text, " (", 2)[0] != name {
+						continue
+					}
+					seen++
+					if in.ArticleID != c.id {
+						t.Errorf("%s in %s is %q, want %q", name, e.Slug, in.ArticleID, c.id)
+					}
+				}
+			}
+			if seen == 0 {
+				t.Errorf("no recipe has %q any more; pick another example", name)
+			}
+		}
+	}
+}

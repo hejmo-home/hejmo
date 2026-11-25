@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -61,7 +62,7 @@ func TestLayoutPartSummaryShowsSlowestCasesAndHeadroom(t *testing.T) {
 	t.Parallel()
 	took := []layoutTook{{"de/a", time.Second}, {"en/b", 5 * time.Second}, {"de/c", 3 * time.Second}}
 	got := layoutPartSummary(1, took, layoutBudget/2)
-	for _, want := range []string{"layout part 2: 3 cases in 7m30s of 15m0s budget (50 % headroom)", "slow case: en/b took 5s", "slow case: de/a took 1s"} {
+	for _, want := range []string{fmt.Sprintf("layout part 2: 3 cases in %s of %s budget (50 %% headroom)", layoutBudget/2, layoutBudget), "slow case: en/b took 5s", "slow case: de/a took 1s"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("summary lacks %q:\n%s", want, got)
 		}

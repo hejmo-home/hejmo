@@ -355,6 +355,14 @@ _Avoid_: variant, subtype
 An article usually at home, such as salt or oil, left out by default when a recipe's ingredients go onto a list.
 _Avoid_: staple, stock item
 
+**Shopping run**:
+One tap of "Zutaten auf die Liste" for a meal or a week: the ticked ingredients go onto a list through the one adding rule, and the run records per list entry and meal how much each meal contributed (the contribution). A meal already on a list is never added twice, only its missing portions; Undo takes back exactly one run.
+_Avoid_: import, sync
+
+**Contribution**:
+What one meal brought to one list entry in a shopping run: meal day and mealtime, recipe, portions and the base quantity (none for a kitchen measure or free text). It is the line under the entry ("Für Erdnuss-Curry (Di)") and the basis for taking quantities back later.
+_Avoid_: source row, link
+
 **Cooking view**:
 A recipe shown for cooking on a device: large text, ingredients to tick and one step at a time, with the screen kept on.
 _Avoid_: kitchen mode, cook mode

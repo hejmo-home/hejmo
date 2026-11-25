@@ -277,8 +277,8 @@ func (s *Service) sync(ctx context.Context, householdID, calendarID string, run 
 		return err
 	}
 	fail := func(msg i18n.Message, cause error) error {
+		msg, next := failed(msg, cause, at, interval, cal.Sync.Failures)
 		run.result, run.failure = "failed", msg.Key
-		next := at.Add(Backoff(interval, cal.Sync.Failures+1))
 		if err := s.db.FailSync(householdID, calendarID, msg, at, next); err != nil {
 			return errors.Join(cause, err)
 		}

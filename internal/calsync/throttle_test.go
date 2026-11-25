@@ -1,0 +1,213 @@
+package calsync_test
+
+import (
+	"context"
+	"net/http"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/hejmo-home/hejmo/internal/caldavclient/caldavtest"
+	"github.com/hejmo-home/hejmo/internal/calendar"
+	"github.com/hejmo-home/hejmo/internal/calsync"
+	"github.com/hejmo-home/hejmo/internal/store"
+)
+
+func TestRetryAfterReadsSecondsAndDatesAndBoundsAbsurdValues(t *testing.T) {
+	now := time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)
+	for _, c := range []struct {
+		name, header string
+		want         time.Duration
+	}{
+		{"seconds", "120", 2 * time.Minute},
+		{"date", now.Add(time.Hour).UTC().Format(http.TimeFormat), time.Hour},
+		{"missing", "", 0},
+		{"not a value", "soon", 0},
+		{"negative", "-5", 0},
+		{"a date in the past", now.Add(-time.Hour).UTC().Format(http.TimeFormat), 0},
+		{"absurd seconds", "99999999999", calsync.MaxRetryAfter},
+		{"absurd date", now.AddDate(5, 0, 0).UTC().Format(http.TimeFormat), calsync.MaxRetryAfter},
+	} {
+		if got := calsync.RetryAfter(c.header, now); got != c.want {
+			t.Errorf("%s: RetryAfter(%q) = %v, want %v", c.name, c.header, got, c.want)
+		}
+	}
+}
+
+// throttledRun holds three queued changes and the log entries of failures.
+func (fx *davFixture) threeQueued(t *testing.T) {
+	t.Helper()
+	for _, n := range []string{"a", "b", "c"} {
+		fx.srv.Put(t, fx.remote, n+".ics", caldavtest.Event(n+"@test", "Event "+n, "20261120T150000", "20261120T160000"))
+	}
+	fx.syncAfter(t, 0)
+	for _, n := range []string{"a", "b", "c"} {
+		e := fx.boxEvent(t, "Event "+n)
+		e.Title = "Changed " + n
+		if err := fx.db.ApplyChange(fx.h.ID, calendar.Change{Update: []calendar.Event{e}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func failures(t *testing.T, db *store.DB, householdID string) []store.SyncLogEntry {
+	t.Helper()
+	log, err := db.SyncLog(householdID, 50)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out []store.SyncLogEntry
+	for _, l := range log {
+		if l.Kind == "failure" {
+			out = append(out, l)
+		}
+	}
+	return out
+}
+
+func TestCalDAVThrottleStopsThePushAndKeepsTheRestQueued(t *testing.T) {
+	for _, status := range []int{429, 503} {
+		t.Run(strconv.Itoa(status), func(t *testing.T) {
+			fx := newDAVFixture(t, caldavtest.Password)
+			fx.threeQueued(t)
+			fx.tamper.RefuseWritesWait(status, "1800")
+			before := fx.tamper.Count("PUT")
+
+			if err := fx.svc.Push(context.Background(), fx.h.ID, fx.cal.ID); err == nil {
+				t.Fatal("push to a throttling server succeeded")
+			}
+			if n := fx.tamper.Count("PUT") - before; n != 1 {
+				t.Fatalf("%d writes reached the throttling server, want 1", n)
+			}
+			if pend, _ := fx.db.PendingObjects(fx.cal.ID); len(pend) != 3 {
+				t.Fatalf("pending = %d, want all 3 kept", len(pend))
+			}
+			log := failures(t, fx.db, fx.h.ID)
+			if len(log) != 1 || log[0].Message.Key != "sync.fail.throttled" {
+				t.Fatalf("log = %+v, want one sync.fail.throttled", log)
+			}
+			cal, _ := fx.db.SyncedCalendar(fx.h.ID, fx.cal.ID)
+			if want := fx.clock.Add(30 * time.Minute); cal.Sync.NextAttempt.Before(want) {
+				t.Fatalf("next attempt %v, want at least %v (Retry-After)", cal.Sync.NextAttempt, want)
+			}
+		})
+	}
+}
+
+func TestCalDAVThrottledPushSkipsTheImportAndTheNextSyncWaits(t *testing.T) {
+	fx := newDAVFixture(t, caldavtest.Password)
+	fx.threeQueued(t)
+	other := fx.srv.MakeCalendar(t, "other", "Other")
+	conn2, err := fx.db.CreateCalDAVConnection(fx.h.ID, store.NewCalDAVConnection{URL: fx.srv.URL, Username: caldavtest.User, Password: caldavtest.Password, Now: fx.clock})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cal2, err := fx.db.AddCalDAVCalendar(fx.h.ID, conn2.ID, store.NewCalDAVCalendar{Name: "Other", RemoteURL: other, IntervalMinutes: 5, Now: fx.clock})
+	if err != nil {
+		t.Fatal(err)
+	}
+	fx.tamper.RefuseWritesWait(429, "1800")
+	reads := func() int { return fx.tamper.Count("REPORT") + fx.tamper.Count("PROPFIND") }
+	before := reads()
+
+	if err := fx.svc.Sync(context.Background(), fx.h.ID, fx.cal.ID); err == nil {
+		t.Fatal("sync with a throttled push succeeded")
+	}
+	if n := reads() - before; n != 0 {
+		t.Fatalf("%d reads went to the server after it throttled", n)
+	}
+
+	// Another connection keeps syncing while this one waits.
+	fx.srv.Put(t, other, "swim.ics", caldavtest.Event("swim@test", "Swimming", "20261121T150000", "20261121T160000"))
+	fx.clock = fx.clock.Add(10 * time.Minute)
+	fx.svc.RunDue(context.Background())
+	evs, _ := fx.db.CalendarEvents(fx.h.ID, cal2.ID)
+	if len(evs) != 1 {
+		t.Fatalf("the other calendar has %d events, want 1", len(evs))
+	}
+	if n := len(failures(t, fx.db, fx.h.ID)); n != 1 {
+		t.Fatalf("%d failures logged, want only the throttle", n)
+	}
+	if pend, _ := fx.db.PendingObjects(fx.cal.ID); len(pend) != 3 {
+		t.Fatalf("pending = %d before the wait is over, want 3", len(pend))
+	}
+
+	// After the wait the queue goes out.
+	fx.tamper.RefuseWritesWait(0, "")
+	fx.clock = fx.clock.Add(21 * time.Minute)
+	fx.svc.RunDue(context.Background())
+	if pend, _ := fx.db.PendingObjects(fx.cal.ID); len(pend) != 0 {
+		t.Fatalf("pending = %+v after the wait", pend)
+	}
+	if got := fx.srv.Get(t, fx.remote+"b.ics"); !strings.Contains(got, "SUMMARY:Changed b") {
+		t.Fatalf("change not pushed:\n%s", got)
+	}
+}
+
+func (fx *outlookFx) threeQueued(t *testing.T) {
+	t.Helper()
+	start := time.Date(2026, 11, 24, 8, 30, 0, 0, berlinZone)
+	for _, n := range []string{"A", "B", "C"} {
+		if _, err := fx.db.CreateEvent(fx.h.ID, calendar.Event{CalendarID: fx.cal.ID, Title: "Event " + n, Start: start, End: start.Add(time.Hour)}); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func (fx *outlookFx) count(prefix string) int {
+	n := 0
+	for _, r := range fx.fake.Requests {
+		if strings.HasPrefix(r, prefix) {
+			n++
+		}
+	}
+	return n
+}
+
+func TestOutlookThrottleStopsThePushAndSkipsTheImport(t *testing.T) {
+	for _, status := range []int{429, 503} {
+		t.Run(strconv.Itoa(status), func(t *testing.T) {
+			fx := newOutlookFx(t)
+			fx.threeQueued(t)
+			fx.fake.FailWrites, fx.fake.RetryAfter = status, "1800"
+
+			if err := fx.sync(t); err == nil {
+				t.Fatal("sync with a throttled push succeeded")
+			}
+			if n := fx.count("POST /v1.0"); n != 1 {
+				t.Fatalf("%d writes reached Graph, want 1", n)
+			}
+			if n := fx.count("GET "); n != 0 {
+				t.Fatalf("%d reads went to Graph after it throttled", n)
+			}
+			if pend, _ := fx.db.PendingObjects(fx.cal.ID); len(pend) != 3 {
+				t.Fatalf("pending = %d, want all 3 kept", len(pend))
+			}
+			log := failures(t, fx.db, fx.h.ID)
+			if len(log) != 1 || log[0].Message.Key != "sync.fail.throttled" {
+				t.Fatalf("log = %+v, want one sync.fail.throttled", log)
+			}
+			cal, _ := fx.db.SyncedCalendar(fx.h.ID, fx.cal.ID)
+			if want := fx.clock.Add(30 * time.Minute); cal.Sync.NextAttempt.Before(want) {
+				t.Fatalf("next attempt %v, want at least %v (Retry-After)", cal.Sync.NextAttempt, want)
+			}
+		})
+	}
+}
+
+func TestOutlookPushAloneStopsAtTheThrottle(t *testing.T) {
+	fx := newOutlookFx(t)
+	fx.threeQueued(t)
+	fx.fake.FailWrites = 429
+	if err := fx.svc.Push(context.Background(), fx.h.ID, fx.cal.ID); err == nil {
+		t.Fatal("push to a throttling server succeeded")
+	}
+	if n := fx.count("POST /v1.0"); n != 1 {
+		t.Fatalf("%d writes reached Graph, want 1", n)
+	}
+	cal, _ := fx.db.SyncedCalendar(fx.h.ID, fx.cal.ID)
+	if cal.Sync.NextAttempt.Before(fx.clock.Add(5 * time.Minute)) {
+		t.Fatalf("without Retry-After the next attempt is %v, want the default wait", cal.Sync.NextAttempt)
+	}
+}

@@ -144,7 +144,8 @@ func outlookMessage(err error) i18n.Message {
 }
 
 func outlookAborts(err error) bool {
-	return errors.Is(err, graph.ErrReauth) || errors.Is(err, errNoApp) || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
+	var throttled *throttledError
+	return errors.As(err, &throttled) || errors.Is(err, graph.ErrReauth) || errors.Is(err, errNoApp) || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
 }
 
 func (s *Service) syncOutlook(ctx context.Context, cal store.SyncedCalendar, h store.Household, at time.Time, run *runInfo, fail func(i18n.Message, error) error) error {

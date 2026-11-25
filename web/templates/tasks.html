@@ -5,10 +5,12 @@
 
   {{if .Child}}
   {{if .ChildParts}}<div class="child-tasks" data-person="{{.ChildSlot}}">
+    {{if .BadgeWon}}{{with .Success}}<p class="msg ok bdg-won-msg" role="status">{{template "seal" (dict "Key" $.BadgeWon "Size" 40)}}<span>{{.}}</span></p>{{end}}{{end}}
     <p class="count">{{template "progressWords" .ChildProgress}}{{if .StarsShown}} · <span class="chip stars" data-stars="{{.StarsBalance}}">{{.StarsBalance}}<span class="sr"> {{t "personal.stars"}}</span></span>{{end}}</p>
-    {{if .RewardLink}}<a class="reward-link" href="/tasks/rewards"><svg class="icon" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="1.5"/><path d="M3 7h18v3H3zM12 7v13"/><path d="M12 7c-1.5-3-5-3.5-5-1.2C7 7 9.5 7 12 7zM12 7c1.5-3 5-3.5 5-1.2C17 7 14.5 7 12 7z"/></svg><span class="t"><b>{{t "rwd.title"}}</b><span>{{.RewardSub}}</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>{{end}}
+    {{if .RewardLink}}<a class="reward-link" href="/tasks/rewards"><svg class="icon" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="1.5"/><path d="M3 7h18v3H3zM12 7v13"/><path d="M12 7c-1.5-3-5-3.5-5-1.2C7 7 9.5 7 12 7zM12 7c1.5-3 5-3.5 5-1.2C17 7 14.5 7 12 7z"/></svg><span class="t"><b>{{t "rwd.title"}}</b><span>{{.RewardSub}}</span>{{range .AskedLines}}<span class="asked-line">{{.}}</span>{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>{{end}}
+    {{if .BadgeLink}}{{template "badgeLink" .}}{{end}}
     <div class="list">{{template "taskParts" (dict "Parts" .ChildParts "Prefix" "/tasks" "Day" "" "StarsShown" .StarsShown "Labels" true)}}</div>
-  </div>{{else}}<p class="lead">{{t "tasks.none.child"}}</p>{{end}}
+  </div>{{else}}<p class="lead">{{t "tasks.none.child"}}</p>{{if .BadgeLink}}<div class="child-tasks" data-person="{{.ChildSlot}}">{{template "badgeLink" .}}</div>{{end}}{{end}}
   {{else}}
   <div class="tasks-tools">
     <div class="row">
@@ -20,8 +22,10 @@
   </div>
 
   {{range .Groups}}
-  <section aria-label="{{.Name}}">
+  <section aria-label="{{.Name}}"{{if .Slot}} data-person="{{.Slot}}"{{end}}>
     <h2>{{.Name}}</h2>
+    {{with .Badges}}<p class="bdg-line">{{template "badgeIcon" 18}}<span><span class="k">{{t "badge.line.k"}}</span>{{range .Names}} <span class="nm"><b>{{.Name}}</b>{{if .New}} <span class="bdg-pill">{{t "badge.pill.line"}}</span>{{end}}{{if not .Last}} ·{{end}}</span>{{else}} {{t "badge.line.none"}}{{end}}</span></p>
+    <a class="g-link bdg-more" href="{{.Href}}">{{.More}}</a>{{end}}
     {{if .Empty}}<div class="empty" data-empty>
       <p>{{tf "tasks.none.person" "name" .Name "template" $.SuggestedTemplate}}</p>
       <a class="button secondary" href="/routines/new?person={{.ID}}">{{t "routine.new"}}</a>
@@ -82,12 +86,13 @@
       {{range .StarCards}}{{$c := .}}
         <li data-person="{{.Slot}}" data-balance="{{.Balance}}">
           <strong class="st-head"><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span>{{.Name}} <span class="stars-balance">{{.Balance}}<span class="sr"> {{t "tasks.stars.unit"}}</span></span></strong>
+          {{with .Below}}<span class="stars-below"><span class="flag warn"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{.}}</span></span></span>{{end}}
           {{if .HasRewards}}{{with .Goal}}<p class="goal-line" data-person="{{$c.Slot}}">{{template "goalIcon" 18}}<span><span class="k">{{t "tasks.goal.label"}}</span> {{template "goalPic" (dict "Goal" . "Class" "sm")}}{{if .Reached}}{{tfh "tasks.goal.enough" "name" .Name}}{{else}}{{tfh "tasks.goal.progress" "name" .Name "have" (printf "%d" .Have) "price" (printf "%d" .Price) "left" (printf "%d" .Left)}}{{end}}</span></p>
           <a class="g-link" href="/tasks/rewards/goal/{{$c.ID}}">{{t "tasks.goal.change"}}</a>
           {{else}}<p class="goal-line none" data-person="{{$c.Slot}}">{{template "goalIcon" 18}}<span>{{tf "tasks.goal.none" "possessive" $c.Poss}}</span></p>
           <a class="g-link" href="/tasks/rewards/goal/{{$c.ID}}">{{t "tasks.goal.choose"}}</a>{{end}}{{end}}
           <span class="hint">{{t "tasks.stars.log"}}</span>
-          {{range .Entries}}<span class="log-line"><b>{{.Delta}}</b> {{.Label}}<span class="hint"> · {{.When}}{{if .By}} · {{.By}}{{if .ByRemoved}} {{t "tasks.stars.removed"}}{{end}}{{end}}</span></span>
+          {{range .Entries}}<span class="log-line"><b>{{.Delta}}</b> {{if .Redeemed}}<span class="rd">{{.Label}}</span>{{else}}{{.Label}}{{end}}<span class="hint"> · {{.When}}{{if .By}} · {{.By}}{{if .ByRemoved}} {{t "tasks.stars.removed"}}{{end}}{{end}}</span></span>
           {{else}}<span class="hint">{{t "tasks.stars.log_empty"}}</span>{{end}}
         </li>
       {{end}}
@@ -157,3 +162,6 @@
 
 {{/* What the tick button of a task says: a task with subtasks ticks all of them. */}}
 {{define "tickText"}}{{if .Subs}}{{if .Done}}{{t "tasks.untick_all"}}{{else}}{{t "tasks.tick_all"}}{{end}}{{else if .Done}}{{t "tasks.untick"}}{{else}}{{t "tasks.tick"}}{{end}}{{end}}
+
+{{/* A child's way to the badges (ticket 295): the shape of the rewards link, after it. The sub-line names the new badges or the newest. */}}
+{{define "badgeLink"}}<a class="reward-link badge-link" href="/tasks/badges">{{template "badgeIcon" 28}}<span class="t"><b>{{t "badge.title"}}</b><span>{{.BadgeSub}}</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>{{end}}

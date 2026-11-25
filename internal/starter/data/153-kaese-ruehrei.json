@@ -1,0 +1,118 @@
+{
+  "n": 153,
+  "slug": "kaese-ruehrei",
+  "category": "Frühstück",
+  "time_minutes": 20,
+  "servings": 4,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/kaese-ruehrei-67740",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 8,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": "ersatzweise Crème fraîche oder Milch",
+      "note_en": "or crème fraîche or milk"
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Parmesan",
+      "article_en": "Parmesan",
+      "note_de": "ersatzweise Bergkäse oder alter Gouda",
+      "note_en": "or mountain cheese or mature Gouda"
+    },
+    {
+      "amount": 0.5,
+      "unit": "Bund",
+      "article_de": "Schnittlauch",
+      "article_en": "Chives",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 40,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Schwarzer Pfeffer",
+      "article_en": "Black pepper",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Käse-Rührei",
+    "steps": [
+      "Alles bereitlegen, dann geht es schnell: Parmesan fein reiben. Schnittlauch abbrausen, trockentupfen und in dünne Ringe schneiden.",
+      "Die Eier in eine Schüssel schlagen und mit der Sahne und dem Schneebesen verquirlen.",
+      "Bei mittlerer Hitze die Butter in einer großen Pfanne mit Antihaftbeschichtung zerlassen. Die Eimasse hineingießen und unter Rühren stocken lassen.",
+      "Sobald die Eier gestockt, aber noch richtig cremig sind, die Pfanne sofort vom Herd nehmen. Den Parmesan unterrühren und in der Resthitze schmelzen lassen. Salzen, pfeffern, mit Schnittlauch bestreuen und gleich servieren."
+    ]
+  },
+  "en": {
+    "title": "Cheese scrambled eggs",
+    "steps": [
+      "Have everything ready, then it goes quickly: grate the Parmesan finely, wash the chives, shake them dry and cut into fine rings.",
+      "Crack the eggs into a bowl and whisk with the cream using a whisk.",
+      "Melt the butter in a large non-stick pan over medium heat. Pour in the egg mixture and let it set, stirring.",
+      "As soon as the eggs are set but still very creamy, take the pan off the heat at once. Stir in the Parmesan and let it melt in the residual heat. Season with salt and pepper, sprinkle with chives and serve immediately."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 8,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 0.5,
+        "unit": "bunch"
+      }
+    ]
+  },
+  "review_note": "Time from source: 20 min, stated as Aufwand (the only time figure on the page). Rating count from the list. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.013
+  }
+}

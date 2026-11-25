@@ -1,0 +1,132 @@
+{
+  "n": 190,
+  "slug": "griessbrei",
+  "category": "Desserts",
+  "servings": 4,
+  "time_minutes": 20,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/cremiger-griessbrei-2559",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Beeren",
+      "article_en": "Berries",
+      "note_de": "einer Sorte oder gemischt, z. B. Erdbeeren, Himbeeren, Johannisbeeren",
+      "note_en": "one kind or mixed, e.g. strawberries, raspberries, redcurrants"
+    },
+    {
+      "amount": 30,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "für die Beeren",
+      "note_en": "for the berries"
+    },
+    {
+      "amount": 0.5,
+      "unit": "Liter",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 125,
+      "unit": "g",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "article_de": "Vanillezucker",
+      "article_en": "Vanilla sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 60,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "für den Brei",
+      "note_en": "for the porridge"
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Weichweizengrieß",
+      "article_en": "Soft wheat semolina",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Grießbrei Grundrezept",
+    "steps": [
+      "Wasche 400 g Beeren und tupfe sie trocken. Halbiere Erdbeeren. Mische die Beeren mit 30 g Zucker und lass sie ziehen, während du den Brei kochst.",
+      "Erhitze in einem kleinen Topf 0,5 Liter Milch, 125 g Sahne, 1 Pck. Vanillezucker, 60 g Zucker und 1 Prise Salz bei niedriger Hitze bis zum Kochen.",
+      "Streue 50 g Weichweizengrieß unter ständigem Rühren ein. Das Rühren ist wichtig, sonst gibt es Klümpchen.",
+      "Lass den Brei einmal aufkochen. Schalte dann auf kleine Hitze und lass ihn 5 Minuten quellen, bis er dick ist.",
+      "Fülle den Grießbrei in tiefe Teller und gib die Beeren darauf."
+    ]
+  },
+  "en": {
+    "title": "Semolina pudding (basic recipe)",
+    "steps": [
+      "Wash 400 g berries and pat them dry. Halve strawberries. Mix the berries with 30 g sugar and let them stand while you cook the porridge.",
+      "In a small pot, heat 0.5 litre milk, 125 g cream, 1 packet vanilla sugar, 60 g sugar and 1 pinch of salt over low heat until it boils.",
+      "Sprinkle in 50 g soft wheat semolina while stirring constantly. The stirring matters, or you get lumps.",
+      "Let the porridge boil up once. Then turn to low heat and let it swell for 5 minutes until thick.",
+      "Pour the semolina porridge into deep plates and top with the berries."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 500,
+        "unit": "ml"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "packet"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "pinch"
+      }
+    ]
+  },
+  "review_note": "Page shows 65 ratings; list says Redaktionsküche. Source yield 4 portions. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

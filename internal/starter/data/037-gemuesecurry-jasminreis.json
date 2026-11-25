@@ -1,0 +1,203 @@
+{
+  "n": 37,
+  "slug": "gemuesecurry-jasminreis",
+  "category": "Hauptgerichte",
+  "time_minutes": 30,
+  "servings": 4,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/gemuesecurry-mit-jasminreis-78737",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zucchini",
+      "article_en": "Courgettes (zucchini)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Paprikaschoten, rot",
+      "article_en": "Red peppers",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Kartoffeln, vorwiegend festkochend",
+      "article_en": "Mainly waxy potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Frühlingszwiebeln",
+      "article_en": "Spring onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Chilischote, rot",
+      "article_en": "Red chilli",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Jasminreis",
+      "article_en": "Jasmine rice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Sonnenblumenöl",
+      "article_en": "Sunflower oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Currypulver",
+      "article_en": "Curry powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Gemüsebrühe",
+      "article_en": "Vegetable stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "ml",
+      "article_de": "Kokosmilch (aus der Dose)",
+      "article_en": "Coconut milk (canned)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Gemüsecurry mit Jasminreis",
+    "steps": [
+      "Bereite alles vor: Knoblauch hacken, Chili entkernen und fein schneiden. Würfle Zucchini, Paprika, Möhren und Kartoffeln in etwa 3 cm große Stücke. Schneide die Frühlingszwiebeln in Ringe und lege das Grün für später beiseite.",
+      "Koche den Jasminreis in Salzwasser ca. 12 Minuten nach Packungsanleitung.",
+      "Erhitze das Öl in einer großen Pfanne. Röste das Currypulver nur kurz darin an, sonst wird es bitter.",
+      "Gib Knoblauch und Chili dazu, danach Möhren und Kartoffeln. Lösche mit der Gemüsebrühe ab und lass alles 8 Minuten garen.",
+      "Gib Zucchini, Paprika, das Weiß der Frühlingszwiebeln und die Kokosmilch dazu. Koche alles ca. 5 Minuten, bis das Gemüse gerade weich, aber noch bissfest ist.",
+      "Salze erst jetzt und schmecke mit Pfeffer ab. Streue das Frühlingszwiebelgrün darüber und serviere das Curry mit dem Reis."
+    ]
+  },
+  "en": {
+    "title": "Vegetable curry with jasmine rice",
+    "steps": [
+      "Prepare everything: chop the garlic, deseed the chilli and slice it finely. Dice the zucchini, pepper, carrots and potatoes into pieces of about 3 cm. Slice the spring onions into rings and set the green part aside for later.",
+      "Cook the jasmine rice in salted water for about 12 minutes according to the packet.",
+      "Heat the oil in a large pan. Toast the curry powder in it only briefly, otherwise it turns bitter.",
+      "Add the garlic and chilli, then the carrots and potatoes. Deglaze with the vegetable stock and cook for 8 minutes.",
+      "Add the zucchini, pepper, the white of the spring onions and the coconut milk. Cook for about 5 minutes, until the vegetables are just tender but still firm.",
+      "Only now add salt and season with pepper. Sprinkle the spring onion greens over it and serve the curry with the rice."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "clove"
+      },
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "bunch"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 9,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 10,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Time from source: 30 min, stated as Aufwand (the only time figure on the page). The source rating is an editorial score (not a count of reviews): 208 ratings, 0.74 of 1. Chilli can be deseeded fully or left out for small children. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

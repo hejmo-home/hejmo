@@ -1,0 +1,89 @@
+{
+  "n": 49,
+  "slug": "lachs-aus-dem-ofen",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 20,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Fisch",
+      "en": "Fish"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/baked-salmon",
+    "site": "BBC Good Food",
+    "ratings": 31
+  },
+  "ingredients": [
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Lachsfilets, ohne Haut",
+      "article_en": "Skinless salmon fillets",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Olivenöl oder geschmolzene Butter",
+      "article_en": "Olive oil or melted butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Gehackte Kräuter, Zitronenscheiben und gedämpfter Brokkoli",
+      "article_en": "Chopped herbs, lemon slices and steamed long-stem broccoli",
+      "note_de": "optional, zum Servieren",
+      "note_en": "optional, to serve"
+    }
+  ],
+  "de": {
+    "title": "Lachs aus dem Ofen",
+    "steps": [
+      "Ofen auf 180 °C Ober-/Unterhitze (160 °C Umluft) vorheizen.",
+      "Lachsfilets mit Olivenöl oder geschmolzener Butter bestreichen und würzen.",
+      "Die Filets in eine ofenfeste Form legen.",
+      "Im Ofen 10 bis 15 Minuten garen. Faustregel: etwa 4 Minuten pro Zentimeter Dicke. Mit Deckel oder Folie wird der Lachs besonders zart, ohne Abdeckung bekommt er leichte Röstaromen.",
+      "Der Lachs ist fertig, wenn er gerade eben undurchsichtig ist und sich mit der Gabel in Flocken teilen lässt.",
+      "Mit gehackten Kräutern und Zitronenscheiben servieren, dazu passt gedämpfter Brokkoli."
+    ]
+  },
+  "en": {
+    "title": "Baked salmon",
+    "steps": [
+      "Preheat the oven to 180 C (160 C fan).",
+      "Brush the salmon fillets with olive oil or melted butter and season them.",
+      "Place the fillets in an ovenproof dish.",
+      "Roast for 10 to 15 minutes. Rule of thumb: about 4 minutes per centimetre of thickness. Covered with a lid or foil the salmon stays extra tender, uncovered it gets a slight roast flavour.",
+      "The salmon is done when it has just turned opaque and flakes apart with a fork.",
+      "Serve with chopped herbs and lemon slices; steamed broccoli goes well with it."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

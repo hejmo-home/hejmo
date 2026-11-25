@@ -118,7 +118,7 @@ func TestAGoalEndsWhenItsRewardIsRedeemedArchivedOrDeleted(t *testing.T) {
 	endedWith(t, f, f.mia.ID, store.GoalArchived, "Eis")
 
 	must(f.db.SetGoal(f.h.ID, f.mia.ID, c.ID))
-	must(f.db.DeleteReward(f.h.ID, c.ID))
+	must(f.db.DeleteReward(f.h.ID, c.ID, rt0))
 	endedWith(t, f, f.mia.ID, store.GoalDeleted, "Ausflug")
 
 	// A new goal clears the ended line.

@@ -56,8 +56,8 @@ func (rb rewardBox) book(t *testing.T, person string, stars int) {
 func (rb rewardBox) redeem(t *testing.T, reward, person, status string, at time.Time) {
 	t.Helper()
 	ts := at.UTC().Format(time.RFC3339)
-	if _, err := rb.parent.b.db.SQL().Exec(`INSERT INTO reward_redemptions (id, reward_id, person_id, status, price, requested_at, decided_at) VALUES (lower(hex(randomblob(8))), ?, ?, ?, 5, ?, ?)`,
-		reward, person, status, ts, ts); err != nil {
+	if _, err := rb.parent.b.db.SQL().Exec(`INSERT INTO reward_redemptions (id, household_id, reward_id, person_id, status, price, requested_at, decided_at) SELECT lower(hex(randomblob(8))), household_id, id, ?, ?, 5, ?, ? FROM rewards WHERE id = ?`,
+		person, status, ts, ts, reward); err != nil {
 		t.Fatal(err)
 	}
 }

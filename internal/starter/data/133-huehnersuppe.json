@@ -1,0 +1,210 @@
+{
+  "n": 133,
+  "slug": "huehnersuppe",
+  "category": "Suppen",
+  "servings": 8,
+  "time_minutes": 75,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.essen-und-trinken.de/rezepte/44430-rzpt-klassische-huehnersuppe",
+    "site": "Essen & Trinken",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Suppenhuhn",
+      "article_en": "Soup chicken",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stange",
+      "article_de": "Lauch",
+      "article_en": "Leek",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Petersilienwurzeln",
+      "article_en": "Parsley roots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel, weiß",
+      "article_en": "White onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Estragon",
+      "article_en": "Tarragon",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Thymian",
+      "article_en": "Thyme",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Petersilie, glatte",
+      "article_en": "Flat-leaf parsley",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": "für die Brühe",
+      "note_en": "for the broth"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Spargel, weißer",
+      "article_en": "White asparagus",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Buchstabennudeln",
+      "article_en": "Alphabet pasta",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eier, Bio",
+      "article_en": "Organic eggs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 125,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": "für die Eiermilch",
+      "note_en": "for the egg custard"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Muskat",
+      "article_en": "Nutmeg",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Klassische Hühnersuppe",
+    "steps": [
+      "Das Suppenhuhn abspülen und in einem großen Topf mit kochendem Salzwasser ansetzen. Wieder aufkochen und den grauen Schaum abschöpfen, so wird die Brühe klar. Je nach Größe 45 bis 60 Minuten gar ziehen lassen.",
+      "Lauch, Möhren und Petersilienwurzeln putzen und klein schneiden. Nach 25 Minuten zusammen mit der geschälten ganzen Zwiebel in die Brühe geben.",
+      "In der Wartezeit den Eierstich ansetzen: Eier mit Milch, Salz und Muskat verquirlen, in eine gefettete Form gießen und mit Alufolie verschließen. In einen Topf mit heißem Wasser stellen, Deckel auflegen und etwa 30 Minuten garen, bis die Masse fest ist. Das Wasser darf nur leise sieden, sonst wird der Eierstich löchrig. Danach stürzen und würfeln.",
+      "Die Nudeln getrennt nach Packungsanleitung in Salzwasser garen und abgießen, so bleibt die Brühe klar. Den Spargel schälen und in Stücke schneiden.",
+      "Das Huhn aus der Brühe heben, die Haut abziehen, das Fleisch von den Knochen lösen und in Stücke teilen.",
+      "Fleisch, Spargel und Nudeln in die Brühe geben und den Spargel bissfest garen. Zuletzt den Eierstich einlegen und nur einmal kurz aufwallen lassen. Mit Salz, Muskat und gehacktem Estragon, Thymian und Petersilie abschmecken."
+    ]
+  },
+  "en": {
+    "title": "Classic chicken soup",
+    "steps": [
+      "Rinse the boiling fowl and put it in a large pot of boiling salted water. Bring back to the boil and skim off the grey scum, which keeps the broth clear. Let it simmer gently for 45 to 60 minutes, depending on size.",
+      "Clean the leek, carrots and parsley roots and chop them small. After 25 minutes add them to the broth together with the peeled whole onion.",
+      "While you wait, start the egg custard: whisk the eggs with milk, salt and nutmeg, pour into a greased mould and seal with foil. Stand it in a pot of hot water, put the lid on and cook for about 30 minutes until set. The water may only barely simmer, otherwise the custard gets holes. Then turn it out and dice it.",
+      "Cook the noodles separately in salted water according to the packet and drain, which keeps the broth clear. Peel the asparagus and cut it into pieces.",
+      "Lift the chicken out of the broth, pull off the skin, take the meat off the bones and cut it into pieces.",
+      "Put the meat, asparagus and noodles in the broth and cook the asparagus until just tender. Last of all add the egg custard and let it bubble up once only. Season with salt, nutmeg and chopped tarragon, thyme and parsley."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "stalk"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 11,
+        "amount": 2,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Source gives no water amount or oven/water-bath temperature; the egg-and-milk mixture is written up as a set egg custard, please check against the source. Salt appears twice in the source list. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.028
+  }
+}

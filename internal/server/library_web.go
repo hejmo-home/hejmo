@@ -339,7 +339,7 @@ func (s *server) handleArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if it.own != nil {
-		s.renderArticleForm(w, r, p, http.StatusOK, st, it.own, s.formOf(*it.own), nil, nil)
+		s.renderArticleForm(w, r, p, http.StatusOK, st, it.own, s.formOf(*it.own, lang), nil, nil)
 		return
 	}
 	s.renderShipped(w, r, p, http.StatusOK, st, it, nil)

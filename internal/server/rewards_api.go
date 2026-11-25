@@ -289,7 +289,7 @@ func (s *server) apiUpdateReward(w http.ResponseWriter, r *http.Request, p princ
 }
 
 func (s *server) apiDeleteReward(w http.ResponseWriter, r *http.Request, p principal) {
-	if err := s.db.DeleteReward(p.household.ID, r.PathValue("id")); err != nil {
+	if err := s.db.DeleteReward(p.household.ID, r.PathValue("id"), s.now()); err != nil {
 		s.rewardError(w, "delete reward", err)
 		return
 	}

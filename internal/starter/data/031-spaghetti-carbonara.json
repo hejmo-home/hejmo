@@ -1,0 +1,135 @@
+{
+  "n": 31,
+  "slug": "spaghetti-carbonara",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 35,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/ultimate-spaghetti-carbonara-recipe",
+    "site": "BBC Good Food",
+    "ratings": 1090
+  },
+  "ingredients": [
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Pancetta",
+      "article_en": "Pancetta",
+      "note_de": "Schwarte entfernt",
+      "note_en": "rind removed"
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Pecorino",
+      "article_en": "Pecorino cheese",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Parmesan",
+      "article_en": "Parmesan",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Eier, groß",
+      "article_en": "Large eggs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 350,
+      "unit": "g",
+      "article_de": "Spaghetti",
+      "article_en": "Spaghetti",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch, dick",
+      "article_en": "Plump garlic cloves",
+      "note_de": "geschält, ganz",
+      "note_en": "peeled, left whole"
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Butter, ungesalzen",
+      "article_en": "Unsalted butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Meersalz und frisch gemahlener schwarzer Pfeffer",
+      "article_en": "Sea salt and freshly ground black pepper",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Spaghetti Carbonara",
+    "steps": [
+      "Setze einen großen Topf Wasser auf. Schneide die Pancetta in kleine Stücke (die Schwarte ist schon entfernt). Reibe Pecorino und Parmesan fein. Die Spaghetti kochst du später.",
+      "Verquirle in einer mittelgroßen Schüssel die 3 Eier mit reichlich schwarzem Pfeffer. Rühre die geriebenen Käse unter, bis eine dickliche Mischung entsteht. Hebe etwas Käse zum Bestreuen auf.",
+      "Koche die Spaghetti in Salzwasser etwa 10 Minuten bei geschlossenem Deckel und leicht köchelnd, bis sie bissfest sind.",
+      "Drücke die Knoblauchzehen mit der Messerklinge an, aber lass sie ganz. Erhitze die Butter in einer großen Pfanne oder einem Wok bei mittlerer Hitze. Brate Pancetta und Knoblauch ca. 5 Minuten, bis die Pancetta goldbraun und knusprig ist. Nimm den Knoblauch heraus und wirf ihn weg.",
+      "Hebe die Spaghetti mit Zange oder Nudelgabel direkt in die Pfanne zur Pancetta. Hebe dabei Nudelwasser auf, du brauchst es gleich. Drehe die Hitze auf niedrig.",
+      "Nimm die Pfanne ganz vom Herd. Das ist wichtig, sonst stockt das Ei. Gib die Eier-Käse-Mischung dazu und wende die Nudeln kräftig. Die Soße soll cremig und dick sein, nicht gestockt.",
+      "Wenn die Nudeln trocken wirken, gieße ein wenig heißes Nudelwasser dazu, bis die Soße feucht, aber nicht wässrig ist. Serviere sofort mit extra Käse."
+    ]
+  },
+  "en": {
+    "title": "Spaghetti carbonara",
+    "steps": [
+      "Put a large pot of water on. Chop the pancetta into small pieces (the rind is already removed). Grate the pecorino and parmesan finely. You cook the spaghetti later.",
+      "In a medium bowl, beat the 3 eggs with plenty of black pepper. Stir in the grated cheeses until you have a thick mixture. Keep a little cheese back for sprinkling.",
+      "Cook the spaghetti in salted water for about 10 minutes, covered and at a gentle simmer, until al dente.",
+      "Bruise the garlic cloves with the flat of a knife, but keep them whole. Heat the butter in a large pan or wok over medium heat. Fry the pancetta and garlic for about 5 minutes, until the pancetta is golden and crisp. Take out the garlic and throw it away.",
+      "Lift the spaghetti with tongs or a pasta fork straight into the pan with the pancetta. Keep some pasta water, you need it in a moment. Turn the heat to low.",
+      "Take the pan completely off the heat. This is important, otherwise the egg scrambles. Add the egg and cheese mixture and toss the pasta vigorously. The sauce should be creamy and thick, not scrambled.",
+      "If the pasta looks dry, add a little hot pasta water until the sauce is moist but not wet. Serve right away with extra cheese."
+    ],
+    "amounts_converted": [
+      {
+        "index": 3,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "clove"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

@@ -299,6 +299,14 @@ _Avoid_: grid, gallery
 What a person eats: omnivore, vegetarian, pescatarian or vegan.
 _Avoid_: nutrition type
 
+**Nutrition values**:
+The seven values of the EU nutrition declaration of a recipe per portion: energy (kcal and kJ), fat, of which saturates, carbohydrate, of which sugars, protein and salt. They are guide values, calculated from the ingredients; a value that is not known is never shown as 0. Shown only on the recipe page: always to parents, to a child only when a parent switched them on for that child, never on a display.
+_Avoid_: nutrients, macros, calories (alone)
+
+**Food** (of an article):
+The entry of BLS 4.0 (Max Rubner-Institut) or USDA FoodData Central behind the nutrition values of an article. Every shipped article that is food has one; an own article may have one or none, and a recipe says which ingredients it could not count. Not the same as a diet or an allergy.
+_Avoid_: ingredient, product
+
 **Allergy**:
 An allergen or intolerance of a person: one of the 14 main EU allergens or free text, which cannot be checked automatically.
 _Avoid_: intolerance (alone)
@@ -323,9 +331,21 @@ _Avoid_: override (in prose), exception
 A dish with portions, ingredients and steps that can be put on the meal plan; entered by a parent, imported from a web page or from Hejmo's starter collection, always with its source.
 _Avoid_: dish (alone), cooking instructions
 
+**Starter recipe**:
+One of the 200 recipes that ship with the box in German and English (the starter collection). It is shown in the language of the person viewing it, names its source ("Ingredients after: Chefkoch") with a link, is read-only for everyone and is not part of a family's own recipes. Its id starts with `starter-`.
+_Avoid_: sample recipe, default recipe, template recipe
+
 **Ingredient**:
 One line of a recipe: an article, optionally with a variety, or free text, with a quantity for the recipe's portions.
 _Avoid_: component, item
+
+**Kitchen measure**:
+A unit of a recipe's ingredient that is no weight or volume Hejmo can convert: EL, TL, Prise, Messerspitze, Schuss, Spritzer, Handvoll and Tasse (tbsp, tsp, pinch, knife tip, dash, splash, handful, cup). It never converts into or adds up with g and ml, not even with another kitchen measure; on a shopping list the article goes on without a quantity.
+_Avoid_: spoon unit, small measure
+
+**Container and piece measure**:
+A unit of a recipe's ingredient that counts things: Dose, Päckchen, Becher, Bund, Glas, Flasche, Stange, Zehe, Scheibe, Würfel, Zweig, Stiel, Kugel, Blatt, Beet and Topf (can, packet, tub, bunch, jar, bottle, stick, clove, slice, cube, sprig, stalk, ball, leaf, punnet, pot). On a shopping list it keeps its quantity ("2 Dosen Tomaten"), and quantities add up only within the same unit.
+_Avoid_: pack unit, count word
 
 **Variety**:
 The more exact kind of an article, such as "Type 405" for flour, kept with an ingredient or list entry and written "Mehl · Type 405". Quantities add up only for the same article and variety (case, spaces and umlauts ignored); allergens and diets come from the article. Free text has no variety.
@@ -387,8 +407,19 @@ _Avoid_: prize, shop item
 Exchanging stars for a reward. A child asks and a parent confirms, or a parent redeems directly; the stars leave the person's star log only on confirmation, and never below zero.
 _Avoid_: purchase, payout
 
+**Request** (to redeem):
+A child's ask for a reward, open until a parent confirms or declines it or the child withdraws it. It keeps the reward's name, symbol, picture and price as they were when asked; nothing is booked while it is open. A child has at most one open request per reward. Decided requests stay visible to the child for 7 days.
+_Avoid_: order, wish
+
+**Free stars**:
+A child's balance minus the prices of their open requests: what they can still ask for. The balance itself stays whole until a parent says yes.
+_Avoid_: available points
+
+**Stars below zero**:
+A household switch (on by default). When on, unticking a task whose stars were already redeemed may take the balance below zero; when off, unticking deducts at most down to zero. Redeeming itself never goes below zero.
+
 **Savings goal**:
-The one reward a person has chosen to save for, by the person on their own device or by a parent; their personal view and the family view show the progress towards its star price. It sets no stars aside, and it ends by itself when that reward is redeemed for the person, archived or no longer meant for them.
+The one reward a person has chosen to save for, by the person on their own device or by a parent; their personal view and the family view show the progress towards its star price. Progress is the plain star balance on every screen, also while open requests set stars aside; only asking for the goal needs the price in free stars. The child's goal card then says "enough stars" and, once asked, that it waits for the parents. It sets no stars aside itself, and it ends by itself when that reward is redeemed for the person, archived or no longer meant for them.
 _Avoid_: wish, target
 
 **Streak**:
@@ -400,7 +431,7 @@ A day a parent marks for the whole family or for chosen people (ill, holiday), i
 _Avoid_: skip day, excuse
 
 **Badge**:
-A mark a person earns once for a milestone, such as a first complete routine or a 7-day streak; it is never taken away.
+A mark a person earns once for a milestone from Hejmo's fixed list of ten (first routine done, a whole day, a whole week, 7 and 30 days in a row, first star, 100 and 500 stars collected, first reward, savings goal reached); it is never taken away, even when the count behind it later drops. Earned also while the person's switch "week count and badges" is off, but shown only while it is on, and never on the family view. Stars collected count every star earned, including stars already redeemed.
 _Avoid_: achievement, trophy, medal
 
 **Waste collection calendar**:
@@ -440,6 +471,10 @@ _Avoid_: connection, relationship type
 **Emergency numbers**:
 The layout block of a display's footer that shows every contact of the contact group "emergency" with at least one phone number, large enough to read across the room: photo (or initials), Hejmo name and every number, the kind of number in words when there are several. Off by default; it takes a footer row of its own and is never shortened or counted.
 _Avoid_: emergency list, SOS tile, Important numbers (that is the children's page)
+
+**Important numbers**:
+The children's page of contacts a parent switched to "visible for children" (`/numbers`, "Wichtige Nummern"): photo, Hejmo name and every phone number of each such contact, never address, e-mail, birthday, groups or note. A child does not see their own contact. A relation alone does not make a contact visible; a visible contact without a phone number is not shown until it has one.
+_Avoid_: emergency list (that is the display block "Emergency numbers"), child contacts
 
 ## Offline mode and connections to the outside
 

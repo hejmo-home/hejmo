@@ -1,0 +1,62 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "cimp.crumb") "Frame" .Frame)}}
+  {{if .ErrLinks}}<p class="error form-error" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{.ErrLead}} {{range .ErrLinks}}<a href="#{{.Anchor}}">{{.Text}}</a>{{.Sep}}{{end}}{{t "cimp.dot"}}</span></p>{{end}}
+  <h1>{{.Title}}</h1>
+  {{if .Expired}}<div class="empty" data-empty><p><b>{{t "cimp.expired.b"}}</b> {{.ExpiredText}}</p><a class="button secondary" href="/contacts/import">{{template "uploadIcon"}}{{t "cimp.expired.again"}}</a></div>
+  {{else if .Nothing}}<div class="imp-sum"><p class="imp-file">{{template "impFileIcon"}}<span><b class="fname">{{.File}}</b><small>{{.Meta}}</small></span></p></div>
+  <div class="empty" data-empty><p><b>{{t "cimp.nothing.b"}}</b> {{.NothingText}}</p><a class="button secondary" href="/contacts">{{t "cimp.nothing.back"}}</a></div>
+  {{template "impUnread" .Unread}}
+  <p class="hint">{{t "cimp.nothing.gone"}}</p>
+  {{else}}
+  <p class="lead">{{.Lead}}</p>
+  <div class="imp-sum"><p class="imp-file">{{template "impFileIcon"}}<span><b class="fname">{{.File}}</b><small>{{.Meta}}</small></span></p>
+    {{if .Lines}}<ul class="plain">{{range .Lines}}<li>{{.}}</li>{{end}}</ul>{{end}}</div>
+  <form class="imp-review" method="post" action="/contacts/import/{{.ID}}"{{if .StateTexts}} data-taken="{{.TakenText}}" data-untaken="{{.UntakenText}}" data-state-new="{{index .StateTexts "new"}}" data-state-completed="{{index .StateTexts "completed"}}" data-state-skipped="{{index .StateTexts "skipped"}}" data-state-nothing="{{index .StateTexts "nothing"}}" data-state-missing="{{index .StateTexts "missing"}}"{{end}}>
+    {{if .Dups}}<section aria-labelledby="dup" class="imp-sec"><h2 id="dup">{{t "cimp.dup.title"}}</h2>
+      <p class="hint">{{t "cimp.dup.hint"}}</p>
+      <ul class="imp-dups">{{range .Dups}}
+        <li class="imp-dup{{if .Invalid}} invalid{{end}}" id="{{.ID}}"{{if .InFile}} data-infile="1"{{end}} data-cards="{{.Cards}}">{{range .Blocks}}
+          <p class="imp-k">{{.K}}</p>
+          {{template "impWho" .Who}}{{if .Why}}
+          <p class="imp-why"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><span>{{.Why}}</span></p>{{end}}{{end}}
+          {{if .Need}}<p class="imp-need"><span class="flag warn"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><span>{{.Need}}</span></span></p>{{end}}
+          <fieldset class="choice imp-pick"><legend>{{.Legend}}</legend>{{$f := .Field}}{{$bad := .Invalid}}{{range .Choices}}
+            <label><input type="radio" name="{{$f}}" value="{{.Value}}"{{if .Checked}} checked{{end}}{{if $bad}} aria-invalid="true"{{end}}><b>{{.Label}}</b>{{with .Small}}<small>{{.}}</small>{{end}}</label>{{end}}
+          </fieldset>
+          {{if .Invalid}}<p class="ferr" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{.Err}}</span></p>{{end}}
+          {{$dup := .}}{{with .Merge}}<div class="merge-out"><p class="mh">{{.Head}}</p>
+            {{if .Add}}<div class="mo-add">{{if not $dup.InFile}}<b>{{t "cimp.merge.add"}}</b>{{end}}<ul class="plain">{{range .Add}}<li>{{.}}</li>{{end}}</ul></div>{{end}}
+            {{if .Keep}}<div class="mo-keep"><b>{{t "cimp.merge.keep"}}</b><ul class="plain">{{range .Keep}}<li>{{.}}</li>{{end}}</ul></div>{{end}}
+            {{with .Photo}}<fieldset class="choice ph-choose"><legend>{{.Legend}}</legend>
+              <label><input type="radio" name="{{.Field}}" value="keep"{{if .KeepChecked}} checked{{end}}>{{template "ctPhoto" (dict "Photo" .Current "Class" "" "Alt" "" "Lazy" true)}}<span><b>{{t "cimp.photo.keep"}}</b><small>{{t "cimp.photo.keep.small"}}</small></span></label>
+              <label><input type="radio" name="{{.Field}}" value="file"{{if not .KeepChecked}} checked{{end}}>{{template "ctPhoto" (dict "Photo" .File "Class" "" "Alt" "" "Lazy" true)}}<span><b>{{t "cimp.photo.file.b"}}</b><small>{{t "cimp.photo.file.small"}}</small></span></label>
+            </fieldset>{{end}}
+            {{with .NoPhoto}}<p class="hint">{{.}}</p>{{end}}
+          </div>{{end}}
+        </li>{{end}}
+      </ul></section>{{end}}
+    {{if .News}}<section aria-labelledby="new" class="imp-sec"><h2 id="new">{{.NewTitle}}</h2>
+      {{if gt (len .News) 1}}<p class="hint">{{t "cimp.new.hint"}}</p>
+      <p class="imp-bulk" hidden><button class="button secondary sq" type="button" data-take="all">{{t "cimp.new.all"}}</button><button class="button secondary sq" type="button" data-take="none">{{t "cimp.new.none"}}</button></p>{{end}}
+      <ul class="imp-rows">{{range .News}}
+        <li><label><input type="checkbox" name="take" value="{{.Value}}"{{if .Taken}} checked{{end}}>{{template "impRow" .}}</label></li>{{end}}
+      </ul>
+      <details class="more imp-grp"{{if .GroupOpen}} open{{end}}><summary><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>{{.GroupSummary}}<span class="sum" data-none="{{.GroupNone}}">{{.GroupNames}}</span></summary><div>
+        <fieldset class="chips grp-pick"><legend>{{.GroupLegend}}</legend>{{range .Groups}}
+          <label class="pchip plain"><input type="checkbox" name="group" value="{{.ID}}"{{if .Checked}} checked{{end}}>{{.Name}}{{template "tickIcon" 16}}</label>{{end}}
+        </fieldset></div></details>
+    </section>{{end}}
+    {{if .Same}}<section aria-labelledby="same" class="imp-sec"><h2 id="same">{{t "cimp.same.title"}}</h2>
+      <p class="imp-same"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>{{.Same}}</span></p></section>{{end}}
+    {{template "impUnread" .Unread}}
+    <div class="savebar imp-save"><button class="button" type="submit">{{.Save}}</button>{{if .State}}<span class="dirty" role="status">{{.State}}</span>{{end}}<button class="link" type="submit" name="cancel" value="1" formnovalidate>{{.Cancel}}</button></div>
+  </form>
+  <script src="/static/contact-import.js" defer></script>
+  {{end}}
+{{template "foot"}}
+{{define "impFileIcon"}}<svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4v13H6z"/><path d="M14 3.5v4h4"/><path d="M9 13h6M9 16.5h4"/></svg>{{end}}
+{{define "impUnread"}}{{if .}}<section aria-labelledby="skip" class="imp-sec"><h2 id="skip">{{t "cimp.skip.title"}}</h2>
+      <ul class="imp-skip">{{range .}}<li><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8 12h8"/></svg><span><b>{{.Title}}</b> {{.Text}}</span></li>{{end}}</ul></section>{{end}}{{end}}
+{{define "impPhotoFlag"}}{{if .PhotoLink}}<span class="flag warn"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><span>{{t "cimp.photo.link"}}</span></span>{{end}}{{end}}
+{{define "impNums"}}{{if .Nums}}<span class="nums">{{range .Nums}}<span><span class="lab">{{.Label}}</span> {{.Value}}</span>{{end}}</span>{{else}}<span class="none">{{t "contact.nonumber"}}</span>{{end}}{{if .Mails}}<span class="nums mails">{{range .Mails}}<span><span class="lab">{{.Label}}</span> {{.Value}}</span>{{end}}</span>{{end}}{{end}}
+{{define "impWho"}}<div class="imp-who">{{template "ctPhoto" (dict "Photo" .Photo "Class" "" "Alt" "" "Lazy" true)}}<span class="t">{{if .Person}}<b class="who"><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span><span>{{.Name}}</span></b>{{else}}<b>{{.Name}}</b>{{end}}{{range .Rels}}<span class="meta rel">{{.}}</span>{{end}}{{with .Full}}<span class="meta">{{.}}</span>{{end}}{{template "impNums" .}}{{template "impPhotoFlag" .}}</span></div>{{end}}
+{{define "impRow"}}{{$w := .Who}}{{template "ctPhoto" (dict "Photo" $w.Photo "Class" "" "Alt" "" "Lazy" true)}}<span class="t"><b>{{$w.Name}}</b>{{with $w.Full}}<span class="meta">{{.}}</span>{{end}}{{template "impNums" $w}}{{with $w.More}}<span class="more-l">{{.}}</span>{{end}}{{with $w.NameNote}}<span class="flag warn"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><span>{{.}}</span></span>{{end}}{{template "impPhotoFlag" $w}}<span class="st">{{if .Taken}}{{t "cimp.new.taken"}}{{else}}{{t "cimp.new.untaken"}}{{end}}</span></span>{{end}}

@@ -1,0 +1,138 @@
+{
+  "n": 2,
+  "slug": "kaesespaetzle",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 40,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/1062121211526182/Schnelle-Kaesespaetzle.html",
+    "site": "Chefkoch",
+    "ratings": 1344
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Bund",
+      "article_de": "Petersilie",
+      "article_en": "Parsley",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Emmentaler",
+      "article_en": "Emmental cheese",
+      "note_de": "oder Bergkäse am Stück",
+      "note_en": "or mountain cheese, in one piece"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 400,
+      "unit": "ml",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "kg",
+      "article_de": "Spätzle",
+      "article_en": "Spaetzle",
+      "note_de": "frisch, aus dem Kühlregal",
+      "note_en": "fresh, from the chilled aisle"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Fett für die Form",
+      "article_en": "Fat for the dish",
+      "note_de": "etwas",
+      "note_en": "a little"
+    }
+  ],
+  "de": {
+    "title": "Käsespätzle",
+    "steps": [
+      "Backofen auf 200 °C Ober-/Unterhitze vorheizen. Eine Auflaufform leicht einfetten.",
+      "Zwiebel fein würfeln, Petersilie hacken, den Käse reiben und in zwei gleich große Hälften teilen.",
+      "Butter in einer Pfanne bei mittlerer Hitze schmelzen und die Zwiebel darin glasig dünsten.",
+      "Sahne und Petersilie dazugeben, mit Salz und Pfeffer würzen und einmal aufkochen.",
+      "Jetzt die Hitze herunterschalten, sonst wird der Käse klumpig. Die Hälfte des Käses in der Sahne schmelzen, bis die Sauce ganz glatt ist.",
+      "Die Spätzle in die Sauce geben und gut durchmischen, bis alle überzogen sind.",
+      "Alles in die gefettete Form füllen und den restlichen Käse darüberstreuen.",
+      "Etwa 20 Minuten backen, bis der Käse ganz geschmolzen ist und die Oberfläche so braun, wie du sie magst."
+    ]
+  },
+  "en": {
+    "title": "Cheese spaetzle",
+    "steps": [
+      "Preheat the oven to 200 °C top/bottom heat. Grease a baking dish lightly.",
+      "Dice the onion finely, chop the parsley, grate the cheese and split it into two equal halves.",
+      "Melt the butter in a pan over medium heat and soften the onion in it until translucent.",
+      "Add the cream and parsley, season with salt and pepper and bring to the boil once.",
+      "Now turn the heat down, otherwise the cheese gets lumpy. Melt half of the cheese into the cream until the sauce is completely smooth.",
+      "Add the spaetzle to the sauce and mix well until every strand is coated.",
+      "Fill everything into the greased dish and scatter the remaining cheese on top.",
+      "Bake for about 20 minutes, until the cheese is fully melted and the top is as brown as you like it."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 0.5,
+        "unit": "bunch"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

@@ -1,0 +1,109 @@
+{
+  "n": 179,
+  "slug": "quarkspeise-mit-fruechten",
+  "category": "Desserts",
+  "servings": 4,
+  "time_minutes": 10,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/510171146654147/Mandarinen-Quarkspeise-nach-Tanjas-Art.html",
+    "site": "Chefkoch",
+    "ratings": 100
+  },
+  "ingredients": [
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Magerquark",
+      "article_en": "Low-fat quark",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Becher",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": "Becher laut Quelle ohne Grammangabe",
+      "note_en": "tub; the source gives no weight"
+    },
+    {
+      "amount": 1,
+      "unit": "Dose",
+      "article_de": "Mandarinen",
+      "article_en": "Mandarin segments",
+      "note_de": "kleine Dose, abgetropft",
+      "note_en": "small can, drained"
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "mehr oder weniger, nach Geschmack",
+      "note_en": "more or less, to taste"
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "article_de": "Vanillezucker",
+      "article_en": "Vanilla sugar",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Mandarinen-Quarkspeise",
+    "steps": [
+      "Schlage die Sahne mit dem Vanillezucker mit dem Mixer steif.",
+      "Rühre den Magerquark in einer großen Schüssel mit dem restlichen Zucker glatt. Etwa 3 EL sind ein guter Start, du kannst mehr oder weniger nehmen. Probiere zwischendurch.",
+      "Hebe die steife Sahne vorsichtig unter den Quark.",
+      "Lass die Mandarinen gut abtropfen und püriere sie grob mit dem Mixer unter die Creme, sodass noch kleine Stückchen zu sehen sind.",
+      "Tipp: Wer es leichter mag, lässt die Sahne weg und süßt den Magerquark stattdessen mit Süßstoff."
+    ]
+  },
+  "en": {
+    "title": "Quark dessert with fruit (mandarin)",
+    "steps": [
+      "Whip the cream with the vanilla sugar using the mixer until stiff.",
+      "Stir the low-fat quark smooth with the remaining sugar in a large bowl. About 3 tbsp is a good start, and you can use more or less. Taste as you go.",
+      "Gently fold the stiff cream into the quark.",
+      "Drain the mandarins well and blend them in coarsely with the mixer so that small pieces are still visible in the cream.",
+      "Tip: if you want it lighter, skip the cream and sweeten the low-fat quark with sweetener instead."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "tub"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "can"
+      },
+      {
+        "index": 3,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "packet"
+      }
+    ]
+  },
+  "review_note": "Rating count from the list (100; page shows 101). Original title \"Mandarinen-Quarkspeise nach Tanjas Art\". Source gives \"1 Becher Sahne\" without weight; not guessed. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

@@ -82,6 +82,14 @@ func (s *server) personalView(h store.Household, d *store.Display, lang, personI
 		return familyview.PersonalView{}, err
 	}
 	in.Goal = displayGoal(goal)
+	// The badges at the foot of the days, only while the person's switch is on (ticket 295).
+	owner, err := s.db.Person(h.ID, person.ID)
+	if err != nil {
+		return familyview.PersonalView{}, err
+	}
+	if in.NewBadges, in.Badges, err = s.personalBadges(h, lang, owner); err != nil {
+		return familyview.PersonalView{}, err
+	}
 	if in.Goal != nil {
 		people, err := s.db.People(h.ID)
 		if err != nil {

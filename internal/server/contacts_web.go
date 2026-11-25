@@ -21,6 +21,9 @@ import (
 
 const contactsPath = "/contacts"
 
+// kidsFilter is the value of ?g= of the chip "Für Kinder sichtbar": no group id looks like it.
+const kidsFilter = "kids"
+
 // ctEnv is what the pages of the address book share: the language, the household, the people with their markers and the groups.
 type ctEnv struct {
 	s      *server
@@ -130,6 +133,9 @@ type ctRow struct {
 	Groups           []string
 	Rels             []string // how the contact is related to the family, one sentence each (ticket 298)
 	Photo            ctPhotoView
+	// Kids is "on" for a contact the children see, "wait" for one switched on that has no number yet (ticket 301).
+	Kids  string
+	Fresh string // "Gerade übernommen" or "Gerade ergänzt" right after an import (ticket 300), for one page load
 }
 
 func (e ctEnv) row(c store.Contact, withGroups bool) ctRow {
@@ -144,6 +150,12 @@ func (e ctEnv) row(c store.Contact, withGroups bool) ctRow {
 		row.Nums = append(row.Nums, ctNum{e.kindWord(l, false), l.Value})
 	}
 	row.Rels = e.relSentences(c, "")
+	switch {
+	case c.ForChildren && len(c.Numbers) > 0:
+		row.Kids = "on"
+	case c.ForChildren:
+		row.Kids = "wait"
+	}
 	if withGroups && !c.IsPerson() {
 		for _, id := range c.GroupIDs {
 			if g, ok := e.groupByID(id); ok {
@@ -209,7 +221,8 @@ func (s *server) handleContacts(w http.ResponseWriter, r *http.Request) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	g := r.URL.Query().Get("g")
 	group, hasGroup := e.groupByID(g)
-	if !hasGroup {
+	kidsOnly := g == kidsFilter // the last chip: the contacts the children see
+	if !hasGroup && !kidsOnly {
 		g = ""
 	}
 	var others, family []store.Contact
@@ -238,12 +251,13 @@ func (s *server) handleContacts(w http.ResponseWriter, r *http.Request) {
 	for _, grp := range e.groups {
 		filters = append(filters, map[string]any{"Href": filterHref(grp.ID), "Text": e.groupName(grp), "Current": g == grp.ID})
 	}
+	filters = append(filters, map[string]any{"Href": filterHref(kidsFilter), "Text": e.t("contact.filter.kids"), "Current": kidsOnly})
 	data["Filters"] = filters
 
 	keep := func(list []store.Contact) []store.Contact {
 		var out []store.Contact
 		for _, c := range list {
-			if (hasGroup && !slices.Contains(c.GroupIDs, group.ID)) || !ctMatches(c, q) {
+			if (hasGroup && !slices.Contains(c.GroupIDs, group.ID)) || (kidsOnly && !c.ForChildren) || !ctMatches(c, q) {
 				continue
 			}
 			out = append(out, c)
@@ -253,14 +267,26 @@ func (s *server) handleContacts(w http.ResponseWriter, r *http.Request) {
 	shownOthers, shownFamily := keep(others), keep(family)
 	sortFurther(e.lang, shownOthers)
 	var otherRows, familyRows []ctRow
+	fresh := s.takeFresh(w, r)
 	for _, c := range shownOthers {
-		otherRows = append(otherRows, e.row(c, true))
+		row := e.row(c, true)
+		switch fresh[c.ID] {
+		case "new":
+			row.Fresh = e.t("cimp.tag.new")
+		case "completed":
+			row.Fresh = e.t("cimp.tag.completed")
+		}
+		otherRows = append(otherRows, row)
 	}
 	for _, c := range shownFamily { // in the order of people
-		familyRows = append(familyRows, e.row(c, false))
+		row := e.row(c, false)
+		if fresh[c.ID] == "completed" {
+			row.Fresh = e.t("cimp.tag.completed")
+		}
+		familyRows = append(familyRows, row)
 	}
 	data["Others"], data["Family"] = otherRows, familyRows
-	filtering := q != "" || hasGroup
+	filtering := q != "" || hasGroup || kidsOnly
 	switch {
 	case len(otherRows)+len(familyRows) == 0 && q != "":
 		data["NoMatch"] = true
@@ -268,12 +294,18 @@ func (s *server) handleContacts(w http.ResponseWriter, r *http.Request) {
 		data["NewHref"] = contactsPath + "/new?" + url.Values{"name": {q}}.Encode()
 		data["NewText"] = e.t("contact.search.new", "q", q)
 		data["ClearHref"], data["ClearText"], data["ResultTitle"] = filterHref0(g), e.t("contact.result.clear"), e.t("contact.result.title")
+	case len(otherRows)+len(familyRows) == 0 && kidsOnly:
+		data["NoMatch"] = true
+		data["NoneText"] = e.t("contact.filter.kids.none")
+		data["ClearHref"], data["ClearText"], data["ResultTitle"] = contactsPath, e.t("contact.filter.clear"), e.t("contact.filter.kids")
 	case len(otherRows)+len(familyRows) == 0 && hasGroup:
 		data["NoMatch"] = true
 		data["NoneText"] = e.t("contact.filter.none", "group", e.groupName(group))
 		data["ClearHref"], data["ClearText"], data["ResultTitle"] = contactsPath, e.t("contact.filter.clear"), e.groupName(group)
 	}
 	switch {
+	case kidsOnly:
+		data["OthersTitle"] = e.t("contact.others.in", "group", e.t("contact.filter.kids"))
 	case hasGroup:
 		data["OthersTitle"] = e.t("contact.others.in", "group", e.groupName(group))
 	default:
@@ -281,6 +313,7 @@ func (s *server) handleContacts(w http.ResponseWriter, r *http.Request) {
 	}
 	data["Filtering"] = filtering
 	data["OthersEmpty"] = len(others) == 0
+	s.importSweep()
 	s.render(w, r, http.StatusOK, "contacts.html", data)
 }
 
@@ -360,6 +393,7 @@ func (s *server) handleContact(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	data["Groups"] = groups
+	data["KidsFact"] = e.kidsFact(c)
 	hint := e.photoHint(c)
 	if !c.IsPerson() {
 		if hint != "" {
@@ -374,17 +408,31 @@ func (s *server) handleContact(w http.ResponseWriter, r *http.Request) {
 	s.render(w, r, http.StatusOK, "contact.html", data)
 }
 
-// createdHint says who made a contact and who changed it last, with the time of the change to the second.
+// createdHint says who made a contact and who changed it last, with the time of the change to the second. A
+// contact taken over from a contact file, or completed from one, names the file (ticket 300).
 func (e ctEnv) createdHint(c store.Contact) string {
 	day := func(t time.Time) string { return e.p.day(t) }
 	out := e.t("contact.hint.created", "name", c.CreatedByName, "date", day(c.CreatedAt))
-	if c.CreatedByName == "" {
+	switch {
+	case c.CreatedFile != "" && c.CreatedByName != "":
+		out = e.t("contact.hint.created_file", "file", c.CreatedFile, "name", c.CreatedByName, "date", day(c.CreatedAt))
+	case c.CreatedFile != "":
+		out = e.t("contact.hint.created_file.anon", "file", c.CreatedFile, "date", day(c.CreatedAt))
+	case c.CreatedByName == "":
 		out = e.t("contact.hint.created.anon", "date", day(c.CreatedAt))
 	}
-	if c.UpdatedAt.After(c.CreatedAt) {
-		changed := e.t("contact.hint.changed", "name", c.UpdatedByName, "when", e.p.dateTimeSeconds(c.UpdatedAt))
-		if c.UpdatedByName == "" {
-			changed = e.t("contact.hint.changed.anon", "when", e.p.dateTimeSeconds(c.UpdatedAt))
+	if c.UpdatedAt.After(c.CreatedAt) || c.UpdatedFile != "" {
+		when := e.p.dateTimeSeconds(c.UpdatedAt)
+		var changed string
+		switch {
+		case c.UpdatedFile != "" && c.UpdatedByName != "":
+			changed = e.t("contact.hint.changed_file", "file", c.UpdatedFile, "name", c.UpdatedByName, "when", when)
+		case c.UpdatedFile != "":
+			changed = e.t("contact.hint.changed_file.anon", "file", c.UpdatedFile, "when", when)
+		case c.UpdatedByName == "":
+			changed = e.t("contact.hint.changed.anon", "when", when)
+		default:
+			changed = e.t("contact.hint.changed", "name", c.UpdatedByName, "when", when)
 		}
 		out += " · " + changed
 	}

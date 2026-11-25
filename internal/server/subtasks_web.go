@@ -230,7 +230,7 @@ func (s *server) handleSubtaskDone(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if key == "flash.task_done" {
-			s.redirectSaved(w, r, "/tasks", key)
+			s.redirectSaved(w, r, "/tasks", s.wonKey(p, ch.Badges, key))
 		} else {
 			s.redirectSavedSub(w, r, "/tasks", key, title)
 		}

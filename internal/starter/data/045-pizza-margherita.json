@@ -1,0 +1,187 @@
+{
+  "n": 45,
+  "slug": "pizza-margherita",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 35,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/pizza-margherita-4-easy-steps",
+    "site": "BBC Good Food",
+    "ratings": 569
+  },
+  "ingredients": [
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Weizenmehl Type 550",
+      "article_en": "Strong bread flour (Type 550)",
+      "note_de": "Quelle: strong bread flour",
+      "note_en": "source: strong bread flour"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Trockenhefe, instant",
+      "article_en": "Instant yeast",
+      "note_de": "aus Päckchen oder Dose",
+      "note_en": "from a sachet or tub"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": "plus extra zum Beträufeln",
+      "note_en": "plus extra for drizzling"
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Passata",
+      "article_en": "Passata",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Handvoll",
+      "article_de": "Basilikum, frisch",
+      "article_en": "Fresh basil",
+      "note_de": "oder 1 TL getrocknet",
+      "note_en": "or 1 tsp dried"
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": "zerdrückt",
+      "note_en": "crushed"
+    },
+    {
+      "amount": 125,
+      "unit": "g",
+      "article_de": "Mozzarella",
+      "article_en": "Mozzarella",
+      "note_de": "1 Kugel, in Scheiben",
+      "note_en": "1 ball, sliced"
+    },
+    {
+      "amount": 1,
+      "unit": "Handvoll",
+      "article_de": "Parmesan (oder vegetarische Alternative)",
+      "article_en": "Parmesan (or vegetarian alternative)",
+      "note_de": "gerieben oder gehobelt",
+      "note_en": "grated or shaved"
+    },
+    {
+      "amount": 1,
+      "unit": "Handvoll",
+      "article_de": "Kirschtomaten",
+      "article_en": "Cherry tomatoes",
+      "note_de": "halbiert",
+      "note_en": "halved"
+    },
+    {
+      "amount": 1,
+      "unit": "Handvoll",
+      "article_de": "Basilikumblätter",
+      "article_en": "Basil leaves",
+      "note_de": "optional",
+      "note_en": "optional"
+    }
+  ],
+  "de": {
+    "title": "Pizza Margherita",
+    "steps": [
+      "Ofen auf 240 °C Ober-/Unterhitze (220 °C Umluft) vorheizen. Ein Backblech auf die obere Schiene schieben, es soll mitheizen. Zwei weitere Bleche brauchst du später für die Pizzen.",
+      "Teig: Mehl, Hefe und Salz in einer Schüssel mischen. 200 ml warmes Wasser und das Olivenöl dazugeben und alles zu einem Teig verrühren.",
+      "Den Teig etwa 5 Minuten kneten, bis er glatt ist. Dann in zwei gleiche Stücke teilen. Gehen lassen ist nicht nötig, weil die Pizza dünn wird. Wenn du Zeit hast, darf der Teig aber ruhen.",
+      "Soße: Passata mit dem zerdrückten Knoblauch und etwas Basilikum verrühren.",
+      "Jedes Teigstück auf bemehlter Fläche sehr dünn zu einem Kreis von etwa 25 cm ausrollen. Je dünner, desto knuspriger.",
+      "Einen Teigkreis auf ein Stück Backpapier oder ein bemehltes Blech legen. Mit der Hälfte der Soße bestreichen, mit der Hälfte von Mozzarella, Kirschtomaten und Parmesan belegen und mit etwas Olivenöl beträufeln.",
+      "Die Pizza samt Backpapier auf das heiße Blech in den Ofen ziehen. Nur eine Pizza auf einmal backen: 8 bis 10 Minuten, bis der Boden knusprig ist.",
+      "Mit Basilikumblättern bestreuen. Die zweite Pizza genauso belegen und backen."
+    ]
+  },
+  "en": {
+    "title": "Margherita pizza",
+    "steps": [
+      "Preheat the oven to 240 C (220 C fan). Slide a baking sheet onto the top shelf so it heats up too. You need two more sheets for the pizzas later.",
+      "Dough: mix the flour, yeast and salt in a bowl. Add 200 ml warm water and the olive oil and stir everything into a dough.",
+      "Knead the dough for about 5 minutes until smooth. Then divide it into two equal pieces. It does not need to rise because the pizza is thin. If you have time, you can let it rest.",
+      "Sauce: stir the passata with the crushed garlic and some of the basil.",
+      "Roll each piece out very thinly on a floured surface into a round of about 25 cm. The thinner, the crispier.",
+      "Put one round on a sheet of baking paper or a floured tray. Spread with half of the sauce, top with half of the mozzarella, cherry tomatoes and Parmesan, and drizzle with a little olive oil.",
+      "Slide the pizza with its paper onto the hot sheet in the oven. Bake only one pizza at a time: 8 to 10 minutes until the base is crisp.",
+      "Scatter with basil leaves. Top and bake the second pizza the same way."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "handful"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "handful"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "handful"
+      },
+      {
+        "index": 10,
+        "amount": 1,
+        "unit": "handful"
+      }
+    ]
+  },
+  "review_note": "Source makes 2 pizzas (serves 4). Source method adds 200 ml warm water to the dough (not in its ingredient list). Strong bread flour mapped to Type 550. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

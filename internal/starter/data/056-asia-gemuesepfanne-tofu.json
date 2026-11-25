@@ -1,0 +1,186 @@
+{
+  "n": 56,
+  "slug": "asia-gemuesepfanne-tofu",
+  "category": "Hauptgerichte",
+  "servings": 2,
+  "time_minutes": 20,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Soja",
+      "en": "Soy"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/asia-gemuesepfanne-mit-tofu-58069",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Champignons, klein",
+      "article_en": "Small button mushrooms",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 125,
+      "unit": "g",
+      "article_de": "Räuchertofu",
+      "article_en": "Smoked tofu",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Mini-Maiskolben",
+      "article_en": "Baby corn",
+      "note_de": "aus dem Glas",
+      "note_en": "from a jar"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Paprikaschote, rot",
+      "article_en": "Red bell pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Sojasauce",
+      "article_en": "Soy sauce",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Süße Chilisauce",
+      "article_en": "Sweet chilli sauce",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Ingwerpulver",
+      "article_en": "Ground ginger",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Apfelessig",
+      "article_en": "Apple cider vinegar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Asia-Gemüsepfanne mit Tofu",
+    "steps": [
+      "Alles vorbereiten, bevor du den Herd anmachst: Champignons halbieren, Räuchertofu würfeln, Paprika in Streifen schneiden, Knoblauch fein hacken, Mais abtropfen lassen.",
+      "Soße anrühren: Sojasauce, süße Chilisauce, Ingwerpulver, Apfelessig, Knoblauch und 2 EL Wasser verrühren.",
+      "Das Öl in einer Pfanne bei hoher Hitze erhitzen. Den Tofu etwa 2 Minuten anbraten und danach aus der Pfanne nehmen, damit er nicht zerfällt.",
+      "Die Paprika etwa 3 Minuten braten. Dann die Champignons dazugeben und weitere 2 Minuten braten.",
+      "Tofu und Mais zurück in die Pfanne geben, die Soße dazugießen und etwa 3 Minuten köcheln lassen.",
+      "Mit Salz und Pfeffer abschmecken. Dazu passt Basmatireis oder Reisnudeln."
+    ]
+  },
+  "en": {
+    "title": "Stir-fried vegetables with tofu",
+    "steps": [
+      "Get everything ready before you turn on the hob: halve the mushrooms, cube the smoked tofu, cut the pepper into strips, finely chop the garlic and drain the corn.",
+      "Mix the sauce: stir together the soy sauce, sweet chilli sauce, ginger powder, apple cider vinegar, garlic and 2 tbsp water.",
+      "Heat the oil in a pan over high heat. Sear the tofu for about 2 minutes, then take it out of the pan so it does not fall apart.",
+      "Fry the pepper for about 3 minutes. Then add the mushrooms and fry for another 2 minutes.",
+      "Return the tofu and corn to the pan, pour in the sauce and simmer for about 3 minutes.",
+      "Season with salt and pepper. Basmati rice or rice noodles go well with it."
+    ],
+    "amounts_converted": [
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 9,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Time from source: 20 min, stated as Aufwand (the only time figure on the page). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

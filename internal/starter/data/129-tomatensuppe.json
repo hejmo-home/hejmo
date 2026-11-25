@@ -1,0 +1,174 @@
+{
+  "n": 129,
+  "slug": "tomatensuppe",
+  "category": "Suppen",
+  "servings": 4,
+  "time_minutes": 105,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [
+    {
+      "de": "Sellerie",
+      "en": "Celery"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/tomato-soup",
+    "site": "BBC Good Food",
+    "ratings": "488"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "kg",
+      "article_de": "Tomaten, reife",
+      "article_en": "Ripe tomatoes",
+      "note_de": "Quelle: 1 bis 1,25 kg",
+      "note_en": "source: 1 to 1.25 kg"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel, mittelgroß",
+      "article_en": "Onion, medium",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Möhre, klein",
+      "article_en": "Carrot, small",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stange",
+      "article_de": "Staudensellerie",
+      "article_en": "Celery stick",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Tomatenmark",
+      "article_en": "Tomato purée",
+      "note_de": "Quelle: 2 Spritzer, ca. 2 TL",
+      "note_en": "source: 2 squirts, about 2 tsp"
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "eine gute Prise",
+      "note_en": "a good pinch"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Lorbeerblätter",
+      "article_en": "Bay leaves",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1.2,
+      "unit": "Liter",
+      "article_de": "Gemüsebrühe, heiß",
+      "article_en": "Vegetable stock, hot",
+      "note_de": "mit kochendem Wasser und 4 gehäuften TL Brühepulver oder 2 Brühwürfeln angesetzt",
+      "note_en": "made with boiling water and 4 rounded tsp bouillon powder or 2 stock cubes"
+    }
+  ],
+  "de": {
+    "title": "Tomatensuppe",
+    "steps": [
+      "1 kg Tomaten vierteln und die harten Stielansätze herausschneiden.",
+      "Zwiebel, Möhre und Staudensellerie klein würfeln.",
+      "2 EL Olivenöl im großen, schweren Topf mit Deckel erhitzen. Das Gemüse darin bei kleiner Hitze etwa 10 Minuten weich dünsten, bis es leicht Farbe hat.",
+      "2 TL Tomatenmark, 1 Prise Zucker, Pfeffer und 2 Lorbeerblätter zugeben, die Tomaten dazu. Zugedeckt 10 Minuten schmoren, bis die Tomaten matschig zerfallen.",
+      "1,2 Liter heiße Brühe angießen, aufkochen, dann die Hitze reduzieren. Zugedeckt 25 Minuten garen, bis es nur sanft an der Oberfläche blubbert.",
+      "Lorbeerblätter herausnehmen.",
+      "Die Suppe portionsweise pürieren: Den Mixer nur zu drei Vierteln füllen, den Dampf entweichen lassen und etwa 30 Sekunden mixen. Wer es feiner mag, streicht sie durch ein Sieb.",
+      "Bei mittlerer Hitze wieder erwärmen, mit Salz und Pfeffer abschmecken, bei blasser Farbe etwas Tomatenmark nachgeben und servieren.",
+      "Die Suppe lässt sich bis zu 3 Monate einfrieren. Gekühlt mit etwas Sahne schmeckt sie auch kalt."
+    ]
+  },
+  "en": {
+    "title": "Tomato soup",
+    "steps": [
+      "Quarter 1 kg tomatoes and cut out the hard cores.",
+      "Finely dice the onion, carrot and celery.",
+      "Heat 2 tbsp olive oil in a large heavy pot with a lid. Soften the vegetables in it on low heat for about 10 minutes, until faintly coloured.",
+      "Add 2 tsp tomato puree, 1 pinch of sugar, pepper and 2 bay leaves, then the tomatoes. Stew covered 10 minutes, until the tomatoes break down to a slush.",
+      "Pour in 1.2 litres hot stock, bring to the boil, then reduce the heat. Cook covered for 25 minutes, with bubbles breaking only gently on the surface.",
+      "Remove the bay leaves.",
+      "Blend the soup in batches: fill the blender no more than three-quarters, let the steam escape and blend about 30 seconds. For a finer result, pass it through a sieve.",
+      "Reheat on medium heat, season with salt and pepper, add a little more puree if the colour is pale, and serve.",
+      "The soup freezes for up to 3 months. Chilled with a little cream it also works cold."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1000,
+        "unit": "g"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "stalk"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "tsp"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 7,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 8,
+        "amount": 1200,
+        "unit": "ml"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

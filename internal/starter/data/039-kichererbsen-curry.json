@@ -1,0 +1,238 @@
+{
+  "n": 39,
+  "slug": "kichererbsen-curry",
+  "category": "Hauptgerichte",
+  "servings": 8,
+  "time_minutes": 50,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/chana-masala",
+    "site": "BBC Good Food",
+    "ratings": 75
+  },
+  "ingredients": [
+    {
+      "amount": 800,
+      "unit": "g",
+      "article_de": "Kichererbsen (Dose)",
+      "article_en": "Canned chickpeas",
+      "note_de": "oder 720 g Glas Riesen-Kichererbsen",
+      "note_en": "or 720 g jar of giant chickpeas"
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Zwiebeln",
+      "article_en": "Onions",
+      "note_de": "geviertelt",
+      "note_en": "quartered"
+    },
+    {
+      "amount": 3,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 5,
+      "unit": "cm",
+      "article_de": "Ingwer",
+      "article_en": "Ginger",
+      "note_de": "Stück",
+      "note_en": "piece"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Grüne Chilischoten",
+      "article_en": "Green chillies",
+      "note_de": "2-3 Stück (unterer Wert), grob gehackt",
+      "note_en": "2-3 (lower value), roughly chopped"
+    },
+    {
+      "amount": 1.5,
+      "unit": "EL",
+      "article_de": "Ghee",
+      "article_en": "Ghee",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Koriander, gemahlen",
+      "article_en": "Ground coriander",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Kreuzkümmel, gemahlen",
+      "article_en": "Ground cumin",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Chilipulver (möglichst Kashmiri)",
+      "article_en": "Chilli powder (Kashmiri if possible)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Kurkuma",
+      "article_en": "Turmeric",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Garam Masala",
+      "article_en": "Garam masala",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1.5,
+      "unit": "TL",
+      "article_de": "Amchur-Pulver (Mangopulver)",
+      "article_en": "Amchoor powder (dried mango powder)",
+      "note_de": "optional",
+      "note_en": "optional"
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Tomaten, mittelgroß",
+      "article_en": "Medium tomatoes",
+      "note_de": "ca. 300 g, grob gehackt; oder 400 g Dose gehackte Tomaten",
+      "note_en": "about 300 g, roughly chopped; or a 400 g can of chopped tomatoes"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zitrone, Saft",
+      "article_en": "Lemon, juiced",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Pck.",
+      "article_de": "Korianderblätter",
+      "article_en": "Coriander leaves",
+      "note_de": "halbe kleine Packung, zum Servieren",
+      "note_en": "half a small pack, to serve"
+    }
+  ],
+  "de": {
+    "title": "Kichererbsen-Curry (Chana Masala)",
+    "steps": [
+      "Gib die Kichererbsen samt Flüssigkeit mit 400 ml Wasser in einen Topf und bringe sie zum Kochen. Schalte dann die Hitze ab und lass sie einfach stehen.",
+      "Gib Zwiebeln, Knoblauch, Ingwer und grüne Chili in den Mixer und püriere alles zu einer Paste.",
+      "Erhitze das Ghee in einer großen Pfanne und brate die Paste 8 bis 10 Minuten, bis die Zwiebel weich ist. Rühre öfter um und gib bei Bedarf einen Schuss vom Kichererbsenwasser dazu, damit nichts ansetzt.",
+      "Gib Koriander, Kreuzkümmel, Chilipulver, Kurkuma, Garam Masala und Amchur dazu und brate die Gewürze 3 Minuten mit.",
+      "Gib die Tomaten dazu und koche sie 5 Minuten, bis sie zerfallen.",
+      "Gib die Kichererbsen mit ihrer Flüssigkeit dazu und lass das Curry 10 Minuten köcheln. Für ein lockereres Curry gibst du einen Schuss Wasser dazu.",
+      "Gib den Zitronensaft dazu und würze das Curry kräftig. Garniere es mit Korianderblättern."
+    ]
+  },
+  "en": {
+    "title": "Chickpea curry (chana masala)",
+    "steps": [
+      "Put the chickpeas with their liquid and 400 ml of water in a pot and bring to the boil. Then turn the heat off and just let them stand.",
+      "Put the onions, garlic, ginger and green chillies in the blender and blend to a paste.",
+      "Heat the ghee in a large pan and fry the paste for 8 to 10 minutes, until the onion is soft. Stir often and add a splash of the chickpea water if needed so nothing sticks.",
+      "Add the coriander, cumin, chilli powder, turmeric, garam masala and amchur and cook the spices for 3 minutes.",
+      "Add the tomatoes and cook for 5 minutes, until they break down.",
+      "Add the chickpeas with their liquid and let the curry simmer for 10 minutes. For a looser curry, add a splash of water.",
+      "Add the lemon juice and season the curry well. Garnish with coriander leaves."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 3,
+        "unit": "clove"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 1.5,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 7,
+        "amount": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 8,
+        "amount": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 10,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 11,
+        "amount": 1.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 12,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 13,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 14,
+        "amount": 0.5,
+        "unit": "pack"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Source yields 8 servings (large batch). Chillies and spices can be reduced for children. Green chillies: source says 2-3; lower value used. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

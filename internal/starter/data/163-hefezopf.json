@@ -1,0 +1,144 @@
+{
+  "n": 163,
+  "slug": "hefezopf",
+  "category": "Backen",
+  "servings": 8,
+  "time_minutes": 200,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bettybossi.ch/de/rezepte/rezept/sonntagszopf-10003690/",
+    "site": "Betty Bossi",
+    "ratings": 110
+  },
+  "ingredients": [
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Zopfmehl oder Weißmehl",
+      "article_en": "Zopf flour or white flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1.5,
+      "unit": "TL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Würfel",
+      "article_de": "Hefe, frisch",
+      "article_en": "Fresh yeast",
+      "note_de": "ca. 20 g",
+      "note_en": "approx. 20 g"
+    },
+    {
+      "amount": 60,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": "3 dl",
+      "note_en": "3 dl"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Eigelb",
+      "article_en": "Egg yolk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Milch oder Rahm",
+      "article_en": "Milk or cream",
+      "note_de": "zum Bestreichen",
+      "note_en": "for brushing"
+    }
+  ],
+  "de": {
+    "title": "Hefezopf",
+    "steps": [
+      "Gib Mehl, Zucker und Salz in eine Schüssel, bröckele die Hefe hinein und vermenge alles. Füge die Butter in Stücken und die Milch hinzu und knete einen weichen, geschmeidigen Teig. Lass ihn zugedeckt bei Raumtemperatur etwa 2 Stunden gehen, bis er doppelt so groß ist.",
+      "Teile den Teig in zwei Hälften und rolle daraus zwei etwa 70 cm lange Stränge, die zu den Enden hin dünner werden. Flechte die beiden Stränge zu einem Zopf und setze ihn auf ein Blech mit Backpapier.",
+      "Verrühre das Eigelb mit 1 EL Milch oder Rahm, bestreiche den Zopf damit und lass ihn weitere 30 Minuten gehen. Heize in dieser Zeit den Ofen auf 200 °C vor und bestreiche den Zopf vor dem Backen ein zweites Mal.",
+      "Backe den Zopf etwa 35 Minuten in der unteren Ofenhälfte und lass ihn auf einem Gitter auskühlen."
+    ]
+  },
+  "en": {
+    "title": "Plaited yeast bread (Hefezopf)",
+    "steps": [
+      "Mix the flour, salt and sugar in a bowl and crumble in the yeast. Add the butter in pieces and the milk and knead everything into a soft, smooth dough. Leave it covered at room temperature for about 2 hours, until doubled in size.",
+      "Divide the dough in two and roll each half into a strand about 70 cm long that tapers towards the ends. Plait the strands into a loaf and place it on a tray lined with baking paper.",
+      "Mix the egg yolk with 1 tbsp of milk or cream, brush the loaf with it and leave it to rise for another 30 minutes. Preheat the oven to 200 °C in the meantime and brush the loaf a second time before baking.",
+      "Bake the loaf in the lower half of the oven for about 35 minutes and let it cool on a wire rack."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 3,
+        "amount": 0.5,
+        "unit": "cube"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Replacement for missing servings in the previous source, approved by the product owner 23/11/2026. Swiss recipe (Sonntagszopf): the source plaits two strands, not three, and uses Zopfmehl (a Swiss flour with a higher gluten content); plain German Weizenmehl Type 550 works. Milk 3 dl = 300 ml (source also gives 300 g). Time 200 min is the total on the page (about 2 h rising, 30 min second rise, 35 min baking, plus work); the page does not break it down fully. Servings: 8 persons as in the source.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

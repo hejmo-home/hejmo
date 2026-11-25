@@ -1,0 +1,145 @@
+{
+  "n": 175,
+  "slug": "zimtsterne",
+  "category": "Backen",
+  "servings": 60,
+  "time_minutes": 80,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Nüsse",
+      "en": "Tree nuts"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/klassische-zimtsterne-28154",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eiweiß",
+      "article_en": "Egg whites",
+      "note_de": "für den Teig",
+      "note_en": "for the dough"
+    },
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Puderzucker",
+      "article_en": "Icing sugar",
+      "note_de": "für den Teig",
+      "note_en": "for the dough"
+    },
+    {
+      "amount": 0.5,
+      "unit": "Stk",
+      "article_de": "Bio-Zitrone",
+      "article_en": "Organic lemon",
+      "note_de": "nur die abgeriebene Schale",
+      "note_en": "zest only, grated"
+    },
+    {
+      "amount": 0.5,
+      "unit": "EL",
+      "article_de": "Zimtpulver",
+      "article_en": "Ground cinnamon",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Mandeln, gemahlen",
+      "article_en": "Ground almonds",
+      "note_de": "250 g im Teig, der Rest zum Ausrollen",
+      "note_en": "250 g in the dough, the rest for rolling out"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Eiweiß, Größe S",
+      "article_en": "Egg white, size S",
+      "note_de": "für die Glasur",
+      "note_en": "for the glaze"
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Puderzucker",
+      "article_en": "Icing sugar",
+      "note_de": "für die Glasur",
+      "note_en": "for the glaze"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": "je 1 Prise für Teig und Glasur",
+      "note_en": "1 pinch each for dough and glaze"
+    }
+  ],
+  "de": {
+    "title": "Zimtsterne",
+    "steps": [
+      "2 Eiweiß mit einer Prise Salz und 150 g Puderzucker steif schlagen.",
+      "Zitronenschale, Zimt und 250 g Mandeln vorsichtig unterheben.",
+      "Den Teig in Frischhaltefolie wickeln und etwa 1 Stunde kalt stellen.",
+      "Den Teig zwischen zwei Lagen Folie mit den restlichen Mandeln bestreut ausrollen. Er ist sehr weich, geh also vorsichtig damit um.",
+      "Sterne ausstechen, etwa 60 Stück. Den Ausstecher jedes Mal in Puderzucker tauchen, damit er nicht klebt.",
+      "Die Sterne mit einem Palettenmesser auf zwei mit Backpapier belegte Bleche setzen.",
+      "Für die Glasur 1 Eiweiß mit 100 g Puderzucker und einer Prise Salz steif schlagen und auf die Sterne streichen.",
+      "Den Ofen auf 140 °C Ober-/Unterhitze (120 °C Umluft) vorheizen, Rost in die Mitte. Ein leeres Blech eine Schiene darüber einschieben, damit die Sterne hell bleiben.",
+      "Die Bleche nacheinander jeweils etwa 20 Minuten backen. Die Sterne sollen hell bleiben."
+    ]
+  },
+  "en": {
+    "title": "Cinnamon stars",
+    "steps": [
+      "Whip 2 egg whites with a pinch of salt and 150 g icing sugar until stiff.",
+      "Carefully fold in the lemon zest, cinnamon and 250 g almonds.",
+      "Wrap the dough in cling film and chill for about 1 hour.",
+      "Roll the dough out between two sheets of foil, dusted with the remaining almonds. It is very soft, so handle it carefully.",
+      "Cut out stars, about 60 of them. Dip the cutter in icing sugar each time so it does not stick.",
+      "Transfer the stars with a palette knife onto two baking trays lined with parchment.",
+      "For the glaze, whip 1 egg white with 100 g icing sugar and a pinch of salt until stiff and spread it on the stars.",
+      "Preheat the oven to 140 °C top and bottom heat (120 °C fan), shelf in the middle. Slide an empty tray in one level above so the stars stay pale.",
+      "Bake the trays one at a time, about 20 minutes each. The stars should stay pale."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 0.5,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 0.5,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Rating count from the list. Source page shows 41 ratings; list says Redaktionsküche. 'Salz' amount is 1 pinch each for dough and glaze as in the source method. Source steps not copied. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

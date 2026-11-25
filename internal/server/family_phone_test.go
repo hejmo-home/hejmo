@@ -370,9 +370,13 @@ func TestFamilyViewFullWidthColumn(t *testing.T) {
 			if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.querySelector(".column[data-full] .person-link").click(), true`)); err != nil {
 				t.Fatal(err)
 			}
-			path, err := chromedp.Run(ctx, chromedp.Evaluate[string](`(async () => { for (let i = 0; i < 100 && location.pathname === "/"; i++) await new Promise((r) => setTimeout(r, 20)); return location.pathname; })()`, chromedp.EvalAwaitPromise))
-			if err != nil {
-				t.Fatal(err)
+			// Polled from here: a page that navigates ends an evaluation that is still waiting inside it.
+			path := "/"
+			for i := 0; i < 250 && path == "/"; i++ {
+				time.Sleep(20 * time.Millisecond)
+				if p, err := chromedp.Run(ctx, chromedp.Evaluate[string](`location.pathname`)); err == nil {
+					path = p
+				}
 			}
 			if path != "/display/person/papa" {
 				t.Errorf("the second tap on the name led to %q", path)

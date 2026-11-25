@@ -1,0 +1,219 @@
+{
+  "n": 66,
+  "slug": "bratwurst-sauerkraut-kartoffelpueree",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 60,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/kartoffelpueree-mit-bratwurst-und-sauerkraut-3303.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Zwiebeln, mittelgroß",
+      "article_en": "Onions, medium",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "kg",
+      "article_de": "Kartoffeln, vorwiegend festkochend",
+      "article_en": "Potatoes, mostly waxy",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Dose",
+      "article_de": "Sauerkraut",
+      "article_en": "Sauerkraut",
+      "note_de": "850 ml",
+      "note_en": "850 ml"
+    },
+    {
+      "amount": 375,
+      "unit": "ml",
+      "article_de": "Brühe, klar",
+      "article_en": "Clear stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 5,
+      "unit": "Stk",
+      "article_de": "Wacholderbeeren",
+      "article_en": "Juniper berries",
+      "note_de": "5 bis 6",
+      "note_en": "5 to 6"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Lorbeerblatt",
+      "article_en": "Bay leaf",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Bund",
+      "article_de": "Schnittlauch",
+      "article_en": "Chives",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 40,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Muskatnuss",
+      "article_en": "Nutmeg",
+      "note_de": "gerieben",
+      "note_en": "grated"
+    },
+    {
+      "amount": 12,
+      "unit": "Stk",
+      "article_de": "Nürnberger Rostbratwürstchen",
+      "article_en": "Nuremberg sausages",
+      "note_de": "ca. 240 g",
+      "note_en": "about 240 g"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Bratwurst mit Sauerkraut und Kartoffelpüree",
+    "steps": [
+      "Schäle die Kartoffeln (1 kg) und schneide sie in gleich große Stücke. Setze sie in einem Topf mit Salzwasser auf und koche sie etwa 20 Minuten.",
+      "Während die Kartoffeln garen, bereitest du die Zwiebeln vor. Schäle die 3 Zwiebeln. Zwei davon würfelst du, die dritte schneidest du in dünne Ringe.",
+      "Erhitze in einem zweiten Topf mit Deckel 2 EL Öl bei starker Hitze. Brate die Zwiebelwürfel und das Sauerkraut darin 5 bis 10 Minuten kräftig an. Es soll ein wenig Farbe nehmen.",
+      "Gieße 375 ml klare Brühe dazu. Gib 5 bis 6 Wacholderbeeren, das Lorbeerblatt und Pfeffer hinein. Schmore das Sauerkraut zugedeckt etwa 20 Minuten.",
+      "Erwärme 200 ml Milch in einem kleinen Topf. Gieße die Kartoffeln ab und stampfe sie mit dem Stampfer. Rühre die warme Milch, 40 g Butter, Salz und etwas geriebene Muskatnuss unter. Die Milch muss warm sein, sonst wird das Püree klumpig und kalt.",
+      "Wende die Zwiebelringe in 1 EL Mehl und klopfe das überschüssige Mehl gut ab. Brate die Ringe in einer Pfanne in 2 EL Öl, bis sie goldbraun sind, und nimm sie heraus.",
+      "Brate die 12 Rostbratwürstchen in derselben Pfanne, bis sie knusprig braun sind.",
+      "Richte alles an: Püree, Sauerkraut und Würstchen auf den Tellern, die Zwiebelringe obendrauf. Schneide ½ Bund Schnittlauch in Röllchen und streue ihn darüber."
+    ]
+  },
+  "en": {
+    "title": "Sausages with sauerkraut and mash",
+    "steps": [
+      "Peel the potatoes (1 kg) and cut them into pieces of equal size. Put them in a pot of salted water and boil them for about 20 minutes.",
+      "While the potatoes cook, prepare the onions. Peel the 3 onions. Dice two of them and cut the third into thin rings.",
+      "In a second pot with a lid, heat 2 tbsp oil over strong heat. Sear the diced onion and the sauerkraut in it for 5 to 10 minutes. It should pick up a little colour.",
+      "Add 375 ml clear stock. Add 5 to 6 juniper berries, the bay leaf and pepper. Braise the sauerkraut covered for about 20 minutes.",
+      "Warm 200 ml milk in a small pot. Drain the potatoes and mash them with the masher. Stir in the warm milk, 40 g butter, salt and a little grated nutmeg. The milk has to be warm, otherwise the mash turns lumpy and cold.",
+      "Dust the onion rings with 1 tbsp flour and shake off the excess flour well. Fry the rings in a pan in 2 tbsp oil until golden brown, then take them out.",
+      "Fry the 12 sausages in the same pan until crisp and brown.",
+      "Plate everything up: mash, sauerkraut and sausages on the plates, the onion rings on top. Cut ½ bunch of chives into rings and sprinkle over."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "can"
+      },
+      {
+        "index": 6,
+        "amount": 5,
+        "unit": "piece"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 9,
+        "amount": 0.5,
+        "unit": "bunch"
+      },
+      {
+        "index": 13,
+        "amount": 12,
+        "unit": "piece"
+      },
+      {
+        "index": 14,
+        "amount": 1,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Source gives 3/8 l stock (375 ml) and 5-6 juniper berries; the lower value is used. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

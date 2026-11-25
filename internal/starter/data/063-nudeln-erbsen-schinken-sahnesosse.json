@@ -1,0 +1,150 @@
+{
+  "n": 63,
+  "slug": "nudeln-erbsen-schinken-sahnesosse",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 25,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/nudeln-schinken-sahne-sosse-80978.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Kochschinken",
+      "article_en": "Cooked ham",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Nudeln, z. B. Penne",
+      "article_en": "Pasta, e.g. penne",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1.25,
+      "unit": "Liter",
+      "article_de": "Gemüsebrühe",
+      "article_en": "Vegetable stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "ml",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 75,
+      "unit": "g",
+      "article_de": "Mozzarella, gerieben",
+      "article_en": "Grated mozzarella",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Erbsen, tiefgekühlt",
+      "article_en": "Frozen peas",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Nudeln mit Erbsen-Schinken-Sahnesoße",
+    "steps": [
+      "Zwiebel fein würfeln, Kochschinken in kleine Würfel schneiden.",
+      "Das Olivenöl in einem großen Topf erhitzen. Zwiebel und Schinken etwa 3 Minuten anbraten.",
+      "Nudeln, Gemüsebrühe und Sahne in den Topf geben und umrühren. Die Nudeln sollten gut bedeckt sein.",
+      "Alles aufkochen und etwa 12 Minuten köcheln lassen, bis die Nudeln gar sind. Ab und zu umrühren, damit nichts am Boden hängt.",
+      "Mozzarella und die gefrorenen Erbsen unterrühren. Die Erbsen kommen direkt aus dem Tiefkühler in den Topf und erwärmen sich in der heißen Soße.",
+      "Mit Salz und Pfeffer abschmecken und servieren. Alles in einem Topf, wenig Abwasch."
+    ]
+  },
+  "en": {
+    "title": "Pasta with peas and ham in cream sauce",
+    "steps": [
+      "Finely dice the onion and cut the cooked ham into small cubes.",
+      "Heat the olive oil in a large pot. Fry the onion and ham for about 3 minutes.",
+      "Add the pasta, vegetable stock and cream to the pot and stir. The pasta should be well covered.",
+      "Bring everything to the boil and simmer for about 12 minutes until the pasta is cooked. Stir now and then so nothing sticks to the bottom.",
+      "Stir in the mozzarella and the frozen peas. The peas go straight from the freezer into the pot and warm through in the hot sauce.",
+      "Season with salt and pepper and serve. Everything in one pot, so little washing up."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 1.25,
+        "unit": "l"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

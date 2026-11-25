@@ -1,0 +1,147 @@
+{
+  "n": 58,
+  "slug": "kuerbisrisotto",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 45,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/italienisches-kuerbisrisotto-21857",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Kürbis",
+      "article_en": "Pumpkin",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel, groß",
+      "article_en": "Large onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 800,
+      "unit": "ml",
+      "article_de": "Gemüsebrühe",
+      "article_en": "Vegetable stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Risottoreis",
+      "article_en": "Risotto rice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 8,
+      "unit": "Zweig",
+      "article_de": "Thymian",
+      "article_en": "Thyme",
+      "note_de": "8 bis 10 Zweige",
+      "note_en": "8 to 10 sprigs"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Parmesan, frisch gerieben",
+      "article_en": "Freshly grated Parmesan",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Kürbisrisotto",
+    "steps": [
+      "Den Kürbis schälen, die Kerne herauslösen und das Fruchtfleisch grob raspeln. Zwiebel fein hacken, vom gewaschenen Thymian die Blättchen abzupfen und klein schneiden.",
+      "800 ml Brühe in einem Topf erhitzen und während des Kochens auf kleiner Flamme heiß halten.",
+      "In einem zweiten Topf Zwiebel in Olivenöl und 1 EL Butter weich und glasig werden lassen. Kürbis und Reis einrühren, 2 bis 3 Minuten unter Rühren mitrösten, dann mit 200 ml heißer Brühe ablöschen.",
+      "Bei mittlerer Temperatur 20 bis 25 Minuten garen. Immer wieder einen Schluck Brühe nachgießen, bis sie aufgebraucht ist. In den letzten 5 Minuten Thymian, restliche Butter und die Hälfte des Parmesans einrühren, mit Salz und Pfeffer abschmecken. Den übrigen Parmesan am Tisch dazu reichen."
+    ]
+  },
+  "en": {
+    "title": "Pumpkin risotto",
+    "steps": [
+      "Peel the pumpkin, scoop out the seeds and shred the flesh on the coarse side of a grater. Chop the onion finely, and pick the leaves from the washed thyme and chop them.",
+      "Heat 800 ml of stock in a pot and keep it hot over a low flame while the risotto cooks.",
+      "In a second pot, soften the onion in the olive oil and 1 tbsp of the butter until glossy and translucent. Stir in the pumpkin and rice, toast for 2 to 3 minutes while stirring, then deglaze with 200 ml of the hot stock.",
+      "Cook over medium heat for 20 to 25 minutes, topping up with a ladle of stock every so often until it is all used. In the last 5 minutes, stir in the thyme, the remaining butter and half of the Parmesan, and season with salt and pepper. Pass the rest of the Parmesan around at the table."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 8,
+        "unit": "sprig"
+      }
+    ]
+  },
+  "review_note": "Time from source: 45 min, stated as Aufwand (the only time figure on the page). Thyme: source says 8-10 sprigs, the lower value is used. Steps restructured (own step division and order of work) after paraphrase spot-check 23/11/2026.",
+  "originality": {
+    "overlap_5gram": 0.018,
+    "checked": "23/11/2026"
+  }
+}

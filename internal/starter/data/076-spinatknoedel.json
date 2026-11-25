@@ -1,0 +1,190 @@
+{
+  "n": 76,
+  "slug": "spinatknoedel",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 60,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/suedtiroler-spinatknoedel-2955",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Weißbrot, altbacken",
+      "article_en": "Stale white bread",
+      "note_de": "geschnitten; fertiges Knödelbrot geht auch",
+      "note_en": "sliced; ready-made dumpling bread also works"
+    },
+    {
+      "amount": 200,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 750,
+      "unit": "g",
+      "article_de": "Spinat",
+      "article_en": "Spinach",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eier (Größe M)",
+      "article_en": "Eggs (size M)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Quark, trocken, oder Ricotta, frisch und cremig",
+      "article_en": "Dry quark or fresh creamy ricotta",
+      "note_de": "Quark oder Ricotta",
+      "note_en": "quark or ricotta"
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Bergkäse",
+      "article_en": "Mountain cheese",
+      "note_de": "frisch gerieben",
+      "note_en": "freshly grated"
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Parmesan",
+      "article_en": "Parmesan",
+      "note_de": "frisch gerieben",
+      "note_en": "freshly grated"
+    },
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Muskatnuss",
+      "article_en": "Nutmeg",
+      "note_de": "frisch gerieben",
+      "note_en": "freshly grated"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": "aus der Mühle",
+      "note_en": "freshly ground"
+    }
+  ],
+  "de": {
+    "title": "Spinatknödel",
+    "steps": [
+      "Schneide 200 g altbackenes Weißbrot in dünne Scheiben, lege sie in eine Schüssel und übergieße sie mit 200 ml Milch. Lass sie einweichen.",
+      "Wasche 750 g Spinat zweimal gründlich und hacke ihn grob. Würfle die Zwiebel und hacke 2 Knoblauchzehen.",
+      "Schmelze 30 g der Butter in einem großen Topf. Dünste Zwiebel und Knoblauch darin an, bis sie weich sind. Gib den Spinat dazu und lass ihn zusammenfallen. Gieße ihn ab und drücke ihn gut aus. Je trockener der Spinat, desto fester werden die Knödel.",
+      "Hacke den Spinat fein und gib ihn zum Brot. Füge 2 Eier, 50 g Quark oder Ricotta, 50 g Bergkäse, 50 g Parmesan (einen Teil davon hebst du zum Servieren auf), 150 g Mehl, Salz, Pfeffer und Muskat hinzu. Verknete alles und lass die Masse etwa 15 Minuten ruhen.",
+      "Forme mit nassen Händen Knödel, etwa so groß wie Tischtennisbälle.",
+      "Bringe in einem großen, weiten Topf Salzwasser zum Sieden und stelle dann die Hitze zurück. Das Wasser soll nur leicht sprudeln, nicht kochen, sonst fallen die Knödel auseinander. Lege die Knödel hinein und lass sie etwa 15 Minuten ohne Deckel ziehen.",
+      "Bräune kurz vor Ende die restliche Butter (70 g) in einer Pfanne. Sie soll nur hellbraun werden und nussig duften, nicht dunkel.",
+      "Hebe die Knödel mit der Schaumkelle heraus und lass sie abtropfen. Richte sie in vorgewärmten tiefen Tellern an, gieße die Butter darüber und streue Parmesan darauf."
+    ]
+  },
+  "en": {
+    "title": "Spinach dumplings",
+    "steps": [
+      "Cut 200 g stale white bread into thin slices, put them in a bowl and pour 200 ml milk over them. Let them soak.",
+      "Wash 750 g spinach thoroughly twice and chop it roughly. Dice the onion and chop 2 garlic cloves.",
+      "Melt 30 g of the butter in a large pot. Soften the onion and garlic in it until tender. Add the spinach and let it collapse. Drain it and squeeze it out well. The drier the spinach, the firmer the dumplings.",
+      "Chop the spinach finely and add it to the bread. Add 2 eggs, 50 g quark or ricotta, 50 g mountain cheese, 50 g Parmesan (keep some of it for serving), 150 g flour, salt, pepper and nutmeg. Knead everything and let the mixture rest for about 15 minutes.",
+      "With wet hands, shape dumplings about the size of ping-pong balls.",
+      "Bring salted water to a simmer in a large, wide pot and then turn the heat down. The water should only bubble gently, not boil, otherwise the dumplings fall apart. Put the dumplings in and let them simmer for about 15 minutes with the lid off.",
+      "Shortly before the end, brown the remaining butter (70 g) in a pan. It should only turn light brown and smell nutty, not dark.",
+      "Lift the dumplings out with the slotted spoon and let them drain. Arrange them in warmed deep plates, pour the butter over and sprinkle with Parmesan."
+    ],
+    "amounts_converted": [
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 10,
+        "amount": 2,
+        "unit": "clove"
+      }
+    ]
+  },
+  "review_note": "Time from source: 60 min, stated as Aufwand (the only time figure on the page). Source gives 4 servings with big appetites or 6 with normal ones; servings set to 4. Source shows 477 ratings; list says Redaktionsküche. Butter split between the onion and the topping is not stated in the source. Steps rewritten in own words on 23/11/2026 from the source steps (times, temperatures and order per source). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

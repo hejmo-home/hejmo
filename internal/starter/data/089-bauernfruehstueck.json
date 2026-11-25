@@ -1,0 +1,149 @@
+{
+  "n": 89,
+  "slug": "bauernfruehstueck",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 45,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/klassisches-bauernfruehstueck-8762.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "kg",
+      "article_de": "Kartoffeln, festkochend",
+      "article_en": "Waxy potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zwiebeln",
+      "article_en": "Onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Scheibe",
+      "article_de": "Schinken, gekocht",
+      "article_en": "Cooked ham",
+      "note_de": "je 75 g",
+      "note_en": "75 g each"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Butterschmalz",
+      "article_en": "Clarified butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Eier (Gr. M)",
+      "article_en": "Eggs (size M)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Edelsüßpaprika",
+      "article_en": "Sweet paprika powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Petersilie",
+      "article_en": "Parsley",
+      "note_de": "gehackt, zum Bestreuen",
+      "note_en": "chopped, for sprinkling"
+    }
+  ],
+  "de": {
+    "title": "Bauernfrühstück",
+    "steps": [
+      "Kartoffeln waschen und mit Schale in Salzwasser etwa 20 Minuten kochen.",
+      "Währenddessen Zwiebeln und Schinken in kleine Würfel schneiden.",
+      "Kartoffeln abgießen und rund 15 Minuten abkühlen lassen. Warm lassen sie sich schlecht schneiden und zerfallen. Dann pellen und in Scheiben schneiden.",
+      "Butterschmalz in einer großen Pfanne erhitzen und die Kartoffelscheiben darin goldbraun braten.",
+      "Zwiebel- und Schinkenwürfel dazugeben und mitbraten, bis alles schön braun ist. Mit Salz und Pfeffer würzen.",
+      "Eier in einer Tasse verquirlen und mit Salz, Pfeffer und Paprika würzen. Über die Kartoffeln gießen.",
+      "Nicht zu heiß weiterbraten und die Masse ab und zu vorsichtig zusammenschieben, bis das Ei gestockt ist. Mit Petersilie bestreuen."
+    ]
+  },
+  "en": {
+    "title": "Farmer's breakfast (potato-egg skillet)",
+    "steps": [
+      "Wash the potatoes and boil them in their skins in salted water for about 20 minutes.",
+      "Meanwhile, cut the onions and ham into small cubes.",
+      "Drain the potatoes and let them cool for about 15 minutes. Warm, they are hard to slice and fall apart. Then peel and slice them.",
+      "Heat the clarified butter in a large pan and fry the potato slices until golden brown.",
+      "Add the onion and ham cubes and fry along until everything is nicely brown. Season with salt and pepper.",
+      "Beat the eggs in a cup and season with salt, pepper and paprika. Pour over the potatoes.",
+      "Keep frying over moderate heat and gently push the mixture together now and then until the egg has set. Sprinkle with parsley."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "slice"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 4,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Source shows 7 ratings; list says Redaktionsküche. Steps rewritten in own words on 23/11/2026 from the source steps (times, temperatures and order per source). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

@@ -19,7 +19,7 @@ const (
 )
 
 // Resources known to the permission model.
-var Resources = []string{"people", "events", "calendars", "tasks", "lists", "meals", "displays", "settings", "tokens", "health", "contacts"}
+var Resources = []string{"people", "events", "calendars", "tasks", "lists", "meals", "displays", "settings", "tokens", "health", "contacts", "numbers"}
 
 // Permission is a resource plus an action, e.g. events:write.
 type Permission struct {

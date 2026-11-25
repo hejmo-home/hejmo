@@ -1,0 +1,149 @@
+{
+  "n": 162,
+  "slug": "butterplaetzchen",
+  "category": "Backen",
+  "servings": 30,
+  "time_minutes": 60,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/butterplaetzchen-130568.html",
+    "site": "Lecker",
+    "ratings": 5
+  },
+  "ingredients": [
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "kalt",
+      "note_en": "cold"
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Plain flour",
+      "note_de": "plus etwas zum Ausrollen",
+      "note_en": "plus some for rolling out"
+    },
+    {
+      "amount": 80,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "article_de": "Vanillezucker",
+      "article_en": "Vanilla sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Msp.",
+      "article_de": "Backpulver",
+      "article_en": "Baking powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Ei",
+      "article_en": "Egg",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Puderzucker und Zitronensaft",
+      "article_en": "Icing sugar and lemon juice",
+      "note_de": "für den Zuckerguss",
+      "note_en": "for the glaze"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zuckerperlen, bunt",
+      "article_en": "Coloured sugar pearls",
+      "note_de": "zum Bestreuen",
+      "note_en": "for sprinkling"
+    }
+  ],
+  "de": {
+    "title": "Butterplätzchen",
+    "steps": [
+      "Gib Ei, Salz, Backpulver, Zucker, Vanillezucker, Mehl und die gewürfelte kalte Butter in eine Schüssel. Verknete alles mit dem Handmixer (Knethaken) und zum Schluss kurz von Hand. Wickle die Teigkugel luftdicht in Frischhaltefolie und kühle sie 30 Minuten.",
+      "Heize den Ofen auf 180 °C Ober-/Unterhitze (Umluft 160 °C) vor. Bereite die Backbleche mit Backpapier vor.",
+      "Halbiere den Teig und stelle eine Hälfte kalt. Rolle die andere auf bemehlter Fläche 3 bis 5 mm dick aus, steche Plätzchen aus und lege sie aufs Blech. Knete die Reste kurz zusammen und verarbeite sie ebenso. Arbeite danach die zweite Hälfte genauso.",
+      "Backe die Plätzchen 8 bis 10 Minuten, bis die Ränder leicht gebräunt sind, und lass sie auf einem Gitter auskühlen.",
+      "Rühre aus Puderzucker und Zitronensaft einen Zuckerguss an, bestreiche einen Teil der Plätzchen damit und streue bunte Zuckerperlen darauf."
+    ]
+  },
+  "en": {
+    "title": "Butter biscuits",
+    "steps": [
+      "Put the butter, in pieces, with the flour, sugar, vanilla sugar, salt, baking powder and egg into a bowl. Work everything into a smooth dough with the dough hooks of a hand mixer and finish briefly by hand. Wrap the ball of dough airtight in cling film and chill it for 30 minutes.",
+      "Preheat the oven to 180 °C top and bottom heat (160 °C fan) and line the baking trays with baking paper.",
+      "Halve the dough and put one half back in the fridge. Roll out the other half on a floured surface to 3 to 5 mm thick, cut out biscuits and place them on a tray. Knead the offcuts together briefly and use them the same way. Then repeat with the second half.",
+      "Bake the biscuits for 8 to 10 minutes, until the edges are lightly browned, and let them cool on a wire rack.",
+      "Mix icing sugar and lemon juice into a glaze, spread it on some of the biscuits and scatter coloured sugar pearls over them."
+    ],
+    "amounts_converted": [
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "packet"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Replacement for missing servings in the previous source, approved by the product owner 23/11/2026. Only 5 ratings (5.0 of 5); chosen as an editorial recipe. 'Servings' = 30 biscuits as stated by the source. The glaze and the decoration have no quantities in the source. Time 60 min is the figure the page shows (includes the 30 min chilling).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

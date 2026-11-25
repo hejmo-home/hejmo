@@ -24,8 +24,9 @@ Each ADR records one decision: context, decision, consequences. ADRs take preced
 | [0018](0018-path-to-0-1.md) | Path to 0.1 | Accepted, amended by 0019, 0020, 0021, 0024, 0025 |
 | [0019](0019-lists-article-library-and-diets.md) | Lists: article library, quantities, tile view and diets | Accepted, amended by 0020, 0021 and by the product owner on 16/11/2026 |
 | [0020](0020-versions-0-2-and-0-3.md) | Versions 0.2 and 0.3 | Accepted, amended by 0021 |
-| [0021](0021-version-0-3-recipes-rewards-address-book.md) | Version 0.3: recipes, star rewards and address book | Accepted |
+| [0021](0021-version-0-3-recipes-rewards-address-book.md) | Version 0.3: recipes, star rewards and address book | Accepted, nutrition values decided in #288 |
 | [0022](0022-home-location.md) | Home location | Accepted, amended by 0023 |
 | [0023](0023-home-location-from-a-list-on-the-box.md) | Home location from a list on the box | Accepted |
 | [0024](0024-offline-mode-and-the-one-door-to-the-outside.md) | Offline mode and the one door to the outside | Accepted, amended by 0025 |
 | [0025](0025-update-file-upload.md) | Uploading an update file in offline mode | Accepted |
+| [0026](0026-phone-numbers-with-nyaruka-phonenumbers.md) | Phone numbers with nyaruka/phonenumbers | Accepted |

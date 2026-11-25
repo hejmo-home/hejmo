@@ -1,0 +1,157 @@
+{
+  "n": 19,
+  "slug": "kartoffel-hackfleisch-auflauf",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 80,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/1665531274697031/Kartoffel-Hack-Auflauf-mit-Speckkruste.html",
+    "site": "Chefkoch",
+    "ratings": 407
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zwiebeln, groß",
+      "article_en": "Large onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Hackfleisch, gemischt",
+      "article_en": "Mixed ground meat (beef and pork)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Tomatenmark",
+      "article_en": "Tomato paste",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer, schwarz",
+      "article_en": "Salt and black pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Frühstücksspeck, in dünnen Scheiben",
+      "article_en": "Streaky bacon, thinly sliced",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 750,
+      "unit": "g",
+      "article_de": "Kartoffeln",
+      "article_en": "Potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Mehl Type 405",
+      "article_en": "Plain flour (Type 405)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 6,
+      "unit": "Scheibe",
+      "article_de": "Raclettekäse",
+      "article_en": "Raclette cheese",
+      "note_de": "Scheiben",
+      "note_en": "slices"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Majoran",
+      "article_en": "Marjoram",
+      "note_de": "evtl., zum Garnieren",
+      "note_en": "optional, for garnish"
+    }
+  ],
+  "de": {
+    "title": "Kartoffel-Hackfleisch-Auflauf mit Speckkruste",
+    "steps": [
+      "Die Zwiebeln reiben. Ein Drittel davon in einer Schüssel mit dem Hack, dem Tomatenmark, Salz und Pfeffer verkneten.",
+      "Backofen auf 200 °C Ober-/Unterhitze (Umluft 175 °C) vorheizen, Rost in die Mitte.",
+      "Eine Kastenform (ca. 30 cm) mit den Speckscheiben auslegen. Die Scheiben sollen etwa 3 cm über den Rand hängen.",
+      "Die Kartoffeln schälen, reiben und in einem Tuch gut ausdrücken.",
+      "Mit den restlichen Zwiebeln, dem Mehl, Salz und Pfeffer vermischen.",
+      "Die Hälfte der Kartoffelmasse in die Form füllen und andrücken.",
+      "Vom Raclettekäse die Rinde abschneiden. 4 Scheiben auf die Kartoffeln legen, darauf die Hackmasse verteilen.",
+      "Die restliche Kartoffelmasse obenauf geben.",
+      "Den überhängenden Speck darüberklappen. Die übrigen 2 Käsescheiben in Streifen schneiden und obenauf legen.",
+      "45-50 Minuten backen, bis die Oberfläche goldbraun ist.",
+      "Zum Schluss nach Wunsch mit Majoran bestreuen."
+    ]
+  },
+  "en": {
+    "title": "Potato and mince bake with bacon crust",
+    "steps": [
+      "Grate the onions. Knead one third of them with the mince, tomato paste, salt and pepper in a bowl.",
+      "Preheat the oven to 200 °C top/bottom heat (175 °C fan), rack in the middle.",
+      "Line a loaf-style baking dish (about 30 cm) with the bacon slices. They should overhang the edge by about 3 cm.",
+      "Peel and grate the potatoes and squeeze them out well in a cloth.",
+      "Mix them with the remaining onions, flour, salt and pepper.",
+      "Fill half of the potato mixture into the dish and press it down.",
+      "Cut the rind off the raclette cheese. Lay 4 slices on the potatoes and spread the mince mixture on top.",
+      "Put the remaining potato mixture on top.",
+      "Fold the overhanging bacon over it. Cut the other 2 cheese slices into strips and lay them on top.",
+      "Bake for 45-50 minutes until the top is golden brown.",
+      "At the end sprinkle with marjoram if you like."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 6,
+        "unit": "slice"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Confirmed by Lena 24/11/2026: title follows the recipe, not the list."
+}

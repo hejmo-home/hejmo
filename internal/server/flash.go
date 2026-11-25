@@ -15,6 +15,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/hejmo-home/hejmo/internal/badge"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/task"
 )
@@ -210,14 +211,21 @@ func (s *server) takeFlash(w http.ResponseWriter, r *http.Request) (key, arg str
 	return key, arg
 }
 
+// pendingFlash is the key and argument of the success line waiting for this
+// browser, without using it up.
+func (s *server) pendingFlash(r *http.Request) (key, arg string) {
+	c, err := r.Cookie(flashCookie)
+	if err != nil {
+		return "", ""
+	}
+	key, arg, _ = strings.Cut(c.Value, ":")
+	return key, arg
+}
+
 // pendingFlashKey is the key of the success line waiting for this browser,
 // without using it up.
 func (s *server) pendingFlashKey(r *http.Request) string {
-	c, err := r.Cookie(flashCookie)
-	if err != nil {
-		return ""
-	}
-	key, _, _ := strings.Cut(c.Value, ":")
+	key, _ := s.pendingFlash(r)
 	return key
 }
 
@@ -310,6 +318,12 @@ func (s *server) successText(lang, key, arg string) string {
 // successHTML is the success line as markup: the text of successText escaped,
 // except the lines after a changed star value, which put the new value in bold.
 func (s *server) successHTML(lang, key, arg string) template.HTML {
+	if key == "flash.badge_won" { // the first badge a tick earned, named in bold (ticket 295)
+		if k := badge.Key(arg); k.Valid() {
+			return formatHTML(s.i18n, lang, key, "name", s.badgeName(lang, k))
+		}
+		return "" // a forged value shows nothing
+	}
 	if _, ok := flashFields[key]; ok && arg != "" && strings.HasPrefix(key, "flash.goal_") || key == "flash.contacts_imported" {
 		// The savings goal lines put the name in bold: the values are escaped, the text is ours.
 		values, ok := s.fieldValues(key, arg)

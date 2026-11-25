@@ -410,3 +410,32 @@ func TestCompletingAnOverdueOnceTaskSucceedsAndRetriesAreHarmless(t *testing.T) 
 		t.Fatalf("move = %d", status)
 	}
 }
+
+// Ticket 295: a badge is awarded after a tick over CalDAV too, once, and it stays after un-completing.
+func TestCompletingATaskInRemindersAwardsABadgeOnceAndKeepsItWhenReopened(t *testing.T) {
+	t.Parallel()
+	tb := newDavTaskBox(t)
+	done := todoICS(tb.cat.ID, "SUMMARY:Feed the cat", "DTSTART;VALUE=DATE:20261114", "STATUS:COMPLETED", "COMPLETED:20261114T110000Z")
+	for range 2 {
+		tb.put(tb.href(tb.cat), done, nil)
+	}
+	badges := func() []string {
+		list, err := tb.c.b.db.Badges(tb.h.ID, tb.mia.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var keys []string
+		for _, b := range list {
+			keys = append(keys, string(b.Key))
+		}
+		return keys
+	}
+	if got := badges(); len(got) != 1 || got[0] != "first_star" {
+		t.Fatalf("badges after completing = %v, want first_star once", got)
+	}
+	open := todoICS(tb.cat.ID, "SUMMARY:Feed the cat", "STATUS:NEEDS-ACTION")
+	tb.put(tb.href(tb.cat), open, nil)
+	if got := badges(); len(got) != 1 || got[0] != "first_star" {
+		t.Fatalf("badges after un-completing = %v, a badge is never taken away", got)
+	}
+}

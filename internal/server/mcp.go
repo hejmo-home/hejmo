@@ -171,6 +171,7 @@ var mcpTools = []mcpTool{
 	{name: "set_routine_template_order", desc: "Put the steps of an own template in a new order.", method: "PUT", path: "/routine-templates/{id}/order", params: []mcpParam{idOf("template"), req("step_ids", "strings", "All step ids, in the new order")}},
 	{name: "get_stars", desc: "Get a person's star balance and star log.", method: "GET", path: "/people/{id}/stars", params: []mcpParam{
 		req("id", "string", "The person id"), opt("limit", "integer", "How many log entries, 1 to 200 (default 50)")}},
+	{name: "get_badges", desc: "Get a person's badges (ten fixed milestones, earned once and never taken away), newest first, with whether each is new and whether the person's switch \"week count and badges\" is on. The list is empty while the switch is off. Read only.", method: "GET", path: "/people/{id}/badges", params: []mcpParam{idOf("person")}},
 	{name: "book_stars", desc: "Book stars by hand with a note: positive adds, negative takes away.", method: "POST", path: "/people/{id}/stars", params: []mcpParam{
 		req("id", "string", "The person id"), req("delta", "integer", "Stars to add (positive) or take away (negative)"), req("note", "string", "Why")}},
 	{name: "get_savings_goal", desc: "Get the reward a person saves for, with their balance and whether it is reached.", method: "GET", path: "/people/{id}/savings-goal", params: []mcpParam{idOf("person")}},

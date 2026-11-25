@@ -233,6 +233,10 @@ func New(opts Options) http.Handler {
 	s.pages = parsePages()
 	s.settleAtStart() // an installation that ended while the box was away, and what an upload left
 	s.syncUpdateSettings()
+	// A box updated to a version with badges gives everyone the badges their history already earned, dated that day (ticket 295).
+	if err := s.db.AwardAllBadges(s.now()); err != nil {
+		s.logger.Error("award badges at start", "err", err)
+	}
 
 	static, err := fs.Sub(web.Static, "static")
 	if err != nil {
@@ -351,6 +355,8 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /tasks/pauses/{id}", s.handlePauseEditPage)
 	mux.HandleFunc("POST /tasks/pauses/edit/{id}", s.handlePauseUpdate)
 	mux.HandleFunc("POST /tasks/pauses/remove/{id}", s.handlePauseRemove)
+	mux.HandleFunc("GET /tasks/badges", s.handleBadges)
+	mux.HandleFunc("GET /tasks/badges/{person}", s.handleBadgesOf)
 	mux.HandleFunc("GET /tasks/{id}", s.handleTaskPage)
 	mux.HandleFunc("POST /tasks/{id}/done", s.handleTaskDone)
 	mux.HandleFunc("POST /tasks/{id}/subtasks", s.handleSubtaskAdd)

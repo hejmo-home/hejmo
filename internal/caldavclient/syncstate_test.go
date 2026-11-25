@@ -169,3 +169,54 @@ func TestChangesCompleteAnswerIsNotTruncated(t *testing.T) {
 		t.Fatalf("Changes() = %+v, %v, want a complete answer", got, err)
 	}
 }
+
+// Google answers 403 for a rate limit and names the reason in a JSON body. The
+// client reads the reason so the sync can tell it from a missing permission.
+func TestStatusErrorReadsTheReasonOfAGoogle403(t *testing.T) {
+	for _, c := range []struct {
+		name, body, reason string
+		rateLimited        bool
+	}{
+		{"rate limit", googleDenied("rateLimitExceeded"), "rateLimitExceeded", true},
+		{"user rate limit", googleDenied("userRateLimitExceeded"), "userRateLimitExceeded", true},
+		{"missing permission", googleDenied("forbidden"), "forbidden", false},
+		{"not json", "no", "", false},
+		{"empty", "", "", false},
+	} {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Retry-After", "90")
+			w.WriteHeader(http.StatusForbidden)
+			io.WriteString(w, c.body)
+		}))
+		c2, _ := caldavclient.NewClient(srv.URL, "u", "p", openClient())
+		_, err := c2.State(context.Background(), srv.URL+"/cal/")
+		srv.Close()
+		var se *caldavclient.StatusError
+		if !errors.As(err, &se) || se.Code != 403 {
+			t.Fatalf("%s: State() = %v, want a StatusError 403", c.name, err)
+		}
+		if se.Reason != c.reason || se.RateLimited() != c.rateLimited || se.RetryAfter != "90" {
+			t.Errorf("%s: Reason %q, RateLimited %v, RetryAfter %q; want %q, %v, 90", c.name, se.Reason, se.RateLimited(), se.RetryAfter, c.reason, c.rateLimited)
+		}
+	}
+}
+
+func googleDenied(reason string) string {
+	return `{"error":{"code":403,"message":"Rate Limit Exceeded","errors":[{"domain":"usageLimits","reason":"` + reason + `","message":"x"}]}}`
+}
+
+// A rate-limited 403 on the change report is a throttle, not "no
+// sync-collection": the caller must not fall back to a full listing.
+func TestChangesRateLimited403IsNotSyncUnavailable(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		io.WriteString(w, googleDenied("rateLimitExceeded"))
+	}))
+	defer srv.Close()
+	c, _ := caldavclient.NewClient(srv.URL, "u", "p", openClient())
+	_, err := c.Changes(context.Background(), srv.URL+"/cal/", "tok")
+	var se *caldavclient.StatusError
+	if err == nil || errors.Is(err, caldavclient.ErrSyncUnavailable) || !errors.As(err, &se) || !se.RateLimited() {
+		t.Fatalf("Changes() = %v, want a rate-limited StatusError, not ErrSyncUnavailable", err)
+	}
+}

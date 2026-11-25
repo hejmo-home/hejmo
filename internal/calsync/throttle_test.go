@@ -384,3 +384,52 @@ func TestOutlookSiblingPushAndSyncSendNothingWhileTheConnectionWaits(t *testing.
 		t.Fatalf("sibling pending = %d, want 1 kept", len(pend))
 	}
 }
+
+// A calendar that falls due during the wait (added to the connection meanwhile)
+// is moved to the end of the wait, so no scheduler tick picks it up before.
+func TestCalDAVCalendarDueDuringTheWaitIsNotPickedUpOnEveryTick(t *testing.T) {
+	fx := newDAVFixture(t, caldavtest.Password)
+	fx.threeQueued(t)
+	fx.tamper.RefuseWritesWait(429, "1800")
+	if err := fx.svc.Push(context.Background(), fx.h.ID, fx.cal.ID); err == nil {
+		t.Fatal("push to a throttling server succeeded")
+	}
+	fx.clock = fx.clock.Add(time.Minute)
+	late := fx.srv.MakeCalendar(t, "late", "Late")
+	added, err := fx.db.AddCalDAVCalendar(fx.h.ID, fx.cal.ConnectionID, store.NewCalDAVCalendar{Name: "Late", RemoteURL: late, IntervalMinutes: 5, Now: fx.clock})
+	if err != nil {
+		t.Fatal(err)
+	}
+	logged := len(failures(t, fx.db, fx.h.ID))
+	for tick := 1; tick <= 3; tick++ {
+		due, err := fx.db.DueCalendars(fx.clock)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, c := range due {
+			if c.ID == added.ID {
+				_ = fx.svc.Sync(context.Background(), fx.h.ID, c.ID)
+			}
+		}
+		fx.clock = fx.clock.Add(time.Minute)
+	}
+	got, err := fx.db.SyncedCalendar(fx.h.ID, added.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Sync.NextAttempt.Before(got.ThrottledUntil) {
+		t.Fatalf("calendar due during the wait: next attempt %v, wait until %v", got.Sync.NextAttempt, got.ThrottledUntil)
+	}
+	if n := len(failures(t, fx.db, fx.h.ID)) - logged; n != 0 {
+		t.Fatalf("%d sync log entries for the waiting calendar, want 0", n)
+	}
+	due, err := fx.db.DueCalendars(fx.clock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range due {
+		if c.ID == added.ID {
+			t.Fatalf("calendar still due at %v, wait until %v", fx.clock, got.ThrottledUntil)
+		}
+	}
+}

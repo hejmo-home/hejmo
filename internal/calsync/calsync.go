@@ -278,7 +278,15 @@ func (s *Service) sync(ctx context.Context, householdID, calendarID string, run 
 	}
 	if throttled(cal, at) {
 		run.result, run.failure = "throttled", "sync.fail.throttled"
-		return stillThrottled(cal, at)
+		// A calendar that fell due during the wait (added meanwhile, or
+		// reconnected) would be due on every tick: move it to the end.
+		err := stillThrottled(cal, at)
+		if cal.Sync.NextAttempt.Before(cal.ThrottledUntil) {
+			if derr := s.db.DeferSync(cal.ID, cal.ThrottledUntil); derr != nil {
+				return errors.Join(err, derr)
+			}
+		}
+		return err
 	}
 	fail := func(msg i18n.Message, cause error) error {
 		msg, err := s.recordFailure(cal, msg, cause, at)

@@ -158,10 +158,14 @@ func TestAMealThatShrinksOrLeavesTheListTakesItsQuantitiesBack(t *testing.T) {
 		t.Errorf("sweet potatoes for 4 portions = %v g", a)
 	}
 	_, p2, _ := c.call(http.MethodGet, "/meal-shopping?meal="+apiToday+".dinner&list_id="+listID, nil)
-	if p2["meal"] == nil {
-		t.Errorf("the meal has 4 portions on the list and 4 planned: preview = %v", p2)
+	ms, _ := p2["meals"].([]any)
+	if len(ms) != 1 {
+		t.Fatalf("one meal in the preview: %v", p2)
 	}
-	if status, m, _ := c.call(http.MethodDelete, "/meals/"+apiToday+"/dinner", nil); status != http.StatusNoContent && status != http.StatusOK {
+	if m := ms[0].(map[string]any); m["portions"] != 4.0 || m["on_list"] != 4.0 || m["to_add"] != 0.0 || m["status"] != "done" {
+		t.Errorf("4 portions are planned and on the list, nothing is missing: %v", m)
+	}
+	if status, m, _ := c.call(http.MethodDelete, "/meals/"+apiToday+"/dinner", nil); status != http.StatusNoContent {
 		t.Fatalf("remove = %d %v", status, m)
 	}
 	if a, n := potatoes(); a != 0 || n != 0 {

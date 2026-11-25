@@ -2583,6 +2583,12 @@ paths:
       description: |
         Removes the adjustment of a meal, so the template's dish shows again
         (and in the calendar). 404 if the meal is not adjusted.
+
+        Ingredients the shopping list took from the recipe (`/meal-shopping`) are
+        taken back when the recipe of the adjustment leaves the meal: the quantity of the portions that go comes
+        off the entries not yet ticked, an entry a run made disappears when
+        nothing is left, and the source lines of the meal go. Ticked entries
+        are never touched.
       parameters:
         - { name: date, in: path, required: true, schema: { type: string, format: date } }
         - { name: mealtime, in: path, required: true, schema: { $ref: "#/components/schemas/Mealtime" } }
@@ -2762,6 +2768,12 @@ paths:
         Changes reach today and all later days, never days before today. Meals
         adjusted for a week keep their change. Overlaps are refused as in
         `createMealTemplate`.
+
+        Ingredients the shopping list took from the recipe (`/meal-shopping`) are
+        taken back when a recipe leaves a meal or its portions shrink: the quantity of the portions that go comes
+        off the entries not yet ticked, an entry a run made disappears when
+        nothing is left, and the source lines of the meal go. Ticked entries
+        are never touched.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -2788,6 +2800,12 @@ paths:
         From today on its meals leave the plan and the calendar. Days before
         today keep what they showed; meals adjusted for a week stay as plain
         entries.
+
+        Ingredients the shopping list took from the recipe (`/meal-shopping`) are
+        taken back when a recipe leaves the plan: the quantity of the portions that go comes
+        off the entries not yet ticked, an entry a run made disappears when
+        nothing is left, and the source lines of the meal go. Ticked entries
+        are never touched.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       responses:
@@ -2922,7 +2940,14 @@ paths:
     delete:
       operationId: deleteRecipe
       summary: Delete a recipe with its ingredients, steps and tips (scope meals:delete, parents only)
-      description: A starter recipe (id starts with `starter-`) is never deleted (403).
+      description: |
+        A starter recipe (id starts with `starter-`) is never deleted (403).
+
+        Ingredients the shopping list took from the recipe (`/meal-shopping`) are
+        taken back when the recipe is deleted: the quantity of the portions that go comes
+        off the entries not yet ticked, an entry a run made disappears when
+        nothing is left, and the source lines of the meal go. Ticked entries
+        are never touched.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
       responses:

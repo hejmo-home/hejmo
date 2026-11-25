@@ -234,3 +234,86 @@ func TestUndoAfterATakeBackLeavesWhatIsLeft(t *testing.T) {
 		t.Errorf("list = %v", got)
 	}
 }
+
+func (f takeBackFixture) entryID(t *testing.T, text string) string {
+	t.Helper()
+	es, _ := f.db.Entries(f.h.ID, f.l.ID)
+	for _, e := range es {
+		if e.Text == text {
+			return e.ID
+		}
+	}
+	t.Fatalf("no entry %q", text)
+	return ""
+}
+
+// A hand-typed entry that reaches zero stays, without quantity and without note.
+func TestAHandTypedEntryThatReachesZeroStaysWithoutQuantity(t *testing.T) {
+	f := newTakeBackFixture(t)
+	f.addByHand(t, "Süßkartoffeln", "sweet-potatoes", list.Quantity{})
+	f.plan(t, f.curry.ID, "2026-11-19", 4)
+	f.shop(t, "2026-11-19", 4, potatoes)
+	if got := f.lines(t); !reflect.DeepEqual(got, []string{"Süßkartoffeln 600 g"}) {
+		t.Fatalf("list = %v", got)
+	}
+	f.clear(t, "2026-11-19")
+	if got := f.lines(t); !reflect.DeepEqual(got, []string{"Süßkartoffeln"}) {
+		t.Errorf("after the meal left = %v", got)
+	}
+	if n := f.notes(t); n != 0 {
+		t.Errorf("%d notes left", n)
+	}
+}
+
+// A run that was undone has nothing left to take back: the hand-typed quantity must not go twice.
+func TestAnUndoneRunIsNotTakenBackAgain(t *testing.T) {
+	f := newTakeBackFixture(t)
+	f.addByHand(t, "Süßkartoffeln", "sweet-potatoes", list.NewQuantity(500, "g"))
+	f.plan(t, f.curry.ID, "2026-11-19", 4)
+	run := f.shop(t, "2026-11-19", 4, potatoes)
+	if _, err := f.db.UndoMealShop(f.h.ID, run.ID); err != nil {
+		t.Fatal(err)
+	}
+	want := f.lines(t)
+	if !reflect.DeepEqual(want, []string{"Süßkartoffeln 500 g"}) {
+		t.Fatalf("after undo = %v", want)
+	}
+	f.plan(t, f.curry.ID, "2026-11-19", 2)
+	if got := f.lines(t); !reflect.DeepEqual(got, want) {
+		t.Errorf("after shrinking = %v, want %v", got, want)
+	}
+	f.clear(t, "2026-11-19")
+	if got := f.lines(t); !reflect.DeepEqual(got, want) {
+		t.Errorf("after leaving = %v, want %v", got, want)
+	}
+}
+
+// Two runs on one meal: the latest run is taken back first.
+func TestTheLatestRunIsTakenBackFirst(t *testing.T) {
+	f := newTakeBackFixture(t)
+	f.plan(t, f.curry.ID, "2026-11-19", 4)
+	f.shop(t, "2026-11-19", 2, potatoes)
+	f.shop(t, "2026-11-19", 2, coconut)
+	if got := f.lines(t); !reflect.DeepEqual(got, []string{"Süßkartoffeln 300 g", "Kokosmilch 1 can"}) {
+		t.Fatalf("list = %v", got)
+	}
+	f.plan(t, f.curry.ID, "2026-11-19", 2)
+	if got := f.lines(t); !reflect.DeepEqual(got, []string{"Süßkartoffeln 300 g"}) {
+		t.Errorf("after 4 to 2 portions = %v: the later run goes first", got)
+	}
+}
+
+// An entry whose unit was changed by hand to another kind keeps its quantity.
+func TestAnEntryChangedToAnotherUnitKindKeepsItsQuantity(t *testing.T) {
+	f := newTakeBackFixture(t)
+	f.plan(t, f.curry.ID, "2026-11-19", 4)
+	f.shop(t, "2026-11-19", 4, potatoes)
+	if _, err := f.db.SetQuantity(f.h.ID, f.l.ID, f.entryID(t, "Süßkartoffeln"), list.NewQuantity(3, "piece"), "piece", show("piece", "g", "kg")); err != nil {
+		t.Fatal(err)
+	}
+	want := f.lines(t)
+	f.plan(t, f.curry.ID, "2026-11-19", 2)
+	if got := f.lines(t); !reflect.DeepEqual(got, want) {
+		t.Errorf("after shrinking = %v, want %v", got, want)
+	}
+}

@@ -121,6 +121,7 @@ var flashFields = map[string][]string{
 	"flash.routine_applied_own":    {"owner", "routine", "person", "tasks", "template", "origin"},
 	"flash.pause_saved":            {"names", "range"},
 	"flash.contact_added_for":      {"name", "sentence"},
+	"flash.contacts_imported":      {"file", "summary"},
 	"flash.rtpl_moved":             {"title", "place", "total"},
 	"flash.routine_template_saved": {"name", "id"},
 	"flash.photo_moved":            {"n", "album"},
@@ -309,7 +310,7 @@ func (s *server) successText(lang, key, arg string) string {
 // successHTML is the success line as markup: the text of successText escaped,
 // except the lines after a changed star value, which put the new value in bold.
 func (s *server) successHTML(lang, key, arg string) template.HTML {
-	if _, ok := flashFields[key]; ok && arg != "" && strings.HasPrefix(key, "flash.goal_") {
+	if _, ok := flashFields[key]; ok && arg != "" && strings.HasPrefix(key, "flash.goal_") || key == "flash.contacts_imported" {
 		// The savings goal lines put the name in bold: the values are escaped, the text is ours.
 		values, ok := s.fieldValues(key, arg)
 		if !ok {

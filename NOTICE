@@ -29,3 +29,9 @@ USDA FoodData Central food data (data, CC0 1.0, embedded in the binary)
   U.S. Department of Agriculture, Agricultural Research Service. FoodData Central, https://fdc.nal.usda.gov
   Licence: https://creativecommons.org/publicdomain/zero/1.0/ (no attribution required; given anyway)
   Changes: reduced to the same seven values and the names (tools/foodlist).
+
+nyaruka/phonenumbers (Go library, MIT, linked into the Hejmo binary)
+  Go port of Google's libphonenumber by Nyaruka; its number plans are Google's libphonenumber metadata
+  (Apache License 2.0). Reads, checks and normalises phone numbers (ADR 0026). No network connections.
+  Licence: https://github.com/nyaruka/phonenumbers/blob/master/LICENSE
+  Also named on the licences page of the web interface (Settings -> Licences).

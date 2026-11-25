@@ -24,10 +24,15 @@ type Params struct {
 	Identifier    string // PayloadIdentifier of the profile: reinstalling the same one replaces it
 	ProfileUUID   string
 	PayloadUUID   string
+	// CardDAVPrincipalPath, when set, adds a CardDAV account for the address book (ticket 299): the path of the
+	// person's CardDAV principal, e.g. /carddav/{person}/. It has a payload UUID of its own.
+	CardDAVPrincipalPath string
+	CardDAVPayloadUUID   string
 }
 
 // CalDAV renders an unsigned configuration profile with one
-// com.apple.caldav.account payload (Apple's Configuration Profile Reference).
+// com.apple.caldav.account payload (Apple's Configuration Profile Reference) and, when asked, a
+// com.apple.carddav.account payload for the address book.
 func CalDAV(p Params) ([]byte, error) {
 	if p.Host == "" || p.Port <= 0 || p.Username == "" || p.Token == "" || p.Identifier == "" || p.ProfileUUID == "" || p.PayloadUUID == "" {
 		return nil, errors.New("iosprofile: host, port, user name, token, identifier and UUIDs are required")
@@ -63,9 +68,29 @@ func CalDAV(p Params) ([]byte, error) {
 	str("CalDAVUsername", p.Username)
 	str("CalDAVPassword", p.Token)
 	str("CalDAVPrincipalURL", "https://"+authority+p.PrincipalPath)
-	b.WriteString("\t\t</dict>\n\t</array>\n\t<key>PayloadType</key>\n\t<string>Configuration</string>\n\t<key>PayloadVersion</key>\n\t<integer>1</integer>\n")
+	b.WriteString("\t\t</dict>\n")
+	if p.CardDAVPrincipalPath != "" {
+		if p.CardDAVPayloadUUID == "" {
+			return nil, errors.New("iosprofile: a CardDAV payload needs its UUID")
+		}
+		b.WriteString("\t\t<dict>\n")
+		str("PayloadType", "com.apple.carddav.account")
+		b.WriteString("\t\t\t<key>PayloadVersion</key>\n\t\t\t<integer>1</integer>\n")
+		str("PayloadIdentifier", p.Identifier+".contacts")
+		str("PayloadUUID", p.CardDAVPayloadUUID)
+		str("PayloadDisplayName", "Hejmo")
+		str("CardDAVAccountDescription", p.DeviceName)
+		str("CardDAVHostName", p.Host)
+		fmt.Fprintf(&b, "\t\t\t<key>CardDAVPort</key>\n\t\t\t<integer>%d</integer>\n", p.Port)
+		b.WriteString("\t\t\t<key>CardDAVUseSSL</key>\n\t\t\t<true/>\n")
+		str("CardDAVUsername", p.Username)
+		str("CardDAVPassword", p.Token)
+		str("CardDAVPrincipalURL", "https://"+authority+p.CardDAVPrincipalPath)
+		b.WriteString("\t\t</dict>\n")
+	}
+	b.WriteString("\t</array>\n\t<key>PayloadType</key>\n\t<string>Configuration</string>\n\t<key>PayloadVersion</key>\n\t<integer>1</integer>\n")
 	for _, kv := range [][2]string{{"PayloadIdentifier", p.Identifier}, {"PayloadUUID", p.ProfileUUID}, {"PayloadDisplayName", "Hejmo: " + p.DeviceName},
-		{"PayloadDescription", "Sets up the calendars of your Hejmo box on this device. It holds a password: install it, then delete the file."}} {
+		{"PayloadDescription", "Sets up the calendars and the address book of your Hejmo box on this device. It holds a password: install it, then delete the file."}} {
 		entry("\t", kv[0], kv[1])
 	}
 	b.WriteString("</dict>\n</plist>\n")

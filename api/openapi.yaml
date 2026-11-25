@@ -24,6 +24,20 @@ info:
     creating and deleting tasks from a client is refused with 403. Create
     one token per device and revoke it on its own.
 
+    The scope `contacts` opens the box's CardDAV server at `/carddav/` for a
+    device's contacts app (same sign-in as CalDAV; `/.well-known/carddav`
+    redirects there; parents only). Hejmo is one address book of its own with
+    every contact of the household: `contacts:read` syncs, `contacts:write`
+    creates and changes, `contacts:delete` (or the whole `contacts` scope)
+    deletes. Cards go out in vCard 3.0 and, where the device asks for it, 4.0;
+    both are read. The Hejmo name is the NICKNAME. For a person of the
+    household only numbers, address and photo change from the device
+    (the name, the e-mail addresses, the birthday and the note do not) and
+    deleting is refused with 403; everything else changes. A photo from a
+    device becomes the contact's photo, one added on the box goes to the
+    device. What a card holds that Hejmo does not model is kept and sent back.
+    A device token made by `/caldav-profile` holds `calendars tasks contacts`.
+
     The box also speaks MCP (Model Context Protocol, streamable HTTP, stateless)
     at `/mcp`, for AI assistants (ADR 0018). It is off by default (`GET` and `PUT`
     `/mcp` below), served over HTTPS only, and takes only a bearer token that was
@@ -1081,10 +1095,10 @@ paths:
       operationId: createCalDAVProfile
       summary: Download an iOS profile that sets up the caller's CalDAV account (scope tokens:write)
       description: |
-        Creates a new device token (scope `calendars`) for the caller, named
-        after the device, and answers with an iOS configuration profile
-        (`com.apple.caldav.account`) that holds the box address, the caller's
-        user name and that token. For the caller's own account only. The box
+        Creates a new device token (scopes `calendars tasks contacts`) for the
+        caller, named after the device, and answers with an iOS configuration
+        profile (`com.apple.caldav.account` and `com.apple.carddav.account`)
+        that holds the box address, the caller's user name and that token. For the caller's own account only. The box
         keeps no copy: the profile is the answer to this request; asking again
         creates another profile and another token. The token is listed and
         revoked like any other (`/tokens`). Served over HTTPS only, because

@@ -20,7 +20,7 @@ func TestDeviceTokenFromTheWebPageOpensCalendarsAndTaskLists(t *testing.T) {
 	}
 	m := regexp.MustCompile(`hejmo_[A-Za-z0-9_-]+`).FindString(res.body)
 	toks, _ := c.b.db.APITokens(h.ID)
-	if m == "" || len(toks) != 1 || toks[0].Scopes != "calendars tasks" {
+	if m == "" || len(toks) != 1 || toks[0].Scopes != "calendars tasks contacts" {
 		t.Fatalf("token %q, tokens %+v", m, toks)
 	}
 	cals, err := c.personalDeviceWith(t, "mama", m).calendars()
@@ -29,7 +29,7 @@ func TestDeviceTokenFromTheWebPageOpensCalendarsAndTaskLists(t *testing.T) {
 	}
 	// Its detail page names what it may do.
 	page := c.b.do(http.MethodGet, "/caldav/tokens/"+toks[0].ID, nil, map[string]string{"Accept-Language": "en"})
-	if page.status != http.StatusOK || !strings.Contains(page.body, "Read calendars and tasks") {
+	if page.status != http.StatusOK || !strings.Contains(page.body, "Read calendars, tasks and contacts") {
 		t.Fatalf("detail page = %d\n%s", page.status, page.body)
 	}
 }

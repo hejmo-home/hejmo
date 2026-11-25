@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"image/jpeg"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -29,7 +30,11 @@ type addressDevice struct {
 
 func (c *apiClient) addressDevice(t *testing.T, scopes string) *addressDevice {
 	t.Helper()
-	secret := c.newToken(scopes)
+	return c.addressDeviceWith(t, c.newToken(scopes))
+}
+
+func (c *apiClient) addressDeviceWith(t *testing.T, secret string) *addressDevice {
+	t.Helper()
 	hc := webdav.HTTPClientWithBasicAuth(c.b.bareClient(), "mama", secret)
 	cc, err := carddav.NewClient(hc, c.b.srv.URL+"/carddav/")
 	if err != nil {
@@ -452,5 +457,19 @@ func TestLabelsComeBackAsTheyWentOut(t *testing.T) {
 	want := []string{"111=Opa Handy", "222=_$!<HomeFAX>!$_", "333=CELL", "444=WORK", "o@example.org=Verein"}
 	if strings.Join(seen, "|") != strings.Join(want, "|") {
 		t.Fatalf("labels %v, want %v\n%s", seen, want, out)
+	}
+}
+
+// The web page and the answer that shows a new token say where the address book is.
+func TestTheDevicePagesNameTheAddressOfTheAddressBook(t *testing.T) {
+	t.Parallel()
+	c := signedInAPI(t)
+	page := c.b.do(http.MethodGet, "/caldav", nil, map[string]string{"Accept-Language": "en"})
+	if page.status != http.StatusOK || !strings.Contains(page.body, "Address of the address book (CardDAV)") || !strings.Contains(page.body, "/carddav/") {
+		t.Fatalf("/caldav = %d\n%s", page.status, page.body)
+	}
+	created := c.b.do(http.MethodPost, "/caldav/tokens", url.Values{"name": {"Pixel"}}, map[string]string{"Accept-Language": "de"})
+	if created.status != http.StatusOK || !strings.Contains(created.body, "Adresse des Adressbuchs (CardDAV)") || !strings.Contains(created.body, "/carddav/") {
+		t.Fatalf("new token = %d\n%s", created.status, created.body)
 	}
 }

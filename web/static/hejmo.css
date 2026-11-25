@@ -4790,3 +4790,26 @@ a.bdg-more { display: inline-flex; align-items: center; min-height: var(--touch-
 .msg.bdg-won-msg > span { min-width: 0; }
 .bdg-chip .seal .fg { stroke-width: 2.6; }
 .bdg-line .nm { display: inline-block; white-space: nowrap; }
+.bdg-line .nm { display: inline-block; white-space: nowrap; }
+
+/* ticket 318: name days in the Birthdays calendar */
+.bd-now { max-width: 560px; margin: 0 0 var(--gap-section); }
+.steps fieldset.nd { display: grid; gap: 12px; }
+.nd .when-on { display: grid; gap: 12px; }
+.nd .choice .grp { margin-top: 6px; }
+.nd-sum { margin: 0; font-size: var(--fs-label); color: var(--text-secondary); }
+.list-rows.nd-rows .meta b { font-size: var(--fs-label); font-weight: 700; color: var(--text); }
+.list-rows.nd-rows .none { font-size: var(--fs-label); color: var(--notice-text); background: var(--notice-bg); border-radius: var(--radius-field); padding: 2px 8px; justify-self: start; }
+.list-rows.nd-rows .tag { align-self: center; }
+[data-theme="bw"] .list-rows.nd-rows .none { outline: 1.5px solid var(--text); }
+ul.nd-names { list-style: none; margin: 0 0 var(--gap-section); padding: 0; display: flex; flex-wrap: wrap; gap: 8px 10px; max-width: 560px; }
+ul.nd-names a { display: inline-flex; align-items: center; min-height: var(--touch-target); padding: 0 14px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+[data-theme="bw"] ul.nd-names a { border: 2px solid var(--text); color: var(--text); }
+.nd-pick .choice label .tdate { font-weight: 700; }
+.nd-pick .other { display: none; }
+.nd-pick:has(input[value="name"]:checked) .other { display: grid; }
+.nd-src { font-size: var(--fs-meta); color: var(--text-secondary); }
+.ev-gen .row-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 var(--gap-section); }
+.ev-moved { max-width: 560px; }
+.nd-pick .notice, .ev-gen .notice.ev-moved { display: flex; gap: 8px; align-items: flex-start; }
+.nd-pick .notice .icon, .ev-moved .icon { flex: none; margin-top: 2px; }

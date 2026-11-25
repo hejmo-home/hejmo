@@ -208,6 +208,9 @@ var wholeFamilyTexts = map[string]bool{
 	"meals.rcp.you_are":                        true, // "ihr seid 4": the people at the table, the whole family (ticket 281)
 	"meals.rcp.error.portions":                 true,
 	"meals.rcp.error.portions.empty":           true,
+	"rph.none":                                 true, // "wenn ihr das Gericht kocht": the family cooking together (ticket 280)
+	"rph.none.page":                            true, // "bis ihr eins hinzufügt": the family
+	"recipes.starter.note.photos":              true, // "sie bleiben bei euch": the photos stay with the family
 	"meals.sugg.unchecked":                     true, // "Prüft Hejmo nicht:" is no imperative: Hejmo is the subject (ticket 281)
 	// The religious holidays are for the whole household: "eurer Religion", "Welche Religionen feiert ihr?" (ticket 339).
 	"hub.religious_holidays.hint": true, "rh.lead": true, "rh.legal.region": true, "rh.choice.legend": true, "rh.rel.christian.hint": true,

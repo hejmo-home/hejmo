@@ -1,7 +1,7 @@
 {
  "list": "greek_orthodox",
  "sources": {
-  "eoc": "Ημερολόγιο της Εκκλησίας της Ελλάδος (Kalender der Kirche von Griechenland)"
+  "eoc": "Ημερολόγιο της Εκκλησίας της Ελλάδος (Kalender der Kirche von Griechenland): Συναξαριστής, Monatsseiten von ecclesiagreece.gr (synaxaristes/ianouarios bis dekembrios), und Αλφαβητικό εορτολόγιο der Αποστολική Διακονία (apostoliki-diakonia.gr), Stand 25/11/2026"
  },
  "entries": [
   {
@@ -17,8 +17,7 @@
    ],
    "saint": "Basilius der Große",
    "day": "01-01",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "vasiliki-01-01",
@@ -28,8 +27,7 @@
    ],
    "saint": "Vasiliki",
    "day": "01-01",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "fotios-01-06",
@@ -41,8 +39,7 @@
    ],
    "saint": "Theophanie des Herrn",
    "day": "01-06",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "ioannis-01-07",
@@ -62,8 +59,7 @@
    "saint": "Johannes der Täufer (Prodromos)",
    "day": "01-07",
    "usual": true,
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "antonios-01-17",
@@ -76,8 +72,7 @@
    ],
    "saint": "Antonius der Große",
    "day": "01-17",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "athanasios-01-18",
@@ -88,8 +83,7 @@
    ],
    "saint": "Athanasius der Große",
    "day": "01-18",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "kyrillos-01-18",
@@ -101,8 +95,7 @@
    ],
    "saint": "Kyrill von Alexandrien",
    "day": "01-18",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "efthymios-01-20",
@@ -114,8 +107,7 @@
    ],
    "saint": "Euthymius der Große",
    "day": "01-20",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "xenia-01-24",
@@ -125,8 +117,7 @@
    ],
    "saint": "Xenia von Rom",
    "day": "01-24",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "grigorios-01-25",
@@ -138,8 +129,7 @@
    ],
    "saint": "Gregor der Theologe",
    "day": "01-25",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "theodoros-02-08",
@@ -151,8 +141,7 @@
    ],
    "saint": "Theodor Stratilates",
    "day": "02-08",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "charalambos-02-10",
@@ -164,8 +153,7 @@
    ],
    "saint": "Charalambos",
    "day": "02-10",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "vlasios-02-11",
@@ -176,8 +164,7 @@
    ],
    "saint": "Blasius",
    "day": "02-11",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "evdokia-03-01",
@@ -188,8 +175,7 @@
    ],
    "saint": "Evdokia",
    "day": "03-01",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "evangelos-03-25",
@@ -202,16 +188,14 @@
    ],
    "saint": "Verkündigung an die Gottesmutter",
    "day": "03-25",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "alexandra-04-21",
    "name": "Alexandra",
    "saint": "Alexandra, Kaiserin",
    "day": "04-21",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "georgios-04-23",
@@ -229,8 +213,7 @@
    "day": "04-23",
    "move": "easter_monday",
    "usual": true,
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "markos-04-25",
@@ -243,8 +226,7 @@
    ],
    "saint": "Markus, Evangelist",
    "day": "04-25",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "irini-05-05",
@@ -255,19 +237,17 @@
    ],
    "saint": "Irini",
    "day": "05-05",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
-   "id": "zoi-05-18",
+   "id": "zoi-easter-plus-5",
    "name": "Zoi",
    "variants": [
     "Zoe"
    ],
-   "saint": "Zoi",
-   "day": "05-18",
+   "saint": "Lebensspendende Quelle (Freitag der Osterwoche)",
    "source": "eoc",
-   "unchecked": true
+   "easter": 5
   },
   {
    "id": "konstantinos-05-21",
@@ -281,8 +261,7 @@
    ],
    "saint": "Konstantin der Große",
    "day": "05-21",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "eleni-05-21",
@@ -295,8 +274,7 @@
    ],
    "saint": "Helena",
    "day": "05-21",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "varnavas-06-11",
@@ -306,8 +284,7 @@
    ],
    "saint": "Barnabas, Apostel",
    "day": "06-11",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "petros-06-29",
@@ -320,8 +297,7 @@
    ],
    "saint": "Petrus, Apostel",
    "day": "06-29",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "pavlos-06-29",
@@ -333,8 +309,7 @@
    ],
    "saint": "Paulus, Apostel",
    "day": "06-29",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "kyriaki-07-07",
@@ -345,16 +320,14 @@
    ],
    "saint": "Kyriaki",
    "day": "07-07",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "marina-07-17",
    "name": "Marina",
    "saint": "Marina",
    "day": "07-17",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "ilias-07-20",
@@ -368,8 +341,7 @@
    ],
    "saint": "Elija, Prophet",
    "day": "07-20",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "magdalini-07-22",
@@ -380,8 +352,7 @@
    ],
    "saint": "Maria Magdalena",
    "day": "07-22",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "christina-07-24",
@@ -392,8 +363,7 @@
    ],
    "saint": "Christina",
    "day": "07-24",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "anna-07-25",
@@ -405,8 +375,7 @@
    ],
    "saint": "Anna, Mutter der Gottesmutter",
    "day": "07-25",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "paraskevi-07-26",
@@ -417,8 +386,7 @@
    ],
    "saint": "Paraskevi",
    "day": "07-26",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "panteleimon-07-27",
@@ -429,8 +397,7 @@
    ],
    "saint": "Panteleimon",
    "day": "07-27",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "sotirios-08-06",
@@ -441,8 +408,7 @@
    ],
    "saint": "Verklärung des Herrn",
    "day": "08-06",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "maria-08-15",
@@ -456,8 +422,7 @@
    "saint": "Entschlafung der Gottesmutter",
    "day": "08-15",
    "usual": true,
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "panagiotis-08-15",
@@ -467,8 +432,7 @@
    ],
    "saint": "Entschlafung der Gottesmutter",
    "day": "08-15",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "gerasimos-08-16",
@@ -478,8 +442,7 @@
    ],
    "saint": "Gerasimos von Kefalonia",
    "day": "08-16",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "titos-08-25",
@@ -489,8 +452,7 @@
    ],
    "saint": "Titus, Apostel",
    "day": "08-25",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "fanourios-08-27",
@@ -500,8 +462,7 @@
    ],
    "saint": "Fanourios",
    "day": "08-27",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "alexandros-08-30",
@@ -514,8 +475,7 @@
    ],
    "saint": "Alexander, Patriarch von Konstantinopel",
    "day": "08-30",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "stavros-09-14",
@@ -525,8 +485,7 @@
    ],
    "saint": "Kreuzerhöhung",
    "day": "09-14",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "sofia-09-17",
@@ -539,8 +498,7 @@
    ],
    "saint": "Sofia und ihre Töchter",
    "day": "09-17",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "agapi-09-17",
@@ -550,8 +508,7 @@
    ],
    "saint": "Agapi, Tochter der Sofia",
    "day": "09-17",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "elpida-09-17",
@@ -561,8 +518,7 @@
    ],
    "saint": "Elpis, Tochter der Sofia",
    "day": "09-17",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "efstathios-09-20",
@@ -573,11 +529,10 @@
    ],
    "saint": "Efstathios",
    "day": "09-20",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
-   "id": "ionas-09-22",
+   "id": "ionas-09-21",
    "name": "Ionas",
    "gloss": "Jonas",
    "variants": [
@@ -585,9 +540,8 @@
     "Jonah"
    ],
    "saint": "Jonas, Prophet",
-   "day": "09-22",
-   "source": "eoc",
-   "unchecked": true
+   "day": "09-21",
+   "source": "eoc"
   },
   {
    "id": "kyriakos-09-29",
@@ -597,8 +551,7 @@
    ],
    "saint": "Kyriakos der Einsiedler",
    "day": "09-29",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "dionysios-10-03",
@@ -611,8 +564,7 @@
    ],
    "saint": "Dionysios Areopagites",
    "day": "10-03",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "thomas-10-06",
@@ -623,8 +575,7 @@
    ],
    "saint": "Thomas, Apostel",
    "day": "10-06",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "loukas-10-18",
@@ -637,8 +588,7 @@
    ],
    "saint": "Lukas, Evangelist",
    "day": "10-18",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "iakovos-10-23",
@@ -651,8 +601,7 @@
    ],
    "saint": "Jakobus, Bruder des Herrn",
    "day": "10-23",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "dimitrios-10-26",
@@ -666,8 +615,7 @@
    ],
    "saint": "Demetrios, Großmärtyrer",
    "day": "10-26",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "kosmas-11-01",
@@ -678,8 +626,7 @@
    ],
    "saint": "Kosmas, Anargyros",
    "day": "11-01",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "damianos-11-01",
@@ -689,8 +636,7 @@
    ],
    "saint": "Damian, Anargyros",
    "day": "11-01",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "michail-11-08",
@@ -704,8 +650,7 @@
    ],
    "saint": "Synaxis des Erzengels Michael",
    "day": "11-08",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "gavriil-11-08",
@@ -716,8 +661,7 @@
    ],
    "saint": "Synaxis des Erzengels Gabriel",
    "day": "11-08",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "nektarios-11-09",
@@ -727,8 +671,7 @@
    ],
    "saint": "Nektarios von Ägina",
    "day": "11-09",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "filippos-11-14",
@@ -740,8 +683,7 @@
    ],
    "saint": "Philippus, Apostel",
    "day": "11-14",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "matthaios-11-16",
@@ -752,8 +694,7 @@
    ],
    "saint": "Matthäus, Apostel und Evangelist",
    "day": "11-16",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "aikaterini-11-25",
@@ -774,8 +715,7 @@
    ],
    "saint": "Katharina von Alexandrien",
    "day": "11-25",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "andreas-11-30",
@@ -789,8 +729,7 @@
    ],
    "saint": "Andreas, Apostel",
    "day": "11-30",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "nikolaos-12-06",
@@ -809,8 +748,7 @@
    ],
    "saint": "Nikolaus von Myra",
    "day": "12-06",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "spyridon-12-12",
@@ -822,8 +760,7 @@
    ],
    "saint": "Spyridon von Trimythous",
    "day": "12-12",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "efstratios-12-13",
@@ -833,8 +770,7 @@
    ],
    "saint": "Efstratios",
    "day": "12-13",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "orestis-12-13",
@@ -844,8 +780,7 @@
    ],
    "saint": "Orestis",
    "day": "12-13",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "eleftherios-12-15",
@@ -855,16 +790,14 @@
    ],
    "saint": "Eleftherios",
    "day": "12-15",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "eleftheria-12-15",
    "name": "Eleftheria",
    "saint": "Eleftheria",
    "day": "12-15",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "dionysios-12-17",
@@ -876,8 +809,7 @@
    "saint": "Dionysios von Zakynthos",
    "day": "12-17",
    "usual": true,
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "sevastianos-12-18",
@@ -889,8 +821,7 @@
    ],
    "saint": "Sebastian",
    "day": "12-18",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "evgenia-12-24",
@@ -900,8 +831,7 @@
    ],
    "saint": "Evgenia",
    "day": "12-24",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "christos-12-25",
@@ -912,8 +842,7 @@
    ],
    "saint": "Geburt Christi",
    "day": "12-25",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "stefanos-12-27",
@@ -927,8 +856,7 @@
    ],
    "saint": "Stephanus, erster Märtyrer",
    "day": "12-27",
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "anastasios-easter-plus-0",
@@ -941,8 +869,7 @@
    ],
    "saint": "Auferstehung des Herrn (Ostersonntag)",
    "easter": 0,
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "lambros-easter-plus-0",
@@ -954,8 +881,7 @@
    ],
    "saint": "Auferstehung des Herrn (Ostersonntag)",
    "easter": 0,
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "paschalis-easter-plus-0",
@@ -966,8 +892,7 @@
    ],
    "saint": "Auferstehung des Herrn (Ostersonntag)",
    "easter": 0,
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "vaios-easter-minus-7",
@@ -977,8 +902,7 @@
    ],
    "saint": "Palmsonntag",
    "easter": -7,
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "lazaros-easter-minus-8",
@@ -990,8 +914,7 @@
    "saint": "Lazarus-Samstag",
    "easter": -8,
    "usual": true,
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "theodoros-easter-minus-43",
@@ -1002,8 +925,7 @@
    ],
    "saint": "Theodor Tiron (Samstag der ersten Fastenwoche)",
    "easter": -43,
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "pigi-easter-plus-5",
@@ -1014,8 +936,7 @@
    ],
    "saint": "Lebensspendende Quelle (Freitag der Osterwoche)",
    "easter": 5,
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   },
   {
    "id": "thomas-easter-plus-7",
@@ -1027,8 +948,7 @@
    "saint": "Thomas-Sonntag (Sonntag nach Ostern)",
    "easter": 7,
    "usual": true,
-   "source": "eoc",
-   "unchecked": true
+   "source": "eoc"
   }
  ]
 }

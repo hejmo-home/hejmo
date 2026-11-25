@@ -55,6 +55,7 @@ func syncBirthdays(tx *sql.Tx, householdID, calendarName string) error {
 	type want struct {
 		title, rrule, nameDayContact string
 		start                        time.Time
+		slava                        bool
 	}
 	loc := time.UTC
 	var tz string
@@ -88,6 +89,13 @@ func syncBirthdays(tx *sql.Tx, householdID, calendarName string) error {
 	}
 	for _, d := range days {
 		wanted[d.id] = want{title: d.title, rrule: d.rrule, start: d.start, nameDayContact: d.contactID}
+	}
+	slavas, err := slavaEvents(tx, householdID, loc)
+	if err != nil {
+		return err
+	}
+	for _, s := range slavas {
+		wanted[s.id] = want{title: s.title, rrule: s.rrule, start: s.start, slava: true}
 	}
 	type have struct{ title, start, rrule string }
 	haveEvents := map[string]have{}
@@ -126,13 +134,16 @@ func syncBirthdays(tx *sql.Tx, householdID, calendarName string) error {
 		return err
 	}
 	for id, w := range wanted {
-		ev := calendar.Event{ID: id, CalendarID: calID, Title: w.title, AllDay: true, Start: w.start, End: w.start.AddDate(0, 0, 1), RRule: w.rrule, Birthday: w.nameDayContact == ""}
+		ev := calendar.Event{ID: id, CalendarID: calID, Title: w.title, AllDay: true, Start: w.start, End: w.start.AddDate(0, 0, 1), RRule: w.rrule, Birthday: w.nameDayContact == "" && !w.slava}
 		old, exists := haveEvents[id]
 		switch {
 		case !exists:
 			err = insertEventRow(tx, householdID, ev)
 			if err == nil && w.nameDayContact != "" {
 				_, err = tx.Exec(`UPDATE events SET name_day_contact = ? WHERE id = ?`, w.nameDayContact, id)
+			}
+			if err == nil && w.slava {
+				_, err = tx.Exec(`UPDATE events SET slava = 1 WHERE id = ?`, id)
 			}
 		case old.title != ev.Title || old.start != w.start.Format(dateLayout) || old.rrule != w.rrule:
 			err = updateEventRow(tx, householdID, ev)

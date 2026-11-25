@@ -409,7 +409,7 @@ func writeAudience(tx *sql.Tx, table, key, id string, a calendar.Audience) error
 
 const eventSelect = `SELECT id, calendar_id, title, description, location, all_day, start_local, end_local, tzid, rrule,
 	COALESCE(series_id, ''), COALESCE(recurrence_id, ''), updated_at, invited, invite_organizer, invite_response, invite_link,
-	(SELECT kind = 'birthdays' FROM calendars WHERE calendars.id = events.calendar_id) AND name_day_contact IS NULL, COALESCE(name_day_contact, '') FROM events`
+	(SELECT kind = 'birthdays' FROM calendars WHERE calendars.id = events.calendar_id) AND name_day_contact IS NULL AND slava = 0, COALESCE(name_day_contact, ''), slava FROM events`
 
 // Series returns the event with this id together with its series: the
 // master and all changed occurrences.
@@ -481,7 +481,7 @@ func scanEvent(rows *sql.Rows) (calendar.Event, error) {
 	var invited bool
 	var inv calendar.Invitation
 	if err := rows.Scan(&e.ID, &e.CalendarID, &e.Title, &e.Description, &e.Location, &e.AllDay, &start, &end, &tz, &e.RRule, &e.SeriesID, &recID, &updated,
-		&invited, &inv.Organizer, &inv.Response, &inv.WebLink, &e.Birthday, &e.NameDayContact); err != nil {
+		&invited, &inv.Organizer, &inv.Response, &inv.WebLink, &e.Birthday, &e.NameDayContact, &e.Slava); err != nil {
 		return e, err
 	}
 	if invited {

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/meal"
+	"github.com/hejmo-home/hejmo/internal/nameday"
 )
 
 // ErrNotFound is returned when a record does not exist.
@@ -56,6 +57,14 @@ type Household struct {
 	// (ticket 318). Off by default; the list is kept while name days are off.
 	NameDaysOn  bool
 	NameDayList string
+	// OrthodoxCalendar is the calendar style of the Orthodox church of the household (ticket 338, shared with the
+	// Orthodox holidays of ticket 339): the revised Julian calendar (the default) or the Julian one.
+	OrthodoxCalendar nameday.Style
+	// SlavaOn puts the Slava of the household into the calendar Birthdays; Slava is the saint (an id of
+	// nameday.Slavas or nameday.OwnID, "" until one was chosen) and SlavaOwnName and SlavaOwnDay ("MM-DD") the own
+	// Slava. Everything is kept while the Slava is off.
+	SlavaOn                          bool
+	Slava, SlavaOwnName, SlavaOwnDay string
 	// FirstStepsHidden is set when a parent hid the first steps card on the start page.
 	FirstStepsHidden bool
 	// BelowZero says unticking a task may take a star balance below zero (ticket 292); on by default.
@@ -322,14 +331,14 @@ func (db *DB) CreateHousehold(h Household) (Household, error) {
 // Household loads a household by id.
 func (db *DB) Household(id string) (Household, error) {
 	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(home_place_id, 0), COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, date_format, time_format, temperature_unit, auto_update, update_ack,
-		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled, below_zero, name_days_on, COALESCE(name_day_list, '')
+		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled, below_zero, name_days_on, COALESCE(name_day_list, ''), orthodox_calendar, slava_on, COALESCE(slava, ''), slava_own_name, slava_own_day
 		FROM households WHERE id = ?`, id))
 }
 
 // HomeHousehold returns the household this box serves (V1: exactly one).
 func (db *DB) HomeHousehold() (Household, error) {
 	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(home_place_id, 0), COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, date_format, time_format, temperature_unit, auto_update, update_ack,
-		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled, below_zero, name_days_on, COALESCE(name_day_list, '')
+		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled, below_zero, name_days_on, COALESCE(name_day_list, ''), orthodox_calendar, slava_on, COALESCE(slava, ''), slava_own_name, slava_own_day
 		FROM households ORDER BY created_at, rowid LIMIT 1`))
 }
 
@@ -337,7 +346,7 @@ func (db *DB) scanHousehold(row *sql.Row) (Household, error) {
 	var h Household
 	var skipped string
 	err := row.Scan(&h.ID, &h.Name, &h.HomeName, &h.HomePlaceID, &h.Latitude, &h.Longitude, &h.Region, &h.Timezone, &h.DateFormat, &h.TimeFormat, &h.TemperatureUnit, &h.AutoUpdate, &h.UpdateAck,
-		&h.MealCutoffs.Breakfast, &h.MealCutoffs.Lunch, &h.MealCutoffs.Snack, &h.MealCutoffs.Dinner, &h.FirstStepsHidden, &skipped, &h.MCPEnabled, &h.BelowZero, &h.NameDaysOn, &h.NameDayList)
+		&h.MealCutoffs.Breakfast, &h.MealCutoffs.Lunch, &h.MealCutoffs.Snack, &h.MealCutoffs.Dinner, &h.FirstStepsHidden, &skipped, &h.MCPEnabled, &h.BelowZero, &h.NameDaysOn, &h.NameDayList, &h.OrthodoxCalendar, &h.SlavaOn, &h.Slava, &h.SlavaOwnName, &h.SlavaOwnDay)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Household{}, ErrNotFound
 	}

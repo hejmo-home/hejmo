@@ -1,6 +1,8 @@
 {{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
   <h1 class="rcp-title"><span class="art-sym big" aria-hidden="true">{{.Symbol}}</span><span>{{.R.Name}}</span></h1>
+  {{with .NewArticles}}<div class="notice imp-new-art" role="status"><p class="h"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><span>{{t "recipes.import.newart.title"}}</span></p><ul>{{range .Links}}<li><a href="{{.Href}}">{{.Name}}</a></li>{{end}}</ul><p>{{.Text}}</p></div>{{end}}
   <p class="rcp-act"><a class="button" href="{{.CookHref}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M2 10h20"/><path d="M9 6.5c0-1.2 1.2-1.2 1.2-2.5M13.8 6.5c0-1.2 1.2-1.2 1.2-2.5"/></svg>{{t "recipes.cook"}}</a>{{if .Parent}}<a class="button secondary" href="{{.EditHref}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>{{t "recipes.change"}}</a>{{end}}</p>
+  {{with .Cover}}<figure class="rcp-cover"><img src="{{.Src}}" alt="{{.Alt}}" width="560" height="373"><figcaption>{{.Caption}}</figcaption></figure>{{end}}
   {{with .Starter}}<p class="hint rcp-starter">{{.}}</p>{{end}}
   <dl class="facts rcp-facts">
     <dt>{{t "recipes.p.category"}}</dt><dd>{{.CategoryName}}</dd>
@@ -9,7 +11,7 @@
     <dt>{{t "recipes.p.mealtimes"}}</dt><dd>{{range .Mealtimes}}<span class="mt">{{template "mealIcon" .}}{{t (printf "meals.mealtime.%s" .)}}</span> {{else}}{{t "recipes.mealtimes.every"}}{{end}}</dd>
     {{if .DietWhy}}<dt>{{t "recipes.p.diet"}}</dt><dd>{{with .Diet}}<span class="tag diet">{{template "leafIcon"}}{{.}}</span>{{end}}<p class="diet-why">{{.DietWhy}}</p></dd>{{end}}
     {{if .Tags}}<dt>{{t "recipes.p.tags"}}</dt><dd>{{range .Tags}}<span class="tag grp">{{.}}</span> {{end}}</dd>{{end}}
-    {{if .Source}}<dt>{{t "recipes.p.source"}}</dt><dd>{{if .SourceLink}}<a class="ext" href="{{.SourceLink}}" rel="noopener noreferrer" target="_blank">{{if .SourceName}}{{.SourceName}}{{else}}{{.Source}}{{end}}</a>{{else}}{{.Source}}{{end}}</dd>{{end}}
+    {{if .Source}}<dt>{{t "recipes.p.source"}}</dt><dd>{{if .SourceLink}}<a class="ext" href="{{.SourceLink}}" rel="noopener noreferrer" target="_blank">{{if .SourceName}}{{.SourceName}}{{else}}{{.Source}}{{end}}</a>{{else}}{{.Source}}{{end}}{{with .SrcWhen}}<span class="src-when">{{.}}</span>{{end}}</dd>{{end}}
   </dl>
   <section class="rcp-check{{if .HasWarn}} has-warn{{end}}" aria-labelledby="chk">
     <h2 id="chk"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>{{t "recipes.check.title"}}</h2>
@@ -36,11 +38,13 @@
   </div></div>
   {{with .Tips}}<section class="rcp-tips" aria-labelledby="tip"><h2 id="tip"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>{{t "recipes.tips.title"}}</h2><p>{{.}}</p></section>{{end}}
   {{with .Nut}}<section class="rcp-nutri" id="nut" aria-labelledby="nut-h"><h2 id="nut-h"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M7 20h10M5 7h14"/><path d="M5 7l-3 6a3 3 0 0 0 6 0zM19 7l-3 6a3 3 0 0 0 6 0z"/></svg>{{t "nutrition.title"}}</h2><p class="nut-lead">{{.Lead}}</p>
+    {{with .Hint}}<p class="hint">{{.}}</p>{{end}}
     {{with .Done}}<p class="none"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>{{.}}</span></p>{{end}}
-    {{if .Flag}}<div class="nut-gap" role="note"><span class="flag warn"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><span>{{.Flag}}</span></span>
+    {{if .WebGap}}<div class="nut-gap" role="note"><span class="flag warn"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><span>{{.Flag}}</span></span><p>{{.WebGap}}</p></div>
+    {{else if .Flag}}<div class="nut-gap" role="note"><span class="flag warn"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><span>{{.Flag}}</span></span>
       {{if .Skip}}<p>{{.Skip}}</p><ul>{{range .Items}}<li><b>{{.Name}}</b>{{.Reason}}{{if .LinkHref}} <a href="{{.LinkHref}}">{{.LinkText}}</a>{{end}}</li>{{end}}</ul>{{end}}
       {{if .Miss}}<p>{{.Miss}}</p><ul>{{range .Gaps}}<li>{{.}}</li>{{end}}</ul>{{end}}</div>{{end}}
-    {{if .Rows}}<table class="nut-table"><caption class="sr">{{t "nutrition.title"}}</caption><tbody>{{range .Rows}}<tr{{if .Sub}} class="nut-sub"{{end}}><th scope="row">{{.Label}}</th><td>{{if .NA}}<span class="nut-na">{{t "nutrition.na"}}</span>{{else if .Big}}<span class="kcal">{{.Value}}</span>{{with .KJ}}<span class="kj">{{.}}</span>{{end}}{{else}}{{.Value}}{{end}}</td></tr>{{end}}</tbody></table>{{end}}
+    {{if .Rows}}<table class="nut-table"><caption class="sr">{{t "nutrition.title"}}</caption><tbody>{{range .Rows}}<tr{{if .Sub}} class="nut-sub"{{end}}><th scope="row">{{.Label}}</th><td>{{if .NA}}{{if .Web}}<span class="nut-na web">{{t "recipes.import.nut.na"}}</span>{{else}}<span class="nut-na">{{t "nutrition.na"}}</span>{{end}}{{else if .Big}}<span class="kcal">{{.Value}}</span>{{with .KJ}}<span class="kj">{{.}}</span>{{end}}{{else}}{{.Value}}{{end}}</td></tr>{{end}}</tbody></table>{{end}}
     {{with .Source}}<p class="hint nut-src">{{.}}</p>{{end}}
     {{with .Who}}<p class="nut-who">{{.}}</p>{{end}}
   </section>{{end}}

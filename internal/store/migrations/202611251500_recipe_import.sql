@@ -2,7 +2,7 @@
 --
 -- A page that was read waits here as a draft until a parent saves it: only the parent who read it can open it,
 -- and after an hour the page's data and its picture are deleted (the row stays a day, so the page can say so).
--- data is the recipe as the page described it (JSON), picture the page's image already made into the stored JPEG.
+-- data is what the page described (JSON), with the pictures of its recipes already made into the stored JPEG.
 CREATE TABLE recipe_drafts (
     id           TEXT PRIMARY KEY,
     household_id TEXT NOT NULL REFERENCES households(id) ON DELETE CASCADE,
@@ -10,7 +10,6 @@ CREATE TABLE recipe_drafts (
     url          TEXT NOT NULL,
     host         TEXT NOT NULL,
     data         BLOB NOT NULL,
-    picture      BLOB,
     expired      INTEGER NOT NULL DEFAULT 0 CHECK (expired IN (0, 1)),
     read_at      TEXT NOT NULL
 );

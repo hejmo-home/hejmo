@@ -26,6 +26,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/places"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
+	"github.com/hejmo-home/hejmo/internal/recipeimport"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/update"
 	"github.com/hejmo-home/hejmo/internal/weather"
@@ -85,6 +86,8 @@ type Options struct {
 	// Pictures downloads the web images of own articles (ticket 164). Nil means
 	// a fetcher that only reaches public addresses; tests pass one that reaches their own server.
 	Pictures *picture.Fetcher
+	// Recipes reads the web pages of the recipe import (ticket 289). Nil means a fetcher that only reaches public names.
+	Recipes *recipeimport.Fetcher
 	// Gate is the box's door to the outside (ticket 201). Nil means a gate
 	// backed by DB, which is what the box uses.
 	Gate *outbound.Gate
@@ -160,6 +163,8 @@ type server struct {
 	pictures pendingPictures
 	// fetcher downloads web images, only from public addresses.
 	fetcher *picture.Fetcher
+	// recipes reads the web pages of the recipe import.
+	recipes *recipeimport.Fetcher
 	// outlook holds the device sign-ins of Outlook that are begun and not finished (ticket 177).
 	outlook outlookFlows
 	rolled  sync.Map // household id -> the day its meal plan calendar was last rolled forward
@@ -206,6 +211,9 @@ func New(opts Options) http.Handler {
 	}
 	if s.fetcher = opts.Pictures; s.fetcher == nil {
 		s.fetcher = &picture.Fetcher{Gate: s.gate}
+	}
+	if s.recipes = opts.Recipes; s.recipes == nil {
+		s.recipes = &recipeimport.Fetcher{Gate: s.gate}
 	}
 	s.done = opts.Done
 	s.kiosk = opts.Kiosk
@@ -444,11 +452,18 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /meals/recipes/new", s.handleRecipeNew)
 	mux.HandleFunc("GET /meals/recipes/suggest", s.handleRecipeSuggest)
 	mux.HandleFunc("POST /meals/recipes", s.handleRecipeCreate)
+	mux.HandleFunc("GET /meals/recipes/import", s.handleImportForm)
+	mux.HandleFunc("POST /meals/recipes/import", s.handleImportRead)
+	mux.HandleFunc("GET /meals/recipes/import/{id}", s.handleImportDraft)
+	mux.HandleFunc("POST /meals/recipes/import/{id}", s.handleImportSave)
+	mux.HandleFunc("GET /meals/recipes/import/{id}/cancel", s.handleImportCancel)
+	mux.HandleFunc("GET /meals/recipes/import/{id}/picture", s.handleImportPicture)
+	// The pages of one recipe go through one pattern per method: "import/{id}" (the drafts of ticket 289) is more
+	// specific than "{id}/{action}", while it would conflict with each of "{id}/cook", "{id}/edit" and so on.
+	mux.HandleFunc("GET /meals/recipes/{id}/{action}", s.handleRecipeAction)
+	mux.HandleFunc("POST /meals/recipes/{id}/{action}", s.handleRecipeAction)
 	mux.HandleFunc("GET /meals/recipes/{id}", s.handleRecipePage)
-	mux.HandleFunc("GET /meals/recipes/{id}/cook", s.handleRecipeCook)
-	mux.HandleFunc("GET /meals/recipes/{id}/edit", s.handleRecipeEdit)
 	mux.HandleFunc("POST /meals/recipes/{id}", s.handleRecipeSave)
-	mux.HandleFunc("POST /meals/recipes/{id}/delete", s.handleRecipeDelete)
 	mux.HandleFunc("GET /meals/templates", s.handleTemplatesPage)
 	mux.HandleFunc("GET /meals/templates/new", s.handleTemplateNew)
 	mux.HandleFunc("POST /meals/templates", s.handleTemplateCreate)

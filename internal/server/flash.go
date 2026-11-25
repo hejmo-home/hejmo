@@ -123,6 +123,7 @@ var flashFields = map[string][]string{
 	"flash.pause_saved":            {"names", "range"},
 	"flash.contact_added_for":      {"name", "sentence"},
 	"flash.contacts_imported":      {"file", "summary"},
+	"flash.recipe_imported":        {"name", "host"},
 	"flash.rtpl_moved":             {"title", "place", "total"},
 	"flash.routine_template_saved": {"name", "id"},
 	"flash.photo_moved":            {"n", "album"},

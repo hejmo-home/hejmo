@@ -5487,5 +5487,7 @@
   "recipes.import.nut.gap.many": "Für diese Werte hat die Webseite keine Angabe: {values}.",
   "recipes.import.nut.dropped.portions": "Die Werte von {host} gelten nicht mehr, seit {name} am {date} die Portionen von {from} auf {to} geändert hat. Darum rechnet Hejmo jetzt selbst.",
   "recipes.import.nut.dropped.ingredients": "Die Werte von {host} gelten nicht mehr, seit {name} am {date} die Zutaten geändert hat. Darum rechnet Hejmo jetzt selbst.",
-  "recipes.import.someone": "jemand"
+  "recipes.import.someone": "jemand",
+  "recipes.import.nut.na": "nicht angegeben",
+  "recipes.import.name.hint": "So steht es im Essensplan und auf den Displays."
 }

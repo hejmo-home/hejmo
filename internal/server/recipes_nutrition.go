@@ -9,6 +9,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/nutrition"
 	"github.com/hejmo-home/hejmo/internal/recipe"
+	"github.com/hejmo-home/hejmo/internal/recipeimport"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/unit"
 )
@@ -78,6 +79,7 @@ var nutritionRows = []struct {
 type nutRowView struct {
 	Label, Value, KJ string
 	Sub, NA, Big     bool
+	Web              bool // a value of a web page: "not stated" when it has none
 }
 
 type nutItemView struct {
@@ -97,6 +99,8 @@ type nutView struct {
 	Rows   []nutRowView
 	Source template.HTML
 	Who    template.HTML
+	Hint   string // why Hejmo calculates, after the page's values stopped to hold
+	WebGap string // the values the page did not state
 }
 
 // sourceWords names a source with its licence, in words.
@@ -267,5 +271,54 @@ func (c *itemCtx) nutritionView(r recipe.Recipe) *nutView {
 		src += ` <a href="/settings/licences">` + html.EscapeString(c.t("nutrition.source.link")) + `</a>`
 	}
 	v.Source = template.HTML(src) // #nosec G203 -- escaped, the link is ours
+	return v
+}
+
+// nutritionViewOf is the card of the recipe page: the values an imported page stated while they hold (ticket 289),
+// else the calculation of ticket 288, with a word on why it replaced them when they stopped to hold.
+func (c *itemCtx) nutritionViewOf(rec store.Recipe) *nutView {
+	pn, ok, err := c.s.db.RecipePageNutrition(c.p.household.ID, rec.ID)
+	if err != nil || !ok || !c.mayWatchNutrition() {
+		return c.nutritionView(rec.Recipe)
+	}
+	parent := c.p.person.Role == store.RoleParent
+	imp, _, _ := c.s.db.RecipeImport(c.p.household.ID, rec.ID)
+	if !pn.Active() {
+		v := c.nutritionView(rec.Recipe)
+		if v == nil {
+			return nil
+		}
+		who := pn.DroppedByName
+		if who == "" {
+			who = c.t("recipes.import.someone")
+		}
+		key := "recipes.import.nut.dropped.ingredients"
+		if pn.DroppedWhat == "portions" {
+			key = "recipes.import.nut.dropped.portions"
+		}
+		v.Hint = c.t(key, "host", imp.Host, "name", who, "date", c.p.day(pn.DroppedAt), "from", strconv.Itoa(pn.Portions), "to", strconv.Itoa(pn.DroppedTo))
+		return v
+	}
+	rows, stated := c.pageNutRows(&recipeimport.Nutrition{KCal: pn.KCal, KJ: pn.KJ, Fat: pn.Fat, Saturates: pn.Saturates, Carbs: pn.Carbs, Sugars: pn.Sugars, Protein: pn.Protein, Salt: pn.Salt})
+	v := &nutView{Lead: c.t("recipes.import.nut.lead"), Rows: rows}
+	if stated < len(rows) {
+		var missing []string
+		for _, r := range rows {
+			if r.NA {
+				missing = append(missing, r.Label)
+			}
+		}
+		key := "recipes.import.nut.gap.one"
+		if len(missing) > 1 {
+			key = "recipes.import.nut.gap.many"
+		}
+		v.Flag, v.WebGap = c.t("nutrition.flag.incomplete"), c.t(key, "values", c.names(missing))
+	}
+	link := `<a class="ext" href="` + html.EscapeString(pn.URL) + `" rel="noopener noreferrer" target="_blank">` + html.EscapeString(imp.Host) + `</a>`
+	text := html.EscapeString(c.t("recipes.import.nut.source", "link", "\x00", "date", c.p.day(pn.At)))
+	v.Source = template.HTML(strings.Replace(text, "\x00", link, 1)) // #nosec G203 -- escaped, the link is built with escaped text
+	if parent {
+		v.Who = c.whoSees()
+	}
 	return v
 }

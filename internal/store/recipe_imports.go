@@ -22,15 +22,11 @@ type RecipeDraft struct {
 	Expired            bool
 }
 
-// AddRecipeDraft keeps what was read from a page: its data (JSON) and the picture made from the page's image, if any.
-func (db *DB) AddRecipeDraft(householdID, by, url, host string, data, picture []byte, at time.Time) (RecipeDraft, error) {
+// AddRecipeDraft keeps what was read from a page: its data (JSON, with the pictures made from the page's images).
+func (db *DB) AddRecipeDraft(householdID, by, url, host string, data []byte, at time.Time) (RecipeDraft, error) {
 	id := newID()
-	var pic any
-	if len(picture) > 0 {
-		pic = picture
-	}
-	if _, err := db.sql.Exec(`INSERT INTO recipe_drafts (id, household_id, read_by, url, host, data, picture, read_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		id, householdID, by, url, host, data, pic, at.UTC().Format(time.RFC3339)); err != nil {
+	if _, err := db.sql.Exec(`INSERT INTO recipe_drafts (id, household_id, read_by, url, host, data, read_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		id, householdID, by, url, host, data, at.UTC().Format(time.RFC3339)); err != nil {
 		return RecipeDraft{}, err
 	}
 	return db.RecipeDraft(householdID, id)
@@ -40,9 +36,9 @@ func (db *DB) AddRecipeDraft(householdID, by, url, host string, data, picture []
 func (db *DB) RecipeDraft(householdID, id string) (RecipeDraft, error) {
 	var d RecipeDraft
 	var at string
-	err := db.sql.QueryRow(`SELECT d.id, d.url, d.host, d.read_by, COALESCE(p.name, ''), d.read_at, d.data, COALESCE(d.picture, x''), d.expired
+	err := db.sql.QueryRow(`SELECT d.id, d.url, d.host, d.read_by, COALESCE(p.name, ''), d.read_at, d.data, d.expired
 		FROM recipe_drafts d LEFT JOIN people p ON p.id = d.read_by WHERE d.household_id = ? AND d.id = ?`, householdID, id).
-		Scan(&d.ID, &d.URL, &d.Host, &d.ReadBy, &d.ReadByName, &at, &d.Data, &d.Picture, &d.Expired)
+		Scan(&d.ID, &d.URL, &d.Host, &d.ReadBy, &d.ReadByName, &at, &d.Data, &d.Expired)
 	if errors.Is(err, sql.ErrNoRows) {
 		return RecipeDraft{}, ErrNotFound
 	}
@@ -55,7 +51,7 @@ func (db *DB) DeleteRecipeDraft(householdID, id string) error {
 	return expectOne(db.sql.Exec(`DELETE FROM recipe_drafts WHERE household_id = ? AND id = ?`, householdID, id))
 }
 
-// ExpireRecipeDrafts deletes the data and the picture of every draft read before the cutoff and keeps a note
+// ExpireRecipeDrafts deletes the data of every draft read before the cutoff and keeps a note
 // that it expired; notes older than a day are deleted.
 func (db *DB) ExpireRecipeDrafts(cutoff, now time.Time) error {
 	tx, err := db.sql.Begin()
@@ -63,7 +59,7 @@ func (db *DB) ExpireRecipeDrafts(cutoff, now time.Time) error {
 		return err
 	}
 	defer tx.Rollback()
-	if _, err := tx.Exec(`UPDATE recipe_drafts SET data = x'', picture = NULL, expired = 1 WHERE expired = 0 AND read_at <= ?`, cutoff.UTC().Format(time.RFC3339)); err != nil {
+	if _, err := tx.Exec(`UPDATE recipe_drafts SET data = x'', expired = 1 WHERE expired = 0 AND read_at <= ?`, cutoff.UTC().Format(time.RFC3339)); err != nil {
 		return err
 	}
 	if _, err := tx.Exec(`DELETE FROM recipe_drafts WHERE expired = 1 AND read_at <= ?`, now.Add(-24*time.Hour).UTC().Format(time.RFC3339)); err != nil {
@@ -92,8 +88,8 @@ func (p PageNutrition) Active() bool { return p.DroppedAt.IsZero() }
 // Imported is what an imported recipe keeps besides the recipe itself.
 type Imported struct {
 	URL, Host, Lang string
-	At              time.Time
-	Cover           []byte // the stored JPEG, nil for none
+	At              time.Time // zero: now
+	Cover           []byte    // the stored JPEG, nil for none
 	Nutrition       *PageNutrition
 	DraftID         string // deleted with the save
 }
@@ -131,7 +127,10 @@ func (db *DB) CreateImportedRecipe(householdID, personID string, r recipe.Recipe
 	if err != nil {
 		return Recipe{}, err
 	}
-	at := imp.At.UTC().Format(time.RFC3339)
+	at := now()
+	if !imp.At.IsZero() {
+		at = imp.At.UTC().Format(time.RFC3339)
+	}
 	if _, err := tx.Exec(`INSERT INTO recipe_imported (recipe_id, url, host, lang, imported_by, imported_at) VALUES (?, ?, ?, ?, NULLIF(?, ''), ?)`,
 		id, imp.URL, imp.Host, imp.Lang, personID, at); err != nil {
 		return Recipe{}, err

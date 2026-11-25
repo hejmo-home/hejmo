@@ -120,8 +120,8 @@ func TestIngredientChangeDropsPageNutrition(t *testing.T) {
 func TestRecipeDraftsBelongToTheParentAndExpire(t *testing.T) {
 	f := newCalFixture(t)
 	at := time.Date(2026, 11, 25, 15, 0, 0, 0, time.UTC)
-	d, err := f.db.AddRecipeDraft(f.h.ID, f.mama.ID, "https://x.de/a", "x.de", []byte(`{"a":1}`), []byte("pic"), at)
-	if err != nil || d.ReadByName != "Mama" || string(d.Data) != `{"a":1}` || string(d.Picture) != "pic" || !d.ReadAt.Equal(at) {
+	d, err := f.db.AddRecipeDraft(f.h.ID, f.mama.ID, "https://x.de/a", "x.de", []byte(`{"a":1}`), at)
+	if err != nil || d.ReadByName != "Mama" || string(d.Data) != `{"a":1}` || !d.ReadAt.Equal(at) {
 		t.Fatalf("AddRecipeDraft = %+v, %v", d, err)
 	}
 	if err := f.db.ExpireRecipeDrafts(at.Add(-time.Minute), at.Add(time.Hour)); err != nil {
@@ -133,7 +133,7 @@ func TestRecipeDraftsBelongToTheParentAndExpire(t *testing.T) {
 	if err := f.db.ExpireRecipeDrafts(at.Add(time.Minute), at.Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}
-	if d, err = f.db.RecipeDraft(f.h.ID, d.ID); err != nil || !d.Expired || len(d.Data) != 0 || len(d.Picture) != 0 {
+	if d, err = f.db.RecipeDraft(f.h.ID, d.ID); err != nil || !d.Expired || len(d.Data) != 0 {
 		t.Fatalf("expired: %+v %v", d, err)
 	}
 	if err := f.db.DeleteRecipeDraft(f.h.ID, d.ID); err != nil {
@@ -146,7 +146,7 @@ func TestRecipeDraftsBelongToTheParentAndExpire(t *testing.T) {
 
 func TestSavingADraftDeletesIt(t *testing.T) {
 	f := newCalFixture(t)
-	d, _ := f.db.AddRecipeDraft(f.h.ID, f.mama.ID, "https://x.de/a", "x.de", []byte(`{}`), nil, time.Now())
+	d, _ := f.db.AddRecipeDraft(f.h.ID, f.mama.ID, "https://x.de/a", "x.de", []byte(`{}`), time.Now())
 	_, err := f.db.CreateImportedRecipe(f.h.ID, f.mama.ID, recipe.Recipe{Name: "A", Category: recipe.Main, Portions: 2}, store.Imported{URL: "https://x.de/a", Host: "x.de", At: time.Now(), DraftID: d.ID})
 	if err != nil {
 		t.Fatal(err)

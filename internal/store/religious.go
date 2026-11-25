@@ -216,21 +216,30 @@ func (db *DB) SyncAllReligious() error {
 var religiousNS = [16]byte{0x6b, 0xa7, 0xb8, 0x11, 0x9d, 0xad, 0x11, 0xd1, 0x80, 0xb4, 0x00, 0xc0, 0x4f, 0xd4, 0x30, 0xc8}
 
 // religiousEventID is a UUIDv5 of household, religion, holiday, the year the holiday belongs to (the year of its
-// own calendar when it has one) and whether it is the eve, so the same holiday has the same id on every start and
-// moves its event when the date changes.
-func religiousEventID(householdID string, h rh.Holiday, eve bool) string {
-	year := h.Start.Year()
-	if h.Own.Cal != "" {
-		year = h.Own.Year
-	}
+// own calendar when it has one), whether it is the eve and which occurrence of it that year it is (0 for the first,
+// which keeps the id it always had), so the same holiday has the same id on every start and moves its event when
+// the date changes. A holiday without a date of its own calendar can fall twice in a Gregorian year.
+func religiousEventID(householdID string, h rh.Holiday, eve bool, occurrence int) string {
+	year := religiousIDYear(h)
 	hash := sha1.New() //nolint:gosec // UUIDv5 is defined with SHA-1; no security use
 	hash.Write(religiousNS[:])
 	fmt.Fprintf(hash, "religious/%s/%s/%s/%d/%t", householdID, h.Religion, h.Key, year, eve)
+	if occurrence > 0 {
+		fmt.Fprintf(hash, "/%d", occurrence)
+	}
 	var b [16]byte
 	copy(b[:], hash.Sum(nil))
 	b[6] = b[6]&0x0f | 0x50
 	b[8] = b[8]&0x3f | 0x80
 	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
+}
+
+// religiousIDYear is the year a holiday belongs to for its id: the year of its own calendar when it has one.
+func religiousIDYear(h rh.Holiday) int {
+	if h.Own.Cal != "" {
+		return h.Own.Year
+	}
+	return h.Start.Year()
 }
 
 type religiousWant struct {
@@ -262,13 +271,18 @@ func (db *DB) syncReligious(tx *sql.Tx, householdID, calendarName string) (Relig
 		start := date0(today)
 		endOfNext := time.Date(year+1, 12, 31, 0, 0, 0, 0, time.UTC)
 		for _, plan := range rh.PlanFor(splitReligions(list), h.ReligiousOptions(), region, year-religiousYearsBack, year+religiousYearsAhead) {
-			for _, hol := range plan.Kept {
+			kept := slices.Clone(plan.Kept)
+			sort.SliceStable(kept, func(i, j int) bool { return kept[i].Start.Before(kept[j].Start) })
+			seen := map[string]int{}
+			for _, hol := range kept {
+				occ := seen[fmt.Sprintf("%s/%d", hol.Key, religiousIDYear(hol))]
+				seen[fmt.Sprintf("%s/%d", hol.Key, religiousIDYear(hol))]++
 				rel := string(plan.Religion)
 				s := time.Date(hol.Start.Year(), hol.Start.Month(), hol.Start.Day(), 0, 0, 0, 0, loc)
 				e := time.Date(hol.End.Year(), hol.End.Month(), hol.End.Day(), 0, 0, 0, 0, loc).AddDate(0, 0, 1)
-				wanted[religiousEventID(householdID, hol, false)] = religiousWant{religion: rel, key: hol.Key, title: db.titleReligious(lang, rel, hol.Key, false), start: s, end: e, vary: hol.Vary}
+				wanted[religiousEventID(householdID, hol, false, occ)] = religiousWant{religion: rel, key: hol.Key, title: db.titleReligious(lang, rel, hol.Key, false), start: s, end: e, vary: hol.Vary}
 				if hol.Eve {
-					wanted[religiousEventID(householdID, hol, true)] = religiousWant{religion: rel, key: hol.Key, title: db.titleReligious(lang, rel, hol.Key, true), start: s.AddDate(0, 0, -1), end: s, eve: true}
+					wanted[religiousEventID(householdID, hol, true, occ)] = religiousWant{religion: rel, key: hol.Key, title: db.titleReligious(lang, rel, hol.Key, true), start: s.AddDate(0, 0, -1), end: s, eve: true}
 				}
 				if !hol.Start.Before(start) && !hol.Start.After(endOfNext) {
 					change.Count++

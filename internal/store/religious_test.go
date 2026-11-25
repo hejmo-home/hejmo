@@ -2,6 +2,7 @@ package store_test
 
 import (
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -13,9 +14,13 @@ import (
 
 // Ticket 339: the generated calendar Religious holidays.
 
+// religiousTestNow is the clock of the store tests; the window of years and the tables must not depend on the wall clock.
+var religiousTestNow = time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC)
+
 func religiousHousehold(t *testing.T, region string, lat, lon float64) (*store.DB, store.Household) {
 	t.Helper()
 	db, _ := openTemp(t)
+	db.SetClock(func() time.Time { return religiousTestNow })
 	db.SetReligiousTitler(func(lang, religion, key string, eve bool) string {
 		if eve {
 			return key + " beginnt am Abend"
@@ -93,7 +98,7 @@ func TestSwitchingOnWritesAReadOnlyCalendarWithFestivalsAsOneEventAndTheEve(t *t
 	if !ok || !cal.ReadOnly || !cal.Shared || cal.Name != "Religiöse Feiertage" {
 		t.Fatalf("calendar %+v", cal)
 	}
-	year := time.Now().Year()
+	year := religiousTestNow.Year()
 	want := rh.Compute(rh.Jewish, rh.Options{Zone: time.UTC}, year-1, year+9)
 	var pessach rh.Holiday
 	for _, w := range want {
@@ -373,7 +378,40 @@ func TestTheCalendarWindowFollowsTheBoxClock(t *testing.T) {
 	for _, e := range religiousEvents(t, db, h) {
 		years[e.Start.Year()] = true
 	}
-	if !years[2041] || years[time.Now().Year()] {
+	if !years[2041] || years[2038] {
 		t.Errorf("years of the events: %v", years)
+	}
+}
+
+// A holiday that has no date of its own calendar and falls twice in a Gregorian year (the SGPC table lists Guru
+// Gobind Singh on 6 January and 27 December 2025) is two events, not one.
+func TestTwoOccurrencesOfOneHolidayInAYearAreTwoEvents(t *testing.T) {
+	t.Parallel()
+	db, h := religiousHousehold(t, "DE-HH", 0, 0)
+	if _, err := db.SaveReligiousHolidays(h.ID, on(rh.Sikh), "Religiöse Feiertage", "de"); err != nil {
+		t.Fatal(err)
+	}
+	var days []string
+	for _, e := range religiousEvents(t, db, h) {
+		if e.ReligiousKey == "guru_gobind_singh" && !e.ReligiousEve && e.Start.Year() == 2025 {
+			days = append(days, e.Start.Format("2006-01-02"))
+		}
+	}
+	slices.Sort(days)
+	if !slices.Equal(days, []string{"2025-01-06", "2025-12-27"}) {
+		t.Errorf("Guru Gobind Singh 2025: %v", days)
+	}
+	// Saving again keeps both and the ids.
+	before := map[string]bool{}
+	for _, e := range religiousEvents(t, db, h) {
+		before[e.ID] = true
+	}
+	if _, err := db.SaveReligiousHolidays(h.ID, on(rh.Sikh), "", "de"); err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range religiousEvents(t, db, h) {
+		if !before[e.ID] {
+			t.Errorf("event %s %s got a new id on the second save", e.ReligiousKey, e.Start.Format("2006-01-02"))
+		}
 	}
 }

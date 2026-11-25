@@ -38,6 +38,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/passkey/passkeytest"
 	"github.com/hejmo-home/hejmo/internal/recipe"
+	"github.com/hejmo-home/hejmo/internal/recipeimport"
 	"github.com/hejmo-home/hejmo/internal/reward"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/streak"
@@ -141,6 +142,8 @@ type layoutFixture struct {
 	recipes       []string // recipe IDs: the long one with twelve steps, then the plain one
 	rewards       []string // reward IDs (#291): redeemed, never redeemed, archived by hand, archived because its person left
 	recipeIDs     []string // recipe IDs (#279): the long Käsespätzle, then the Gurkensalat
+	importDraft   string   // the draft of a recipe read from a web page (#289): long names, lines Hejmo does not know, a picture, values
+	importedID    string   // the recipe imported from a web page, with its cover and the values of the page (#289)
 }
 
 func newLayoutFixture(t *testing.T) *layoutFixture {
@@ -295,6 +298,8 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 		}
 		f.recipes = append(f.recipes, got.ID)
 	}
+
+	f.addImport(t)
 
 	// Nutrition values (ticket 288): two of the five children see them, the card of a recipe that cannot count
 	// everything (a long free-text line, a unit without weight, an own article without a food, a value the food lacks),
@@ -623,6 +628,8 @@ var notRendered = map[string]string{
 	"/settings/lists/always/plan":             "fragment: the sentence under the holiday, rendered inside its page",
 	"/meals/recipes/suggest":                  "fragment: the suggestions under an ingredient line, rendered inside the recipe form",
 	"/meals/suggest":                          "fragment: the suggestions under a meal field, rendered inside the week form (mealRecipePages)",
+	"/meals/recipes/import/{id}/picture":      "the picture of a draft read from a web page, an image",
+	"/meals/recipes/import/{id}/cancel":       "discards a draft and redirects to the list",
 }
 
 // matches reports whether a request path is served by a route pattern.
@@ -682,6 +689,14 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 			add(parent, p)
 		}
 	}
+	// Importing a recipe from a web page (#289): the page with its errors (a POST answer), the check of a long recipe with
+	// lines Hejmo does not know, a choice made, the errors at the lines, and the recipe page with its cover.
+	for _, p := range []string{"/meals/recipes/import/" + f.importDraft, "/meals/recipes/" + f.importedID, "/meals/recipes/" + f.importedID + "/edit"} {
+		if !have[p] {
+			add(parent, p)
+		}
+	}
+	pages = append(pages, importPages(t, f)...)
 	// The badges of three children (#295): six of them two new, all ten, none. The crawl renders only the first
 	// person's page, so the others are added by hand.
 	for _, id := range []string{f.ids[3], f.ids[2], f.ids[4]} {
@@ -1801,4 +1816,58 @@ func contactPhotoPages(t *testing.T, f *layoutFixture) []layoutPage {
 		pages = append(pages, layoutPage{site: site, path: c.path + c.label, html: html})
 	}
 	return pages
+}
+
+// addImport reads a long recipe of a web page into a draft and imports another one, with a cover.
+func (f *layoutFixture) addImport(t *testing.T) {
+	t.Helper()
+	h, db, by := f.householdID, f.db, f.ids[0]
+	float := func(v float64) *float64 { return &v }
+	cand := recipeimport.Found{Name: "Omas schwäbische Käsespätzle mit Röstzwiebeln und Bergkäse aus dem Allgäu für den ganzen Sonntag", Portions: 6, PortionsGiven: true, YieldText: "6 Portionen", Minutes: 50,
+		Category: "main", CategoryWord: "Hauptspeise Schwäbische Küche", Keywords: []string{"Sonntagsessen", "Kinder mögen es", "schwäbisch"}, Lang: "en", ImageURL: "/a.jpg",
+		Steps:     []string{"Mehl, Eier und Salz verrühren.", "Für den Teig: Alles kneten, bis er Blasen wirft und sich vom Löffel löst, und eine halbe Stunde ruhen lassen."},
+		Nutrition: &recipeimport.Nutrition{KCal: float(380), KJ: float(1590), Fat: float(17), Saturates: float(9.6), Carbs: float(38), Sugars: float(8.2), Protein: float(17)}}
+	for _, l := range []string{"500 g Weizenmehl (Type 405)", "1–2 TL Harissa (scharfe Paste)", "1 Dose Dinkel-Vollkorn-Haferflocken-Mischung „Frühstückszauber“ aus dem Bioladen, fein vermahlen", "150 g Naturjoghurt",
+		"0 g Backpulver", "etwas Salz", "1 1/2 TL Zimt", "2 große Eier", "1.000 g Äpfel, säuerlich (z. B. Boskop)"} {
+		cand.Ingredients = append(cand.Ingredients, recipeimport.ParseLine(l))
+	}
+	raw, err := json.Marshal(map[string]any{"candidates": []recipeimport.Found{cand}, "pictures": map[int][]byte{0: testJPEG(t, 600, 400)}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := db.AddRecipeDraft(h, by, "https://www.beispiel-kochseite.de/rezepte/omas-schwaebische-kaesespaetzle-mit-roestzwiebeln-und-bergkaese-aus-dem-allgaeu", "www.beispiel-kochseite.de", raw, f.box.now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.importDraft = d.ID
+	got, err := db.CreateImportedRecipe(h, by, recipe.Recipe{Name: "Rote Linsensuppe mit Harissa aus dem Kochbuch einer sehr langen Webseite", Category: recipe.Main, Portions: 4, Minutes: 35,
+		Ingredients: []recipe.Ingredient{{Amount: 250, Unit: "g", Text: "Linsen", ArticleID: "lentils", Variety: "rot"}, {Amount: 1, Text: "Harissa"}}, Steps: []string{"Kochen."}},
+		store.Imported{URL: "https://www.beispielrezepte.de/rezepte/1187/rote-linsensuppe-mit-harissa.html", Host: "www.beispielrezepte.de", Lang: "de", Cover: testJPEG(t, 600, 400),
+			Nutrition: &store.PageNutrition{KCal: float(380), KJ: float(1590), Fat: float(17), Saturates: float(9.6), Carbs: float(38), Sugars: float(8.2), Protein: float(17)}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.importedID = got.ID
+}
+
+// importPages are the pages of the import that only a form reaches: the import page with an error and the check with
+// the errors at the lines.
+func importPages(t *testing.T, f *layoutFixture) []layoutPage {
+	t.Helper()
+	var pages []layoutPage
+	site := siteOf("recipe import", f.box, f.client)
+	for _, lang := range []string{"de", "en"} {
+		bad := f.do(http.MethodPost, "/meals/recipes/import", url.Values{"url": {"http://192.168.178.20/rezepte/suppe-mit-einem-sehr-langen-namen"}}, map[string]string{"Accept-Language": lang})
+		if bad.status != http.StatusUnprocessableEntity {
+			t.Fatalf("import page with an error = %d\n%s", bad.status, bad.body)
+		}
+		pages = append(pages, layoutPage{site: site, path: "/meals/recipes/import#errors", html: map[string]string{lang: bad.body}})
+		review := f.do(http.MethodPost, "/meals/recipes/import/"+f.importDraft, url.Values{"name": {"Käsespätzle"}, "portions": {"6"}, "ing_name": {"Naturjoghurt", "Harissa"}, "ing_amount": {"150", "1"}, "ing_unit": {"g", "tsp"}, "ing_article": {"", ""},
+			"ing_variety": {"", ""}, "ing_from": {"3", "1"}, "which": {"0"}, "pick_1": {"free"}}, map[string]string{"Accept-Language": lang})
+		if review.status != http.StatusUnprocessableEntity {
+			t.Fatalf("the check with errors = %d\n%s", review.status, review.body)
+		}
+		pages = append(pages, layoutPage{site: site, path: "/meals/recipes/import/" + f.importDraft + "#errors", html: map[string]string{lang: review.body}})
+	}
+	return mergeCardPages(pages)
 }

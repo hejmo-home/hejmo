@@ -24,6 +24,8 @@ type ctDraft struct {
 	HideBirthday                    bool         // keep the birthday out of the Birthdays calendar
 	ForChildren                     bool         // show the contact on the children's page "Wichtige Nummern" (ticket 301)
 	Rels                            []ctRelDraft // the relation lines in the order of the form (ticket 298)
+	// NameDayMode, NameDayEntry and NameDayName are the choice of the name day (ticket 318); an empty mode keeps it.
+	NameDayMode, NameDayEntry, NameDayName string
 }
 
 // ctRelDraft is a relation line as typed: the word, and the people it is for or the whole family.
@@ -179,5 +181,6 @@ func (d ctDraft) input(today time.Time, calendarName string) store.ContactInput 
 		BdayDay: d.Day, BdayMonth: d.Month, BdayYear: d.Year, Note: d.Note,
 		Numbers: d.Numbers, Emails: d.Emails, GroupIDs: d.GroupIDs, NewGroup: d.NewGroup, Today: today,
 		HideBirthday: d.HideBirthday, ForChildren: d.ForChildren, CalendarName: calendarName,
+		NameDayMode: d.NameDayMode, NameDayEntry: d.NameDayEntry, NameDayName: d.NameDayName,
 	}
 }

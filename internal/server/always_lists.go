@@ -34,6 +34,9 @@ type listAuto struct {
 // forList builds the notes and the lines of the entries for one list, and fills
 // AutoSrc and TileAuto of the entry views (open and ticked).
 func (s *server) autoOverlay(p principal, lang string, l list.List, es []list.Entry, views ...[]entryView) (listAuto, error) {
+	if err := s.mealSources(p, lang, es, views...); err != nil {
+		return listAuto{}, err
+	}
 	a, err := s.alwaysContext(p, lang)
 	if err != nil {
 		return listAuto{}, err
@@ -190,4 +193,31 @@ func (a *alwaysCtx) listRules(here []alwaysRule) *autoRules {
 		rows = append(rows, row)
 	}
 	return &autoRules{Summary: a.tr("always.lrules.summary", "names", a.names(names)), Rows: rows}
+}
+
+// mealSources fills RcpSrc and TileRcp of the open entries meals brought quantities to (ticket 283).
+func (s *server) mealSources(p principal, lang string, es []list.Entry, views ...[]entryView) error {
+	var ids []string
+	for _, e := range es {
+		if !e.Done {
+			ids = append(ids, e.ID)
+		}
+	}
+	src, err := s.db.EntrySources(p.household.ID, ids)
+	if err != nil || len(src) == 0 {
+		return err // no meal brought anything: the context of the words is not needed
+	}
+	c, err := s.itemContext(p, lang)
+	if err != nil {
+		return err
+	}
+	lines, tiles := c.listSources(es, src)
+	for _, vs := range views {
+		for i := range vs {
+			if !vs[i].Done && lines[vs[i].ID] != "" {
+				vs[i].RcpSrc, vs[i].TileRcp = lines[vs[i].ID], tiles[vs[i].ID]
+			}
+		}
+	}
+	return nil
 }

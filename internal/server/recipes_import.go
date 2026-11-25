@@ -1034,6 +1034,8 @@ func (s *server) handleRecipeAction(w http.ResponseWriter, r *http.Request) {
 		s.handleRecipeCover(w, r)
 	case "POST delete":
 		s.handleRecipeDelete(w, r)
+	case "POST favourites":
+		s.handleRecipeFavourites(w, r)
 	default:
 		http.NotFound(w, r)
 	}

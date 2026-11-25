@@ -43,6 +43,9 @@ func (s *Service) pushOutlook(ctx context.Context, sess *graph.Session, cal stor
 	var first error
 	for _, po := range pending {
 		if err := p.object(ctx, po); err != nil {
+			if t := throttleOf(err, s.now()); t != nil {
+				return t // the rest stays queued for the next sync
+			}
 			if outlookAborts(err) {
 				return err
 			}

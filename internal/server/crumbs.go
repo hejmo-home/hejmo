@@ -31,6 +31,7 @@ var (
 	crumbContactGroups   = crumb{"/contacts/groups", "contact.groups.title", ""}
 	crumbAccount         = crumb{"/account", "hub.otp", ""}
 	crumbSessions        = crumb{"/sessions", "hub.sessions", ""}
+	crumbImport          = crumb{recipeImportPath, "recipes.import.title", ""}
 
 	crumbMealTemplates    = crumb{"/meals/templates", "meals.tpl.title", ""}
 	crumbRoutineTemplates = crumb{"/routines/templates", "routine.tpl.title", ""}
@@ -76,11 +77,21 @@ func crumbsFor(name string, data map[string]any) []crumb {
 			return []crumb{crumbSettings, crumbPeople, {Href: "/people/" + id, Name: who}}
 		}
 		return []crumb{crumbSettings, crumbPeople}
+	case "recipe_import.html":
+		if crumbed, _ := data["Crumb"].(bool); crumbed {
+			return []crumb{crumbMeals, crumbRecipes, crumbImport}
+		}
+		return []crumb{crumbMeals, crumbRecipes}
 	case "recipe_form.html":
+		if data["Web"] != nil {
+			return []crumb{crumbMeals, crumbRecipes, crumbImport}
+		}
 		if id, name := lookup(data, "RecipeID"), lookup(data, "RecipeName"); id != "" {
 			return []crumb{crumbMeals, crumbRecipes, {Href: recipesPath + "/" + id, Name: name}}
 		}
 		return []crumb{crumbMeals, crumbRecipes}
+	case "recipe_photos.html":
+		return []crumb{crumbMeals, crumbRecipes, {Href: recipesPath + "/" + lookup(data, "RecipeID"), Name: lookup(data, "RecipeName")}}
 	case "contact_form.html":
 		if id, who := lookup(data, "CT", "ID"), lookup(data, "CT", "Name"); id != "" {
 			return []crumb{crumbSettings, crumbContacts, {Href: "/contacts/" + id, Name: who}}

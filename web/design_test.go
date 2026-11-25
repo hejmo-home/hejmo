@@ -163,9 +163,10 @@ func TestSpecDimensionsAndTypographyExistAsTokens(t *testing.T) {
 		{"--journey-border", "1.5px", d.Sizes, "journey-border"},
 		{"--icon-stroke", "1.8px", d.Sizes, "icon-stroke"},
 		{"--touch-target", "44px", d.Sizes, "touch-target"},
-		{"--photo-row", "56px", d.Sizes, "photo-row"},    // ticket 297: contact photo in rows
-		{"--photo-kid", "96px", d.Sizes, "photo-kid"},    // ... for children's "Wichtige Nummern"
-		{"--photo-page", "132px", d.Sizes, "photo-page"}, // ... on the contact page and in the form
+		{"--photo-row", "56px", d.Sizes, "photo-row"},      // ticket 297: contact photo in rows
+		{"--photo-kid", "96px", d.Sizes, "photo-kid"},      // ... for children's "Wichtige Nummern"
+		{"--photo-page", "132px", d.Sizes, "photo-page"},   // ... on the contact page and in the form
+		{"--photo-cover", "320px", d.Sizes, "photo-cover"}, // ticket 280: cover of a recipe, at most this wide
 	}
 	for _, c := range dims {
 		if got := root[c.cssVar]; got != c.want {

@@ -89,6 +89,7 @@
   --photo-row: 56px; /* contact photo in rows (ticket 297) */
   --photo-kid: 96px; /* ... in the children's important numbers */
   --photo-page: 132px; /* ... on the contact page and in the form */
+  --photo-cover: 320px; /* ticket 280: the cover of a recipe, at most this wide */
   font-family: Figtree, system-ui, sans-serif;
 }
 
@@ -4792,7 +4793,188 @@ a.bdg-more { display: inline-flex; align-items: center; min-height: var(--touch-
 .msg.bdg-won-msg > span { min-width: 0; }
 .bdg-chip .seal .fg { stroke-width: 2.6; }
 .bdg-line .nm { display: inline-block; white-space: nowrap; }
+/* ---- ticket 289: import a recipe from a web page (preview-289) ---- */
+/* Recipes list: the import button stands next to the one primary. */
+.rcp-act .button.secondary .icon { stroke: currentColor; }
+.empty .rcp-act { margin: 0; }
 
+/* Import page: one card with the link field, what Hejmo takes, one primary. */
+form.rcp-imp { box-sizing: border-box; max-width: 560px; display: grid; gap: 14px; margin: 0 0 var(--gap-section); padding: 16px; background: var(--surface); border-radius: var(--radius-tile); }
+[data-theme="bw"] form.rcp-imp { border: 2px solid var(--text); }
+form.rcp-imp .f input { box-sizing: border-box; font-size: 16px; }
+form.rcp-imp .f.invalid input { border: 2px solid var(--error-text); }
+form.rcp-imp .acts, form.imp-which-form .acts { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+form.rcp-imp .acts .button .icon { stroke: currentColor; }
+.imp-takes { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: var(--fs-label-large); }
+.imp-takes li { display: flex; gap: 8px; align-items: flex-start; overflow-wrap: break-word; }
+.imp-takes .icon { flex: none; stroke: var(--accent); margin-top: 2px; }
+[data-theme="bw"] .imp-takes .icon { stroke: var(--text); }
+.imp-takes-h { margin: 0; font-size: var(--fs-label); font-weight: 700; color: var(--text-secondary); }
+.rcp-imp .ferr .host, .imp-wait .host { font-weight: 700; overflow-wrap: anywhere; }
+.rcp-imp .ferr-acts { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin: 0; }
+/* While the box reads the page (script only): the button says what happens, no animation. */
+.imp-wait { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 8px 10px; border-radius: var(--radius-field); background: var(--background); font-size: var(--fs-label-large); }
+.imp-wait .icon { flex: none; stroke: var(--accent); margin-top: 2px; }
+.imp-wait b { display: block; }
+[data-theme="bw"] .imp-wait { background: none; border: 2px solid var(--text); }
+[data-theme="bw"] .imp-wait .icon { stroke: var(--text); }
+.button[aria-disabled="true"] { opacity: .6; cursor: default; }
+/* The connection is switched off, or the box is offline: a notice instead of the form. */
+.notice.imp-off { display: grid; gap: 8px; max-width: 560px; margin: 0 0 var(--gap-section); }
+.notice.imp-off p { margin: 0; }
+.notice.imp-off .h { display: flex; gap: 8px; align-items: flex-start; font-weight: 700; }
+.notice.imp-off .icon { flex: none; stroke: currentColor; margin-top: 2px; }
+[data-theme="bw"] .notice.imp-off { background: none; color: var(--text); border: 2px dashed var(--text); }
+.imp-after { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 var(--gap-section); }
+.imp-after .button .icon { stroke: currentColor; }
+
+/* Several recipes on one page: choose one. */
+fieldset.choice.imp-which { max-width: 560px; margin: 0 0 var(--gap-section); }
+fieldset.choice.imp-which legend { font-size: var(--fs-person-name); font-weight: 700; margin-bottom: 4px; overflow-wrap: break-word; }
+.imp-which b { overflow-wrap: break-word; hyphens: manual; }
+
+/* Review: the summary card names the page; every line is a jump link. */
+.imp-sum .imp-file .fname { overflow-wrap: anywhere; }
+.imp-sum .imp-file small a { color: inherit; overflow-wrap: anywhere; }
+.imp-sum ul.plain a .need-n { color: var(--notice-text); }
+.imp-sum .flag { justify-self: start; }
+.notice.imp-again { max-width: 560px; margin: 0 0 var(--gap-section); display: flex; gap: 8px; align-items: flex-start; }
+.notice.imp-again .icon { flex: none; stroke: currentColor; margin-top: 2px; }
+[data-theme="bw"] .notice.imp-again { background: none; color: var(--text); border: 2px dashed var(--text); }
+
+/* Review form: the recipe form of #279 with what the page said under each line. */
+.rcp-form.from-web li.ing { grid-template-areas: "q u n rm" "o o o o" "s s s s" "c c c c" "w w w w" "e e e e"; }
+.rcp-form.from-web li.ing.blank { grid-template-areas: "q u n" "o o o" "s s s" "c c c" "w w w" "e e e"; }
+li.ing > .ing-src { grid-area: o; }
+.ing-src { display: flex; gap: 6px; align-items: flex-start; margin: 0; font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: anywhere; }
+.ing-src .icon { flex: none; stroke: var(--text-secondary); margin-top: 1px; }
+.ing-src q { color: var(--text); quotes: "„" "“"; }
+html[lang="en"] .ing-src q { quotes: "“" "”"; }
+.ing-src .chg { color: var(--notice-text); font-weight: 600; }
+[data-theme="bw"] .ing-src .chg { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+.v-web { font-size: var(--fs-meta); color: var(--text-secondary); }
+/* A line Hejmo could not match: framed until a choice is made. */
+li.ing.needs { margin: 6px 0; padding: 12px; border: 2px solid var(--notice-text); border-radius: var(--radius-card); }
+li.ing.needs:first-child { padding-top: 12px; }
+li.ing.needs + li.ing { border-top: 0; }
+li.ing.needs.invalid { border-color: var(--error-text); }
+li.ing > .ing-pick { grid-area: c; margin-top: 2px; }
+.ing-state.need { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: var(--fs-label-large); }
+.ing-state.need .flag { flex: none; }
+.ing-state.need .need-done { display: none; }
+.ing-pick label { padding: 10px 12px; }
+.ing-pick label:has(input:checked) { padding: 9px 11px; }
+.ing-pick .allergen-warn { grid-column: 2; justify-self: start; margin-top: 4px; font-size: var(--fs-label); }
+.ing-pick > .hint { margin: 0; }
+@supports selector(:has(a)) {
+  li.ing.needs:has(.ing-pick input:checked) { border: 1px solid var(--border); padding: 13px; }
+  li.ing.needs:has(.ing-pick input:checked) .need-open { display: none; }
+  li.ing.needs:has(.ing-pick input:checked) .need-done { display: inline-flex; }
+}
+.flag.done { background: var(--surface); color: var(--accent); border: 1.5px solid var(--accent); }
+.flag.done .icon { stroke: currentColor; }
+[data-theme="bw"] li.ing.needs { border: 3px dashed var(--text); }
+[data-theme="bw"] li.ing.needs.invalid { border: 3px solid var(--text); }
+@supports selector(:has(a)) { [data-theme="bw"] li.ing.needs:has(.ing-pick input:checked) { border: 1px solid var(--text); padding: 14px; } }
+[data-theme="bw"] .flag.done { color: var(--text); border: 2px solid var(--text); }
+@media (max-width: 479px) {
+  .rcp-form.from-web li.ing { grid-template-areas: "q u u" "n n rm" "o o o" "s s s" "c c c" "w w w" "e e e"; }
+  li.ing.needs { padding: 10px; }
+}
+
+/* Picture from the page: shown at 3:2, the switch says whether it is kept. */
+.imp-pic { margin: 0; display: grid; gap: 6px; }
+.imp-pic { max-width: 360px; }
+.imp-pic img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: var(--radius-card); background: var(--background); }
+.imp-pic figcaption { font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: anywhere; }
+@supports selector(:has(a)) { fieldset.imp-pic-card:has(input[role="switch"]:not(:checked)) .imp-pic img { opacity: .35; } }
+[data-theme="bw"] .imp-pic img { filter: grayscale(1); border: 2px solid var(--text); box-sizing: border-box; }
+/* Values from the page, read only in the review. */
+fieldset.imp-nut .nut-table { margin-top: 2px; }
+.nut-na.web { font-weight: 600; }
+/* The source of an imported recipe is fixed: a line, not a field. */
+.imp-srcline { display: grid; gap: 2px; margin: 0; }
+.imp-srcline > span:first-child { font-size: var(--fs-label-large); font-weight: 600; }
+.imp-srcline a { overflow-wrap: anywhere; font-weight: 600; }
+.imp-srcline .hint { margin: 0; }
+.rcp-form .tag-pick .web-tag { font-weight: 400; }
+
+/* After saving: own articles made by the import still lack allergens. */
+.notice.imp-new-art { max-width: 560px; margin: 0 0 var(--gap-section); display: grid; gap: 6px; }
+.notice.imp-new-art p { margin: 0; }
+.notice.imp-new-art .h { display: flex; gap: 8px; align-items: flex-start; font-weight: 700; }
+.notice.imp-new-art .icon { flex: none; stroke: currentColor; margin-top: 2px; }
+.notice.imp-new-art ul { margin: 0; padding-left: 28px; display: grid; gap: 2px; }
+[data-theme="bw"] .notice.imp-new-art { background: none; color: var(--text); border: 2px dashed var(--text); }
+.rcp-facts dd .src-when { flex-basis: 100%; font-size: var(--fs-label); color: var(--text-secondary); }
+.imp-sum ul.plain .need-line { display: block; padding: 10px 0; overflow-wrap: break-word; }
+.imp-sum ul.plain .need-line a { display: inline; padding: 0; min-height: 0; }
+.imp-sum ul.plain .need-line a b { color: var(--accent); }
+.imp-sum .imp-file small a { hyphens: manual; -webkit-hyphens: manual; }
+
+/* ---- ticket 280: own photos for recipes ---- */
+/* Recipe rows: one 56 px box for the cover or the category symbol, so rows line up. */
+.list-rows.recipes .art-sym.rcp-pic { width: var(--photo-row); height: var(--photo-row); border-radius: var(--radius-card); font-size: 30px; align-self: start; }
+.list-rows.recipes a { gap: 14px; }
+
+/* Head of the recipe page: cover beside the name and the actions; stacked under 600 px. */
+.rcp-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px 20px; align-items: start; margin: 0 0 var(--gap); max-width: 880px; }
+.rcp-head.has-cover { grid-template-columns: minmax(180px, var(--photo-cover)) minmax(0, 1fr); }
+@media (max-width: 599px) { .rcp-head.has-cover { grid-template-columns: minmax(0, 1fr); } }
+.rcp-head-t { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; align-content: start; }
+.rcp-head-t h1.rcp-title { margin: 0; }
+.rcp-head-t .rcp-act { margin: 0; }
+.rcp-cover { display: block; aspect-ratio: 4 / 3; border-radius: var(--radius-tile); overflow: hidden; background: var(--background); }
+.rcp-cover img, .rph-grid .rph-ph img, .rph-card .rph-ph img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; display: block; }
+.rcp-cover:focus-visible, .rph-grid .rph-ph:focus-visible, .rph-card .rph-ph:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rcp-phl { margin: 0; }
+.rcp-phl a { display: inline-flex; align-items: center; gap: 8px; min-height: var(--touch-target); color: var(--accent); font-weight: 600; text-underline-offset: 3px; }
+.rcp-phl a .icon { flex: none; stroke: currentColor; }
+
+/* The section "Fotos" on the recipe page. */
+.rcp-photos { box-sizing: border-box; max-width: 880px; margin: 0 0 var(--gap-section); padding: 16px; display: grid; gap: 12px; background: var(--surface); border-radius: var(--radius-tile); }
+.rcp-photos h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: var(--fs-person-name); }
+.rcp-photos h2 .icon { flex: none; stroke: var(--accent); }
+.rcp-photos > .hint, .rcp-photos > p { margin: 0; }
+.rph-none { font-size: var(--fs-label-large); }
+.rph-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px 12px; }
+.rph-grid li { display: grid; gap: 6px; align-content: start; justify-items: start; min-width: 0; }
+.rph-grid .rph-ph, .rph-card .rph-ph { display: block; justify-self: stretch; aspect-ratio: 4 / 3; border-radius: var(--radius-card); overflow: hidden; background: var(--background); }
+.rph-grid .by, .rph-card .by { font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: break-word; }
+.rph-add { display: grid; gap: 10px; }
+.rph-full { margin: 0; font-size: var(--fs-label-large); }
+.ph-pick .button[aria-disabled="true"] { cursor: default; background: var(--border); color: var(--text-secondary); border-color: var(--border); }
+.rph-manage { margin: 0; }
+.rph-manage a { display: inline-flex; align-items: center; gap: 8px; min-height: var(--touch-target); color: var(--accent); font-weight: 600; text-underline-offset: 3px; }
+.rph-manage a .icon { flex: none; stroke: currentColor; }
+
+/* The page "Fotos": upload card, then one card per photo. */
+.rph-upload .ph-pick { margin: 0; }
+.rph-h2 { margin: 0 0 10px; font-size: var(--fs-person-name); }
+.rph-cards { list-style: none; margin: 0 0 var(--gap-section); padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--gap); align-items: start; max-width: 880px; }
+.rph-card { box-sizing: border-box; display: grid; gap: 10px; align-content: start; padding: 12px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-tile); min-width: 0; }
+.rph-card.is-cover { border: 2px solid var(--accent); }
+.rph-st { display: grid; gap: 8px; justify-items: start; min-width: 0; }
+.rph-st form { margin: 0; }
+.rph-st .button { display: inline-flex; align-items: center; gap: 8px; }
+.rph-st .button .icon { flex: none; stroke: currentColor; }
+.rph-cov { margin: 0; display: grid; gap: 4px; justify-items: start; font-size: var(--fs-label); color: var(--text-secondary); }
+.pill-cover { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 2px 12px; border-radius: var(--radius-chip); background: var(--accent); color: var(--accent-text); font-size: var(--fs-meta); font-weight: 700; }
+.pill-cover .icon { stroke: currentColor; fill: currentColor; }
+.tag.cover-tag { background: var(--accent); color: var(--accent-text); }
+.rph-card details.danger.rph-rm { margin: 0; justify-self: stretch; }
+.rph-card details.danger.rph-rm .confirm { flex-wrap: wrap; }
+
+/* bw: grey photos with a frame, the cover with a thick frame. */
+[data-theme="bw"] .rcp-cover, [data-theme="bw"] .rph-grid .rph-ph, [data-theme="bw"] .rph-card .rph-ph { border: 2px solid var(--text); }
+[data-theme="bw"] .rcp-cover img, [data-theme="bw"] .rph-grid .rph-ph img, [data-theme="bw"] .rph-card .rph-ph img { filter: grayscale(1); }
+[data-theme="bw"] .rcp-photos { border: 2px solid var(--text); }
+[data-theme="bw"] .rph-card { border: 2px solid var(--text); }
+[data-theme="bw"] .rph-card.is-cover { border: 4px solid var(--text); }
+[data-theme="bw"] .pill-cover, [data-theme="bw"] .tag.cover-tag { background: var(--text); color: var(--surface); border-color: var(--text); }
+[data-theme="bw"] .ph-pick .button[aria-disabled="true"] { background: var(--surface); color: var(--text); border: 2px dashed var(--text); }
+/* The recipe box of the meal plan has its own .rcp-head: the head of the recipe page must not reach it. */
+.rcp-entry .rcp-head { margin: 0; max-width: none; }
 /* ticket 318: name days in the Birthdays calendar */
 .bd-now { max-width: 560px; margin: 0 0 var(--gap-section); }
 .steps fieldset.nd { display: grid; gap: 12px; }

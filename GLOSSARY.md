@@ -343,6 +343,17 @@ _Avoid_: cooked on, last made
 One of the 200 recipes that ship with the box in German and English (the starter collection). It is shown in the language of the person viewing it, names its source ("Ingredients after: Chefkoch") with a link, is read-only for everyone and is not part of a family's own recipes. Its id starts with `starter-`.
 _Avoid_: sample recipe, default recipe, template recipe
 
+**Recipe import**:
+Reading a recipe from a web page (its schema.org/Recipe) into a **recipe draft**, checking it in the recipe form and saving it. Two steps, nothing is saved unchecked. The page and its picture are read through the connection "recipes" (the Gate); offline mode or a switched-off connection replaces the form with a notice. The imported recipe keeps the page's link as its source for good, the picture as its cover and the nutrition values the page stated (until someone changes its ingredients or portions).
+_Avoid_: scraping, crawl, web clipper
+
+**Recipe draft**:
+What the box read from a web page while a parent checks it: it belongs to the parent who read the page, lives one hour and is then gone (the recipe was never saved). The page's picture waits in it as the stored JPEG.
+_Avoid_: pending recipe, preview
+**Recipe photo**:
+A family's own photo of a recipe, own or starter (each household has its own photos of a starter recipe). Stored as files on the box at most 1600 px wide with location and camera data removed, plus a 640 px and a 168 px file for lists and the grid; at most 12 per recipe. The first becomes the **cover** (Titelbild), which stays until a parent chooses another or removes it (then the newest remaining photo takes over). The cover shows at the top of the recipe, in the recipe list and in the meal plan; parents add and remove photos, everyone sees them.
+_Avoid_: recipe picture (a picture is what an article or a reward has), image
+
 **Ingredient**:
 One line of a recipe: an article, optionally with a variety, or free text, with a quantity for the recipe's portions.
 _Avoid_: component, item

@@ -1,6 +1,7 @@
 package nameday
 
 import (
+	"regexp"
 	"testing"
 	"time"
 )
@@ -277,20 +278,73 @@ func TestCatholicMatthiasIsOn24February(t *testing.T) {
 	}
 }
 
-func TestEveryEntryIsCheckedOrSaysItIsNot(t *testing.T) {
-	for _, l := range []List{Catholic, Protestant, GreekOrthodox, RomanianOrthodox} {
+func TestEveryEntryIsCheckedAgainstItsSource(t *testing.T) {
+	year := regexp.MustCompile(`20\d\d`)
+	for _, l := range Lists() {
 		c, ok := Get(l)
 		if !ok {
 			t.Fatal(l)
 		}
-		var unchecked int
 		for _, e := range c.Entries {
 			if e.Unchecked {
-				unchecked++
+				t.Errorf("%s/%s: still unchecked; check it against its source or remove it", l, e.ID)
 			}
 		}
-		if unchecked == 0 {
-			t.Errorf("%s: no entry is marked unchecked, yet no one has checked the dates against the sources", l)
+		for k, name := range c.Sources {
+			if !year.MatchString(name) {
+				t.Errorf("%s/%s: the source names no edition or year: %q", l, k, name)
+			}
+		}
+	}
+}
+
+// TestCheckedCorrections pins every entry whose date the check against the
+// church calendars corrected, and every entry that no source confirmed.
+func TestCheckedCorrections(t *testing.T) {
+	moved := map[List]map[string]string{ // new id -> new day; "easter+N" for an Easter offset
+		Catholic: {
+			"lambert-09-18": "09-18", "gertrud-11-17": "11-17", "virgil-09-24": "09-24", "johanna-08-12": "08-12",
+		},
+		Protestant: {
+			"franz-10-03": "10-03", "philipp-05-03": "05-03", "jakob-05-03": "05-03", "ambrosius-04-04": "04-04",
+		},
+		GreekOrthodox:    {"ionas-09-21": "09-21", "zoi-easter-plus-5": "easter+5"},
+		RomanianOrthodox: {"iona-09-21": "09-21"},
+	}
+	gone := map[List][]string{
+		Catholic: {"lambert-09-17", "gertrud-11-16", "virgil-11-27", "johanna-12-12",
+			"adolf-02-11", "irene-04-05", "veronika-07-04", "zacharias-11-05", "gerhard-10-16"},
+		Protestant: {"franz-10-04", "philipp-05-01", "jakob-05-01", "ambrosius-12-07",
+			"fabian-01-20", "agnes-01-21", "hanna-02-02", "valentin-02-14", "josef-03-19", "florian-05-04",
+			"vitus-06-15", "elias-07-20", "anna-07-26", "martha-07-29", "agidius-09-01", "kreuz-09-14",
+			"gabriel-09-29", "raphael-09-29", "ursula-10-21", "karl-11-04", "luzia-12-13",
+			"adam-12-24", "eva-12-24", "silvester-12-31"},
+		GreekOrthodox:    {"ionas-09-22", "zoi-05-18"},
+		RomanianOrthodox: {"iona-09-22"},
+	}
+	for l, m := range moved {
+		c, _ := Get(l)
+		for id, want := range m {
+			e, ok := c.Entry(id)
+			if !ok {
+				t.Errorf("%s/%s: missing", l, id)
+				continue
+			}
+			if want == "easter+5" {
+				if e.Easter == nil || *e.Easter != 5 {
+					t.Errorf("%s/%s: want Easter+5, got %+v", l, id, e)
+				}
+			} else if e.Day != want {
+				t.Errorf("%s/%s: day %s, want %s", l, id, e.Day, want)
+			}
+		}
+	}
+	for l, ids := range gone {
+		c, _ := Get(l)
+		for _, id := range ids {
+			if _, ok := c.Entry(id); ok {
+				t.Errorf("%s/%s: should be corrected or removed", l, id)
+			}
 		}
 	}
 	c, _ := Get(Catholic)

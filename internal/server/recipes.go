@@ -473,9 +473,11 @@ func (s *server) apiDeleteRecipe(w http.ResponseWriter, r *http.Request, p princ
 		writeError(w, http.StatusForbidden, starterReadOnly)
 		return
 	}
-	if s.storeError(w, "delete recipe", s.db.DeleteRecipe(p.household.ID, r.PathValue("id"))) {
+	ids, err := s.db.DeleteRecipeWithPhotos(p.household.ID, r.PathValue("id"))
+	if s.storeError(w, "delete recipe", err) {
 		return
 	}
+	s.removeRecipePhotoFiles(ids)
 	w.WriteHeader(http.StatusNoContent)
 }
 

@@ -46,6 +46,38 @@ type settingsJSON struct {
 	NameDays nameDaysJSON `json:"name_days"`
 	// ReligiousHolidays says whether the religious holidays are in their generated calendar and which religions (ticket 339).
 	ReligiousHolidays religiousJSON `json:"religious_holidays"`
+	// MealShopping says whether the ingredients of the meal plan go on a shopping list by hand or by themselves (ticket 285).
+	MealShopping mealShoppingJSON `json:"meal_shopping"`
+}
+
+type mealShoppingJSON struct {
+	Mode   string  `json:"mode"` // manual (default) or automatic
+	Days   int     `json:"days"` // how many days ahead the automatic run looks, from today on
+	ListID *string `json:"list_id"`
+}
+
+const (
+	shopModeManual    = "manual"
+	shopModeAutomatic = "automatic"
+)
+
+func mealShoppingOf(a store.MealShopAuto) mealShoppingJSON {
+	out := mealShoppingJSON{Mode: shopModeManual, Days: a.Days, ListID: strPtr(a.ListID)}
+	if a.On {
+		out.Mode = shopModeAutomatic
+	}
+	return out
+}
+
+// settingsFor is the household's settings as the API shows them.
+func (s *server) settingsFor(h store.Household) (settingsJSON, error) {
+	auto, err := s.db.MealShopAuto(h.ID)
+	if err != nil {
+		return settingsJSON{}, err
+	}
+	out := settingsOf(h)
+	out.MealShopping = mealShoppingOf(auto)
+	return out, nil
 }
 
 type religiousJSON struct {
@@ -101,7 +133,12 @@ type cutoffsJSON struct {
 func cutoffsToJSON(c meal.Cutoffs) cutoffsJSON { return cutoffsJSON(c) }
 
 func (s *server) apiGetSettings(w http.ResponseWriter, _ *http.Request, p principal) {
-	writeJSON(w, http.StatusOK, settingsOf(p.household))
+	out, err := s.settingsFor(p.household)
+	if err != nil {
+		s.fail(w, "settings", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p principal) {
@@ -128,6 +165,12 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 			On   *bool   `json:"on"`
 			List *string `json:"list"`
 		} `json:"name_days"`
+		// MealShopping chooses by hand or automatic, the days ahead and the list; omitted parts stay as they are, a null list takes the choice away.
+		MealShopping *struct {
+			Mode   *string         `json:"mode"`
+			Days   *int            `json:"days"`
+			ListID json.RawMessage `json:"list_id"`
+		} `json:"meal_shopping"`
 		// ReligiousHolidays switches the religious holidays calendar on or off and chooses the religions; omitted parts stay as they are.
 		ReligiousHolidays *struct {
 			On               *bool     `json:"on"`
@@ -192,6 +235,40 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 			return
 		}
 	}
+	var shopAuto *store.MealShopAuto
+	if ms := in.MealShopping; ms != nil { // before anything is saved
+		a, err := s.db.MealShopAuto(p.household.ID)
+		if err != nil {
+			s.fail(w, "update settings", err)
+			return
+		}
+		if ms.Mode != nil {
+			if *ms.Mode != shopModeManual && *ms.Mode != shopModeAutomatic {
+				writeError(w, http.StatusUnprocessableEntity, "meal_shopping.mode must be manual or automatic")
+				return
+			}
+			a.On = *ms.Mode == shopModeAutomatic
+		}
+		if ms.Days != nil {
+			a.Days = *ms.Days
+		}
+		if ms.ListID != nil {
+			var id *string
+			if err := json.Unmarshal(ms.ListID, &id); err != nil {
+				writeError(w, http.StatusBadRequest, "invalid JSON")
+				return
+			}
+			a.ListID = ""
+			if id != nil {
+				a.ListID = *id
+			}
+		}
+		if err := s.db.CheckMealShopAuto(p.household.ID, a); err != nil {
+			writeError(w, http.StatusUnprocessableEntity, "meal_shopping: "+err.Error())
+			return
+		}
+		shopAuto = &a
+	}
 	var rin store.ReligiousInput
 	if rs := in.ReligiousHolidays; rs != nil {
 		rin = store.ReligiousInput{On: p.household.ReligiousHolidaysOn, Religions: p.household.Religions, Islamic: p.household.IslamicCalendar, Orthodox: p.household.OrthodoxCalendar}
@@ -235,6 +312,12 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 			return
 		}
 	}
+	if shopAuto != nil {
+		if err := s.db.SetMealShopAuto(p.household.ID, *shopAuto); err != nil {
+			s.fail(w, "update settings", err)
+			return
+		}
+	}
 	if in.NameDays != nil {
 		lang := s.langOf(r)
 		if _, err := s.db.SetNameDays(p.household.ID, ndOn, ndList, s.i18n.T(lang, "birthdays.calendar_name"), s.i18n.T(lang, "nd.ev.word")); err != nil {
@@ -265,7 +348,12 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 	if home != nil {
 		s.refreshWeather(home.Latitude, home.Longitude)
 	}
-	writeJSON(w, http.StatusOK, settingsOf(saved))
+	out, err := s.settingsFor(saved)
+	if err != nil {
+		s.fail(w, "update settings", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 // homeOfPatch reads the home of a settings patch: nil if it does not touch

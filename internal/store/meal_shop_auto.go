@@ -38,6 +38,17 @@ func (db *DB) MealShopAuto(householdID string) (MealShopAuto, error) {
 // SetMealShopAuto stores the setting. Days are 1 to MaxShopDays and the list,
 // if there is one, is a list of the household (else ErrInvalid).
 func (db *DB) SetMealShopAuto(householdID string, a MealShopAuto) error {
+	if err := db.CheckMealShopAuto(householdID, a); err != nil {
+		return err
+	}
+	_, err := db.sql.Exec(`INSERT INTO meal_shop_settings (household_id, auto, days, list_id) VALUES (?, ?, ?, NULLIF(?, ''))
+		ON CONFLICT(household_id) DO UPDATE SET auto = excluded.auto, days = excluded.days, list_id = excluded.list_id`,
+		householdID, a.On, a.Days, a.ListID)
+	return err
+}
+
+// CheckMealShopAuto says whether SetMealShopAuto would accept the setting (ErrInvalid if not).
+func (db *DB) CheckMealShopAuto(householdID string, a MealShopAuto) error {
 	if a.Days < 1 || a.Days > MaxShopDays {
 		return fmt.Errorf("%w: days must be from 1 to %d", ErrInvalid, MaxShopDays)
 	}
@@ -50,8 +61,5 @@ func (db *DB) SetMealShopAuto(householdID string, a MealShopAuto) error {
 			return fmt.Errorf("%w: list_id is not a list of this household", ErrInvalid)
 		}
 	}
-	_, err := db.sql.Exec(`INSERT INTO meal_shop_settings (household_id, auto, days, list_id) VALUES (?, ?, ?, NULLIF(?, ''))
-		ON CONFLICT(household_id) DO UPDATE SET auto = excluded.auto, days = excluded.days, list_id = excluded.list_id`,
-		householdID, a.On, a.Days, a.ListID)
-	return err
+	return nil
 }

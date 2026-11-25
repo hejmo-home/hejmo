@@ -4875,5 +4875,15 @@
   "nutrition.who.alloff.many": "Your children do not see them: off for {off}.",
   "nutrition.who.allon.one": "Your child sees them: on for {on}.",
   "nutrition.who.allon.many": "Your children see them: on for {on}.",
-  "nutrition.who.link": "Change on the person pages"
+  "nutrition.who.link": "Change on the person pages",
+  "people.recipes": "Recipes",
+  "people.nutrition.label": "Nutrition values at recipes",
+  "people.nutrition.state.on": "On.",
+  "people.nutrition.state.off": "Off.",
+  "people.nutrition.on": "{name} sees the nutrition values per portion on every recipe.",
+  "people.nutrition.off": "{name} sees no nutrition values on recipes. Ingredients, steps and allergy warnings stay.",
+  "people.nutrition.aria": "Nutrition values at recipes for {name}",
+  "people.nutrition.hint": "For children this is off at first. Parents always see the values, wall displays never.",
+  "flash.nutrition_on": "{name} now sees the nutrition values per portion on recipes.",
+  "flash.nutrition_off": "{name} no longer sees nutrition values on recipes."
 }

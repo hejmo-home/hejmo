@@ -256,8 +256,12 @@ func (s *server) renderPerson(w http.ResponseWriter, r *http.Request, p principa
 	if v, ok := form["Streaks"].(bool); ok {
 		streaksShown = v // a rejected form keeps the switch as the parent left it
 	}
+	nutritionShown := person.NutritionShown
+	if v, ok := form["Nutrition"].(bool); ok {
+		nutritionShown = v
+	}
 	data := map[string]any{
-		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Subject": chip, "Role": person.Role, "StreaksShown": streaksShown,
+		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Subject": chip, "Role": person.Role, "StreaksShown": streaksShown, "NutritionShown": nutritionShown,
 		"Form": form, "Error": form["Error"], "ErrorField": form["ErrorField"],
 	}
 	f, err := s.db.PersonFood(p.household.ID, person.ID)
@@ -330,7 +334,7 @@ func (s *server) handlePersonSave(w http.ResponseWriter, r *http.Request) {
 	field, key := checkLook(people, person.ID, &look, &person)
 	if field != "" {
 		s.renderPerson(w, r, p, http.StatusUnprocessableEntity, person, people, map[string]any{
-			"Name": strings.TrimSpace(r.PostFormValue("name")), "Color": look.Color, "Shape": look.Shape, "Streaks": r.PostFormValue("streaks") != "", "Error": key, "ErrorField": field,
+			"Name": strings.TrimSpace(r.PostFormValue("name")), "Color": look.Color, "Shape": look.Shape, "Streaks": r.PostFormValue("streaks") != "", "Nutrition": r.PostFormValue("nutrition") != "", "Error": key, "ErrorField": field,
 		})
 		return
 	}
@@ -340,15 +344,29 @@ func (s *server) handlePersonSave(w http.ResponseWriter, r *http.Request) {
 	}
 	// The switch "week count and badges" is saved with the rest of the form.
 	streaks := r.PostFormValue("streaks") != ""
+	flash := ""
 	if streaks != person.StreaksShown {
 		if err := s.db.SetStreaksShown(p.household.ID, person.ID, streaks); err != nil {
 			s.fail(w, "streaks switch", err)
 			return
 		}
 		if !streaks {
-			s.redirectSavedNamed(w, r, "/people", "flash.streaks_off", look.Name)
+			flash = "flash.streaks_off"
+		}
+	}
+	// The switch "nutrition values at recipes" is a child's: adults always see them (ticket 288).
+	if nutrition := r.PostFormValue("nutrition") != ""; person.Role == store.RoleChild && nutrition != person.NutritionShown {
+		if err := s.db.SetNutritionShown(p.household.ID, person.ID, nutrition); err != nil {
+			s.fail(w, "nutrition switch", err)
 			return
 		}
+		if flash == "" {
+			flash = map[bool]string{true: "flash.nutrition_on", false: "flash.nutrition_off"}[nutrition]
+		}
+	}
+	if flash != "" {
+		s.redirectSavedNamed(w, r, "/people", flash, look.Name)
+		return
 	}
 	s.redirectSaved(w, r, "/people", "flash.person_saved")
 }

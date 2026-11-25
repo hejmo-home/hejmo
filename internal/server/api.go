@@ -346,10 +346,12 @@ type personJSON struct {
 	Symbol string     `json:"symbol"`
 	// StreaksShown is the switch "week count and badges" (ticket 294).
 	StreaksShown bool `json:"streaks_shown"`
+	// NutritionShown is the switch "nutrition values at recipes" (ticket 288).
+	NutritionShown bool `json:"nutrition_shown"`
 }
 
 func toJSON(p store.Person) personJSON {
-	return personJSON{p.ID, p.Name, p.Role, p.Color, p.Shape, p.Symbol, p.StreaksShown}
+	return personJSON{p.ID, p.Name, p.Role, p.Color, p.Shape, p.Symbol, p.StreaksShown, p.NutritionShown}
 }
 
 func (s *server) apiMe(w http.ResponseWriter, _ *http.Request, p principal) {

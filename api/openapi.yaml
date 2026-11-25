@@ -360,6 +360,8 @@ paths:
         (`Person.color`), the marker one of the eight shapes. No two people may have
         the same colour and the same marker: such a request gets 422.
         `streaks_shown` switches the week count and badges of the person on or off.
+        `nutrition_shown` switches the nutrition values at recipes on or off for a
+        child (off at first; parents always see them, so a request for a parent gets 422).
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -4908,7 +4910,7 @@ components:
       enum: [parent, child]
     Person:
       type: object
-      required: [id, name, role, color, shape, symbol, streaks_shown]
+      required: [id, name, role, color, shape, symbol, streaks_shown, nutrition_shown]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
@@ -4917,6 +4919,7 @@ components:
         shape: { type: string, description: "Marker for black-and-white mode", example: circle-filled }
         symbol: { type: string }
         streaks_shown: { type: boolean, description: "The switch \"week count and badges\": when off, no week, best streak or badge is shown for the person anywhere (stars stay). On for children and off for adults when the person is created." }
+        nutrition_shown: { type: boolean, description: "The switch \"nutrition values at recipes\" of a child: off at first, a parent switches it on. Parents always see the nutrition values whatever this says (false for them), wall displays never." }
     ContactLine:
       type: object
       required: [kind, value]
@@ -5056,6 +5059,7 @@ components:
         color: { $ref: "#/components/schemas/PersonColor" }
         shape: { $ref: "#/components/schemas/PersonShape" }
         streaks_shown: { type: boolean }
+        nutrition_shown: { type: boolean, description: "Children only; a request for a parent gets 422." }
     NewPerson:
       type: object
       required: [name, role]

@@ -27,6 +27,10 @@
       {{template "switch" (dict "Name" "streaks" "Label" (t "people.streaks.label") "OnText" (tf "people.streaks.on" "name" .Subject.Name) "OffText" (tf "people.streaks.off" "name" .Subject.Name) "AriaLabel" (t "people.streaks.aria") "Checked" .StreaksShown)}}
       <p class="hint">{{t "people.streaks.hint"}}</p>
     </fieldset>
+    {{if eq (print .Role) "child"}}<fieldset id="rcp"><legend>{{t "people.recipes"}}</legend>
+      <div class="card-row"><span class="t"><b>{{t "people.nutrition.label"}}</b><span class="state{{if .NutritionShown}} is-on{{end}}"><span class="on-text"><b>{{t "people.nutrition.state.on"}}</b> {{tf "people.nutrition.on" "name" .Subject.Name}}</span><span class="off-text"><b>{{t "people.nutrition.state.off"}}</b> {{tf "people.nutrition.off" "name" .Subject.Name}}</span></span></span><label class="switch"><input type="checkbox" role="switch" name="nutrition"{{if .NutritionShown}} checked{{end}} aria-label="{{tf "people.nutrition.aria" "name" .Subject.Name}}"></label></div>
+      <p class="hint">{{t "people.nutrition.hint"}}</p>
+    </fieldset>{{end}}
     <button class="button" type="submit">{{t "people.save"}}</button>
   </form>
 {{template "foot"}}

@@ -198,12 +198,12 @@ func TestParentsSeeWhichChildrenSeeTheValuesByName(t *testing.T) {
 		return rcpBetween(t, nutCard(t, rb.page(t, rb.b, r.ID, header)), `<p class="nut-who">`, "</p>")
 	}
 	// Both off: one sentence, both named.
-	rcpHas(t, "all off", who(rcpDE), "Eltern sehen die Nährwerte immer, Wandbildschirme nie. ", "Eure Kinder sehen sie nicht: aus für ", "</span>Mia</span> und <span", "</span>Sebastian</span>", `<a href="/people">Bei den Personen ändern</a>`)
+	rcpHas(t, "all off", who(rcpDE), "Eltern sehen die Nährwerte immer, Wandbildschirme nie. ", "Die Kinder sehen sie nicht: aus für ", "</span>Mia</span> und <span", "</span>Sebastian</span>", `<a href="/people">Bei den Personen ändern</a>`)
 	rb.b.db.SetNutritionShown(rb.hid, seb.ID, true)
 	mixed := who(rcpDE)
 	rcpHas(t, "mixed", mixed, "Kinder: an für <span", "</span>Sebastian</span>, aus für <span", "</span>Mia</span>. ")
 	rb.b.db.SetNutritionShown(rb.hid, rb.mia.ID, true)
-	rcpHas(t, "all on", who(rcpDE), "Eure Kinder sehen sie: an für ", "Mia</span> und <span")
+	rcpHas(t, "all on", who(rcpDE), "Die Kinder sehen sie: an für ", "Mia</span> und <span")
 	rcpHas(t, "English", who(enHeader), "Parents always see the values, wall displays never. ", "Your children see them: on for ", `Change on the person pages`)
 	if strings.Contains(who(rcpDE), "+") {
 		t.Error("people are named, never counted")

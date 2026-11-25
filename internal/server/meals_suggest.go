@@ -22,7 +22,8 @@ import (
 
 type mealSuggRecipe struct {
 	*mealRecipe
-	Box *mealCell // the box that choosing the recipe puts in place of the field
+	Box   *mealCell     // the box that choosing the recipe puts in place of the field
+	Likes template.HTML // "Mia likes it" (ticket 287)
 }
 
 type mealSuggDish struct{ Text, Sub string }
@@ -39,6 +40,16 @@ type mealSuggView struct {
 func (s *server) whenText(p principal, lang, day string) string {
 	d := mustDay(day)
 	return s.i18n.T(lang, "meals.weekday."+strconv.Itoa(int(d.Weekday()))) + ", " + datefmt.Short(p.household.DateFormat, d)
+}
+
+// cookedText is whenText for a day in the past: the year is added when the day
+// is not in the current year, so an old date does not look recent (ticket 287).
+func (s *server) cookedText(p principal, lang, day string) string {
+	d := mustDay(day)
+	if d.Year() == mustDay(s.today(p)).Year() {
+		return s.whenText(p, lang, day)
+	}
+	return s.i18n.T(lang, "meals.weekday."+strconv.Itoa(int(d.Weekday()))) + ", " + datefmt.Date(p.household.DateFormat, d)
 }
 
 // handleMealSuggest answers the list under a meal field: GET /meals/suggest?q=&cell=
@@ -76,7 +87,9 @@ func (s *server) handleMealSuggest(w http.ResponseWriter, r *http.Request) {
 	plain := make([]recipe.Recipe, 0, len(all))
 	var names []string
 	byID := map[string]int{}
+	liked := map[string]bool{}
 	for i, x := range all {
+		liked[x.ID] = len(x.FavouriteOf) > 0
 		plain = append(plain, x.Recipe)
 		names = append(names, x.Name)
 		byID[x.ID] = i
@@ -88,9 +101,9 @@ func (s *server) handleMealSuggest(w http.ResponseWriter, r *http.Request) {
 	}
 	people := c.householdPortions()
 	view := mealSuggView{Cell: cell, Typed: typed, KeepName: c.t("meals.sugg.keep", "q", typed), KeepSub: c.t("meals.sugg.keep.hint")}
-	for _, x := range recipe.SuggestRecipes(plain, typed, mt, recipe.MaxSuggestedRecipes) {
+	for _, x := range recipe.SuggestRecipes(plain, typed, mt, recipe.MaxSuggestedRecipes, liked) {
 		rec := all[byID[x.ID]]
-		row := mealSuggRecipe{mealRecipe: c.mealRecipe(rec, day, string(mt), people, people)}
+		row := mealSuggRecipe{mealRecipe: c.mealRecipe(rec, day, string(mt), people, people), Likes: c.likes(rec)}
 		if hasCell {
 			row.Box = &mealCell{Name: cell, Mealtime: string(mt), Day: day, Recipe: row.mealRecipe}
 		}

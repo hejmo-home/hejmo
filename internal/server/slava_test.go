@@ -223,13 +223,15 @@ func TestSettingsAPITakesTheCalendarStyleAndTheSlava(t *testing.T) {
 	c := newCtBox(t)
 	_, got, _ := c.api.call(http.MethodGet, "/settings", nil)
 	sl, _ := got["slava"].(map[string]any)
-	if got["orthodox_calendar"] != "revised_julian" || sl == nil || sl["on"] != false || sl["saint"] != nil || sl["own_name"] != "" || sl["own_day"] != "" {
+	rel, _ := got["religious_holidays"].(map[string]any)
+	if _, twice := got["orthodox_calendar"]; twice || rel["orthodox_calendar"] != "revised_julian" || sl == nil || sl["on"] != false || sl["saint"] != nil || sl["own_name"] != "" || sl["own_day"] != "" {
 		t.Fatalf("defaults: %v", got)
 	}
-	status, got, _ := c.api.call(http.MethodPatch, "/settings", map[string]any{"orthodox_calendar": "julian", "name_days": map[string]any{"on": true, "list": "russian_orthodox"},
-		"slava": map[string]any{"on": true, "saint": "nikola"}})
+	status, got, _ := c.api.call(http.MethodPatch, "/settings", map[string]any{"religious_holidays": map[string]any{"orthodox_calendar": "julian"},
+		"name_days": map[string]any{"on": true, "list": "russian_orthodox"}, "slava": map[string]any{"on": true, "saint": "nikola"}})
 	sl, _ = got["slava"].(map[string]any)
-	if status != http.StatusOK || got["orthodox_calendar"] != "julian" || sl["on"] != true || sl["saint"] != "nikola" {
+	rel, _ = got["religious_holidays"].(map[string]any)
+	if status != http.StatusOK || rel["orthodox_calendar"] != "julian" || sl["on"] != true || sl["saint"] != "nikola" {
 		t.Fatalf("patch = %d %v", status, got)
 	}
 	status, got, _ = c.api.call(http.MethodPatch, "/settings", map[string]any{"slava": map[string]any{"saint": "own", "own_name": "Sveti X", "own_day": "05-25"}})
@@ -262,7 +264,7 @@ func TestSettingsAPIRefusesABadStyleOrSlavaAndSavesNothing(t *testing.T) {
 	t.Parallel()
 	c := newCtBox(t)
 	for why, body := range map[string]map[string]any{
-		"an unknown style":    {"orthodox_calendar": "gregorian"},
+		"an unknown style":    {"religious_holidays": map[string]any{"orthodox_calendar": "gregorian"}},
 		"slava without saint": {"slava": map[string]any{"on": true}},
 		"an unknown saint":    {"slava": map[string]any{"on": true, "saint": "nope"}},
 		"own without a name":  {"slava": map[string]any{"on": true, "saint": "own", "own_day": "05-25"}},
@@ -287,5 +289,54 @@ func TestNameDayListsOfTheAPIIncludeTheNewChurches(t *testing.T) {
 		if status, got, _ := c.api.call(http.MethodPatch, "/settings", map[string]any{"name_days": map[string]any{"on": true, "list": l}}); status != http.StatusOK || got["name_days"].(map[string]any)["list"] != l {
 			t.Errorf("%s = %d %v", l, status, got)
 		}
+	}
+}
+
+// eventTitles lists the titles of the events of a window of the API.
+func eventTitles(t *testing.T, c ctBox, from, to string) []string {
+	t.Helper()
+	_, _, list := c.api.call(http.MethodGet, "/events?from="+from+"T00:00:00Z&to="+to+"T00:00:00Z", nil)
+	var out []string
+	for _, x := range list {
+		out = append(out, x.(map[string]any)["title"].(string))
+	}
+	return out
+}
+
+func TestTheStyleIsOneValueAtSettingsReligiousHolidaysAndMovesTheNameDays(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	c.add(t, contactForm("Mama K", "Katharina Maier", nil, nil))
+	c.api.call(http.MethodPatch, "/settings", map[string]any{"name_days": map[string]any{"on": true, "list": "russian_orthodox"}})
+	if got := eventTitles(t, c, "2026-11-24", "2026-11-25"); len(got) != 1 || !strings.Contains(got[0], "Mama K") {
+		t.Fatalf("revised name day: %v", got)
+	}
+	// The style alone, with the religious holidays off, moves the name days.
+	status, got, _ := c.api.call(http.MethodPatch, "/settings", map[string]any{"religious_holidays": map[string]any{"orthodox_calendar": "julian"}})
+	if rel, _ := got["religious_holidays"].(map[string]any); status != http.StatusOK || rel["orthodox_calendar"] != "julian" || rel["on"] != false {
+		t.Fatalf("patch = %d %v", status, got)
+	}
+	if _, twice := got["orthodox_calendar"]; twice {
+		t.Error("the style is also at the top level of the settings")
+	}
+	if a, b := eventTitles(t, c, "2026-11-24", "2026-11-25"), eventTitles(t, c, "2026-12-07", "2026-12-08"); len(a) != 0 || len(b) != 1 {
+		t.Fatalf("julian name day: %v on 24.11., %v on 07.12.", a, b)
+	}
+}
+
+func TestTheBirthdaysPageStyleMovesTheReligiousHolidays(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	c.api.call(http.MethodPatch, "/settings", map[string]any{"religious_holidays": map[string]any{"on": true, "religions": []string{"orthodox"}}})
+	if got := eventTitles(t, c, "2027-01-19", "2027-01-20"); len(got) != 0 {
+		t.Fatalf("revised: %v", got)
+	}
+	postBirthdays(c, url.Values{"name_days": {"1"}, "name_day_list": {"russian_orthodox"}, "orthodox_calendar": {"julian"}})
+	if got := eventTitles(t, c, "2027-01-19", "2027-01-20"); len(got) != 1 {
+		t.Fatalf("julian: %v", got)
+	}
+	_, got, _ := c.api.call(http.MethodGet, "/settings", nil)
+	if rel, _ := got["religious_holidays"].(map[string]any); rel["orthodox_calendar"] != "julian" {
+		t.Fatalf("the REST shape does not follow the page: %v", got)
 	}
 }

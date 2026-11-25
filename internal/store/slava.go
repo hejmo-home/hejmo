@@ -14,7 +14,10 @@ import (
 // made from the choice of the household. It is independent of name days and always follows the Serbian Orthodox
 // Church (the Julian calendar), not the calendar style of the household.
 
-// SlavaTitle is the title of the event: "Slava: Nikoljdan".
+// SlavaTitle is the title of the event: "Slava: Nikoljdan". The prefix is not routed through i18n on purpose: Slava
+// is a Serbian proper noun that both shipped languages write the same, and the title is stored with the event, so a
+// translation would need the language of the household stored for the sync (as the name-day word is). Add that
+// together with the first language that writes it differently.
 func SlavaTitle(name string) string { return "Slava: " + name }
 
 // SlavaInput is what a household says about its Slava. Choice is the id of a saint of the list or nameday.OwnID;

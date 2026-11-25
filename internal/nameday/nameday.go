@@ -23,6 +23,8 @@ import (
 	"time"
 	"unicode"
 
+	rh "github.com/hejmo-home/hejmo/internal/religiousholiday"
+
 	"golang.org/x/text/unicode/norm"
 )
 
@@ -65,16 +67,14 @@ func (l List) Calendar() (style Style, ok bool) {
 }
 
 // Style is the calendar a household celebrates the fixed feasts by (ticket 338): the revised Julian calendar (our
-// dates) or the Julian one (13 days later until 2100). Easter is the Orthodox Easter in both.
-type Style string
+// dates) or the Julian one (13 days later until 2100). Easter is the Orthodox Easter in both. It is the type of the
+// Orthodox holidays (ticket 339), not a second one: the household has one calendar style, so one type.
+type Style = rh.OrthodoxCalendar
 
 const (
-	RevisedJulian Style = "revised_julian"
-	Julian        Style = "julian"
+	RevisedJulian = rh.RevisedJulian
+	Julian        = rh.Julian
 )
-
-// Valid reports whether s is one of the two styles.
-func (s Style) Valid() bool { return s == RevisedJulian || s == Julian }
 
 // ParseStyle reads a stored style; anything else is the default, the revised Julian calendar.
 func ParseStyle(s string) Style {

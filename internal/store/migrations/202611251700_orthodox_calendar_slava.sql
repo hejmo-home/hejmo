@@ -1,8 +1,6 @@
--- Orthodox name days and the Serbian Slava (ticket 338).
--- orthodox_calendar is the calendar style of the household's Orthodox church. The same column, with the same
--- definition, is added by the religious holidays of ticket 339 (migration 202611251630): whichever of the two
--- reaches main second drops its ALTER line, so the two converge on one column.
-ALTER TABLE households ADD COLUMN orthodox_calendar TEXT NOT NULL DEFAULT 'revised_julian' CHECK (orthodox_calendar IN ('revised_julian', 'julian'));
+-- The Slava of the Serbian Orthodox Church (ticket 338).
+-- The calendar style of the Orthodox church is households.orthodox_calendar, which the religious holidays of
+-- ticket 339 added (migration 202611251630); the Orthodox name days follow the same column.
 
 -- The Slava: one feast of the household, off by default and independent of name days. slava is the saint (an id of
 -- the embedded list, 'own' or NULL until one was chosen); slava_own_name (at most 60 characters) and slava_own_day

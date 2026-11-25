@@ -45,7 +45,7 @@ func (h Household) NameDayStyle() nameday.Style {
 func (h Household) NameDayStyleApplies() bool { return nameday.List(h.NameDayList).Orthodox() }
 
 // SetOrthodoxCalendar saves the calendar style of the household's Orthodox church (ticket 338; the Orthodox holidays
-// of ticket 339 share it) and writes the name days again, whose dates follow it. Anything but the two styles is a
+// of ticket 339 share it) and writes the name days and the religious holidays again, whose dates follow it. Anything but the two styles is a
 // *FieldError at orthodox_calendar.
 func (db *DB) SetOrthodoxCalendar(householdID string, style nameday.Style, calendarName string) error {
 	_, err := db.SetBirthdays(householdID, BirthdaySettings{Style: &style}, calendarName)
@@ -161,7 +161,15 @@ func (db *DB) SetBirthdays(householdID string, in BirthdaySettings, calendarName
 			return change, err
 		}
 	}
+	styleChanged := false
 	if in.Style != nil {
+		var cur string
+		if err := tx.QueryRow(`SELECT orthodox_calendar FROM households WHERE id = ?`, householdID).Scan(&cur); errors.Is(err, sql.ErrNoRows) {
+			return change, ErrNotFound
+		} else if err != nil {
+			return change, err
+		}
+		styleChanged = cur != string(*in.Style)
 		if err := setOrthodoxCalendarTx(tx, householdID, *in.Style); err != nil {
 			return change, err
 		}
@@ -173,6 +181,11 @@ func (db *DB) SetBirthdays(householdID string, in BirthdaySettings, calendarName
 	}
 	if err := syncBirthdays(tx, householdID, calendarName); err != nil {
 		return change, err
+	}
+	if styleChanged { // the style is shared: the Orthodox holidays (ticket 339) follow it too
+		if _, err := db.syncReligious(tx, householdID, ""); err != nil {
+			return change, err
+		}
 	}
 	return change, tx.Commit()
 }

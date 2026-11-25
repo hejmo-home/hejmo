@@ -39,6 +39,11 @@
       <h2>{{t "licences.figtree.title"}}</h2>
       <p class="hint">{{t "licences.figtree"}}</p>
     </li>
+    <li class="card" data-licence="religious_holidays">
+      <h2>{{t "lic.rh.title"}}</h2>
+      <p class="hint">{{t "lic.rh.hint"}}</p>
+      <ul class="lic-list">{{range .RHLines}}<li{{if .Unchecked}} class="unch"{{end}}>{{.Text}}</li>{{end}}</ul>
+    </li>
     <li class="card" data-licence="hejmo">
       <h2>{{t "licences.hejmo.title"}}</h2>
       <p class="hint">{{t "licences.hejmo"}}</p>

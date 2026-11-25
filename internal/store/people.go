@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/meal"
-	"github.com/hejmo-home/hejmo/internal/nameday"
+	rh "github.com/hejmo-home/hejmo/internal/religiousholiday"
 )
 
 // ErrNotFound is returned when a record does not exist.
@@ -57,9 +57,6 @@ type Household struct {
 	// (ticket 318). Off by default; the list is kept while name days are off.
 	NameDaysOn  bool
 	NameDayList string
-	// OrthodoxCalendar is the calendar style of the Orthodox church of the household (ticket 338, shared with the
-	// Orthodox holidays of ticket 339): the revised Julian calendar (the default) or the Julian one.
-	OrthodoxCalendar nameday.Style
 	// SlavaOn puts the Slava of the household into the calendar Birthdays; Slava is the saint (an id of
 	// nameday.Slavas or nameday.OwnID, "" until one was chosen) and SlavaOwnName and SlavaOwnDay ("MM-DD") the own
 	// Slava. Everything is kept while the Slava is off.
@@ -72,6 +69,16 @@ type Household struct {
 	// FirstStepsSkipped lists the steps of the card a parent skipped, in the
 	// order of FirstStepIDs.
 	FirstStepsSkipped []string
+	// ReligiousHolidaysOn puts the holidays of the chosen Religions into the generated calendar Religious holidays
+	// (ticket 339). Off by default; the religions are kept while it is off. IslamicCalendar and OrthodoxCalendar
+	// are the two calendar choices. OrthodoxCalendar is the one calendar style of the household's Orthodox church:
+	// the Orthodox holidays (ticket 339) and the Orthodox name days (ticket 338) both follow it, so changing it
+	// writes both generated calendars again. ReligiousLang is the language of the titles of the events.
+	ReligiousHolidaysOn bool
+	Religions           []rh.Religion
+	IslamicCalendar     rh.IslamicCalendar
+	OrthodoxCalendar    rh.OrthodoxCalendar
+	ReligiousLang       string
 }
 
 // DateFormat is how the household wants dates in numbers written.
@@ -260,12 +267,25 @@ func (db *DB) SaveHouseholdSettings(id string, in HouseholdSettings) error {
 		}
 	}
 	c := in.MealCutoffs
-	return expectOne(db.sql.Exec(`UPDATE households SET date_format = ?, time_format = ?, temperature_unit = ?, auto_update = ?,
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err := expectOne(tx.Exec(`UPDATE households SET date_format = ?, time_format = ?, temperature_unit = ?, auto_update = ?,
 		cutoff_breakfast = ?, cutoff_lunch = ?, cutoff_snack = ?, cutoff_dinner = ?,
 		first_steps_hidden = COALESCE(?, first_steps_hidden), first_steps_skipped = COALESCE(?, first_steps_skipped),
 		home_name = COALESCE(?, home_name), latitude = COALESCE(?, latitude), longitude = COALESCE(?, longitude),
 		home_place_id = CASE WHEN ? = 1 THEN ? ELSE home_place_id END, updated_at = ? WHERE id = ?`,
-		in.DateFormat, in.TimeFormat, in.TemperatureUnit, in.AutoUpdate, c.Breakfast, c.Lunch, c.Snack, c.Dinner, in.FirstStepsHidden, skipped, homeName, lat, lon, setPlace, placeID, now(), id))
+		in.DateFormat, in.TimeFormat, in.TemperatureUnit, in.AutoUpdate, c.Breakfast, c.Lunch, c.Snack, c.Dinner, in.FirstStepsHidden, skipped, homeName, lat, lon, setPlace, placeID, now(), id)); err != nil {
+		return err
+	}
+	if in.Home != nil { // Hindu days and the public holidays of the region depend on the place (ticket 339)
+		if _, err := db.syncReligious(tx, id, ""); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 // Person is a family member as seen from one household.
@@ -331,26 +351,33 @@ func (db *DB) CreateHousehold(h Household) (Household, error) {
 // Household loads a household by id.
 func (db *DB) Household(id string) (Household, error) {
 	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(home_place_id, 0), COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, date_format, time_format, temperature_unit, auto_update, update_ack,
-		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled, below_zero, name_days_on, COALESCE(name_day_list, ''), orthodox_calendar, slava_on, COALESCE(slava, ''), slava_own_name, slava_own_day
+		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled, below_zero, name_days_on, COALESCE(name_day_list, ''),
+		religious_holidays_on, religious_holidays, islamic_calendar, orthodox_calendar, religious_holidays_lang,
+		slava_on, COALESCE(slava, ''), slava_own_name, slava_own_day
 		FROM households WHERE id = ?`, id))
 }
 
 // HomeHousehold returns the household this box serves (V1: exactly one).
 func (db *DB) HomeHousehold() (Household, error) {
 	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(home_place_id, 0), COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, date_format, time_format, temperature_unit, auto_update, update_ack,
-		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled, below_zero, name_days_on, COALESCE(name_day_list, ''), orthodox_calendar, slava_on, COALESCE(slava, ''), slava_own_name, slava_own_day
+		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled, below_zero, name_days_on, COALESCE(name_day_list, ''),
+		religious_holidays_on, religious_holidays, islamic_calendar, orthodox_calendar, religious_holidays_lang,
+		slava_on, COALESCE(slava, ''), slava_own_name, slava_own_day
 		FROM households ORDER BY created_at, rowid LIMIT 1`))
 }
 
 func (db *DB) scanHousehold(row *sql.Row) (Household, error) {
 	var h Household
-	var skipped string
+	var skipped, religions string
 	err := row.Scan(&h.ID, &h.Name, &h.HomeName, &h.HomePlaceID, &h.Latitude, &h.Longitude, &h.Region, &h.Timezone, &h.DateFormat, &h.TimeFormat, &h.TemperatureUnit, &h.AutoUpdate, &h.UpdateAck,
-		&h.MealCutoffs.Breakfast, &h.MealCutoffs.Lunch, &h.MealCutoffs.Snack, &h.MealCutoffs.Dinner, &h.FirstStepsHidden, &skipped, &h.MCPEnabled, &h.BelowZero, &h.NameDaysOn, &h.NameDayList, &h.OrthodoxCalendar, &h.SlavaOn, &h.Slava, &h.SlavaOwnName, &h.SlavaOwnDay)
+		&h.MealCutoffs.Breakfast, &h.MealCutoffs.Lunch, &h.MealCutoffs.Snack, &h.MealCutoffs.Dinner, &h.FirstStepsHidden, &skipped, &h.MCPEnabled, &h.BelowZero, &h.NameDaysOn, &h.NameDayList,
+		&h.ReligiousHolidaysOn, &religions, &h.IslamicCalendar, &h.OrthodoxCalendar, &h.ReligiousLang,
+		&h.SlavaOn, &h.Slava, &h.SlavaOwnName, &h.SlavaOwnDay)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Household{}, ErrNotFound
 	}
 	h.FirstStepsSkipped = splitSteps(skipped)
+	h.Religions = splitReligions(religions)
 	return h, err
 }
 

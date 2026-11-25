@@ -368,10 +368,12 @@ func TestFamilyViewFullWidthColumn(t *testing.T) {
 				t.Errorf("the full column did not survive a refresh: %+v", after)
 			}
 			// The second tap on the name opens the personal view.
-			if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.querySelector(".column[data-full] .person-link").click(), true`)); err != nil {
+			if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`setTimeout(() => document.querySelector(".column[data-full] .person-link").click(), 0), true`)); err != nil {
 				t.Fatal(err)
 			}
-			// Polled from here: a page that navigates ends an evaluation that is still waiting inside it.
+			// The click runs after this evaluation has returned, and the path is polled from
+			// here: a page that navigates tears down an evaluation that is still pending in it
+			// (Chrome: "Inspected target navigated or closed", -32000).
 			path := "/"
 			for i := 0; i < 250 && path == "/"; i++ {
 				time.Sleep(20 * time.Millisecond)

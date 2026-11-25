@@ -101,11 +101,29 @@ type eventJSON struct {
 	People      []string             `json:"people"`
 	Groups      []string             `json:"groups"`
 	Invitation  *eventInvitationJSON `json:"invitation,omitempty"`
+	// ReadOnly: the event cannot be changed or deleted (its calendar is read-only or generated).
+	ReadOnly bool `json:"read_only"`
+	// VariesBySighting: the day depends on moon sighting, some communities celebrate one day later (religious holidays).
+	VariesBySighting bool `json:"varies_by_sighting"`
 }
 
-func (s *server) eventToJSON(r *http.Request, e calendar.Event, loc *time.Location) eventJSON {
+// readOnlyCalendars says which calendars of the household are read-only.
+func (s *server) readOnlyCalendars(householdID string) (map[string]bool, error) {
+	cals, err := s.db.Calendars(householdID)
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]bool{}
+	for _, c := range cals {
+		out[c.ID] = c.ReadOnly
+	}
+	return out, nil
+}
+
+func (s *server) eventToJSON(r *http.Request, e calendar.Event, loc *time.Location, readOnly map[string]bool) eventJSON {
 	return eventJSON{e.ID, e.CalendarID, s.title(r, e.Title), e.Description, e.Location, e.AllDay,
-		formatTime(e.Start, e.AllDay, loc), formatTime(e.End, e.AllDay, loc), e.RRule, nonNil(e.People), nonNil(e.Groups), eventInvitationOf(e.Invitation)}
+		formatTime(e.Start, e.AllDay, loc), formatTime(e.End, e.AllDay, loc), e.RRule, nonNil(e.People), nonNil(e.Groups), eventInvitationOf(e.Invitation),
+		readOnly[e.CalendarID] || e.Invitation != nil, e.VarySighting}
 }
 
 type occurrenceJSON struct {
@@ -122,8 +140,9 @@ type occurrenceJSON struct {
 	People       []string             `json:"people"`
 	Groups       []string             `json:"groups"`
 	Invitation   *eventInvitationJSON `json:"invitation,omitempty"`
-	// ReadOnly says the box never changes the event: it is in a read-only calendar such as the generated Birthdays.
-	ReadOnly bool `json:"read_only"`
+	// ReadOnly and VariesBySighting: see eventJSON.
+	ReadOnly         bool `json:"read_only"`
+	VariesBySighting bool `json:"varies_by_sighting"`
 	// Generated says what the box makes the event from: "name_day" or "slava" (tickets 318 and 338); absent for every other event.
 	Generated string `json:"generated,omitempty"`
 }
@@ -152,14 +171,10 @@ func (s *server) apiListEvents(w http.ResponseWriter, r *http.Request, p princip
 			return
 		}
 	}
-	cals, err := s.db.Calendars(p.household.ID)
+	readOnly, err := s.readOnlyCalendars(p.household.ID)
 	if err != nil {
-		s.fail(w, "load calendars", err)
+		s.fail(w, "calendars", err)
 		return
-	}
-	readOnly := map[string]bool{}
-	for _, c := range cals {
-		readOnly[c.ID] = c.ReadOnly
 	}
 	out := make([]occurrenceJSON, 0, len(occs))
 	for _, o := range occs {
@@ -175,7 +190,7 @@ func (s *server) apiListEvents(w http.ResponseWriter, r *http.Request, p princip
 			rec = formatTime(o.RecurrenceID, false, loc)
 		}
 		out = append(out, occurrenceJSON{o.EventID, o.SeriesID, rec, o.CalendarID, s.title(r, o.Title), o.Description, o.Location, o.AllDay,
-			formatTime(o.Start, o.AllDay, loc), formatTime(o.End, o.AllDay, loc), nonNil(o.People), nonNil(o.Groups), eventInvitationOf(o.Invitation), readOnly[o.CalendarID], generated})
+			formatTime(o.Start, o.AllDay, loc), formatTime(o.End, o.AllDay, loc), nonNil(o.People), nonNil(o.Groups), eventInvitationOf(o.Invitation), readOnly[o.CalendarID] || o.Invitation != nil, o.VarySighting, generated})
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -272,7 +287,7 @@ func (s *server) apiCreateEvent(w http.ResponseWriter, r *http.Request, p princi
 		return
 	}
 	s.sync.PushSoon(p.household.ID, e.CalendarID)
-	writeJSON(w, http.StatusCreated, s.eventToJSON(r, created, p.location()))
+	writeJSON(w, http.StatusCreated, s.eventToJSON(r, created, p.location(), nil))
 }
 
 // seriesTarget resolves an event id plus ?occurrence= and ?scope=.
@@ -399,9 +414,14 @@ func (s *server) apiSearch(w http.ResponseWriter, r *http.Request, p principal) 
 		s.fail(w, "search", err)
 		return
 	}
+	readOnly, err := s.readOnlyCalendars(p.household.ID)
+	if err != nil {
+		s.fail(w, "calendars", err)
+		return
+	}
 	out := make([]eventJSON, 0, len(events))
 	for _, e := range events {
-		out = append(out, s.eventToJSON(r, e, p.location()))
+		out = append(out, s.eventToJSON(r, e, p.location(), readOnly))
 	}
 	writeJSON(w, http.StatusOK, out)
 }

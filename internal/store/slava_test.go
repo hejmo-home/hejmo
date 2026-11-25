@@ -73,6 +73,41 @@ func TestSetBirthdaysSavesAllPartsTogetherOrNone(t *testing.T) {
 	}
 }
 
+func TestSetBirthdaysRollsBackWhatWasWrittenWhenALaterPartFails(t *testing.T) {
+	t.Parallel()
+	db, h := bareHousehold(t)
+	nameDayContact(t, db, h, "Mama", "Katharina Maier")
+	// Every part is valid, so validation lets the save begin; the Slava update fails inside the transaction, after the
+	// name days and the style were written.
+	if _, err := db.SQL().Exec(`CREATE TRIGGER slava_fails BEFORE UPDATE OF slava_on ON households BEGIN SELECT RAISE(ABORT, 'disk on fire'); END`); err != nil {
+		t.Fatal(err)
+	}
+	julian := nameday.Julian
+	_, err := db.SetBirthdays(h.ID, store.BirthdaySettings{NameDays: &store.NameDaySetting{On: true, List: "russian_orthodox", Word: "Name day"}, Style: &julian,
+		Slava: &store.SlavaInput{On: true, Choice: "nikola"}}, "Geburtstage")
+	if err == nil || !strings.Contains(err.Error(), "disk on fire") {
+		t.Fatalf("err = %v, want the failure of the Slava update", err)
+	}
+	got, _ := db.Household(h.ID)
+	if got.NameDaysOn || got.NameDayList != "" || got.OrthodoxCalendar != nameday.RevisedJulian || got.SlavaOn || got.Slava != "" {
+		t.Fatalf("a save that failed half way left %+v", got)
+	}
+	if days := birthdayDays(t, db, h, 2026); len(days) != 0 {
+		t.Fatalf("a save that failed half way left events: %v", days)
+	}
+	// Without the failure the same save goes through, so the rollback was the trigger's doing and nothing else's.
+	if _, err := db.SQL().Exec(`DROP TRIGGER slava_fails`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.SetBirthdays(h.ID, store.BirthdaySettings{NameDays: &store.NameDaySetting{On: true, List: "russian_orthodox", Word: "Name day"}, Style: &julian,
+		Slava: &store.SlavaInput{On: true, Choice: "nikola"}}, "Geburtstage"); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ = db.Household(h.ID); !got.NameDaysOn || got.OrthodoxCalendar != nameday.Julian || !got.SlavaOn {
+		t.Fatalf("saved %+v", got)
+	}
+}
+
 func TestChangingTheCalendarStyleWritesTheNameDaysAgain(t *testing.T) {
 	t.Parallel()
 	db, h := bareHousehold(t)

@@ -33,6 +33,7 @@ type eventItem struct {
 	Groups                      []string
 	WhoParts                    []wholine.Part // who it is for, in words (wholine, nobody left out), one part per name for the page to keep whole
 	Repeats, ReadOnly           bool
+	Vary                        bool // the day depends on moon sighting: "or 1 day later" (ticket 339)
 }
 
 type weekBar struct {
@@ -127,8 +128,10 @@ func eventHref(o calendar.Occurrence) string {
 }
 
 func (c *calendarContext) item(o calendar.Occurrence) eventItem {
-	it := eventItem{Title: c.s.title(c.r, o.Title), Location: o.Location, ReadOnly: c.readOnly[o.CalendarID], Repeats: o.SeriesID != ""}
-	if !it.ReadOnly || o.NameDayContact != "" || o.Slava { // a name day and the Slava have a page of its own that says where it comes from (ticket 318)
+	it := eventItem{Title: c.s.title(c.r, o.Title), Location: o.Location, ReadOnly: c.readOnly[o.CalendarID] && o.Religious == "", Repeats: o.SeriesID != ""}
+	it.Vary = o.VarySighting
+	// a name day (ticket 318), the Slava (ticket 338) and a religious holiday (ticket 339) have a page of their own that says where they come from
+	if !it.ReadOnly || o.NameDayContact != "" || o.Slava || o.Religious != "" {
 		it.Href = eventHref(o)
 	}
 	if !o.AllDay {
@@ -148,8 +151,10 @@ func (c *calendarContext) item(o calendar.Occurrence) eventItem {
 		it.Slot = it.People[0].Slot
 	}
 	lang := c.s.langOf(c.r)
-	it.WhoParts = wholine.Of(wholine.Input{Household: c.household, Groups: c.wgroups, Audience: calendar.ViewersOf(o, c.audiences, c.viewers)},
-		c.s.i18n, lang).Parts
+	if o.Religious == "" { // a religious holiday is for the whole family: its page says so, the week stays calm (ticket 339)
+		it.WhoParts = wholine.Of(wholine.Input{Household: c.household, Groups: c.wgroups, Audience: calendar.ViewersOf(o, c.audiences, c.viewers)},
+			c.s.i18n, lang).Parts
+	}
 	it.Date = datefmt.Date(c.p.household.DateFormat, o.Start.In(c.loc))
 	return it
 }
@@ -242,7 +247,8 @@ func (s *server) handleCalendarSearch(w http.ResponseWriter, r *http.Request) {
 		}
 		for _, e := range found {
 			o := calendar.Occurrence{EventID: e.ID, SeriesID: e.SeriesID, RecurrenceID: e.RecurrenceID, CalendarID: e.CalendarID, Title: e.Title, Location: e.Location,
-				AllDay: e.AllDay, Start: e.Start, End: e.End, People: e.People, Groups: e.Groups}
+				AllDay: e.AllDay, Start: e.Start, End: e.End, People: e.People, Groups: e.Groups,
+				Religious: e.Religious, ReligiousKey: e.ReligiousKey, ReligiousEve: e.ReligiousEve, VarySighting: e.VarySighting}
 			it := c.item(o)
 			it.Repeats = e.Recurring() || e.SeriesID != ""
 			items = append(items, it)
@@ -596,6 +602,12 @@ func (s *server) renderEventPage(w http.ResponseWriter, r *http.Request, c *cale
 	if master.NameDayContact != "" {
 		if pg, ok := s.nameDayEventPage(r, c.p, master.NameDayContact, extra["CalendarName"].(string), occ); ok {
 			extra["Gen"] = pg
+		}
+	}
+	if master.Religious != "" {
+		occ.Religious, occ.ReligiousKey, occ.ReligiousEve = master.Religious, master.ReligiousKey, master.ReligiousEve
+		if pg, ok := s.religiousEventPage(r, c.p, extra["CalendarName"].(string), occ); ok {
+			extra["RGen"] = pg
 		}
 	}
 	s.renderEventForm(w, r, c, status, "edit", f, extra, bad)

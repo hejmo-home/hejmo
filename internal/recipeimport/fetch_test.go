@@ -134,3 +134,29 @@ func TestFetchGate(t *testing.T) {
 		t.Errorf("closed gate: %v", err)
 	}
 }
+
+// Only the switch "recipes" stops the page: the fetcher counts as that connection, not as another.
+type onlyOff struct{ off outbound.Service }
+
+func (p onlyOff) Verdict(s outbound.Service) outbound.Verdict {
+	if s == p.off {
+		return outbound.VerdictSwitchedOff
+	}
+	return outbound.VerdictAllowed
+}
+
+func TestFetchCountsAsTheRecipesConnection(t *testing.T) {
+	s := serve(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte("<p>x</p>"))
+	})
+	f := loopback()
+	f.Gate = outbound.New(onlyOff{outbound.Recipes}, nil)
+	if _, err := f.Fetch(context.Background(), s.URL); !errors.Is(err, outbound.ErrRefused) {
+		t.Errorf("recipes off: %v", err)
+	}
+	f.Gate = outbound.New(onlyOff{outbound.Images}, nil)
+	if _, err := f.Fetch(context.Background(), s.URL); err != nil {
+		t.Errorf("only images off: %v", err)
+	}
+}

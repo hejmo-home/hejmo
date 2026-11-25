@@ -351,6 +351,8 @@ var thousandsRe = regexp.MustCompile(`^[1-9]\d{0,2}(?:[.,]\d{3})+$`)
 type amount struct {
 	val  float64
 	unit string // lower case, "" when none follows the number
+	// grouped is a number that looks like thousands ("1.500"): the grams of a nutrient read it as a decimal.
+	grouped bool
 }
 
 // amounts reads every number of s with its own unit.
@@ -358,12 +360,13 @@ func amounts(s string) []amount {
 	var out []amount
 	for _, m := range amountRe.FindAllStringSubmatch(strings.ToLower(s), -1) {
 		num := m[1]
-		if thousandsRe.MatchString(num) {
+		grouped := thousandsRe.MatchString(num)
+		if grouped {
 			num = strings.NewReplacer(".", "", ",", "").Replace(num)
 		}
 		v, err := strconv.ParseFloat(strings.Replace(num, ",", ".", 1), 64)
 		if err == nil {
-			out = append(out, amount{v, m[2]})
+			out = append(out, amount{v, m[2], grouped})
 		}
 	}
 	return out
@@ -380,8 +383,11 @@ func nutritionOf(v any) *Nutrition {
 			return nil
 		}
 		v := as[0].val
-		if as[0].unit == "mg" {
+		switch {
+		case as[0].unit == "mg":
 			v /= 1000
+		case as[0].unit == "g" && as[0].grouped:
+			v /= 1000 // "1.500 g" is 1.5 g, no serving holds 1500 g
 		}
 		v = round(v, 2)
 		return &v

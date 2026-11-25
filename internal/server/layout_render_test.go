@@ -1219,7 +1219,8 @@ func TestRenderedLayout(t *testing.T) {
 	// Every part is done when the group of parallel subtests ends: a known problem that no longer occurs
 	// is fixed, its entry goes. Not checked when a subtest was picked with -run, which sees only some pages.
 	t.Cleanup(func() {
-		if run := flag.Lookup("test.run"); run == nil || !strings.Contains(run.Value.String(), "/") {
+		// Not either when a part stopped early: its known problems were never seen, and saying so would be false.
+		if run := flag.Lookup("test.run"); !t.Failed() && (run == nil || !strings.Contains(run.Value.String(), "/")) {
 			for i, k := range knownLayoutProblems {
 				if !seen[i] && !k.platform {
 					t.Errorf("known layout problem #%d (%s, %s, width %d) did not occur: remove it from knownLayoutProblems", k.issue, k.path, k.kind, k.width)

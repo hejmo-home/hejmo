@@ -139,6 +139,16 @@ func classifyImport(err error, host string) *importErr {
 // picturesBudget is the longest all pictures of a page take together; each has its own shorter timeout.
 const picturesBudget = 20 * time.Second
 
+// pageFetcher is the box's picture fetcher as the pictures of a page use it: the connection "recipes" through the
+// box's gate, and number addresses refused exactly where the page's own fetcher refuses them.
+func (s *server) pageFetcher() picture.Fetcher {
+	pf := *s.fetcher
+	pf.Gate = s.gate
+	pf.Service = outbound.Recipes
+	pf.NoIPLiteral = pf.NoIPLiteral || !s.recipes.AllowIPLiteral
+	return pf
+}
+
 // draftPictures downloads the image of each recipe, once per address, as the stored picture (at most 1600 px).
 // A picture that cannot be read is left out: the recipe is still imported.
 func (s *server) draftPictures(ctx context.Context, base *url.URL, found []recipeimport.Found) map[int][]byte {
@@ -148,10 +158,7 @@ func (s *server) draftPictures(ctx context.Context, base *url.URL, found []recip
 	// "images"), names only (the same rule as the page, ADR 0021). All pictures together get one budget.
 	ctx, cancel := context.WithTimeout(ctx, picturesBudget)
 	defer cancel()
-	pf := *s.fetcher
-	pf.Gate = s.gate
-	pf.Service = outbound.Recipes
-	pf.NoIPLiteral = pf.NoIPLiteral || !s.recipes.AllowIPLiteral
+	pf := s.pageFetcher()
 	for i, f := range found {
 		if f.ImageURL == "" {
 			continue

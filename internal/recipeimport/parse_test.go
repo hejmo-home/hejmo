@@ -199,3 +199,12 @@ func TestYieldFallbackAndTags(t *testing.T) {
 		t.Errorf("unknown = %q", got)
 	}
 }
+
+// In grams a value like 1.500 is a decimal (1.5 g), not a thousand: no serving holds 1500 g of protein.
+func TestGramsReadThreeDecimalsAsDecimals(t *testing.T) {
+	f := one(t, `{"@type":"Recipe","name":"x","nutrition":{"proteinContent":"1.500 g","fatContent":"2,250 g"}}`)
+	n := f.Nutrition
+	if n == nil || *n.Protein != 1.5 || *n.Fat != 2.25 {
+		t.Errorf("grams: %+v", n)
+	}
+}

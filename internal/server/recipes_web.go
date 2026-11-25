@@ -93,7 +93,7 @@ func (c *itemCtx) row(r store.Recipe) rcpRow {
 	}
 	out.Meta = append(out.Meta, c.portionsText(r.Portions))
 	if r.LastCooked != "" {
-		out.Meta = append(out.Meta, c.t("recipes.cooked.short", "when", c.s.whenText(c.p, c.lang, r.LastCooked)))
+		out.Meta = append(out.Meta, c.t("recipes.cooked.short", "when", c.s.cookedText(c.p, c.lang, r.LastCooked)))
 	}
 	out.Likes = c.likes(r)
 	out.Diet = recipe.DietOf(r.Ingredients, c.lookup).Mark
@@ -285,7 +285,7 @@ func (s *server) handleRecipePage(w http.ResponseWriter, r *http.Request) {
 		data["OwnRecipe"] = true
 		data["Likes"] = c.likes(rec)
 		if rec.LastCooked != "" {
-			data["Cooked"] = s.whenText(p, lang, rec.LastCooked)
+			data["Cooked"] = s.cookedText(p, lang, rec.LastCooked)
 		}
 		data["FavForm"] = c.favouriteChips(rec)
 		data["FavAction"] = recipesPath + "/" + rec.ID + "/favourites"
@@ -366,6 +366,10 @@ func (c *itemCtx) favouriteChips(r store.Recipe) []favChip {
 func (s *server) handleRecipeFavourites(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
 	if !ok {
+		return
+	}
+	if starter.IsID(r.PathValue("id")) { // the same answer as the API
+		http.Error(w, starterReadOnly, http.StatusForbidden)
 		return
 	}
 	rec, err := s.db.Recipe(p.household.ID, r.PathValue("id"))

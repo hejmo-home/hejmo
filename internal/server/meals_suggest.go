@@ -42,6 +42,16 @@ func (s *server) whenText(p principal, lang, day string) string {
 	return s.i18n.T(lang, "meals.weekday."+strconv.Itoa(int(d.Weekday()))) + ", " + datefmt.Short(p.household.DateFormat, d)
 }
 
+// cookedText is whenText for a day in the past: the year is added when the day
+// is not in the current year, so an old date does not look recent (ticket 287).
+func (s *server) cookedText(p principal, lang, day string) string {
+	d := mustDay(day)
+	if d.Year() == mustDay(s.today(p)).Year() {
+		return s.whenText(p, lang, day)
+	}
+	return s.i18n.T(lang, "meals.weekday."+strconv.Itoa(int(d.Weekday()))) + ", " + datefmt.Date(p.household.DateFormat, d)
+}
+
 // handleMealSuggest answers the list under a meal field: GET /meals/suggest?q=&cell=
 // (the field's name, which also gives the mealtime) or &mealtime=. Less than two
 // letters get no content.

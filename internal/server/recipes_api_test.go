@@ -333,7 +333,7 @@ func TestMCPToolsWriteAndReadRecipesUnderTheMealsArea(t *testing.T) {
 	c.switchMCP(t, true)
 	areas := map[string]string{"events": "write", "lists": "write", "tasks": "write", "meals": "write", "health": "read"}
 	s := c.mcpSession(t, c.newMCPToken(t, "Claude", areas))
-	want := map[string]string{"list_recipes": "meals", "get_recipe": "meals", "create_recipe": "meals", "update_recipe": "meals", "delete_recipe": "meals", "list_recipe_units": "meals", "get_recipe_warnings": "health"}
+	want := map[string]string{"list_recipes": "meals", "get_recipe": "meals", "create_recipe": "meals", "update_recipe": "meals", "delete_recipe": "meals", "set_recipe_favourites": "meals", "list_recipe_units": "meals", "get_recipe_warnings": "health"}
 	found := 0
 	for _, tool := range server.MCPTools() {
 		if area, ok := want[tool.Name]; ok {
@@ -371,6 +371,14 @@ func TestMCPToolsWriteAndReadRecipesUnderTheMealsArea(t *testing.T) {
 	}
 	if out, failed := callTool(s, "list_recipe_units", nil); failed || !strings.Contains(out, "tbsp") {
 		t.Errorf("list_recipe_units = %v %s", failed, out)
+	}
+	withFamily(t, c)
+	mia := apiPersonID(t, c, "Mia")
+	if out, failed := callTool(s, "set_recipe_favourites", map[string]any{"id": id, "person_ids": []string{mia}}); failed || !strings.Contains(out, mia) {
+		t.Errorf("set_recipe_favourites = %v %s", failed, out)
+	}
+	if _, one, _ := c.call(http.MethodGet, "/recipes/"+id, nil); one["favourite_of"] == nil || len(one["favourite_of"].([]any)) != 1 {
+		t.Errorf("REST sees favourite_of = %v", one["favourite_of"])
 	}
 	if out, failed := callTool(s, "delete_recipe", map[string]any{"id": id}); failed {
 		t.Errorf("delete_recipe: %s", out)

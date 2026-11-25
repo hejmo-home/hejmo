@@ -70,8 +70,21 @@ func TestAFavouriteGoesWhenItsPersonOrItsRecipeGoes(t *testing.T) {
 	if got, _ := f.db.Recipe(f.h.ID, f.curry.ID); !reflect.DeepEqual(got.FavouriteOf, []string{f.mama.ID}) {
 		t.Errorf("after Mia left = %v", got.FavouriteOf)
 	}
+	count := func() (n int) {
+		t.Helper()
+		if err := f.db.SQL().QueryRow(`SELECT COUNT(*) FROM recipe_favourites WHERE recipe_id = ?`, f.curry.ID).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+	if n := count(); n != 1 {
+		t.Fatalf("before deleting the recipe = %d rows, want 1", n)
+	}
 	if err := f.db.DeleteRecipe(f.h.ID, f.curry.ID); err != nil {
 		t.Fatal(err)
+	}
+	if n := count(); n != 0 {
+		t.Errorf("after deleting the recipe = %d rows, want 0: the marks go with it", n)
 	}
 }
 
@@ -111,7 +124,7 @@ func TestLastCookedIsTheLatestPlannedDayThatIsOver(t *testing.T) {
 	}
 }
 
-func TestLastCookedStaysAfterTheEntryIsRemovedOrTheRecipeRenamed(t *testing.T) {
+func TestLastCookedStaysAfterTheRecipeIsRenamed(t *testing.T) {
 	f := newRecipeMealFixture(t)
 	if err := f.db.SetMeals(f.h.ID, []store.Meal{{Day: "2026-11-03", Mealtime: meal.Dinner, RecipeID: f.curry.ID, Portions: 4}}, optionsOn("2026-11-01")); err != nil {
 		t.Fatal(err)

@@ -85,8 +85,8 @@ func TestAParentMarksWhoLikesARecipeAndAChildOnlyReadsFavourites(t *testing.T) {
 	if r := mb.b.do(http.MethodPost, "/meals/recipes/"+curry.ID+"/favourites", url.Values{"person": {"nobody"}}, enHeader); r.status != http.StatusUnprocessableEntity {
 		t.Errorf("unknown person = %d, want 422", r.status)
 	}
-	if r := mb.b.do(http.MethodPost, "/meals/recipes/starter-rahmspinat/favourites", url.Values{}, enHeader); r.status != http.StatusNotFound {
-		t.Errorf("starter recipe = %d, want 404: only own recipes are planned", r.status)
+	if r := mb.b.do(http.MethodPost, "/meals/recipes/starter-rahmspinat/favourites", url.Values{}, enHeader); r.status != http.StatusForbidden {
+		t.Errorf("starter recipe = %d, want 403 like the API: only own recipes are planned", r.status)
 	}
 	starter := mb.b.do(http.MethodGet, "/meals/recipes/starter-rahmspinat", nil, enHeader).body
 	rcpLacks(t, "a starter recipe", starter, "/favourites", "Last cooked", "Favourite of")
@@ -141,4 +141,16 @@ func TestTheMealPlanSuggestsFavouritesFirstAndNamesWhoLikesThem(t *testing.T) {
 	if !(strings.Index(body, br.Name) < strings.Index(body, a.Name) && strings.Index(body, z.Name) < strings.Index(body, br.Name)) {
 		t.Errorf("favourites first, then by mealtime and name within them:\n%s", body)
 	}
+}
+
+// A date from an earlier year carries its year, so an old date does not look recent.
+func TestLastCookedShowsTheYearWhenItIsNotThisYear(t *testing.T) {
+	t.Parallel()
+	mb := newMealBox(t)
+	curry := mb.curry(t)
+	mb.plan(t, store.Meal{Day: "2025-11-10", Mealtime: meal.Dinner, RecipeID: curry.ID, Portions: 4})
+	page := mb.b.do(http.MethodGet, "/meals/recipes/"+curry.ID, nil, enHeader).body
+	rcpHas(t, "the recipe", page, "<dd>Monday, 10.11.2025</dd>")
+	list := mb.b.do(http.MethodGet, "/meals/recipes", nil, enHeader).body
+	rcpHas(t, "the list", list, "Monday, 10.11.2025")
 }

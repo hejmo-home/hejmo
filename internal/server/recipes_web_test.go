@@ -247,7 +247,7 @@ func TestTheRecipeShowsOneAllergyCardAndRepeatsTheWarningAtTheIngredient(t *test
 	}
 	rcpHas(t, "the recipe", page.body, `<h1 class="rcp-title"><span class="art-sym big" aria-hidden="true">🍲</span><span>Erdnuss-Curry mit Süßkartoffeln</span></h1>`,
 		`<a href="/meals">Meals</a>`, `<a href="/meals/recipes">Recipes</a>`, `<span aria-current="page">Erdnuss-Curry mit Süßkartoffeln</span>`,
-		`<dt>Category</dt><dd>Main dish</dd>`, `<dt>Servings</dt><dd>4</dd>`, `<dt>Time</dt><dd>45 minutes</dd>`, "Lunch</span>", "Dinner</span>",
+		`<dt>Category</dt><dd>Main dish</dd>`, `<dt>Servings</dt><dd>written for 4</dd>`, `<dt>Time</dt><dd>45 minutes</dd>`, "Lunch</span>", "Dinner</span>",
 		`<span class="tag diet">`, "All ingredients from the library are vegan. Currypaste is free text; Hejmo does not check it.", `<span class="tag grp">schnell</span>`)
 	card := rcpBetween(t, page.body, `<section class="rcp-check has-warn"`, "</section>")
 	rcpHas(t, "the card", card, "Allergies in your family", "Contains peanuts: ", "</span>Mia</span> is allergic", "Not checked automatically: Currypaste. This is a free-text ingredient without an article.",

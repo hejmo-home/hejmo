@@ -139,6 +139,7 @@ type layoutFixture struct {
 	hint          *screen  // a display that shows the screensaver's hint
 	outlook       []string // the Outlook pages (#177) that no link leads to
 	rewards       []string // reward IDs (#291): redeemed, never redeemed, archived by hand, archived because its person left
+	recipeIDs     []string // recipe IDs (#279): the long Käsespätzle, then the Gurkensalat
 }
 
 func newLayoutFixture(t *testing.T) *layoutFixture {
@@ -393,6 +394,33 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	if status, body := createTemplate(t, c, tpl); status != http.StatusCreated {
 		t.Fatalf("meal template = %d %v", status, body)
 	}
+	// Recipes in the plan (ticket 281), after the template so that the first is a week's adjustment of it: a long name for all eight people,
+	// one for five, one more for all eight, and an earlier free-text dish to suggest.
+	recipes, err := db.Recipes(h)
+	must(err)
+	for _, r := range recipes {
+		if strings.HasPrefix(r.Name, "Omas") { // the long Käsespätzle first, then the Gurkensalat
+			f.recipeIDs = append([]string{r.ID}, f.recipeIDs...)
+		} else {
+			f.recipeIDs = append(f.recipeIDs, r.ID)
+		}
+	}
+	for _, m := range []struct {
+		day, mealtime string
+		recipe        int
+		portions      int
+	}{{"2026-11-16", "dinner", 0, 0}, {"2026-11-17", "lunch", 1, 5}, {"2026-11-19", "dinner", 0, 0}} {
+		body := map[string]any{"recipe_id": f.recipeIDs[m.recipe]}
+		if m.portions > 0 {
+			body["portions"] = m.portions
+		}
+		if status, resp, _ := c.call(http.MethodPut, "/meals/"+m.day+"/"+m.mealtime, body); status != http.StatusOK {
+			t.Fatalf("recipe meal %s = %d %v", m.day, status, resp)
+		}
+	}
+	if status, resp, _ := c.call(http.MethodPut, "/meals/2026-11-03/dinner", map[string]any{"text": "Spätzle mit Linsen"}); status != http.StatusOK {
+		t.Fatalf("earlier dish = %d %v", status, resp)
+	}
 	return f
 }
 
@@ -587,6 +615,7 @@ var notRendered = map[string]string{
 	"/settings/lists/library/plan/{id}":       "fragment: the sentence under the card of an article, rendered inside it",
 	"/settings/lists/always/plan":             "fragment: the sentence under the holiday, rendered inside its page",
 	"/meals/recipes/suggest":                  "fragment: the suggestions under an ingredient line, rendered inside the recipe form",
+	"/meals/suggest":                          "fragment: the suggestions under a meal field, rendered inside the week form (mealRecipePages)",
 }
 
 // matches reports whether a request path is served by a route pattern.
@@ -692,6 +721,10 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	add(parent, "/contacts/import")
 	pages = append(pages, contactImportPages(t, f)...)
 
+	// The meal plan with recipes (ticket 281): a week with a recipe for all eight, one for five and an adjusted one,
+	// the child's reading view, the recipe page with the portions of the plan, and the states a form or a script reaches.
+	pages = append(pages, mealRecipePages(t, f, kid)...)
+
 	// The card of recovery codes (#176) is reached only by POST: rendered with
 	// the box's answer, in the wizard, the invitation and My account, and in
 	// the state after a continue without the tick.
@@ -715,6 +748,51 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	add(out, "/invite/"+f.inviteToken)
 	add(out, "/invite/"+f.inviteToken+"/account")
 	return pages
+}
+
+// mealRecipePages returns the pages of ticket 281 that the crawl does not reach: the week of recipes for a
+// parent and for a child, the recipe opened from the plan with many and with one portion, the week after a
+// refused portions field, and the week with the suggestions open under a field (the fragment the script asks
+// for, put into the page where the script puts it).
+func mealRecipePages(t *testing.T, f *layoutFixture, kid layoutSite) []layoutPage {
+	t.Helper()
+	parent := siteOf("app", f.box, f.client)
+	var pages []layoutPage
+	for _, path := range []string{"/meals?week=2026-11-16", "/meals/recipes/" + f.recipeIDs[0] + "?portions=99&plan=2026-11-16/dinner", "/meals/recipes/" + f.recipeIDs[0] + "?portions=1&plan=2026-11-16/dinner",
+		"/meals/recipes/" + f.recipeIDs[0] + "?portions=8"} {
+		if status, _ := parent.get(t, path); status != http.StatusOK {
+			t.Fatalf("%s = %d, want 200", path, status)
+		}
+		pages = append(pages, layoutPage{site: parent, path: path})
+	}
+	if status, _ := kid.get(t, "/meals?week=2026-11-16"); status != http.StatusOK {
+		t.Fatalf("the child's meal plan = %d", status)
+	}
+	pages = append(pages, layoutPage{site: kid, path: "/meals?week=2026-11-16"},
+		layoutPage{site: kid, path: "/meals/recipes/" + f.recipeIDs[0] + "?portions=8&plan=2026-11-16/dinner"})
+	cell := mealField("2026-11-16", "dinner")
+	bad, open := map[string]string{}, map[string]string{}
+	for _, lang := range []string{"de", "en"} {
+		header := map[string]string{"Accept-Language": lang}
+		refused := f.do(http.MethodPost, "/meals", url.Values{"week": {"2026-11-16"}, cell + ".recipe": {f.recipeIDs[0]}, cell + ".portions": {"hundert und acht"},
+			mealField("2026-11-17", "dinner"): {"Eine lange Beschreibung des Abendessens, das am Dienstag gekocht wird"}}, header)
+		if refused.status != http.StatusUnprocessableEntity {
+			t.Fatalf("refused portions = %d", refused.status)
+		}
+		bad[lang] = refused.body
+		page := f.do(http.MethodGet, "/meals?week=2026-11-16", nil, header)
+		field := mealField("2026-11-18", "snack")
+		sugg := f.do(http.MethodGet, "/meals/suggest?q=sp%C3%A4tzle&cell="+field, nil, header)
+		if sugg.status != http.StatusOK {
+			t.Fatalf("suggestions = %d", sugg.status)
+		}
+		at := `<textarea id="` + field + `" name="` + field + `" rows="1" maxlength="200"></textarea>`
+		if !strings.Contains(page.body, at) {
+			t.Fatalf("no field %s in the week", field)
+		}
+		open[lang] = strings.Replace(page.body, at, at+sugg.body, 1)
+	}
+	return append(pages, layoutPage{site: parent, path: "/meals?week=2026-11-16#portions-error", html: bad}, layoutPage{site: parent, path: "/meals?week=2026-11-16#suggestions", html: open})
 }
 
 // connectChoicePages returns the choice page "Connect a calendar" (ticket 231)

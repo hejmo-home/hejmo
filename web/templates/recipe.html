@@ -23,7 +23,8 @@
   <div class="rcp-body"><div class="rcp-cols">
     <section class="rcp-part" aria-labelledby="ing">
       <h2 id="ing">{{t "recipes.ings.title"}}</h2>
-      <p class="hint">{{.IngsFor}}</p>
+      <div class="portions-view" role="group" aria-labelledby="pv-l"><span id="pv-l" class="pv-l">{{t "recipes.portions.for"}}</span><a class="button secondary step" href="{{.PV.Less}}" aria-label="{{.PV.LessLabel}}"{{if .PV.LessOff}} aria-disabled="true"{{end}}><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></a><strong class="pv-n">{{.PV.N}}</strong><a class="button secondary step" href="{{.PV.More}}" aria-label="{{.PV.MoreLabel}}"{{if .PV.MoreOff}} aria-disabled="true"{{end}}><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></a><span class="pv-l">{{t "recipes.portions.unit"}}</span></div>
+      <p class="hint pv-hint">{{.PV.Hint}}{{if .PV.AsWritten}} <a href="{{.PV.AsWrittenHref}}">{{.PV.AsWritten}}</a>{{end}}</p>
       {{if .Ings}}<ul class="rcp-ings">{{range .Ings}}
         <li><span class="q">{{.Qty}}</span><span class="n">{{.Name}}{{with .Variety}}<span class="variety"> · {{.}}</span>{{end}}</span>{{if .Free}}<span class="tag unchk">{{t "recipes.ing.free"}}</span>{{end}}{{range .Warns}}{{.}}{{end}}</li>{{end}}
       </ul>{{else}}<p class="rcp-empty">{{t "recipes.ings.none"}}</p>{{end}}
@@ -44,5 +45,5 @@
     {{with .Who}}<p class="nut-who">{{.}}</p>{{end}}
   </section>{{end}}
   {{if .Parent}}<p class="hint rcp-who">{{.Who}}</p>
-  {{template "danger" (dict "Label" (t "recipes.delete.label") "Confirm" .DeleteConfirm "Explain" .DeleteExplain "Action" (printf "/meals/recipes/%s/delete" .R.ID) "CancelHref" (printf "/meals/recipes/%s" .R.ID))}}{{end}}
+  {{template "danger" (dict "Label" (t "recipes.delete.label") "Confirm" .DeleteConfirm "Explain" .DeleteExplain "Also" .DeletePlanned "Action" (printf "/meals/recipes/%s/delete" .R.ID) "CancelHref" (printf "/meals/recipes/%s" .R.ID))}}{{end}}
 {{template "foot"}}

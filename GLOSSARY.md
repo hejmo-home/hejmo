@@ -312,7 +312,7 @@ An allergen or intolerance of a person: one of the 14 main EU allergens or free 
 _Avoid_: intolerance (alone)
 
 **Meal plan**:
-The household's meals per day and mealtime: one line of free text each. Every entry also shows in the calendar as an all-day event of the generated, read-only meal-plan calendar.
+The household's meals per day and mealtime: each is one line of free text, or a recipe with its portions (the number of people in the household when chosen, 1 to 99). Every entry also shows in the calendar as an all-day event named only by its dish, the generated, read-only meal-plan calendar. A recipe that is renamed is renamed in the plan; one that is deleted leaves its name as free text.
 _Avoid_: menu, food plan
 
 **Mealtime**:

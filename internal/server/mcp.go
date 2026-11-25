@@ -202,7 +202,10 @@ var mcpTools = []mcpTool{
 	// Meal plan
 	{name: "list_meals", desc: "List the meal plan from one day to another (default: the coming seven days).", method: "GET", path: "/meals", params: []mcpParam{
 		opt("from", "string", "First day, YYYY-MM-DD (give both from and to, or neither)"), opt("to", "string", "Last day, YYYY-MM-DD, at most 62 days after from")}},
-	{name: "set_meal", desc: "Plan a meal, or change the planned one.", method: "PUT", path: "/meals/{date}/{mealtime}", params: []mcpParam{mealDate, mealtime, req("text", "string", "What there is to eat (at most 200 characters)")}},
+	{name: "set_meal", desc: "Plan a meal, or change the planned one: free text, or a recipe with portions.", method: "PUT", path: "/meals/{date}/{mealtime}", params: []mcpParam{mealDate, mealtime,
+		opt("text", "string", "What there is to eat as free text (at most 200 characters); not with recipe_id"),
+		opt("recipe_id", "string", "A recipe of the family (see list_recipes) instead of text"),
+		opt("portions", "integer", "With recipe_id: 1 to 99; the number of people in the household when missing")}},
 	{name: "delete_meal", desc: "Remove a planned meal.", method: "DELETE", path: "/meals/{date}/{mealtime}", params: []mcpParam{mealDate, mealtime}},
 	{name: "restore_meal", desc: "Back to the template: drop this week's change of a meal.", method: "POST", path: "/meals/{date}/{mealtime}/restore", params: []mcpParam{mealDate, mealtime}},
 	{name: "list_diets_and_allergies", desc: "List every person's diet (omnivore, vegetarian, pescatarian, vegan) and allergies: the 14 main EU allergens by key, plus free text that is not checked automatically and cannot be filtered by. Health data, read only.", method: "GET", path: "/food"},

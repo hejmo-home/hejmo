@@ -48,6 +48,9 @@ func (e *ClashError) Is(target error) bool { return target == ErrConflict }
 // PlanMeal is the meal a cell of the plan shows, and where it comes from. An
 // adjusted meal may be empty ("nothing this week"); TemplateDish is what the
 // template fills in.
+//
+// Text is the dish: the free text, or for a recipe the recipe's current name.
+// RecipeID and Portions (1 to 99) are set when the entry is a recipe.
 type PlanMeal struct {
 	Day          string
 	Mealtime     meal.Mealtime
@@ -56,6 +59,8 @@ type PlanMeal struct {
 	TemplateID   string
 	TemplateName string
 	TemplateDish string
+	RecipeID     string
+	Portions     int
 }
 
 type cell struct {
@@ -78,32 +83,40 @@ type queryer interface {
 	Query(query string, args ...any) (*sql.Rows, error)
 }
 
+// layerEntry is what a hand-typed entry or an adjustment holds: free text, or a
+// recipe (its name as text) with portions.
+type layerEntry struct {
+	text     string
+	recipeID string
+	portions int
+}
+
 // mealLayers holds what decides a cell from a day on: the templates, the
 // hand-typed entries and the adjustments.
 type mealLayers struct {
 	templates      []meal.Template
-	manual, adjust map[cell]string
+	manual, adjust map[cell]layerEntry
 }
 
 func loadMealLayers(q queryer, householdID, fromDay string) (*mealLayers, error) {
-	l := &mealLayers{manual: map[cell]string{}, adjust: map[cell]string{}}
+	l := &mealLayers{manual: map[cell]layerEntry{}, adjust: map[cell]layerEntry{}}
 	var err error
 	if l.templates, err = loadTemplates(q, householdID, ""); err != nil {
 		return nil, err
 	}
-	for table, into := range map[string]map[cell]string{"meal_manual": l.manual, "meal_adjustments": l.adjust} {
-		rows, err := q.Query(`SELECT day, mealtime, text FROM `+table+` WHERE household_id = ? AND day >= ?`, householdID, fromDay)
+	for table, into := range map[string]map[cell]layerEntry{"meal_manual": l.manual, "meal_adjustments": l.adjust} {
+		rows, err := q.Query(`SELECT day, mealtime, text, recipe_id, portions FROM `+table+` WHERE household_id = ? AND day >= ?`, householdID, fromDay)
 		if err != nil {
 			return nil, err
 		}
 		for rows.Next() {
 			var c cell
-			var text string
-			if err := rows.Scan(&c.day, &c.mealtime, &text); err != nil {
+			var e layerEntry
+			if err := rows.Scan(&c.day, &c.mealtime, &e.text, &e.recipeID, &e.portions); err != nil {
 				rows.Close()
 				return nil, err
 			}
-			into[c] = text
+			into[c] = e
 		}
 		if err := rows.Err(); err != nil {
 			rows.Close()
@@ -188,48 +201,51 @@ func (l *mealLayers) resolve(c cell) PlanMeal {
 	adj, hasAdj := l.adjust[c]
 	switch {
 	case tpl != nil && hasAdj:
-		m.Text, m.Source, m.TemplateID, m.TemplateName, m.TemplateDish = adj, SourceAdjusted, tpl.ID, tpl.Name, dish
+		m.Text, m.RecipeID, m.Portions = adj.text, adj.recipeID, adj.portions
+		m.Source, m.TemplateID, m.TemplateName, m.TemplateDish = SourceAdjusted, tpl.ID, tpl.Name, dish
 	case tpl != nil:
 		m.Text, m.Source, m.TemplateID, m.TemplateName, m.TemplateDish = dish, SourceTemplate, tpl.ID, tpl.Name, dish
 	case hasAdj:
-		m.Text = adj // the template that was adjusted is gone: a plain entry
+		m.Text, m.RecipeID, m.Portions = adj.text, adj.recipeID, adj.portions // the template that was adjusted is gone: a plain entry
 	default:
-		m.Text = l.manual[c]
+		e := l.manual[c]
+		m.Text, m.RecipeID, m.Portions = e.text, e.recipeID, e.portions
 	}
 	return m
 }
 
-// set stores a typed text for a cell from today on: an adjustment where a
-// template fills it (none when the text is the template's own dish), else the
-// hand-typed entry.
-func (l *mealLayers) set(tx *sql.Tx, householdID string, c cell, text string) error {
-	put := func(table string, into map[cell]string, keep bool) error {
+// set stores an entry for a cell from today on: an adjustment where a template
+// fills it (none when the text is the template's own dish; a recipe is always
+// an adjustment), else the hand-typed entry.
+func (l *mealLayers) set(tx *sql.Tx, householdID string, c cell, e layerEntry) error {
+	put := func(table string, into map[cell]layerEntry, keep bool) error {
 		if !keep {
 			delete(into, c)
 			_, err := tx.Exec(`DELETE FROM `+table+` WHERE household_id = ? AND day = ? AND mealtime = ?`, householdID, c.day, c.mealtime)
 			return err
 		}
-		into[c] = text
-		_, err := tx.Exec(`INSERT INTO `+table+` (household_id, day, mealtime, text) VALUES (?, ?, ?, ?)
-			ON CONFLICT (household_id, day, mealtime) DO UPDATE SET text = excluded.text`, householdID, c.day, c.mealtime, text)
+		into[c] = e
+		_, err := tx.Exec(`INSERT INTO `+table+` (household_id, day, mealtime, text, recipe_id, portions) VALUES (?, ?, ?, ?, ?, ?)
+			ON CONFLICT (household_id, day, mealtime) DO UPDATE SET text = excluded.text, recipe_id = excluded.recipe_id, portions = excluded.portions`,
+			householdID, c.day, c.mealtime, e.text, e.recipeID, e.portions)
 		return err
 	}
 	if tpl, dish := l.templateFor(c); tpl != nil {
-		return put("meal_adjustments", l.adjust, text != dish)
+		return put("meal_adjustments", l.adjust, e.recipeID != "" || e.text != dish)
 	}
 	if _, stale := l.adjust[c]; stale {
 		if err := put("meal_adjustments", l.adjust, false); err != nil {
 			return err
 		}
 	}
-	return put("meal_manual", l.manual, text != "")
+	return put("meal_manual", l.manual, e.text != "")
 }
 
 // releaseAdjustments turns the adjustments of the cells that template id fills
 // into plain entries (an emptied one into nothing). After a template edit,
 // after is the edited template and only cells it no longer fills are released.
 func (l *mealLayers) releaseAdjustments(tx *sql.Tx, householdID, id string, after *meal.Template) error {
-	for c, text := range l.adjust {
+	for c, e := range l.adjust {
 		if t, _ := l.templateFor(c); t == nil || t.ID != id {
 			continue
 		}
@@ -239,11 +255,12 @@ func (l *mealLayers) releaseAdjustments(tx *sql.Tx, householdID, id string, afte
 			}
 		}
 		var err error
-		if text == "" {
+		if e.text == "" {
 			_, err = tx.Exec(`DELETE FROM meal_manual WHERE household_id = ? AND day = ? AND mealtime = ?`, householdID, c.day, c.mealtime)
 		} else {
-			_, err = tx.Exec(`INSERT INTO meal_manual (household_id, day, mealtime, text) VALUES (?, ?, ?, ?)
-				ON CONFLICT (household_id, day, mealtime) DO UPDATE SET text = excluded.text`, householdID, c.day, c.mealtime, text)
+			_, err = tx.Exec(`INSERT INTO meal_manual (household_id, day, mealtime, text, recipe_id, portions) VALUES (?, ?, ?, ?, ?, ?)
+				ON CONFLICT (household_id, day, mealtime) DO UPDATE SET text = excluded.text, recipe_id = excluded.recipe_id, portions = excluded.portions`,
+				householdID, c.day, c.mealtime, e.text, e.recipeID, e.portions)
 		}
 		if err == nil {
 			_, err = tx.Exec(`DELETE FROM meal_adjustments WHERE household_id = ? AND day = ? AND mealtime = ?`, householdID, c.day, c.mealtime)
@@ -459,13 +476,13 @@ func refreshMealPlan(tx *sql.Tx, householdID string, o MealOptions) error {
 	}
 	w := &planWriter{tx: tx, householdID: householdID, o: o}
 	have := map[cell]PlanMeal{}
-	rows, err := tx.Query(`SELECT day, mealtime, text, source, template_id, template_dish FROM meal_plan WHERE household_id = ? AND day >= ?`, householdID, today)
+	rows, err := tx.Query(`SELECT day, mealtime, text, source, template_id, template_dish, recipe_id, portions FROM meal_plan WHERE household_id = ? AND day >= ?`, householdID, today)
 	if err != nil {
 		return err
 	}
 	for rows.Next() {
 		var m PlanMeal
-		if err := rows.Scan(&m.Day, &m.Mealtime, &m.Text, &m.Source, &m.TemplateID, &m.TemplateDish); err != nil {
+		if err := rows.Scan(&m.Day, &m.Mealtime, &m.Text, &m.Source, &m.TemplateID, &m.TemplateDish, &m.RecipeID, &m.Portions); err != nil {
 			rows.Close()
 			return err
 		}
@@ -504,7 +521,7 @@ func refreshMealPlan(tx *sql.Tx, householdID string, o MealOptions) error {
 		if !ok && want.Text == "" {
 			continue
 		}
-		if ok && old.Text == want.Text && old.Source == want.Source && old.TemplateID == want.TemplateID && old.TemplateDish == want.TemplateDish {
+		if ok && old.Text == want.Text && old.Source == want.Source && old.TemplateID == want.TemplateID && old.TemplateDish == want.TemplateDish && old.RecipeID == want.RecipeID && old.Portions == want.Portions {
 			continue
 		}
 		if err := w.write(want); err != nil {
@@ -536,14 +553,14 @@ func (db *DB) MealPlan(householdID, from, to, today string) ([]PlanMeal, error) 
 	}
 	past := map[cell]PlanMeal{}
 	if from < today {
-		rows, err := db.sql.Query(`SELECT day, mealtime, text, source, template_id, template_dish FROM meal_plan WHERE household_id = ? AND day >= ? AND day <= ? AND day < ?`, householdID, from, to, today)
+		rows, err := db.sql.Query(`SELECT day, mealtime, text, source, template_id, template_dish, recipe_id, portions FROM meal_plan WHERE household_id = ? AND day >= ? AND day <= ? AND day < ?`, householdID, from, to, today)
 		if err != nil {
 			return nil, err
 		}
 		defer rows.Close()
 		for rows.Next() {
 			var m PlanMeal
-			if err := rows.Scan(&m.Day, &m.Mealtime, &m.Text, &m.Source, &m.TemplateID, &m.TemplateDish); err != nil {
+			if err := rows.Scan(&m.Day, &m.Mealtime, &m.Text, &m.Source, &m.TemplateID, &m.TemplateDish, &m.RecipeID, &m.Portions); err != nil {
 				return nil, err
 			}
 			m.TemplateName = names[m.TemplateID]
@@ -572,5 +589,35 @@ func (db *DB) MealPlan(householdID, from, to, today string) ([]PlanMeal, error) 
 			}
 		}
 	}
-	return out, nil
+	return out, db.currentRecipeNames(householdID, out)
+}
+
+// currentRecipeNames makes the dish of every recipe entry the recipe's current name.
+func (db *DB) currentRecipeNames(householdID string, list []PlanMeal) error {
+	var any bool
+	for _, m := range list {
+		any = any || m.RecipeID != ""
+	}
+	if !any {
+		return nil
+	}
+	rows, err := db.sql.Query(`SELECT id, name FROM recipes WHERE household_id = ?`, householdID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	names := map[string]string{}
+	for rows.Next() {
+		var id, name string
+		if err := rows.Scan(&id, &name); err != nil {
+			return err
+		}
+		names[id] = name
+	}
+	for i := range list {
+		if name, ok := names[list[i].RecipeID]; ok && list[i].RecipeID != "" {
+			list[i].Text = name
+		}
+	}
+	return rows.Err()
 }

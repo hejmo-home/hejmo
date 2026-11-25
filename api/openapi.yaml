@@ -2888,7 +2888,7 @@ paths:
     put:
       operationId: updateRecipe
       summary: Replace a recipe (scope meals:write, parents only)
-      description: Give all fields; the ingredients, steps and tags are replaced. Who wrote the recipe stays. An ingredient's variety is read as in `POST /recipes`. A starter recipe (id starts with `starter-`) is never replaced (403).
+      description: Give all fields; the ingredients, steps and tags are replaced. Who wrote the recipe stays. An ingredient's variety is read as in `POST /recipes`. A starter recipe (id starts with `starter-`) is never replaced (403). The source of a recipe imported from a web page is that page's address and never changes, so a `source` sent for it is ignored.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
       requestBody:
@@ -3162,6 +3162,110 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/NutritionFood" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /recipe-imports:
+    post:
+      operationId: readRecipePage
+      summary: Read a recipe from a web page into a draft (scope meals:write, parents only)
+      description: |
+        Hejmo reads the one page at `url` (and its picture) through the connection
+        "recipes" and keeps what it found as a draft that belongs to the person who
+        read it and lives one hour. Nothing is saved as a recipe: that is
+        `POST /recipe-imports/{id}`. The page counts as read from the box, so
+        the connection `recipes` must be on and offline mode off (else 409, nothing is
+        sent). Only web pages on the internet are read: not a number address or an address in the
+        home network, also not after a redirect (422, field `url`). Further refusals
+        (422, field `url`): no link, no answer within 20 seconds, name unknown, page
+        missing (404, 410) or refused (403, 429), a file instead of a page, a page over 5 MB,
+        and no schema.org/Recipe in the page (`code` `no_recipe`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url: { type: string, maxLength: 2000, description: "An http or https address" }
+      responses:
+        "201":
+          description: The draft; a page may hold several recipes (`candidates`), the first is shown
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecipeImportDraft" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /recipe-imports/{id}:
+    get:
+      operationId: getRecipeImport
+      summary: A draft read from a web page (scope meals:write, parents only)
+      description: |
+        The recipe as the page described it, ready to be checked: each ingredient line says what the page wrote,
+        what Hejmo made of it and, for a line that is no article of the library, up to three proposals.
+        Only the person who read the page can open its draft (404 for another's). After an hour it is gone (410,
+        nothing was saved).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: candidate, in: query, required: false, schema: { type: integer, minimum: 0 }, description: "Which recipe of the page, when it holds several (default 0)" }
+      responses:
+        "200":
+          description: The draft
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecipeImportDraft" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "410":
+          description: The draft is older than one hour; nothing was saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    post:
+      operationId: saveRecipeImport
+      summary: Save a draft as a recipe, with a choice for every line Hejmo does not know (scope meals:write, parents only)
+      description: |
+        Give the recipe as it should be saved, usually the draft's with changes. The source is the page's
+        address and never changes. A line that is no article of the library needs a `choice`: `own` makes an own
+        article of its name (default department, no allergens, so Hejmo warns for nothing until they are
+        entered), `free` keeps free text. Without one the answer is 422 (field `ingredients[n].choice`) and nothing
+        is saved: a silent default would weaken the allergy check. Name rules are those of `POST /recipes` (taken: 422, field `name`).
+        Needs the connection `recipes` only for reading, not for saving. The draft is deleted when the recipe is saved.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RecipeImportSave" }
+      responses:
+        "201":
+          description: The recipe as stored, with the page's address as its source
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Recipe" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "410":
+          description: The draft is older than one hour; nothing was saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: discardRecipeImport
+      summary: Discard a draft (scope meals:write, parents only)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: The draft is gone }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
@@ -7223,6 +7327,112 @@ components:
         name: { type: string, maxLength: 200 }
         article_id: { type: string, nullable: true, description: The key of a shipped article or the id of an own one }
         variety: { type: string, nullable: true, maxLength: 60, description: 'The more exact kind, such as "Type 405"; only an article has one. A variety written in `text` wins over this ("Mehl Type 405" with variety "Type 550" is Type 405); this counts only when `text` has none' }
+    RecipeImportLine:
+      type: object
+      required: [original, quantity, unit, name, variety, article_id, status, change, proposals]
+      properties:
+        original: { type: string, description: The line as the web page wrote it }
+        quantity: { type: number, nullable: true, description: "Null for none: the page gave none, or Hejmo took 0 or \"etwas\" as none (`change`)" }
+        unit: { type: string, nullable: true, description: A key of GET /recipe-units }
+        name: { type: string }
+        variety: { type: string, nullable: true, description: "Proposed from the text after a comma or bracket, only for a line of the library" }
+        article_id: { type: string, nullable: true, description: The article of the library Hejmo matched }
+        status: { type: string, enum: [library, needs_choice], description: "`needs_choice`: Hejmo does not know the line as an article; saving needs a `choice` for it" }
+        change: { type: string, nullable: true, enum: [range, some, zero, null], description: "What Hejmo interpreted: a range took the smaller number, \"etwas\" and 0 mean no quantity" }
+        proposals:
+          type: array
+          description: Up to three articles of the library whose name occurs in the line (only for `needs_choice`)
+          items:
+            type: object
+            required: [article_id, name, variety]
+            properties:
+              article_id: { type: string }
+              name: { type: string }
+              variety: { type: string, nullable: true }
+    RecipeImportNutrition:
+      type: object
+      description: What the page stated per portion; a value it did not state is null, never 0. Salt is sodium times 2.5.
+      required: [kcal, kj, fat, saturates, carbs, sugars, protein, salt]
+      properties:
+        kcal: { type: number, nullable: true }
+        kj: { type: number, nullable: true }
+        fat: { type: number, nullable: true }
+        saturates: { type: number, nullable: true }
+        carbs: { type: number, nullable: true }
+        sugars: { type: number, nullable: true }
+        protein: { type: number, nullable: true }
+        salt: { type: number, nullable: true }
+    RecipeImportDraft:
+      type: object
+      required: [id, url, host, read_at, expires_at, candidates, candidate, recipe]
+      properties:
+        id: { type: string }
+        url: { type: string, description: "The address of the page after redirects, the recipe's source" }
+        host: { type: string }
+        read_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time }
+        existing_recipe_id: { type: string, description: "A recipe of the household that was imported from the same address (a hint, no block)" }
+        candidates:
+          type: array
+          items:
+            type: object
+            required: [index, name, ingredients, steps, minutes, has_picture]
+            properties:
+              index: { type: integer }
+              name: { type: string }
+              ingredients: { type: integer }
+              steps: { type: integer }
+              minutes: { type: integer, nullable: true }
+              has_picture: { type: boolean }
+        candidate: { type: integer, description: "Which recipe of the page `recipe` is" }
+        recipe:
+          type: object
+          required: [name, category, category_word, portions, portions_status, yield_text, minutes, language, keywords, ingredients, steps, has_picture, nutrition]
+          properties:
+            name: { type: string }
+            category: { $ref: "#/components/schemas/RecipeCategory" }
+            category_word: { type: string, nullable: true, description: "The page's word when it is none of the six categories (then `category` is main)" }
+            portions: { type: integer }
+            portions_status: { type: string, enum: [stated, from_yield, household], description: "`stated` the page named portions; `from_yield` a number taken from a yield that is no portion count (a tray of 12 pieces), please check; `household` the page names none, the number of people was used" }
+            yield_text: { type: string, nullable: true, description: The page's yield as written }
+            minutes: { type: integer, nullable: true }
+            language: { type: string, nullable: true, description: "The language the page says the recipe is in, such as de or en; the recipe keeps it" }
+            keywords: { type: array, items: { type: string }, description: "The page's keywords; none is chosen unless sent as `tags`" }
+            ingredients:
+              type: array
+              items: { $ref: "#/components/schemas/RecipeImportLine" }
+            steps: { type: array, items: { type: string }, description: Plain text; the names of sections are the start of their steps }
+            has_picture: { type: boolean }
+            nutrition: { allOf: [{ $ref: "#/components/schemas/RecipeImportNutrition" }], nullable: true }
+    RecipeImportIngredient:
+      type: object
+      required: [name]
+      properties:
+        quantity: { type: number, nullable: true, minimum: 0, exclusiveMinimum: true, maximum: 9999 }
+        unit: { type: string, nullable: true }
+        name: { type: string, maxLength: 200 }
+        article_id: { type: string, nullable: true }
+        variety: { type: string, nullable: true, maxLength: 60 }
+        choice: { type: string, enum: [own, free], description: "Needed for a line that is no article of the library: `own` makes an own article, `free` keeps free text" }
+    RecipeImportSave:
+      type: object
+      required: [name]
+      properties:
+        candidate: { type: integer, minimum: 0, description: Which recipe of the page (default 0) }
+        name: { type: string, maxLength: 120 }
+        category: { $ref: "#/components/schemas/RecipeCategory" }
+        portions: { type: integer, minimum: 1, maximum: 99 }
+        minutes: { type: integer, nullable: true, minimum: 0, maximum: 9999 }
+        mealtimes:
+          type: array
+          items: { $ref: "#/components/schemas/Mealtime" }
+        tags: { type: array, maxItems: 30, items: { type: string, maxLength: 30 } }
+        tips: { type: string, maxLength: 2000 }
+        ingredients:
+          type: array
+          items: { $ref: "#/components/schemas/RecipeImportIngredient" }
+        steps: { type: array, items: { type: string } }
+        picture: { type: boolean, description: "Keep the page's picture as the cover (default true)" }
     NewRecipe:
       type: object
       required: [name]

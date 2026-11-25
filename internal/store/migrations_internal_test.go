@@ -310,3 +310,60 @@ func TestAPersonLeavingTakesTheirIdFromRelationsAndDropsThoseWithNobodyLeft(t *t
 		t.Errorf("relations = %+v", c.Relations)
 	}
 }
+
+func TestDeltaBaselineMigrationMovesOutlookCTag(t *testing.T) {
+	conn, err := sql.Open("sqlite", "file:"+filepath.Join(t.TempDir(), "legacy.db")+"?_pragma=foreign_keys(1)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := &DB{sql: conn}
+	defer old.Close()
+	if _, err := conn.Exec(`CREATE TABLE schema_migrations (
+		version INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`); err != nil {
+		t.Fatal(err)
+	}
+	ms, err := migrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var before, target []migration
+	for _, m := range ms {
+		if strings.HasSuffix(m.name, "_delta_baseline.sql") {
+			target = append(target, m)
+		} else if len(target) == 0 {
+			before = append(before, m)
+		}
+	}
+	if len(target) != 1 {
+		t.Fatalf("found %d delta_baseline migrations, want 1", len(target))
+	}
+	if err := old.apply(before); err != nil {
+		t.Fatal(err)
+	}
+	for _, q := range []string{
+		`INSERT INTO households (id, name, timezone, created_at, updated_at) VALUES ('h1', 'Familie', 'Europe/Berlin', 'x', 'x')`,
+		`INSERT INTO calendars (id, household_id, name, kind, color, created_at, updated_at) VALUES
+			('c-out', 'h1', 'Outlook', 'outlook', '#000000', 'x', 'x'), ('c-dav', 'h1', 'CalDAV', 'caldav', '#000000', 'x', 'x')`,
+		`INSERT INTO calendar_sync (calendar_id, interval_minutes, started_at, next_attempt_at, remote_ctag) VALUES
+			('c-out', 15, 'x', 'x', '2026-11-20T08:00:00Z'), ('c-dav', 15, 'x', 'x', 'ctag-7')`,
+	} {
+		if _, err := conn.Exec(q); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := old.apply(target); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []struct{ id, ctag, baseline string }{
+		{"c-out", "", "2026-11-20T08:00:00Z"},
+		{"c-dav", "ctag-7", ""},
+	} {
+		var ctag, baseline string
+		if err := conn.QueryRow(`SELECT remote_ctag, remote_delta_baseline FROM calendar_sync WHERE calendar_id = ?`, c.id).Scan(&ctag, &baseline); err != nil {
+			t.Fatal(err)
+		}
+		if ctag != c.ctag || baseline != c.baseline {
+			t.Errorf("%s: ctag %q baseline %q, want %q and %q", c.id, ctag, baseline, c.ctag, c.baseline)
+		}
+	}
+}

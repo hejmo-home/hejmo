@@ -621,3 +621,20 @@ func TestOutlookIsPausedByTheCalendarsSwitchAndAsksNothingOfMicrosoft(t *testing
 		}
 	}
 }
+
+// The delta baseline is kept in its own column, not in the CTag (ticket 226).
+func TestOutlookKeepsItsDeltaBaselineOutOfTheCTag(t *testing.T) {
+	fx := newOutlookFx(t)
+	fx.fake.Put("cal-1", gev("Zahnarzt", "11-20", "08:30", "09:00"))
+	fx.mustSync(t)
+	st, err := fx.db.RemoteState(fx.cal.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st.CTag != "" {
+		t.Errorf("CTag = %q, want empty", st.CTag)
+	}
+	if st.DeltaBaseline != fx.clock.UTC().Format(time.RFC3339) || st.Token == "" {
+		t.Errorf("state = %+v, want the baseline %s and a delta link", st, fx.clock.UTC().Format(time.RFC3339))
+	}
+}

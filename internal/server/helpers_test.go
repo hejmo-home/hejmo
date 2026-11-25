@@ -25,6 +25,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/picture"
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
+	"github.com/hejmo-home/hejmo/internal/recipeimport"
 	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -212,6 +213,7 @@ type boxConfig struct {
 	freeSpace      func(string) (uint64, error)
 	maxUpdateSize  int64
 	fetcher        *picture.Fetcher
+	recipes        *recipeimport.Fetcher
 	kiosk          *fakeKiosk
 	resolver       server.NameResolver
 }
@@ -226,6 +228,11 @@ func withResolver(r server.NameResolver) boxOption { return func(c *boxConfig) {
 // withFetcher makes the box download web images with this fetcher, which a test
 // lets reach its own server (the real one only reaches public addresses).
 func withFetcher(f *picture.Fetcher) boxOption { return func(c *boxConfig) { c.fetcher = f } }
+
+// withRecipeFetcher makes the box read recipe pages with this fetcher, which a test lets reach its own server.
+func withRecipeFetcher(f *recipeimport.Fetcher) boxOption {
+	return func(c *boxConfig) { c.recipes = f }
+}
 
 // withOldHostUpdater makes the box run beside a host script that cannot install an uploaded file.
 func withOldHostUpdater(c *boxConfig) { c.oldHostUpdater = true }
@@ -307,7 +314,7 @@ func newFreshBox(t *testing.T, opts ...boxOption) *box {
 		kioskRun = server.NewKioskRunner(server.KioskOptions{DB: db, Factory: cfg.kiosk.factory(), Now: now, After: func(_ time.Duration, f func()) { b.later = append(b.later, f) }})
 		b.kioskRun = kioskRun
 	}
-	b.handler = server.New(server.Options{Kiosk: kioskRun, DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir, Pictures: cfg.fetcher, PhotoDir: b.photoDir, Resolver: cfg.resolver,
+	b.handler = server.New(server.Options{Kiosk: kioskRun, DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir, Pictures: cfg.fetcher, Recipes: cfg.recipes, PhotoDir: b.photoDir, Resolver: cfg.resolver,
 		UpdateInstall: updateDir != "" && !cfg.oldHostUpdater, UpdateArch: "arm64", UpdateVerifier: lazyVerifier{b}, UpdateMaxSize: cfg.maxUpdateSize, FreeSpace: cfg.freeSpace})
 	b.srv = httptest.NewServer(b.handler)
 	t.Cleanup(func() { b.srv.Close() })

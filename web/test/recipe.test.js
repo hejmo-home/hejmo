@@ -100,3 +100,10 @@ test('after a line is removed the focus goes to the next, or the one before the 
   assert.equal(ctx.rcpFocusAfter(3, 3), 2);
   assert.equal(ctx.rcpFocusAfter(1, 0), 0);
 });
+
+test('the savebar of an imported recipe says in words how many choices are missing', () => {
+  const fmt = { none: 'Noch nicht gespeichert.', one: 'Noch nicht gespeichert. Bei 1 Zutat fehlt deine Wahl.', other: 'Noch nicht gespeichert. Bei {n} Zutaten fehlt deine Wahl.' };
+  assert.equal(ctx.rcpDirtyText(0, fmt), 'Noch nicht gespeichert.');
+  assert.equal(ctx.rcpDirtyText(1, fmt), 'Noch nicht gespeichert. Bei 1 Zutat fehlt deine Wahl.');
+  assert.equal(ctx.rcpDirtyText(3, fmt), 'Noch nicht gespeichert. Bei 3 Zutaten fehlt deine Wahl.');
+});

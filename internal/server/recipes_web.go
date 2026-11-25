@@ -188,7 +188,7 @@ func (s *server) handleRecipes(w http.ResponseWriter, r *http.Request) {
 	}
 	data := map[string]any{
 		"Rows": rows, "Q": q, "Cat": cat, "Parent": parent, "Filters": filters, "Any": len(list) > 0, "Searching": q != "" || cat != "",
-		"FreeText": s.freeText(c.st), "ClearHref": listHref("", cat), "AllHref": recipesPath, "NewHref": recipesPath + "/new",
+		"FreeText": s.freeText(c.st), "ClearHref": listHref("", cat), "AllHref": recipesPath, "NewHref": recipesPath + "/new", "ImportHref": recipeImportPath,
 		"StarterHref": starterPath, "StarterLink": c.t("recipes.starter.link", "n", strconv.Itoa(starter.Count())),
 	}
 	switch {
@@ -318,8 +318,27 @@ func (s *server) handleRecipePage(w http.ResponseWriter, r *http.Request) {
 			data["Diet"] = c.dietWord(d.Mark)
 		}
 	}
-	if n := c.nutritionView(rec.Recipe); n != nil {
+	if n := c.nutritionViewOf(rec); n != nil {
 		data["Nut"] = n
+	}
+	if imp, ok, err := s.db.RecipeImport(p.household.ID, rec.ID); err == nil && ok && entry == nil {
+		data["SrcWhen"], data["SourceName"] = c.t("recipes.import.src.when", "date", p.day(imp.At)), imp.Host
+		if parent {
+			if made := s.takeNewArticles(w, r, p, rec.ID); len(made) > 0 {
+				var links, names []string
+				for _, a := range made {
+					links = append(links, "/settings/lists/library/"+a.ID)
+					names = append(names, a.Name)
+				}
+				type link struct{ Href, Name string }
+				var ls []link
+				for i := range made {
+					ls = append(ls, link{links[i], names[i]})
+				}
+				data["NewArticles"] = map[string]any{"Links": ls, "Text": c.t("recipes.import.newart.text", "names", c.names(names))}
+			}
+			data["ImportWho"] = imp
+		}
 	}
 	free := c.freeNames(rec.Recipe)
 	if len(free) > 0 {
@@ -342,6 +361,9 @@ func (s *server) handleRecipePage(w http.ResponseWriter, r *http.Request) {
 	data["Ings"] = ings
 	if parent {
 		data["Who"] = c.whoText(rec)
+		if imp, ok := data["ImportWho"].(store.RecipeImport); ok {
+			data["Who"] = c.whoImported(rec, imp)
+		}
 		data["DeleteExplain"] = c.t("recipes.delete.explain", "name", rec.Name)
 		if n := len(data["PhotoItems"].([]rphItem)); n == 1 {
 			data["DeleteExplain"] = c.t("recipes.delete.explain.photo.one", "name", rec.Name)
@@ -540,4 +562,20 @@ func (s *server) handleRecipeDelete(w http.ResponseWriter, r *http.Request) {
 // htmlLink is a link with escaped text, for a sentence the page builds.
 func htmlLink(href, text string) string {
 	return `<a href="` + html.EscapeString(href) + `">` + html.EscapeString(text) + `</a>`
+}
+
+// whoImported says who imported a recipe from a web page and who changed it last, to the second.
+func (c *itemCtx) whoImported(r store.Recipe, imp store.RecipeImport) string {
+	out := c.t("recipes.import.who.anon", "when", c.p.dateTimeSeconds(r.CreatedAt))
+	if imp.ByName != "" {
+		out = c.t("recipes.import.who", "name", imp.ByName, "when", c.p.dateTimeSeconds(r.CreatedAt))
+	}
+	if r.UpdatedAt.After(r.CreatedAt) {
+		if r.UpdatedByName == "" {
+			out += " " + c.t("recipes.who.changed.anon", "when", c.p.dateTimeSeconds(r.UpdatedAt))
+		} else {
+			out += " " + c.t("recipes.who.changed", "name", r.UpdatedByName, "when", c.p.dateTimeSeconds(r.UpdatedAt))
+		}
+	}
+	return out
 }

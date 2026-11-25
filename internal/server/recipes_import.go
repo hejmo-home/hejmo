@@ -888,6 +888,8 @@ func (c *itemCtx) webData(data map[string]any, f *rcpForm, is *rcpIssues) {
 		data["IngsHint"] = c.t("recipes.import.ings.hint.none")
 	case need == 0 && inLib == imported:
 		data["IngsHint"] = c.t("recipes.import.ings.hint.ok", "n", strconv.Itoa(imported))
+	case need == 0:
+		data["IngsHint"] = c.t("recipes.import.ings.hint.chosen", "lib", strconv.Itoa(inLib), "n", strconv.Itoa(imported))
 	default:
 		data["IngsHint"] = c.t("recipes.import.ings.hint", "lib", strconv.Itoa(inLib), "n", strconv.Itoa(imported), "m", strconv.Itoa(need))
 	}

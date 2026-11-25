@@ -432,3 +432,75 @@ func TestCancellingDiscardsTheDraft(t *testing.T) {
 
 var _ = json.Marshal
 var _ = picture.RecipeMaxSide
+
+func TestAYieldThatIsNoPortionCountAndAMissingOneAreMarkedToCheck(t *testing.T) {
+	t.Parallel()
+	ib := newImportBox(t)
+	pages := map[string]string{
+		"/tray":    `{"@type":"Recipe","name":"Apfelkuchen vom Blech","recipeYield":"1 Blech (12 Stücke)","recipeIngredient":["250 g Mehl"],"recipeInstructions":"Backen."}`,
+		"/noyield": `{"@type":"Recipe","name":"Suppe","recipeIngredient":["1 Zwiebel"]}`,
+	}
+	web := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(ldPage(pages[r.URL.Path])))
+	}))
+	t.Cleanup(web.Close)
+	read := func(path string) string {
+		r := ib.b.do(http.MethodPost, importPath, url.Values{"url": {web.URL + path}}, rcpDE)
+		return ib.b.do(http.MethodGet, r.location, nil, rcpDE).body
+	}
+	tray := read("/tray")
+	rcpHas(t, "the tray", tray, `value="12"`, `<span class="flag warn">`, "Bitte prüfen", "Die Webseite schreibt „1 Blech (12 Stücke)“. Hejmo hat 12 Portionen eingesetzt")
+	none := read("/noyield")
+	rcpHas(t, "no yield", none, `<span class="flag warn">`, "Die Webseite nennt keine Portionen.", "Hejmo hat alle 1 Zutaten", `class="ing-state ok"`)
+	rcpLacks(t, "no yield", none, `id="nut"`, `id="pic"`)
+	rcpHas(t, "no yield", none, "Keine Nährwerte auf der Webseite")
+}
+
+func TestTheSamePageTwiceShowsANoticeAndATakenNameGetsAProposal(t *testing.T) {
+	t.Parallel()
+	ib := newImportBox(t)
+	save := func() resp {
+		to := ib.draftOf(t, "/lentils")
+		body := ib.b.do(http.MethodGet, to, nil, rcpDE).body
+		form := reviewForm(t, body)
+		form.Set("pick_0", "free")
+		form.Set("pick_2", "free")
+		form.Set("pick_3", "free")
+		return ib.b.do(http.MethodPost, to, form, rcpDE)
+	}
+	if r := save(); r.status != http.StatusSeeOther {
+		t.Fatalf("the first save = %d", r.status)
+	}
+	to := ib.draftOf(t, "/lentils")
+	r := ib.b.do(http.MethodGet, to, nil, rcpDE)
+	rcpHas(t, "the notice", r.body, `class="notice imp-again"`, "Von dieser Seite habt ihr schon", "„Rote Linsensuppe mit Harissa“", "importiert von Mama am", "gibt es das Rezept zweimal")
+	form := reviewForm(t, r.body)
+	for _, k := range []string{"pick_0", "pick_2", "pick_3"} {
+		form.Set(k, "free")
+	}
+	second := ib.b.do(http.MethodPost, to, form, rcpDE)
+	if second.status != http.StatusUnprocessableEntity {
+		t.Fatalf("a taken name = %d", second.status)
+	}
+	rcpHas(t, "the name error", second.body, `class="ferr"`, "gibt es schon", "Gib diesem Rezept einen eigenen Namen", "öffne das vorhandene</a>", `class="notice imp-again"`)
+}
+
+func TestWithTheSwitchOffTheRecipeHasNoCover(t *testing.T) {
+	t.Parallel()
+	ib := newImportBox(t)
+	to := ib.draftOf(t, "/lentils")
+	form := reviewForm(t, ib.b.do(http.MethodGet, to, nil, rcpDE).body)
+	for _, k := range []string{"pick_0", "pick_2", "pick_3"} {
+		form.Set(k, "free")
+	}
+	form.Del("picture")
+	r := ib.b.do(http.MethodPost, to, form, rcpDE)
+	if r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d", r.status)
+	}
+	rcpLacks(t, "the recipe page", ib.b.do(http.MethodGet, r.location, nil, rcpDE).body, "rcp-cover")
+	if c := ib.b.do(http.MethodGet, r.location+"/cover", nil, nil); c.status != http.StatusNotFound {
+		t.Errorf("cover = %d, want 404", c.status)
+	}
+}

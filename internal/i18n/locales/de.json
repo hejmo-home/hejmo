@@ -5489,5 +5489,6 @@
   "recipes.import.nut.dropped.ingredients": "Die Werte von {host} gelten nicht mehr, seit {name} am {date} die Zutaten geändert hat. Darum rechnet Hejmo jetzt selbst.",
   "recipes.import.someone": "jemand",
   "recipes.import.nut.na": "nicht angegeben",
-  "recipes.import.name.hint": "So steht es im Essensplan und auf den Displays."
+  "recipes.import.name.hint": "So steht es im Essensplan und auf den Displays.",
+  "recipes.import.ings.hint.chosen": "Hejmo hat {lib} von {n} Zutaten in der Bibliothek gefunden, bei den anderen hast du gewählt. Unter jeder Zeile steht, was auf der Webseite stand."
 }

@@ -1,0 +1,177 @@
+{
+  "n": 110,
+  "slug": "zucchini-hackfleisch-pfanne",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 25,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Soja",
+      "en": "Soy"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/schnelle-zucchini-hackfleisch-pfanne-28339",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "Tasse",
+      "article_de": "Langkornreis",
+      "article_en": "Long-grain rice",
+      "note_de": "ca. 250 g",
+      "note_en": "about 250 g"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zucchini, mittelgroß",
+      "article_en": "Medium zucchini",
+      "note_de": "ca. 600 g",
+      "note_en": "about 600 g"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Hackfleisch, gemischt",
+      "article_en": "Mixed mince",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Tomaten, passiert",
+      "article_en": "Passata",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Italienische Kräuter, getrocknet",
+      "article_en": "Dried Italian herbs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Sojasauce",
+      "article_en": "Soy sauce",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Paprikapulver, edelsüß",
+      "article_en": "Sweet paprika powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Zucchini-Hackfleisch-Pfanne",
+    "steps": [
+      "Reis zuerst aufsetzen: 2 Tassen Reis (ca. 250 g) mit etwa 4 Tassen Wasser und 1/2 TL Salz in einen Topf mit Deckel geben, aufkochen und zugedeckt bei kleiner Hitze 15 Minuten garen.",
+      "Währenddessen die Zwiebel würfeln. Die 2 Zucchini in 3–4 mm dicke Scheiben schneiden.",
+      "Das Öl in einer hohen Pfanne erhitzen und die Zwiebel darin glasig dünsten.",
+      "Hitze hochdrehen, das Hackfleisch zugeben und kräftig anbraten. Mit dem Kochlöffel ständig zerdrücken, bis es krümelig und braun ist.",
+      "Zucchini, passierte Tomaten und italienische Kräuter dazugeben und alles 5 Minuten braten.",
+      "Mit Sojasauce, Paprikapulver, Pfeffer und nach Bedarf Salz abschmecken. Mit dem Reis servieren."
+    ]
+  },
+  "en": {
+    "title": "Zucchini and mince skillet",
+    "steps": [
+      "Start the rice first: put 2 cups rice (about 250 g) with about 4 cups water and 1/2 tsp salt into a lidded pot, bring to the boil and cook covered on low heat for 15 minutes.",
+      "Meanwhile dice the onion. Slice the 2 zucchini 3-4 mm thick.",
+      "Heat the oil in a tall pan and sweat the onion until glassy.",
+      "Turn the heat up high, add the mince and brown it hard. Keep breaking it up with the wooden spoon until it is crumbly and brown.",
+      "Add the zucchini, passata and Italian herbs and fry everything for 5 minutes.",
+      "Season with soy sauce, paprika, pepper and salt if needed. Serve with the rice."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "cup"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Time from source: 25 min, stated as Aufwand (the only time figure on the page). Source says gemischtes Hackfleisch (mixed mince) without specifying the mix. Page ratingCount 212. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

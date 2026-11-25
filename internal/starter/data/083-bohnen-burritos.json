@@ -1,0 +1,285 @@
+{
+  "n": 83,
+  "slug": "bohnen-burritos",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 45,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/easy-beef-burritos",
+    "site": "BBC Good Food",
+    "ratings": 107
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Sonnenblumenöl",
+      "article_en": "Sunflower oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": "fein gehackt",
+      "note_en": "finely chopped"
+    },
+    {
+      "amount": 4,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": "sehr fein gehackt",
+      "note_en": "very finely chopped"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Kreuzkümmel, gemahlen",
+      "article_en": "Ground cumin",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Koriander, gemahlen",
+      "article_en": "Ground coriander",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Cayennepfeffer",
+      "article_en": "Cayenne pepper",
+      "note_de": "mehr, wenn es schärfer sein soll",
+      "note_en": "more if you want it spicier"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Oregano, getrocknet",
+      "article_en": "Dried oregano",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Rinderhackfleisch",
+      "article_en": "Beef mince",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Zucker",
+      "article_en": "Golden caster sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Weinessig oder Apfelessig",
+      "article_en": "Wine vinegar or cider vinegar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Tomaten, gehackt (Dose)",
+      "article_en": "Chopped tomatoes (canned)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Schwarze Bohnen oder Kidneybohnen (Dose)",
+      "article_en": "Black beans or kidney beans (canned)",
+      "note_de": "mit der Flüssigkeit aus der Dose",
+      "note_en": "with the can water"
+    },
+    {
+      "amount": 8,
+      "unit": "Stk",
+      "article_de": "Tortillas, Weizen oder Mais",
+      "article_en": "Flour or corn tortillas",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Reis, gekocht",
+      "article_en": "Cooked rice",
+      "note_de": "oder mexikanischer Tomatenreis",
+      "note_en": "or Mexican tomato rice"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Avocado oder Guacamole",
+      "article_en": "Avocado or guacamole",
+      "note_de": "in Scheiben, zum Servieren",
+      "note_en": "sliced, to serve"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Tomaten",
+      "article_en": "Tomatoes",
+      "note_de": "gehackt, zum Servieren",
+      "note_en": "chopped, to serve"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Saure Sahne",
+      "article_en": "Soured cream",
+      "note_de": "zum Servieren",
+      "note_en": "to serve"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Kopfsalat",
+      "article_en": "Lettuce",
+      "note_de": "fein geschnitten, zum Servieren",
+      "note_en": "shredded, to serve"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zwiebel, rot",
+      "article_en": "Red onion",
+      "note_de": "in Scheiben, zum Servieren",
+      "note_en": "sliced, to serve"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Cheddar",
+      "article_en": "Cheddar",
+      "note_de": "gerieben, zum Servieren",
+      "note_en": "grated, to serve"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Chilischote, rot",
+      "article_en": "Red chilli",
+      "note_de": "in Scheiben, zum Servieren",
+      "note_en": "sliced, to serve"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Limette",
+      "article_en": "Lime",
+      "note_de": "halbiert, zum Servieren",
+      "note_en": "halved, to serve"
+    }
+  ],
+  "de": {
+    "title": "Bohnen-Burritos",
+    "steps": [
+      "Erhitze 2 EL Sonnenblumenöl in einer großen Pfanne oder einem Schmortopf. Brate die fein gehackte Zwiebel etwa 8 Minuten.",
+      "Gib 4 sehr fein gehackte Knoblauchzehen, je 1 EL gemahlenen Kreuzkümmel und Koriander, 1 Prise Cayennepfeffer (mehr, wenn es schärfer sein soll) und 1 TL Oregano dazu. Rühre 1 Minute.",
+      "Gib 500 g Rinderhack hinzu und brate es etwa 5 Minuten, bis es durchgehend braun ist.",
+      "Rühre 1 Prise Zucker, 1 EL Essig und 400 g gehackte Tomaten aus der Dose ein. Lass alles 5 Minuten köcheln.",
+      "Gib 400 g Bohnen mit ihrer Flüssigkeit aus der Dose dazu. Fülle die leere Dose mit Wasser, gieße es ebenfalls in die Pfanne und lass alles 20 Minuten köcheln, bis eine dicke Soße entstanden ist.",
+      "Tipp: Die Füllung hält sich 2 Tage im Kühlschrank oder 6 Monate im Gefrierfach. Erwärme sie mit einem Schuss Wasser wieder.",
+      "Wärme die 8 Tortillas kurz auf. Bereite die Beilagen vor: Avocado oder Guacamole, gehackte Tomaten, saure Sahne, Salat, rote Zwiebel, Cheddar, Chili und Limette.",
+      "Fülle die Tortillas mit 500 g gekochtem Reis, der Bohnenfüllung und den Beilagen. Klappe die Enden ein, bevor du aufrollst, damit nichts ausläuft. Wickle die Burritos in Folie und iss sie sofort."
+    ]
+  },
+  "en": {
+    "title": "Bean burritos",
+    "steps": [
+      "Heat 2 tbsp sunflower oil in a large pan or casserole. Fry the finely chopped onion for about 8 minutes.",
+      "Add 4 very finely chopped garlic cloves, 1 tbsp each of ground cumin and coriander, 1 pinch of cayenne (more if you like it hotter) and 1 tsp oregano. Stir for 1 minute.",
+      "Add 500 g beef mince and fry for about 5 minutes until browned all the way through.",
+      "Stir in 1 pinch of sugar, 1 tbsp vinegar and 400 g canned chopped tomatoes. Let everything simmer for 5 minutes.",
+      "Add 400 g canned beans with their liquid. Fill the empty can with water, pour that into the pan too and simmer for 20 minutes until a thick sauce forms.",
+      "Tip: The filling keeps for 2 days in the fridge or 6 months in the freezer. Reheat it with a splash of water.",
+      "Warm the 8 tortillas briefly. Prepare the toppings: avocado or guacamole, chopped tomatoes, sour cream, lettuce, red onion, Cheddar, chilli and lime.",
+      "Fill the tortillas with 500 g cooked rice, the bean filling and the toppings. Fold in the ends before rolling up so nothing leaks out. Wrap the burritos in foil and eat them right away."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 4,
+        "unit": "clove"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 12,
+        "amount": 8,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "List title says 'Bohnen-Burritos' (vegetarian-style name) but the linked source is BBC 'Easy beef burritos' with beef mince; ingredients taken as given, diet left null as in the list. Page JSON-LD has no rating count; 107 is the count shown in the list. Makes 8, serves 4. Steps rewritten in own words on 23/11/2026 from the source steps (times, temperatures and order per source). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

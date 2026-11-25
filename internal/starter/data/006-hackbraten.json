@@ -1,0 +1,223 @@
+{
+  "n": 6,
+  "slug": "hackbraten",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 85,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/1170311223132029/Hackbraten-supersaftig.html",
+    "site": "Chefkoch",
+    "ratings": 1459
+  },
+  "ingredients": [
+    {
+      "amount": 1.5,
+      "unit": "Stk",
+      "article_de": "Semmeln",
+      "article_en": "Bread rolls (Semmeln)",
+      "note_de": "altbacken",
+      "note_en": "stale"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Gewürzgurken",
+      "article_en": "Pickled gherkins",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zwiebeln, klein",
+      "article_en": "Small onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Petersilie",
+      "article_en": "Parsley",
+      "note_de": "kleines Bund",
+      "note_en": "small bunch"
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 600,
+      "unit": "g",
+      "article_de": "Hackfleisch, gemischt",
+      "article_en": "Mixed ground meat (beef and pork)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eier, klein",
+      "article_en": "Small eggs",
+      "note_de": "Größe S",
+      "note_en": "size S"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer, schwarz",
+      "article_en": "Salt and black pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Cayennepfeffer",
+      "article_en": "Cayenne pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Fett für die Form",
+      "article_en": "Fat for the dish",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 125,
+      "unit": "ml",
+      "article_de": "Fleischbrühe",
+      "article_en": "Meat broth",
+      "note_de": "für die Sauce",
+      "note_en": "for the sauce"
+    },
+    {
+      "amount": 125,
+      "unit": "ml",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": "für die Sauce",
+      "note_en": "for the sauce"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Crème fraîche",
+      "article_en": "Crème fraîche",
+      "note_de": "für die Sauce",
+      "note_en": "for the sauce"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Paprikapulver edelsüß",
+      "article_en": "Sweet paprika powder",
+      "note_de": "für die Sauce",
+      "note_en": "for the sauce"
+    }
+  ],
+  "de": {
+    "title": "Hackbraten",
+    "steps": [
+      "Die Semmeln in Scheiben schneiden, mit kaltem Wasser übergießen und 10 Minuten einweichen. Danach gut ausdrücken.",
+      "Gewürzgurken und Zwiebeln fein würfeln, Petersilie hacken. Den Ofen auf 180 °C Umluft vorheizen, den Rost auf die untere Schiene setzen.",
+      "30 g der Butter in einer Pfanne zerlassen und die Zwiebeln darin glasig dünsten. Petersilie kurz mitgaren, dann abkühlen lassen.",
+      "Hack, Eier, ausgedrückte Semmeln, Gurken, Zwiebel-Petersilien-Mischung und Zitronensaft in eine Schüssel geben. Mit Salz, Pfeffer und Cayennepfeffer kräftig würzen und alles gründlich durchkneten.",
+      "Eine Form einfetten. Aus der Masse einen länglichen Laib formen und hineinsetzen.",
+      "Die restliche Butter schmelzen und den Laib damit bestreichen. Etwa 30 Minuten backen und zwischendurch immer wieder mit flüssiger Butter bepinseln.",
+      "Währenddessen die Sauce: Brühe, Sahne, Crème fraîche und Paprikapulver verrühren.",
+      "Nach den ersten 30 Minuten die Sauce über den Hackbraten gießen und weitere 10-15 Minuten backen."
+    ]
+  },
+  "en": {
+    "title": "Meatloaf",
+    "steps": [
+      "Slice the rolls, pour cold water over them and soak for 10 minutes. Then squeeze them out well.",
+      "Dice the pickles and onions finely, chop the parsley. Preheat the oven to 180 °C fan and put the rack on the lower level.",
+      "Melt 30 g of the butter in a pan and soften the onions in it until translucent. Cook the parsley briefly with them, then let it cool.",
+      "Put mince, eggs, squeezed rolls, pickles, the onion-parsley mixture and lemon juice into a bowl. Season boldly with salt, pepper and cayenne and knead everything thoroughly.",
+      "Grease a dish. Shape the mixture into an oblong loaf and set it in the dish.",
+      "Melt the remaining butter and brush the loaf with it. Bake for about 30 minutes and keep basting with melted butter in between.",
+      "Meanwhile make the sauce: stir together stock, cream, crème fraîche and paprika.",
+      "After the first 30 minutes pour the sauce over the meatloaf and bake for another 10-15 minutes."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1.5,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "bunch"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 7,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 13,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 14,
+        "amount": 1,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

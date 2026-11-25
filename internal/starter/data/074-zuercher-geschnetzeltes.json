@@ -1,0 +1,206 @@
+{
+  "n": 74,
+  "slug": "zuercher-geschnetzeltes",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 35,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Nüsse",
+      "en": "Tree nuts"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bettybossi.ch/de/rezepte/rezept/zurcher-geschnetzeltes-klassisch-10007327/",
+    "site": "Betty Bossi",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Kalbfleisch",
+      "article_en": "Veal",
+      "note_de": "z. B. Nuss",
+      "note_en": "e.g. top round (Nuss)"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Kalbsnierli",
+      "article_en": "Veal kidneys",
+      "note_de": "siehe Hinweis auf der Quellseite",
+      "note_en": "see note on the source page"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Champignons",
+      "article_en": "Button mushrooms",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Bratbutter",
+      "article_en": "Clarified butter for frying",
+      "note_de": "zum Braten",
+      "note_en": "for frying"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "wenig, zum Bestäuben",
+      "note_en": "a little, for dusting"
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": "wenig",
+      "note_en": "a little"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Weißwein",
+      "article_en": "White wine",
+      "note_de": "1 dl",
+      "note_en": "1 dl"
+    },
+    {
+      "amount": 200,
+      "unit": "ml",
+      "article_de": "Rahm",
+      "article_en": "Cream",
+      "note_de": "2 dl",
+      "note_en": "2 dl"
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Fleischbouillon",
+      "article_en": "Meat stock",
+      "note_de": "1 dl",
+      "note_en": "1 dl"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Maisstärke (Maizena)",
+      "article_en": "Cornstarch (Maizena)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": "nach Bedarf",
+      "note_en": "as needed"
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Petersilie, glattblättrig",
+      "article_en": "Flat-leaf parsley",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Zürcher Geschnetzeltes",
+    "steps": [
+      "Heize den Ofen auf 60 °C vor. Stelle die Teller und eine Platte zum Wärmen hinein.",
+      "Schneide 400 g Kalbfleisch und 200 g Kalbsnierli in etwa 1 cm breite Streifen. Hacke die Zwiebel fein und schneide die Champignons (200 g) in Scheiben.",
+      "Bestäube das Fleisch mit wenig Mehl. Erhitze Bratbutter in einer Pfanne bei mittlerer Hitze und brate das Fleisch portionsweise, je etwa 3 Minuten. In einer vollen Pfanne gart es nicht gut. Würze es mit ½ TL Salz und wenig Pfeffer und halte es auf der warmen Platte im Ofen warm.",
+      "Tupfe das übrige Fett aus der Pfanne mit Küchenpapier aus. Dünste Zwiebel und Champignons mit 1 TL Zitronensaft etwa 2 Minuten an.",
+      "Gieße 100 ml Weißwein dazu und lass ihn bei mittlerer Hitze fast einkochen.",
+      "Verrühre 200 ml Rahm, 100 ml Fleischbouillon und 1 EL Maisstärke glatt. Gib die Mischung in die Pfanne und lass die Soße etwa 3 Minuten köcheln, bis sie cremig ist. Schmecke mit Salz und Pfeffer ab. Hacke 1 Bund Petersilie und rühre die Hälfte in die Soße.",
+      "Gib das Fleisch zurück in die Soße und erwärme es nur kurz. Es darf nicht mehr kochen, sonst wird es zäh. Serviere auf den warmen Tellern, mit der übrigen Petersilie bestreut."
+    ]
+  },
+  "en": {
+    "title": "Zurich-style sliced veal",
+    "steps": [
+      "Preheat the oven to 60 °C. Put the plates and a platter in to warm.",
+      "Cut 400 g veal and 200 g veal kidneys into strips about 1 cm wide. Chop the onion finely and slice the mushrooms (200 g).",
+      "Dust the meat with a little flour. Heat clarified frying butter in a pan over medium heat and fry the meat in batches, about 3 minutes each. In a crowded pan it does not cook well. Season with ½ tsp salt and a little pepper and keep it warm on the warmed platter in the oven.",
+      "Blot the remaining fat out of the pan with kitchen paper. Soften the onion and mushrooms with 1 tsp lemon juice for about 2 minutes.",
+      "Add 100 ml white wine and let it reduce almost completely over medium heat.",
+      "Stir 200 ml cream, 100 ml meat stock and 1 tbsp cornstarch until smooth. Add the mix to the pan and simmer the sauce for about 3 minutes until creamy. Season with salt and pepper. Chop 1 bunch of parsley and stir half of it into the sauce.",
+      "Return the meat to the sauce and only heat it through briefly. It must not boil any more, otherwise it turns tough. Serve on the warm plates, sprinkled with the rest of the parsley."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 12,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 14,
+        "amount": 1,
+        "unit": "bunch"
+      }
+    ]
+  },
+  "review_note": "Source gives dl; converted exactly to ml. Suggested allergens copied from the list include Nüsse, which does not match the source ingredients; check before production use. Source shows 2 ratings; list says Redaktionsküche. The kidneys are marked \"siehe Hinweis\" on the source page (optional per that note, not verified here). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

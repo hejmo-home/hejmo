@@ -1,0 +1,269 @@
+{
+  "n": 13,
+  "slug": "spargel-hollandaise-schweinemedaillons-kartoffelgratin",
+  "category": "Hauptgerichte",
+  "servings": 2,
+  "time_minutes": 105,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/967251202388045/Spargel-mit-Sauce-Hollandaise-gebratenem-Schweinefilet-und-Kartoffelgratin.html",
+    "site": "Chefkoch",
+    "ratings": 169
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Spargel",
+      "article_en": "Asparagus",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "für den Spargel",
+      "note_en": "for the asparagus"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Schuss",
+      "article_de": "Weißweinessig",
+      "article_en": "White wine vinegar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Schalotte",
+      "article_en": "Shallot",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 60,
+      "unit": "ml",
+      "article_de": "Weißwein",
+      "article_en": "White wine",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Nelke",
+      "article_en": "Clove",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Lorbeerblatt",
+      "article_en": "Bay leaf",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "für die Sauce Hollandaise",
+      "note_en": "for the hollandaise"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eigelb",
+      "article_en": "Egg yolks",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Kartoffeln, mehlig kochend",
+      "article_en": "Floury potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 150,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Muskat",
+      "article_en": "Nutmeg",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Schweinemedaillons",
+      "article_en": "Pork medallions",
+      "note_de": "je ca. 65 g",
+      "note_en": "about 65 g each"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Öl zum Braten",
+      "article_en": "Oil for frying",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Spargel mit Sauce Hollandaise, Schweinemedaillons und Kartoffelgratin",
+    "steps": [
+      "Gratin zuerst: Ofen auf 160 °C Umluft vorheizen. Milch und Sahne mit dem durchgepressten Knoblauch, Salz, Pfeffer und Muskat aufkochen.",
+      "Kartoffeln schälen und in dünne Scheiben schneiden. Die Scheiben in die heiße Flüssigkeit rühren, sodass sie überall benetzt sind.",
+      "Alles in eine Auflaufform füllen und etwa 45 Minuten backen, bis das Gratin goldbraun ist.",
+      "Spargel schälen. Ein Stück Alufolie auslegen (glänzende Seite nach innen), den Spargel daraufsetzen, mit Butter, Zucker, Salz und einem Schuss Weißweinessig würzen und zum Päckchen verschließen. Bei mehr Portionen nimmst du mehrere Päckchen. Statt Folie gehen auch Backpapier oder ein Topf mit Deckel.",
+      "Das Päckchen 40-45 Minuten mit ins Backrohr geben.",
+      "Die Sauce Hollandaise: 150 g Butter schmelzen und klären, also den weißen Schaum abschöpfen und das klare Fett abgießen. Warm halten.",
+      "Schalotte fein würfeln und mit Weißwein, Nelke, Lorbeerblatt, einem Schuss Essig, Salz und Pfeffer in einem Topf stark einkochen. Durch ein feines Sieb mit Tuch gießen.",
+      "Die Reduktion mit den Eigelben über dem heißen Wasserbad schaumig aufschlagen. Die Sauce darf nicht zu heiß werden, sonst gerinnt das Eigelb.",
+      "Die geklärte Butter nur ganz langsam, tropfenweise, einrühren und dabei ständig rühren. Mit Salz und etwas Zitronensaft oder Essig abschmecken.",
+      "Die Schweinemedaillons salzen, pfeffern und in einer Pfanne mit Öl von beiden Seiten anbraten.",
+      "Danach höchstens 10 Minuten im Ofen fertig garen.",
+      "Alles zusammen auf Tellern anrichten: Spargel mit Sauce, Medaillons und Gratin."
+    ]
+  },
+  "en": {
+    "title": "Asparagus with hollandaise, pork medallions and potato gratin",
+    "steps": [
+      "Gratin first: preheat the oven to 160 °C fan. Bring milk and cream to the boil with the pressed garlic, salt, pepper and nutmeg.",
+      "Peel the potatoes and cut them into thin slices. Stir the slices into the hot liquid so they are coated all over.",
+      "Fill everything into a baking dish and bake for about 45 minutes until the gratin is golden.",
+      "Peel the asparagus. Lay out a piece of foil (shiny side in), put the asparagus on it, season with butter, sugar, salt and a splash of white wine vinegar and close it into a packet. For more portions use several packets. Parchment paper or a dish with a lid also work instead of foil.",
+      "Put the packet in the oven for 40-45 minutes.",
+      "The hollandaise: melt 150 g butter and clarify it, meaning skim off the white foam and pour off the clear fat. Keep it warm.",
+      "Dice the shallot finely and reduce it strongly in a pot with white wine, clove, bay leaf, a splash of vinegar, salt and pepper. Pour it through a fine sieve with a cloth.",
+      "Whisk the reduction with the egg yolks over a hot water bath until foamy. The sauce must not get too hot or the yolks will scramble.",
+      "Stir in the clarified butter very slowly, drop by drop, stirring constantly. Season with salt and a little lemon juice or vinegar.",
+      "Season the pork medallions with salt and pepper and sear them on both sides in a pan with oil.",
+      "Then finish them in the oven for 10 minutes at most.",
+      "Plate everything together: asparagus with sauce, medallions and gratin."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "bunch"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "dash"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 10,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 12,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 16,
+        "amount": 4,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "List title is Spargel mit Sauce Hollandaise; the linked source recipe also includes pork medallions and potato gratin, so the title and ingredients cover the whole source recipe. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Confirmed by Lena 24/11/2026: title follows the recipe, not the list.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

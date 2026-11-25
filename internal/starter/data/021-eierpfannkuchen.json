@@ -1,0 +1,127 @@
+{
+  "n": 21,
+  "slug": "eierpfannkuchen",
+  "category": "Hauptgerichte",
+  "servings": 1,
+  "time_minutes": 10,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/1265881231835442/1-A-Eierpfannkuchen.html",
+    "site": "Chefkoch",
+    "ratings": 200
+  },
+  "ingredients": [
+    {
+      "amount": 350,
+      "unit": "g",
+      "article_de": "Mehl Type 405",
+      "article_en": "Plain flour (Type 405)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 70,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 6,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "ml",
+      "article_de": "Mineralwasser mit Kohlensäure",
+      "article_en": "Sparkling mineral water",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Backpulver",
+      "article_en": "Baking powder",
+      "note_de": "gestrichen",
+      "note_en": "level"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pflanzenöl",
+      "article_en": "Vegetable oil",
+      "note_de": "zum Backen",
+      "note_en": "for frying"
+    }
+  ],
+  "de": {
+    "title": "Eierpfannkuchen",
+    "steps": [
+      "Die Eier trennen: Eigelbe in eine Schüssel, Eiweiße in eine fettfreie, saubere Schüssel.",
+      "Die Eiweiße mit dem Zucker steif schlagen.",
+      "Eigelbe mit Milch und Mineralwasser verquirlen.",
+      "Mehl und Backpulver mischen und in die Eigelbmasse rühren, bis ein glatter Teig entsteht.",
+      "Den Eischnee vorsichtig unterheben, damit er nicht zusammenfällt. Eischnee, Mineralwasser und Backpulver machen die Pfannkuchen luftig.",
+      "Etwas Pflanzenöl in einer Pfanne bei mittlerer Hitze erhitzen und eine Kelle Teig hineingeben.",
+      "Wenn die Unterseite goldbraun ist, wenden und fertig backen. Heiß oder kalt sind sie gut."
+    ]
+  },
+  "en": {
+    "title": "Thin German-style pancakes",
+    "steps": [
+      "Separate the eggs: yolks into one bowl, whites into a clean, grease-free bowl.",
+      "Whip the whites with the sugar until stiff.",
+      "Whisk the yolks with milk and mineral water.",
+      "Mix flour and baking powder and stir them into the yolk mixture until you have a smooth batter.",
+      "Gently fold in the egg whites so they don't collapse. Egg whites, mineral water and baking powder make the pancakes light.",
+      "Heat a little vegetable oil in a pan over medium heat and add a ladle of batter.",
+      "When the underside is golden brown, flip and finish cooking. They are good hot or cold."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 6,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "Source states 1 serving, but the quantities (350 g flour, 6 eggs) make a family batch; servings copied from source, please check. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

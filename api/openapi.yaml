@@ -2649,7 +2649,10 @@ paths:
         The name must be free in the household, ignoring case (else 422, field
         `name`). An ingredient is an article of the library (`article_id`, or the
         exact name, or a name followed by a variety such as "Mehl Type 405") or
-        free text, which Hejmo does not check for allergens. A unit without a
+        free text, which Hejmo does not check for allergens. A variety written in
+        the text (`text` "Mehl Type 405") wins over a `variety` sent with the
+        line, since it is what was typed; `variety` is used when the text has
+        none. A unit without a
         quantity means one. The units are those of `GET /recipe-units`.
         Warnings never block saving.
       requestBody:
@@ -2667,12 +2670,38 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /starter-recipes:
+    get:
+      operationId: listStarterRecipes
+      summary: The starter collection of 200 recipes that ships with the box, from A to Z (scope meals:read)
+      description: |
+        Everyone reads them, children included. The texts come in the language of
+        the request (`Accept-Language` or the person's choice), German when
+        unknown. Each recipe names its source (`source_name`, `source_url`: "Ingredients
+        after: ..."), has `starter` true and an id that starts with `starter-`; the
+        family's own recipes at `/recipes` do not hold them. A starter recipe is read
+        at `GET /recipes/{id}` like an own one but cannot be replaced or deleted
+        (403). `q` and `category` work as at `/recipes`.
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string } }
+        - { name: category, in: query, required: false, schema: { $ref: "#/components/schemas/RecipeCategory" } }
+      responses:
+        "200":
+          description: The starter recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Recipe" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
   /recipes/{id}:
     get:
       operationId: getRecipe
-      summary: One recipe (scope meals:read)
+      summary: One recipe, an own one or a starter recipe (scope meals:read)
+      description: The id of a starter recipe starts with `starter-` (see `GET /starter-recipes`).
       parameters:
-        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: id, in: path, required: true, schema: { type: string } }
       responses:
         "200":
           description: The recipe
@@ -2685,9 +2714,9 @@ paths:
     put:
       operationId: updateRecipe
       summary: Replace a recipe (scope meals:write, parents only)
-      description: Give all fields; the ingredients, steps and tags are replaced. Who wrote the recipe stays.
+      description: Give all fields; the ingredients, steps and tags are replaced. Who wrote the recipe stays. An ingredient's variety is read as in `POST /recipes`. A starter recipe (id starts with `starter-`) is never replaced (403).
       parameters:
-        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: id, in: path, required: true, schema: { type: string } }
       requestBody:
         required: true
         content:
@@ -2707,8 +2736,9 @@ paths:
     delete:
       operationId: deleteRecipe
       summary: Delete a recipe with its ingredients, steps and tips (scope meals:delete, parents only)
+      description: A starter recipe (id starts with `starter-`) is never deleted (403).
       parameters:
-        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: id, in: path, required: true, schema: { type: string } }
       responses:
         "204": { description: Deleted }
         "401": { $ref: "#/components/responses/Unauthorized" }
@@ -2724,9 +2754,9 @@ paths:
         Free-text ingredients (`not_checked_ingredients`) and the people's
         free-text allergies (`not_checked_allergies`) are not checked
         automatically (`note`). The answer is experimental and without
-        guarantee. Warnings never block anything.
+        guarantee. Warnings never block anything. Works for starter recipes too.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: id, in: path, required: true, schema: { type: string } }
       responses:
         "200":
           description: The warnings
@@ -2745,7 +2775,7 @@ paths:
         `tsp`, `pinch`, `knifetip`, `dash`, `splash`, `handful`, `cup`), which never
         convert into or add up with g and ml, then the containers and piece
         measures (`can`, `packet`, `tub`, `bunch`, `jar`, `bottle`, `stick`, `clove`,
-        `slice`, `cube`, `sprig`, `stalk`, `ball`, `leaf`, `punnet`), whose
+        `slice`, `cube`, `sprig`, `stalk`, `ball`, `leaf`, `punnet`, `pot`), whose
         quantities add up only within the same unit.
       responses:
         "200":
@@ -6459,7 +6489,7 @@ components:
         unit: { type: string, nullable: true, description: "A key of GET /recipe-units; none for a plain number" }
         name: { type: string, maxLength: 200 }
         article_id: { type: string, nullable: true, description: The key of a shipped article or the id of an own one }
-        variety: { type: string, nullable: true, maxLength: 60, description: 'The more exact kind, such as "Type 405"; only an article has one' }
+        variety: { type: string, nullable: true, maxLength: 60, description: 'The more exact kind, such as "Type 405"; only an article has one. A variety written in `text` wins over this ("Mehl Type 405" with variety "Type 550" is Type 405); this counts only when `text` has none' }
     NewRecipe:
       type: object
       required: [name]
@@ -6489,9 +6519,11 @@ components:
           items: { type: string }
     Recipe:
       type: object
-      required: [id, name, category, portions, minutes, mealtimes, tags, tips, source, source_url, ingredients, steps, diet, created_by, created_at, updated_by, updated_at]
+      required: [id, name, category, portions, minutes, mealtimes, tags, tips, source, source_url, source_name, starter, ingredients, steps, diet, created_by, created_at, updated_by, updated_at]
       properties:
-        id: { type: string, format: uuid }
+        id: { type: string, description: A uuid; a starter recipe's id starts with "starter-" }
+        starter: { type: boolean, description: "True for a recipe of the starter collection, which nobody in the household wrote and nobody can change" }
+        source_name: { type: string, nullable: true, description: 'The site the ingredients are after ("Ingredients after: Chefkoch"); only a starter recipe has one' }
         name: { type: string }
         category: { $ref: "#/components/schemas/RecipeCategory" }
         portions: { type: integer }
@@ -6513,14 +6545,14 @@ components:
           items: { type: string }
         diet: { type: string, nullable: true, enum: [vegan, vegetarian, null], description: Set only when every library article fits; free text does not stop it }
         created_by: { type: string, nullable: true, format: uuid }
-        created_at: { type: string, format: date-time }
+        created_at: { type: string, format: date-time, nullable: true, description: Null for a starter recipe }
         updated_by: { type: string, nullable: true, format: uuid }
-        updated_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time, nullable: true, description: Null for a starter recipe }
     RecipeWarnings:
       type: object
       required: [recipe_id, warnings, not_checked_ingredients, not_checked_allergies, diet, note]
       properties:
-        recipe_id: { type: string, format: uuid }
+        recipe_id: { type: string }
         warnings:
           type: array
           items:

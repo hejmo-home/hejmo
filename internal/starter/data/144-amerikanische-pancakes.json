@@ -1,0 +1,160 @@
+{
+  "n": 144,
+  "slug": "amerikanische-pancakes",
+  "category": "Frühstück",
+  "servings": 4,
+  "time_minutes": 55,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/american-pancakes",
+    "site": "BBC Good Food",
+    "ratings": "631"
+  },
+  "ingredients": [
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Mehl mit Backpulver (Self-raising flour)",
+      "article_en": "Self-raising flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1.5,
+      "unit": "TL",
+      "article_de": "Backpulver",
+      "article_en": "Baking powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Zucker, fein, goldgelb (Golden Caster Sugar)",
+      "article_en": "Golden caster sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Eier, groß",
+      "article_en": "Large eggs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 25,
+      "unit": "g",
+      "article_de": "Butter, geschmolzen",
+      "article_en": "Butter, melted",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "zum Braten",
+      "note_en": "for cooking"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pflanzenöl",
+      "article_en": "Vegetable oil",
+      "note_de": "zum Braten",
+      "note_en": "for cooking"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Ahornsirup",
+      "article_en": "Maple syrup",
+      "note_de": "zum Servieren",
+      "note_en": "to serve"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Toppings nach Wahl",
+      "article_en": "Toppings of your choice",
+      "note_de": "z. B. gebratener Speck, Schokotropfen, Heidelbeeren oder Erdnussbutter und Marmelade",
+      "note_en": "e.g. cooked bacon, chocolate chips, blueberries or peanut butter and jam"
+    }
+  ],
+  "de": {
+    "title": "Fluffige amerikanische Pancakes",
+    "steps": [
+      "Mehl, Backpulver, Zucker und eine Prise Salz in einer großen Schüssel mischen.",
+      "In die Mitte eine Mulde drücken. Eier, geschmolzene Butter und Milch hineingeben.",
+      "Alles mit Schneebesen oder Handrührgerät glatt rühren und den Teig in einen Krug gießen. So lässt er sich später besser portionieren.",
+      "Etwas Butter und Öl in einer großen beschichteten Pfanne bei mittlerer Hitze erhitzen. Wenn die Butter schäumt, ist die Pfanne bereit.",
+      "Den Teig zu Kreisen von ca. 8 cm in die Pfanne gießen. Lass Abstand, denn die Pancakes laufen noch auseinander.",
+      "Die erste Seite 1–2 Min. backen, bis kleine Bläschen aufsteigen und platzen. Dann wenden und ca. 1 Min. fertig backen.",
+      "So den restlichen Teig verbacken und die Pancakes mit Ahornsirup und Toppings servieren."
+    ]
+  },
+  "en": {
+    "title": "Fluffy American pancakes",
+    "steps": [
+      "Mix the flour, baking powder, sugar and a pinch of salt in a large bowl.",
+      "Make a well in the middle. Add the eggs, melted butter and milk.",
+      "Whisk until smooth with a whisk or electric beaters and pour the batter into a jug. This makes it easier to portion later.",
+      "Heat a little butter and oil in a large non-stick pan over medium heat. When the butter is frothy, the pan is ready.",
+      "Pour the batter into rounds of about 8 cm. Leave space between them, because the pancakes spread.",
+      "Cook the first side for 1-2 min until small bubbles rise and pop. Then flip and cook for about 1 min more.",
+      "Cook the rest of the batter the same way and serve the pancakes with maple syrup and toppings."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 3,
+        "amount": 3,
+        "unit": "piece"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

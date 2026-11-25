@@ -1,0 +1,193 @@
+{
+  "n": 71,
+  "slug": "wiener-schnitzel",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 30,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://extra.orf.at/rezepte/frisch-gekocht/30012017-rezept-wiener-schnitzel100.html",
+    "site": "ORF (extra.ORF.at)",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Kalbsschnitzel",
+      "article_en": "Veal escalopes",
+      "note_de": "je 200 g, aus der Schale des Kalbsschlögels",
+      "note_en": "200 g each, cut from the top round of the leg"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": "zum Backen",
+      "note_en": "for frying"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "zum Panieren",
+      "note_en": "for breading"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": "zum Panieren",
+      "note_en": "for breading"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Semmelbrösel",
+      "article_en": "Breadcrumbs",
+      "note_de": "zum Panieren",
+      "note_en": "for breading"
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Erdäpfel (Kartoffeln)",
+      "article_en": "Potatoes",
+      "note_de": "gekocht, geschält, geviertelt; für die Petersilerdäpfel",
+      "note_en": "boiled, peeled, quartered; for the parsley potatoes"
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Petersilie",
+      "article_en": "Parsley",
+      "note_de": "Blätter abgezupft und gehackt",
+      "note_en": "leaves picked and chopped"
+    },
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Vogerlsalat (Feldsalat)",
+      "article_en": "Lamb's lettuce (corn salad)",
+      "note_de": "für den Salat",
+      "note_en": "for the salad"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Senf, scharf",
+      "article_en": "Hot mustard",
+      "note_de": "für den Salat",
+      "note_en": "for the salad"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Essig",
+      "article_en": "Vinegar",
+      "note_de": "für den Salat",
+      "note_en": "for the salad"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": "für den Salat",
+      "note_en": "for the salad"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": "für den Salat",
+      "note_en": "for the salad"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": "für den Salat",
+      "note_en": "for the salad"
+    }
+  ],
+  "de": {
+    "title": "Wiener Schnitzel",
+    "steps": [
+      "Wärme die Teller im Ofen oder in heißem Wasser vor. Das Schnitzel wird sonst auf kalten Tellern schnell zäh.",
+      "Klopfe die 4 Kalbsschnitzel zwischen Frischhaltefolie dünn und gleichmäßig. Salze sie auf beiden Seiten.",
+      "Stelle drei flache Teller bereit: Mehl, verquirlte Eier und Semmelbrösel. Wende ein Schnitzel zuerst im Mehl und schüttle das überschüssige Mehl gut ab. Ziehe es dann durch das Ei und lass es abtropfen. Drücke es zum Schluss locker in die Brösel. Nicht festdrücken, die Panade soll luftig bleiben.",
+      "Erhitze in einer großen Pfanne reichlich Öl. Das Schnitzel muss darin schwimmen. Das Fett muss heiß sein. Backe die Schnitzel nacheinander goldgelb aus.",
+      "Schwenke die Pfanne dabei ständig, damit sich die Panade vom Fleisch abhebt und die typischen Wellen bildet. Wende die Schnitzel vorsichtig mit einer Gabel am Rand, ohne ins Fleisch zu stechen. Backe sie auf beiden Seiten goldgelb.",
+      "Lege die fertigen Schnitzel auf Küchenpapier und tupfe sie gut ab.",
+      "Petersilerdäpfel: Wende die gekochten, geschälten und geviertelten Kartoffeln in den übrigen Bröseln und in der gehackten Petersilie.",
+      "Salat: Rühre aus 1 EL scharfem Senf, Essig, Öl, Salz und Pfeffer eine Vinaigrette. Mische sie mit dem Vogerlsalat (150 g).",
+      "Serviere die Schnitzel sofort auf den vorgewärmten Tellern mit Petersilerdäpfeln und Salat."
+    ]
+  },
+  "en": {
+    "title": "Wiener schnitzel",
+    "steps": [
+      "Warm the plates in the oven or in hot water. Otherwise the schnitzel quickly turns tough on cold plates.",
+      "Pound the 4 veal escalopes thin and even between sheets of cling film. Salt them on both sides.",
+      "Set out three shallow plates: flour, beaten eggs and breadcrumbs. Turn one schnitzel in the flour first and shake off the excess flour well. Then pull it through the egg and let it drip. Finally press it lightly into the crumbs. Do not press hard, the breading should stay airy.",
+      "Heat plenty of oil in a large pan. The schnitzel has to float in it. The fat must be hot. Fry the schnitzel one after the other until golden yellow.",
+      "Keep shaking the pan the whole time so the crumb lifts off the meat and forms the typical waves. Turn the schnitzel carefully with a fork at the edge, without piercing the meat. Fry them golden yellow on both sides.",
+      "Put the finished schnitzel on kitchen paper and blot them well.",
+      "Parsley potatoes: Toss the boiled, peeled and quartered potatoes in the leftover crumbs and the chopped parsley.",
+      "Salad: Whisk a vinaigrette from 1 tbsp hot mustard, vinegar, oil, salt and pepper. Toss it with the lamb's lettuce (150 g).",
+      "Serve the schnitzel at once on the warmed plates with parsley potatoes and salad."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "bunch"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "The linked ORF page has no schema.org Recipe data; ingredients were taken from the page text. The page gives no quantities for flour, eggs, breadcrumbs, oil, vinegar and seasoning, so those amounts are null. Source rating is not shown on the page; list says Redaktionsküche. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

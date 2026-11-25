@@ -1,0 +1,130 @@
+{
+  "n": 149,
+  "slug": "ananas-bananen-haferflocken-drink",
+  "category": "Frühstück",
+  "servings": 4,
+  "time_minutes": 10,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/ananas-bananen-drink-mit-haferflocken-und-ingwer-14627.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 0.5,
+      "unit": "Stk",
+      "article_de": "Ananas",
+      "article_en": "Pineapple",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Bananen, reif",
+      "article_en": "Bananas, ripe",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "cm",
+      "article_de": "Ingwer",
+      "article_en": "Ginger",
+      "note_de": "Stück, ca. 2 cm",
+      "note_en": "piece, about 2 cm"
+    },
+    {
+      "amount": 250,
+      "unit": "ml",
+      "article_de": "Apfelsaft",
+      "article_en": "Apple juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Haferflocken, zart, fein",
+      "article_en": "Oat flakes, tender, fine",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Muskat",
+      "article_en": "Nutmeg",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Ananas-Bananen-Haferflocken-Drink",
+    "steps": [
+      "Die Ananas schälen, der Länge nach vierteln und den harten Strunk entfernen. Das Fruchtfleisch würfeln.",
+      "Die Bananen in Scheiben schneiden und sofort mit dem Zitronensaft mischen, dann werden sie nicht braun.",
+      "Den Ingwer schälen und fein würfeln.",
+      "Ananas, Bananen, Ingwer und Apfelsaft im Mixer zu einem glatten Drink pürieren.",
+      "In Gläser füllen und mit den Haferflocken und einer Prise Muskat bestreuen."
+    ]
+  },
+  "en": {
+    "title": "Pineapple-banana-oat drink",
+    "steps": [
+      "Peel the pineapple, quarter it lengthways and remove the hard core. Dice the flesh.",
+      "Slice the bananas and mix them with the lemon juice straight away so they do not turn brown.",
+      "Peel the ginger and dice it finely.",
+      "Blend the pineapple, bananas, ginger and apple juice in a blender until smooth.",
+      "Pour into glasses and sprinkle with the oats and a pinch of nutmeg."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 0.5,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "pinch"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

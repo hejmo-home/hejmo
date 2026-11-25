@@ -1,0 +1,174 @@
+{
+  "n": 160,
+  "slug": "versunkener-apfelkuchen",
+  "category": "Backen",
+  "servings": 12,
+  "time_minutes": 65,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Nüsse",
+      "en": "Tree nuts"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/versunkener-apfelkuchen-nach-omas-rezept-30093.html",
+    "site": "Lecker",
+    "ratings": 6
+  },
+  "ingredients": [
+    {
+      "amount": 750,
+      "unit": "g",
+      "article_de": "Äpfel",
+      "article_en": "Apples",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 175,
+      "unit": "g",
+      "article_de": "Butter oder Margarine",
+      "article_en": "Butter or margarine",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 175,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "article_de": "Vanillinzucker",
+      "article_en": "Vanillin sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Bittermandel-Aroma",
+      "article_en": "Bitter almond flavouring",
+      "note_de": "einige Tropfen",
+      "note_en": "a few drops"
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Plain flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "TL",
+      "article_de": "Backpulver",
+      "article_en": "Baking powder",
+      "note_de": "gestrichen",
+      "note_en": "level"
+    },
+    {
+      "amount": 40,
+      "unit": "g",
+      "article_de": "Mandelblättchen",
+      "article_en": "Flaked almonds",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Puderzucker",
+      "article_en": "Icing sugar",
+      "note_de": "zum Bestäuben",
+      "note_en": "for dusting"
+    }
+  ],
+  "de": {
+    "title": "Versunkener Apfelkuchen",
+    "steps": [
+      "Heize den Ofen auf 200 °C Ober-/Unterhitze (Umluft 175 °C) vor und fette eine Springform (26 cm Durchmesser).",
+      "Schäle die Äpfel, viertle und entkerne sie. Ritze sie mehrmals längs leicht ein und beträufle sie mit Zitronensaft.",
+      "Rühre Fett, Zucker, Vanillinzucker und Aroma mit dem Handrührgerät weiß-cremig. Rühre die Eier nach und nach unter, mische Mehl mit Backpulver und rühre es ebenfalls unter.",
+      "Streiche den Teig in der Form glatt. Setze die Apfelviertel mit den Einschnitten nach oben dicht an dicht im Kreis darauf und streue die Mandelblättchen darüber. Backe den Kuchen etwa 45 Minuten.",
+      "Lass den Kuchen auf einem Gitter auskühlen, löse ihn aus der Form und bestäube ihn mit Puderzucker."
+    ]
+  },
+  "en": {
+    "title": "Sunken apple cake",
+    "steps": [
+      "Preheat the oven to 200 °C top and bottom heat (175 °C fan) and grease a springform tin (26 cm diameter).",
+      "Peel, quarter and core the apples. Score them lightly several times lengthways and sprinkle with lemon juice.",
+      "Beat the fat, sugar, vanillin sugar and flavouring with a hand mixer until pale and creamy. Beat in the eggs one by one, mix the flour with the baking powder and stir that in as well.",
+      "Smooth the batter in the tin. Arrange the apple quarters tightly in a circle on top, scored side up, and scatter the flaked almonds over them. Bake the cake for about 45 minutes.",
+      "Let the cake cool on a wire rack, release it from the tin and dust it with icing sugar."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "packet"
+      },
+      {
+        "index": 6,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 8,
+        "amount": 3,
+        "unit": "tsp"
+      },
+      {
+        "index": 10,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Replacement for missing servings in the previous source, approved by the product owner 23/11/2026. Time from source: 20 min preparation + 45 min waiting (baking) = 65 min. Only 6 ratings (4.5 of 5); chosen as an editorial recipe. Bitter almond flavouring has no quantity beyond 'a few drops'. Springform 26 cm.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

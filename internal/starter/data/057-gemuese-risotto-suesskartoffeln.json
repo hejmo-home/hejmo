@@ -1,0 +1,192 @@
+{
+  "n": 57,
+  "slug": "gemuese-risotto-suesskartoffeln",
+  "category": "Hauptgerichte",
+  "servings": 2,
+  "time_minutes": 25,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/gruenes-gemueserisotto-mit-suesskartoffeln-93597",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zucchini",
+      "article_en": "Zucchini",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Stange",
+      "article_de": "Lauch",
+      "article_en": "Leek",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Süßkartoffel",
+      "article_en": "Sweet potato",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.25,
+      "unit": "Stk",
+      "article_de": "Zitrone",
+      "article_en": "Lemon",
+      "note_de": "Saft davon",
+      "note_en": "juice of"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 80,
+      "unit": "g",
+      "article_de": "Risottoreis",
+      "article_en": "Risotto rice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 220,
+      "unit": "ml",
+      "article_de": "Gemüsebrühe",
+      "article_en": "Vegetable stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Gemüsebrühe",
+      "article_en": "Vegetable stock",
+      "note_de": "etwas, zum Aufgießen",
+      "note_en": "a little extra, for topping up"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 6,
+      "unit": "Stk",
+      "article_de": "Minzeblättchen",
+      "article_en": "Mint leaves",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Parmesan, frisch gerieben",
+      "article_en": "Freshly grated Parmesan",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Gemüserisotto mit Süßkartoffeln",
+    "steps": [
+      "Gemüse vorbereiten: Zucchini, Lauch und Süßkartoffel in kleine Würfel von etwa 1 cm schneiden. Knoblauch fein hacken. Den Saft aus der Zitrone pressen. Minze hacken.",
+      "Olivenöl in einem Topf mit Deckel erhitzen. Das Gemüse etwa 1 Minute anschwitzen.",
+      "Den Reis dazugeben und etwa 1 Minute mit anschwitzen.",
+      "220 ml Brühe und den Zitronensaft zugeben, umrühren.",
+      "Deckel auflegen und bei niedriger Hitze etwa 15 Minuten köcheln lassen. Zwischendurch immer wieder umrühren, damit nichts ansetzt.",
+      "Wenn die Flüssigkeit aufgesogen ist, der Reis aber noch Biss hat, ist es fertig. Ist es noch zu fest, in kleinen Mengen Brühe nachgießen und weitergaren.",
+      "Zum Schluss Minze und Parmesan unterheben, mit Salz und Pfeffer abschmecken."
+    ]
+  },
+  "en": {
+    "title": "Vegetable risotto with sweet potato",
+    "steps": [
+      "Prepare the vegetables: cut the courgette, leek and sweet potato into small cubes of about 1 cm. Finely chop the garlic. Squeeze the lemon. Chop the mint.",
+      "Heat the olive oil in a pot with a lid. Sweat the vegetables for about 1 minute.",
+      "Add the rice and sweat it for about 1 minute.",
+      "Add 220 ml stock and the lemon juice and stir.",
+      "Put the lid on and simmer on low heat for about 15 minutes. Stir every now and then so nothing sticks.",
+      "When the liquid has been absorbed but the rice still has a slight bite, it is done. If it is still too firm, add stock in small amounts and keep cooking.",
+      "At the end fold in the mint and Parmesan and season with salt and pepper."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 0.5,
+        "unit": "stalk"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 4,
+        "amount": 0.25,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 11,
+        "amount": 6,
+        "unit": "piece"
+      },
+      {
+        "index": 12,
+        "amount": 4,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Time from source: 25 min, stated as Aufwand (the only time figure on the page). Source rating shows 10 ratings with value 1; list says Redaktionsküche. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Confirmed by Lena 24/11/2026: title follows the recipe, not the list.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "n": 157,
+  "slug": "brownies",
+  "category": "Backen",
+  "servings": 16,
+  "time_minutes": 60,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/best-ever-chocolate-brownies-recipe",
+    "site": "BBC Good Food",
+    "ratings": 2992
+  },
+  "ingredients": [
+    {
+      "amount": 185,
+      "unit": "g",
+      "article_de": "Butter, ungesalzen",
+      "article_en": "Unsalted butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 185,
+      "unit": "g",
+      "article_de": "Zartbitterschokolade",
+      "article_en": "Dark chocolate",
+      "note_de": "gute Qualität",
+      "note_en": "good quality"
+    },
+    {
+      "amount": 85,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Plain flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 40,
+      "unit": "g",
+      "article_de": "Kakaopulver",
+      "article_en": "Cocoa powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Weiße Schokolade",
+      "article_en": "White chocolate",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Vollmilchschokolade",
+      "article_en": "Milk chocolate",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Eier, Größe L",
+      "article_en": "Eggs, large",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 275,
+      "unit": "g",
+      "article_de": "Zucker, golden (Golden Caster Sugar)",
+      "article_en": "Golden caster sugar",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Brownies",
+    "steps": [
+      "Die Butter würfeln, die Zartbitterschokolade in Stücke brechen und beides in eine Schüssel geben. Über einen Topf mit heißem Wasser stellen (die Schüssel darf das Wasser nicht berühren) und bei niedriger Hitze unter gelegentlichem Rühren schmelzen. Alternativ locker abgedeckt 2 Minuten bei hoher Stufe in die Mikrowelle. Auf Zimmertemperatur abkühlen lassen.",
+      "Den Rost in die Ofenmitte setzen und den Ofen auf 180 °C Ober-/Unterhitze (160 °C Umluft) heizen. Eine flache quadratische 20-cm-Form am Boden mit Alufolie oder Backpapier auslegen.",
+      "Mehl und Kakao zusammen durch ein Sieb in eine Schüssel geben. Weiße und Vollmilchschokolade grob hacken.",
+      "Eier und Zucker mit dem Handrührgerät auf höchster Stufe 3 bis 8 Minuten aufschlagen (je nach Gerät), bis die Masse dick, sehr hell und doppelt so voluminös ist. Probe: Rührer anheben, die ablaufende Masse hinterlässt kurz eine Spur.",
+      "Die abgekühlte Schokomasse mit einem Teigspatel in Achterbewegungen vorsichtig unterheben, damit die Luft erhalten bleibt, bis alles gleichmäßig dunkelbraun marmoriert ist.",
+      "Die Mehl-Kakao-Mischung darübersieben und behutsam unterheben. Sie sieht zunächst trocken aus, wird aber mit Geduld fudgig. Lieber etwas früher aufhören. Zum Schluss die Schokostücke unterrühren.",
+      "Den Teig in die Form schaben und glatt streichen. 25 Minuten backen. Wackelt die Mitte noch, weitere 5 Minuten backen. Fertig sind die Brownies, wenn die Oberfläche eine glänzende, papierdünne Kruste hat und sich die Ränder leicht lösen.",
+      "In der Form vollständig erkalten lassen, dann in 16 Stücke schneiden. Luftdicht halten sie 2 Wochen, tiefgekühlt 1 Monat."
+    ]
+  },
+  "en": {
+    "title": "Brownies",
+    "steps": [
+      "Cube the butter, break the dark chocolate into pieces and put both in a bowl. Set it over a pot of hot water (the bowl must not touch the water) and melt over low heat, stirring now and then. Alternatively, microwave loosely covered for 2 minutes on high. Let cool to room temperature.",
+      "Put the rack in the middle of the oven and heat it to 180 °C top/bottom heat (160 °C fan). Line the base of a shallow square 20 cm tin with foil or baking paper.",
+      "Sift the flour and cocoa together into a bowl. Chop the white and milk chocolate coarsely.",
+      "With a hand mixer on its highest setting, whisk the eggs and sugar for 3 to 8 minutes (depending on the mixer) until thick, very pale and doubled in volume. Test: lift the beaters, and the mixture running off should leave a trail for a moment.",
+      "Gently fold the cooled chocolate mixture in with a spatula using figure-of-eight movements, so the air is kept, until it is evenly marbled dark brown.",
+      "Sift the flour and cocoa mixture over the top and fold in gently. It looks dry at first but turns fudgy with patience. Better to stop a little early. Finally stir in the chocolate chunks.",
+      "Scrape the batter into the tin and level it. Bake for 25 minutes. If the middle still wobbles, bake for another 5 minutes. The brownies are done when the surface has a shiny, paper-thin crust and the edges come away slightly.",
+      "Let cool completely in the tin, then cut into 16 pieces. Airtight they keep for 2 weeks, frozen for 1 month."
+    ],
+    "amounts_converted": [
+      {
+        "index": 6,
+        "amount": 3,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Rating count from the list. Source steps not copied. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.015
+  }
+}

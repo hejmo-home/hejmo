@@ -1,0 +1,248 @@
+{
+  "n": 103,
+  "slug": "fischfrikadellen-gurkensauce",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 45,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Fisch",
+      "en": "Fish"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/fischfrikadellen-mit-gurkensauce-1288",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Fischfilet",
+      "article_en": "Fish fillet",
+      "note_de": "z. B. Seelachs oder Rotbarsch",
+      "note_en": "e.g. pollock or redfish"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Petersilie",
+      "article_en": "Parsley",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Ei",
+      "article_en": "Egg",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Saure Sahne",
+      "article_en": "Sour cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Semmelbrösel",
+      "article_en": "Breadcrumbs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Paprikapulver, edelsüß",
+      "article_en": "Sweet paprika powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Muskatnuss",
+      "article_en": "Nutmeg",
+      "note_de": "frisch gerieben",
+      "note_en": "freshly grated"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "zum Wenden und für die Sauce",
+      "note_en": "for coating and for the sauce"
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Butterschmalz",
+      "article_en": "Clarified butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "ml",
+      "article_de": "Fischfond",
+      "article_en": "Fish stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Salzgurke",
+      "article_en": "Pickled gherkin",
+      "note_de": "plus 70 ml Salzgurkenlake",
+      "note_en": "plus 70 ml of the pickling brine"
+    }
+  ],
+  "de": {
+    "title": "Fischfrikadellen",
+    "steps": [
+      "Fischfilet in Würfel schneiden, mit Zitronensaft mischen und durch den Fleischwolf drehen oder im Mixer fein hacken. Den Fisch immer kalt halten und bis zum Weiterarbeiten in den Kühlschrank stellen.",
+      "Zwiebel fein würfeln und in der Butter etwa 5 Minuten goldgelb dünsten. Abkühlen lassen, sonst wärmt sie den Fisch an.",
+      "Petersilie hacken. Fisch mit Zwiebel, der Hälfte der Petersilie, Ei, saurer Sahne, Semmelbröseln, Paprika, Muskat, Salz und Pfeffer vermengen.",
+      "Ofen auf 75 °C stellen. Aus der Masse etwa 16 kleine Frikadellen formen und in Mehl wenden.",
+      "Butterschmalz in einer Pfanne bei mittlerer Hitze erhitzen und die Frikadellen pro Seite 7 Minuten braun braten. Im Ofen warm halten.",
+      "Für die Sauce das restliche Mehl im Bratfett goldgelb anrösten. Fischfond und Salzgurkenlake unter Rühren dazugießen, aufkochen und 10 Minuten köcheln lassen. Dabei rühren, damit sie sich bindet und nicht klumpt.",
+      "Salzgurke fein würfeln, mit der restlichen Petersilie in die Sauce geben und abschmecken. Frikadellen mit der Sauce servieren."
+    ]
+  },
+  "en": {
+    "title": "Fish cakes",
+    "steps": [
+      "Cut the fish fillet into cubes, mix with the lemon juice and put it through the meat grinder or chop it finely in a blender. Always keep the fish cold and put it in the fridge until you carry on.",
+      "Finely dice the onion and sweat it in the butter for about 5 minutes until golden. Let it cool, otherwise it warms up the fish.",
+      "Chop the parsley. Mix the fish with the onion, half of the parsley, egg, sour cream, breadcrumbs, paprika, nutmeg, salt and pepper.",
+      "Set the oven to 75 °C. Shape the mixture into about 16 small patties and turn them in flour.",
+      "Heat the clarified butter in a pan over medium heat and fry the patties for 7 minutes per side until brown. Keep warm in the oven.",
+      "For the sauce, toast the remaining flour in the frying fat until golden. Pour in the fish stock and pickle brine while stirring, bring to the boil and simmer for 10 minutes. Keep stirring so it thickens and does not go lumpy.",
+      "Finely dice the pickle, add it to the sauce with the remaining parsley and season. Serve the patties with the sauce."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "bunch"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 12,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 13,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 15,
+        "amount": 1,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Time from source: 45 min, stated as Aufwand (the only time figure on the page). Mehl: 3 EL laut Quelle insgesamt (davon 1 EL für die Sauce); Ratings count on page is 5, list says Redaktionsküche. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

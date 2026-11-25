@@ -1,0 +1,220 @@
+{
+  "n": 136,
+  "slug": "gulaschsuppe",
+  "category": "Suppen",
+  "servings": 2,
+  "time_minutes": 60,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.essen-und-trinken.de/rezepte/31934-rzpt-gulaschsuppe",
+    "site": "Essen & Trinken",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Rindfleisch",
+      "article_en": "Beef",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel, rot",
+      "article_en": "Red onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Paprikaschote, rot",
+      "article_en": "Red bell pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Paprikaschote, gelb",
+      "article_en": "Yellow bell pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Tomatenmark",
+      "article_en": "Tomato paste",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Paprikapulver, rosenscharf",
+      "article_en": "Paprika powder, hot",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Paprikapulver, edelsüß",
+      "article_en": "Paprika powder, sweet",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 125,
+      "unit": "ml",
+      "article_de": "Rotwein",
+      "article_en": "Red wine",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 650,
+      "unit": "ml",
+      "article_de": "Rinderbrühe",
+      "article_en": "Beef stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Kartoffeln",
+      "article_en": "Potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Bio-Zitronenschale",
+      "article_en": "Organic lemon zest",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Kümmelsaat",
+      "article_en": "Caraway seeds",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Gulaschsuppe",
+    "steps": [
+      "Alles vorbereiten: Rindfleisch, Zwiebel und die entkernten Paprika in feine Würfel schneiden, die Kartoffeln schälen und in 1-cm-Würfel schneiden. Knoblauch, Zitronenschale und Kümmel mit einer Prise Salz fein hacken und beiseitestellen.",
+      "Das Öl im Topf erhitzen. Zwiebel und Fleisch darin anbraten, die Paprika zugeben und 1 Minute mitbraten.",
+      "Tomatenmark und beide Paprikapulver nur kurz einrühren, sonst werden sie bitter. Mit Rotwein und Brühe auffüllen und aufkochen.",
+      "Zugedeckt bei mittlerer Hitze insgesamt 40 Minuten garen. Nach 25 Minuten die Kartoffeln zugeben.",
+      "In den letzten 5 Minuten die gehackte Würzmischung einrühren, so bleibt das Aroma frisch."
+    ]
+  },
+  "en": {
+    "title": "Goulash soup",
+    "steps": [
+      "Prepare everything: cut the beef, onion and the deseeded peppers into small dice, peel the potatoes and cut them into 1 cm cubes. Chop the garlic, lemon zest and caraway finely with a pinch of salt and set aside.",
+      "Heat the oil in a pot. Brown the onion and meat in it, add the peppers and cook for 1 minute.",
+      "Stir in the tomato paste and both paprikas only briefly, otherwise they turn bitter. Add the red wine and stock and bring to the boil.",
+      "Cook covered over medium heat for 40 minutes in total. Add the potatoes after 25 minutes.",
+      "In the last 5 minutes stir in the chopped seasoning mix, which keeps the aroma fresh."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 11,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 12,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 13,
+        "amount": 1,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.022
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026."
+}

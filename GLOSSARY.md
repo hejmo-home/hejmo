@@ -323,6 +323,10 @@ _Avoid_: override (in prose), exception
 A dish with portions, ingredients and steps that can be put on the meal plan; entered by a parent, imported from a web page or from Hejmo's starter collection, always with its source.
 _Avoid_: dish (alone), cooking instructions
 
+**Starter recipe**:
+One of the 200 recipes that ship with the box in German and English (the starter collection). It is shown in the language of the person viewing it, names its source ("Ingredients after: Chefkoch") with a link, is read-only for everyone and is not part of a family's own recipes. Its id starts with `starter-`.
+_Avoid_: sample recipe, default recipe, template recipe
+
 **Ingredient**:
 One line of a recipe: an article, optionally with a variety, or free text, with a quantity for the recipe's portions.
 _Avoid_: component, item
@@ -332,7 +336,7 @@ A unit of a recipe's ingredient that is no weight or volume Hejmo can convert: E
 _Avoid_: spoon unit, small measure
 
 **Container and piece measure**:
-A unit of a recipe's ingredient that counts things: Dose, Päckchen, Becher, Bund, Glas, Flasche, Stange, Zehe, Scheibe, Würfel, Zweig, Stiel, Kugel, Blatt and Beet (can, packet, tub, bunch, jar, bottle, stick, clove, slice, cube, sprig, stalk, ball, leaf, punnet). On a shopping list it keeps its quantity ("2 Dosen Tomaten"), and quantities add up only within the same unit.
+A unit of a recipe's ingredient that counts things: Dose, Päckchen, Becher, Bund, Glas, Flasche, Stange, Zehe, Scheibe, Würfel, Zweig, Stiel, Kugel, Blatt, Beet and Topf (can, packet, tub, bunch, jar, bottle, stick, clove, slice, cube, sprig, stalk, ball, leaf, punnet, pot). On a shopping list it keeps its quantity ("2 Dosen Tomaten"), and quantities add up only within the same unit.
 _Avoid_: pack unit, count word
 
 **Variety**:

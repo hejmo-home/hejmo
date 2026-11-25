@@ -1,0 +1,113 @@
+{
+  "n": 145,
+  "slug": "arme-ritter",
+  "category": "Frühstück",
+  "servings": 4,
+  "time_minutes": 20,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/434984328773/Arme-Ritter.html",
+    "site": "Chefkoch",
+    "ratings": "529"
+  },
+  "ingredients": [
+    {
+      "amount": 4,
+      "unit": "Scheibe",
+      "article_de": "Toastbrot",
+      "article_en": "Toast bread",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Ei",
+      "article_en": "Egg",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zimt",
+      "article_en": "Cinnamon",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Arme Ritter (French Toast)",
+    "steps": [
+      "Das Ei mit der Milch in einer flachen Schale verquirlen.",
+      "Die Toastscheiben hineinlegen und gut durchziehen lassen, bis sie sich vollgesogen haben.",
+      "Butter in der Pfanne zerlassen und die Brotscheiben darin von beiden Seiten goldbraun und knusprig braten.",
+      "Zimt und Zucker mischen und die heißen Scheiben sofort damit bestreuen. Warm servieren."
+    ]
+  },
+  "en": {
+    "title": "French toast",
+    "steps": [
+      "Whisk the egg with the milk in a shallow dish.",
+      "Lay the toast slices in and let them soak thoroughly until they are full of the mixture.",
+      "Melt the butter in the pan and fry the slices on both sides until golden brown and crisp.",
+      "Mix the cinnamon and sugar and sprinkle it over the hot slices straight away. Serve warm."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 4,
+        "unit": "slice"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

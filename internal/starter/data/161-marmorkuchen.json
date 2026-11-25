@@ -1,0 +1,236 @@
+{
+  "n": 161,
+  "slug": "marmorkuchen",
+  "category": "Backen",
+  "servings": 12,
+  "time_minutes": 90,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/504411145461802/Marmorkuchen-nach-Frieda-klassische-Art.html",
+    "site": "Chefkoch",
+    "ratings": 2872
+  },
+  "ingredients": [
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "sehr weich",
+      "note_en": "very soft"
+    },
+    {
+      "amount": 160,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "für die Buttermasse",
+      "note_en": "for the butter mixture"
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "article_de": "Bourbon-Vanillezucker",
+      "article_en": "Bourbon vanilla sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Msp.",
+      "article_de": "Zitronenabrieb",
+      "article_en": "Lemon zest",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Rum",
+      "article_en": "Rum",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 6,
+      "unit": "Stk",
+      "article_de": "Eigelb, Größe M",
+      "article_en": "Egg yolks, size M",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 6,
+      "unit": "Stk",
+      "article_de": "Eiweiß, Größe M",
+      "article_en": "Egg whites, size M",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Msp.",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 120,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "für den Eischnee",
+      "note_en": "for the meringue"
+    },
+    {
+      "amount": 280,
+      "unit": "g",
+      "article_de": "Weizenmehl Type 405",
+      "article_en": "Wheat flour (German type 405)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Pck.",
+      "article_de": "Backpulver",
+      "article_en": "Baking powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": "lauwarm",
+      "note_en": "lukewarm"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "zum Einfetten der Form",
+      "note_en": "for greasing the tin"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "zum Ausstäuben der Form",
+      "note_en": "for dusting the tin"
+    },
+    {
+      "amount": 20,
+      "unit": "g",
+      "article_de": "Kakaopulver",
+      "article_en": "Cocoa powder",
+      "note_de": "ungesüßt, klassisch dunkel (Backkakao)",
+      "note_en": "unsweetened, classic dark baking cocoa"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Puderzucker",
+      "article_en": "Icing sugar",
+      "note_de": "zum Bestäuben, oder Kakao-Fettglasur",
+      "note_en": "for dusting, or chocolate glaze"
+    }
+  ],
+  "de": {
+    "title": "Marmorkuchen",
+    "steps": [
+      "Eine 22-cm-Gugelhupfform mit Butter ausstreichen und mit Mehl ausstäuben.",
+      "Die Eier trennen: Eigelb und Eiweiß in getrennte Schüsseln.",
+      "Die sehr weiche Butter mit 160 g Zucker, Vanillezucker, Zitronenabrieb und Rum cremig rühren.",
+      "Die 6 Eigelbe einzeln unterrühren.",
+      "Den Ofen auf 180 °C Ober-/Unterhitze (150 bis 160 °C Umluft) vorheizen.",
+      "Eiweiß mit dem Salz anschlagen und dabei die 120 g Zucker einrieseln lassen, bis ein fester Schnee entsteht.",
+      "Mehl und Backpulver mischen. Abwechselnd mit der lauwarmen Milch und dem Eischnee zur Buttermasse geben. Nur mit dem Kochlöffel oder Teigspatel von Hand unterheben, ohne Mixer, damit der Schnee nicht zusammenfällt.",
+      "Die Hälfte des Teigs in die Form füllen.",
+      "Den Kakao in den restlichen Teig sieben, damit keine Klümpchen entstehen, und unterheben. Verwende dunklen Backkakao, kein Instant-Kakaopulver.",
+      "Den dunklen Teig auf den hellen Teig geben und mit einer großen Gabel spiralförmig durchziehen, so entsteht das Marmormuster.",
+      "Etwa 60 Minuten backen. Stäbchenprobe machen. Der Kuchen soll hell bleiben und keine harte Kruste bekommen.",
+      "Kurz abkühlen lassen und dann auf ein Gitter stürzen.",
+      "Nach dem Auskühlen mit Puderzucker bestäuben oder mit Kakaoglasur überziehen."
+    ]
+  },
+  "en": {
+    "title": "Marble cake",
+    "steps": [
+      "Grease a 22 cm Bundt tin with butter and dust it with flour.",
+      "Separate the eggs: yolks and whites into separate bowls.",
+      "Beat the very soft butter with 160 g sugar, vanilla sugar, lemon zest and rum until creamy.",
+      "Stir in the 6 egg yolks one at a time.",
+      "Preheat the oven to 180 °C top and bottom heat (150 to 160 °C fan).",
+      "Beat the egg whites with the salt, trickling in the 120 g sugar, until you have stiff peaks.",
+      "Mix the flour and baking powder. Add to the butter mixture alternately with the lukewarm milk and the beaten whites. Fold by hand only, with a wooden spoon or spatula and no mixer, so the whites do not collapse.",
+      "Fill half of the batter into the tin.",
+      "Sift the cocoa into the remaining batter so there are no lumps, and fold it in. Use dark baking cocoa, not instant cocoa powder.",
+      "Spoon the dark batter on top of the light batter and swirl through it with a large fork in a spiral to create the marble pattern.",
+      "Bake about 60 minutes. Do the skewer test. The cake should stay pale and not form a hard crust.",
+      "Let it cool briefly, then turn it out onto a wire rack.",
+      "Once cool, dust with icing sugar or cover with chocolate glaze."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "packet"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 6,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 6,
+        "unit": "piece"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 10,
+        "amount": 0.5,
+        "unit": "packet"
+      }
+    ]
+  },
+  "review_note": "Rating count from the list. Servings: 12 pieces from a 22 cm Bundt tin, as stated in the source note. Source steps not copied. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

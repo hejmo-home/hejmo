@@ -1,0 +1,188 @@
+{
+  "n": 184,
+  "slug": "bratapfel",
+  "category": "Desserts",
+  "servings": 4,
+  "time_minutes": 45,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Nüsse",
+      "en": "Tree nuts"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide and sulphites"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/bratapfel-wie-bei-oma-80845.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 0.5,
+      "unit": "Stk",
+      "article_de": "Bio-Zitrone",
+      "article_en": "Organic lemon",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Äpfel",
+      "article_en": "Apples",
+      "note_de": "je ca. 150 g, z. B. Boskop",
+      "note_en": "about 150 g each, e.g. Boskop"
+    },
+    {
+      "amount": 80,
+      "unit": "g",
+      "article_de": "Marzipan-Rohmasse",
+      "article_en": "Raw marzipan paste",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Haselnüsse",
+      "article_en": "Hazelnuts",
+      "note_de": "gehackt",
+      "note_en": "chopped"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Mandelstifte",
+      "article_en": "Slivered almonds",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Rosinen",
+      "article_en": "Raisins",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Rum",
+      "article_en": "Rum",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Zimt",
+      "article_en": "Ground cinnamon",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Zimtstangen",
+      "article_en": "Cinnamon sticks",
+      "note_de": "nach Belieben",
+      "note_en": "optional"
+    }
+  ],
+  "de": {
+    "title": "Bratapfel",
+    "steps": [
+      "Heize den Ofen auf 200 °C Ober-/Unterhitze (180 °C Umluft) vor.",
+      "Reibe die Schale der halben Zitrone ab und presse den Saft aus.",
+      "Steche bei den 4 Äpfeln das Kerngehäuse mit einem Apfelausstecher oder Kugelausstecher aus. Unten muss ein 2 cm breiter Rand bleiben und du darfst den Boden nicht durchstechen, sonst läuft die Füllung aus.",
+      "Pinsle die Äpfel innen mit Zitronensaft ein. Schneide unten bei Bedarf eine dünne Scheibe ab, damit sie gerade stehen.",
+      "Zupfe 80 g Marzipan in kleine Stücke. Röste 2 EL gehackte Haselnüsse und 2 EL Mandelstifte ohne Fett in einer Pfanne an.",
+      "Schmilz 3 EL Butter und rühre sie mit Marzipan, Nüssen, 2 EL Rosinen, 3 EL Rum, Zitronenschale und 1 TL Zimt mit dem Handmixer oder von Hand zu einer Masse.",
+      "Fülle die Äpfel mit der Masse und drücke sie fest an. Setze sie in eine Auflaufform.",
+      "Backe sie 25 bis 30 Minuten. Wenn du die abgeschnittenen Deckel mitbacken willst, setze sie nach etwa 12 Minuten auf. Nach Belieben mit 1 Zimtstange in jedem Apfel servieren."
+    ]
+  },
+  "en": {
+    "title": "Baked apple",
+    "steps": [
+      "Preheat the oven to 200 C conventional (180 C fan).",
+      "Grate the zest of the half lemon and squeeze out the juice.",
+      "Core the 4 apples with an apple corer or melon baller. Leave a 2 cm rim at the bottom and do not pierce the base, or the filling will leak out.",
+      "Brush the insides of the apples with lemon juice. If needed, cut a thin slice off the bottom so they stand straight.",
+      "Tear 80 g marzipan into small pieces. Toast 2 tbsp chopped hazelnuts and 2 tbsp flaked almonds in a dry pan.",
+      "Melt 3 tbsp butter and mix it with marzipan, nuts, 2 tbsp raisins, 3 tbsp rum, lemon zest and 1 tsp cinnamon using a hand mixer or by hand until you have a paste.",
+      "Stuff the apples with the mixture and press it in firmly. Place them in a baking dish.",
+      "Bake for 25 to 30 minutes. If you want to bake the cut-off lids too, put them on after about 12 minutes. Serve with 1 cinnamon stick in each apple if you like."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 0.5,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 9,
+        "amount": 4,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Rum is part of the filling; flag for children. Page shows 84 ratings; list says Redaktionsküche. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

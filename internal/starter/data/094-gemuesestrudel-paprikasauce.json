@@ -1,0 +1,278 @@
+{
+  "n": 94,
+  "slug": "gemuesestrudel-paprikasauce",
+  "category": "Hauptgerichte",
+  "servings": 6,
+  "time_minutes": 140,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Nüsse",
+      "en": "Tree nuts"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/gemuesestrudel-mit-paprikasauce-11086",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "für den Teig",
+      "note_en": "for the dough"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": "für den Teig",
+      "note_en": "for the dough"
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": "für den Teig",
+      "note_en": "for the dough"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Eigelb",
+      "article_en": "Egg yolk",
+      "note_de": "zum Bestreichen",
+      "note_en": "for brushing"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "für die Arbeitsfläche",
+      "note_en": "for the work surface"
+    },
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": "für die Füllung",
+      "note_en": "for the filling"
+    },
+    {
+      "amount": 5,
+      "unit": "cm",
+      "article_de": "Ingwer, frisch",
+      "article_en": "Fresh ginger",
+      "note_de": "ein Stück, etwa 5 cm",
+      "note_en": "one piece, about 5 cm"
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Spitzkohl",
+      "article_en": "Pointed cabbage",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Brokkoliröschen",
+      "article_en": "Broccoli florets",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Frühlingszwiebeln",
+      "article_en": "Spring onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Walnusskerne",
+      "article_en": "Walnut kernels",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": "für die Füllung",
+      "note_en": "for the filling"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": "für die Füllung",
+      "note_en": "for the filling"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": "für die Füllung",
+      "note_en": "for the filling"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Paprikaschoten, rot",
+      "article_en": "Red bell peppers",
+      "note_de": "für die Sauce",
+      "note_en": "for the sauce"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Paprikaschoten, gelb",
+      "article_en": "Yellow bell peppers",
+      "note_de": "für die Sauce",
+      "note_en": "for the sauce"
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": "für die Sauce",
+      "note_en": "for the sauce"
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": "für die Sauce",
+      "note_en": "for the sauce"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": "für die Sauce",
+      "note_en": "for the sauce"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Cayennepfeffer",
+      "article_en": "Cayenne pepper",
+      "note_de": "für die Sauce",
+      "note_en": "for the sauce"
+    }
+  ],
+  "de": {
+    "title": "Gemüsestrudel",
+    "steps": [
+      "Teig: Mehl, Salz, Öl und etwas lauwarmes Wasser 10 Minuten zu einem glatten, geschmeidigen Teig kneten.",
+      "Eine Schüssel mit warmem Wasser ausspülen, über den Teig stülpen und ihn 30 Minuten ruhen lassen. In dieser Zeit machst du die Füllung.",
+      "Knoblauch und Ingwer fein hacken. Spitzkohl und Möhren in feine Streifen schneiden, Brokkoli in kleine Röschen teilen, Lauchzwiebeln in Ringe schneiden, Walnüsse grob hacken.",
+      "Öl in einer großen Pfanne erhitzen. Knoblauch und Ingwer 2 Minuten anbraten, dann das Gemüse 2 Minuten unter Rühren mitbraten. Walnüsse, Salz und Pfeffer dazugeben. Die Füllung muss ganz abkühlen, bevor du sie einrollst.",
+      "Ofen auf 250 °C Grillfunktion vorheizen. Paprika halbieren, entkernen und mit der Haut nach oben auf ein Blech legen. Auf der obersten Schiene 12 bis 15 Minuten grillen, bis die Haut Blasen wirft.",
+      "Paprika 2 Minuten abdecken, dann lässt sich die Haut gut abziehen. Gelbe und rote Paprika getrennt mit je 2 EL Olivenöl, 1 TL Zitronensaft, Salz und einer Prise Cayennepfeffer pürieren. So bekommst du zwei Saucen.",
+      "Ofen auf 180 °C Ober-/Unterhitze (160 °C Umluft) stellen. Ein Küchentuch mit Mehl bestäuben, den Teig darauf ausrollen und dann über den Handrücken hauchdünn ausziehen.",
+      "Füllung als Streifen auf den Teig häufen, die kurzen Enden einschlagen und den Strudel mithilfe des Tuchs aufrollen. Mit der Naht nach unten auf ein Blech mit Backpapier legen und mit Eigelb bestreichen.",
+      "Auf mittlerer Schiene 30 Minuten backen. In Scheiben schneiden und mit den beiden Paprikasaucen servieren."
+    ]
+  },
+  "en": {
+    "title": "Vegetable strudel",
+    "steps": [
+      "Dough: knead flour, salt, oil and some lukewarm water for 10 minutes into a smooth, supple dough.",
+      "Rinse a bowl with warm water, turn it over the dough and let it rest for 30 minutes. Make the filling during this time.",
+      "Finely chop the garlic and ginger. Cut the pointed cabbage and carrots into fine strips, divide the broccoli into small florets, cut the spring onions into rings and roughly chop the walnuts.",
+      "Heat oil in a large pan. Fry garlic and ginger for 2 minutes, then stir-fry the vegetables with them for 2 minutes. Add walnuts, salt and pepper. The filling has to cool completely before you roll it up.",
+      "Preheat the oven to 250 °C on the grill setting. Halve the peppers, deseed them and place them skin side up on a tray. Grill on the top rack for 12 to 15 minutes until the skin blisters.",
+      "Cover the peppers for 2 minutes, then the skin comes off easily. Purée the yellow and red peppers separately, each with 2 tbsp olive oil, 1 tsp lemon juice, salt and a pinch of cayenne. This gives you two sauces.",
+      "Set the oven to 180 °C top/bottom heat (160 °C fan). Dust a kitchen cloth with flour, roll the dough out on it and then stretch it paper-thin over the backs of your hands.",
+      "Pile the filling in a strip on the dough, tuck in the short ends and roll up the strudel with the help of the cloth. Place it seam side down on a tray with baking paper and brush it with egg yolk.",
+      "Bake on the middle rack for 30 minutes. Slice and serve with the two pepper sauces."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "clove"
+      },
+      {
+        "index": 10,
+        "amount": 1,
+        "unit": "bunch"
+      },
+      {
+        "index": 12,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 15,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 16,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 17,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 18,
+        "amount": 2,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "Time from source: 80 min prep + 60 min baking = 140 min (Aufwand shown on the page). Source shows 1 rating; list says Redaktionsküche. Mehl für die Arbeitsfläche and the dough Mehl are listed separately as in the source. Steps rewritten in own words on 23/11/2026 from the source steps (times, temperatures and order per source). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

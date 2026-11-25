@@ -1,0 +1,190 @@
+{
+  "n": 126,
+  "slug": "linsensuppe",
+  "category": "Suppen",
+  "servings": 3,
+  "time_minutes": 105,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [
+    {
+      "de": "Soja",
+      "en": "Soy"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/2751661427199893/Mamas-vegane-Linsensuppe.html",
+    "site": "Chefkoch",
+    "ratings": "391"
+  },
+  "ingredients": [
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Räuchertofu",
+      "article_en": "Smoked tofu",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Zwiebeln",
+      "article_en": "Onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Kartoffeln",
+      "article_en": "Potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Tellerlinsen",
+      "article_en": "Brown plate lentils",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": "nach Belieben",
+      "note_en": "to taste"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Tomatenmark",
+      "article_en": "Tomato paste",
+      "note_de": "viel, ca. 1/2 Tube, bei Bedarf mehr oder weniger",
+      "note_en": "plenty, about 1/2 tube, more or less as needed"
+    },
+    {
+      "amount": 1,
+      "unit": "Liter",
+      "article_de": "Gemüsebrühe",
+      "article_en": "Vegetable stock",
+      "note_de": "bei Bedarf mehr oder weniger",
+      "note_en": "more or less as needed"
+    },
+    {
+      "amount": 1,
+      "unit": "Liter",
+      "article_de": "Wasser",
+      "article_en": "Water",
+      "note_de": "bei Bedarf mehr oder weniger",
+      "note_en": "more or less as needed"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Gemüsebrühepulver",
+      "article_en": "Vegetable stock powder",
+      "note_de": "nach Belieben",
+      "note_en": "to taste"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Balsamico",
+      "article_en": "Balsamic vinegar",
+      "note_de": "nach Belieben",
+      "note_en": "to taste"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Petersilie, gehackt",
+      "article_en": "Parsley, chopped",
+      "note_de": "nach Belieben",
+      "note_en": "to taste"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": "nach Belieben",
+      "note_en": "to taste"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "nach Belieben",
+      "note_en": "to taste"
+    }
+  ],
+  "de": {
+    "title": "Linsensuppe (vegan)",
+    "steps": [
+      "3 Zwiebeln, 4 Kartoffeln, 2 Möhren und 250 g Räuchertofu würfeln.",
+      "Olivenöl in einem großen Topf erhitzen. Zwiebeln und Tofu darin anbraten.",
+      "Kartoffeln und Möhren zugeben und mitbraten, bis das Gemüse Farbe nimmt.",
+      "Reichlich Tomatenmark (etwa 1/2 Tube) einrühren und kurz anrösten, bevor die Flüssigkeit kommt.",
+      "1 Liter Gemüsebrühe und 1 Liter Wasser angießen, 250 g Tellerlinsen zugeben.",
+      "Etwa 1 Stunde köcheln lassen.",
+      "Erst jetzt würzen: Brühepulver, Balsamico, Salz, Pfeffer, Zucker und gehackte Petersilie nach Geschmack."
+    ]
+  },
+  "en": {
+    "title": "Lentil soup (vegan)",
+    "steps": [
+      "Dice 3 onions, 4 potatoes, 2 carrots and 250 g smoked tofu.",
+      "Heat olive oil in a large pot. Fry the onions and tofu in it.",
+      "Add the potatoes and carrots and fry until the vegetables take on colour.",
+      "Stir in plenty of tomato paste (about 1/2 tube) and fry briefly before adding any liquid.",
+      "Pour in 1 litre vegetable stock and 1 litre water, add 250 g brown lentils.",
+      "Simmer about 1 hour.",
+      "Season only now: stock powder, balsamic vinegar, salt, pepper, sugar and chopped parsley to taste."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 7,
+        "amount": 1000,
+        "unit": "ml"
+      },
+      {
+        "index": 8,
+        "amount": 1000,
+        "unit": "ml"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

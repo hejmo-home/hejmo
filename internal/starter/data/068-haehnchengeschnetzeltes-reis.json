@@ -1,0 +1,167 @@
+{
+  "n": 68,
+  "slug": "haehnchengeschnetzeltes-reis",
+  "category": "Hauptgerichte",
+  "servings": 2,
+  "time_minutes": 30,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.essen-und-trinken.de/rezepte/54601-rzpt-haehnchengeschnetzeltes",
+    "site": "Essen & Trinken",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 150,
+      "unit": "ml",
+      "article_de": "Schlagsahne",
+      "article_en": "Whipping cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Bund",
+      "article_de": "Schnittlauch",
+      "article_en": "Chives",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Hähnchenbrustfilet",
+      "article_en": "Chicken breast fillet",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Bio-Zitronenspalten",
+      "article_en": "Organic lemon wedges",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "1 Prise",
+      "note_en": "1 pinch"
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Hähnchengeschnetzeltes mit Reis",
+    "steps": [
+      "Schlage die 150 ml Sahne halbsteif auf und stelle sie kalt. Schneide ½ Bund Schnittlauch in feine Röllchen.",
+      "Schneide die beiden Hähnchenbrustfilets in schmale Streifen. Würze sie mit Salz und Pfeffer.",
+      "Erhitze 2 EL Öl in einer Pfanne. Brate die Hälfte des Fleischs darin rundum hellbraun an und nimm es heraus. Brate die zweite Hälfte mit den restlichen 2 EL Öl genauso an. Das Fleisch brät man in zwei Portionen, sonst zieht es Wasser und wird nicht braun.",
+      "Gib das ganze Fleisch zurück in die Pfanne, bestäube es mit 1 TL Mehl und gieße ein paar Esslöffel Wasser an, damit der Bratensatz sich löst.",
+      "Lege die 2 Zitronenspalten dazu und lass alles bei milder Hitze 2 Minuten köcheln.",
+      "Nimm die Zitronenspalten heraus. Schmecke kräftig mit Salz, Pfeffer, 2 TL Zitronensaft und 1 Prise Zucker ab.",
+      "Hebe die Sahne vorsichtig unter. Streue den Schnittlauch darüber und serviere das Geschnetzelte sofort."
+    ]
+  },
+  "en": {
+    "title": "Creamy chicken strips with rice",
+    "steps": [
+      "Whip the 150 ml cream until semi-stiff and keep it cold. Cut ½ bunch chives into fine rings.",
+      "Cut the two chicken breast fillets into thin strips. Season them with salt and pepper.",
+      "Heat 2 tbsp oil in a pan. Brown half of the meat all over until light brown and take it out. Brown the second half the same way with the remaining 2 tbsp oil. You brown the meat in two batches, otherwise it releases water and does not brown.",
+      "Return all the meat to the pan, dust it with 1 tsp flour and add a few tablespoons of water so the browned bits loosen.",
+      "Add the 2 lemon wedges and let everything simmer for 2 minutes over gentle heat.",
+      "Take out the lemon wedges. Season sharply with salt, pepper, 2 tsp lemon juice and 1 pinch of sugar.",
+      "Carefully fold in the cream. Sprinkle with the chives and serve the creamy chicken strips at once."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 0.5,
+        "unit": "bunch"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 7,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 9,
+        "amount": 2,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "List title includes rice, but the source recipe has no rice ingredient or quantity; serve with cooked rice, not quantified here. Source rating shows 67 ratings; list says Redaktionsküche. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

@@ -1,0 +1,343 @@
+{
+  "n": 5,
+  "slug": "koenigsberger-klopse",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 85,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Fisch",
+      "en": "Fish"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/1998981323763212/Koenigsberger-Klopse.html",
+    "site": "Chefkoch",
+    "ratings": 2085
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Brötchen",
+      "article_en": "Bread roll",
+      "note_de": "altbacken",
+      "note_en": "stale"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Wasser oder Milch",
+      "article_en": "Water or milk",
+      "note_de": "zum Einweichen",
+      "note_en": "for soaking"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel, groß",
+      "article_en": "Large onion",
+      "note_de": "für die Klopse",
+      "note_en": "for the meatballs"
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Rinderhackfleisch",
+      "article_en": "Ground beef",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Schweinehackfleisch",
+      "article_en": "Ground pork",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Sardellenpaste",
+      "article_en": "Anchovy paste",
+      "note_de": "etwas, optional",
+      "note_en": "a little, optional"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Paniermehl",
+      "article_en": "Breadcrumbs",
+      "note_de": "optional",
+      "note_en": "optional"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel, groß",
+      "article_en": "Large onion",
+      "note_de": "für die Brühe",
+      "note_en": "for the broth"
+    },
+    {
+      "amount": 1,
+      "unit": "Liter",
+      "article_de": "Fleischbrühe, klar",
+      "article_en": "Clear meat broth",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Lorbeerblatt",
+      "article_en": "Bay leaf",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Pimentkörner",
+      "article_en": "Allspice berries",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Pfefferkörner",
+      "article_en": "Peppercorns",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": "nach Bedarf",
+      "note_en": "as needed"
+    },
+    {
+      "amount": 1,
+      "unit": "Glas",
+      "article_de": "Kapern",
+      "article_en": "Capers",
+      "note_de": "kleines Glas",
+      "note_en": "small jar"
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Margarine oder Butter",
+      "article_en": "Margarine or butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Mehl Type 405",
+      "article_en": "Plain flour (Type 405)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 375,
+      "unit": "ml",
+      "article_de": "Brühe",
+      "article_en": "Cooking broth",
+      "note_de": "vom Kochen der Klopse",
+      "note_en": "from cooking the meatballs"
+    },
+    {
+      "amount": 125,
+      "unit": "ml",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": "für die Sauce",
+      "note_en": "for the sauce"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Eigelb",
+      "article_en": "Egg yolk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Petersilie",
+      "article_en": "Parsley",
+      "note_de": "kleines Bund, zum Garnieren",
+      "note_en": "small bunch, for garnish"
+    }
+  ],
+  "de": {
+    "title": "Königsberger Klopse",
+    "steps": [
+      "Das Brötchen in Wasser oder Milch 5-10 Minuten einweichen, danach gut ausdrücken.",
+      "Eine große Zwiebel fein würfeln. Mit Rinder- und Schweinehack, Eiern, dem ausgedrückten Brötchen, Salz, Pfeffer und nach Wunsch etwas Sardellenpaste zu einer gleichmäßigen Masse verkneten. Ist sie zu weich, 2 EL Paniermehl untermischen.",
+      "Aus der Masse etwa 50 g schwere Kugeln rollen.",
+      "Fleischbrühe mit der zweiten, grob geschnittenen Zwiebel, Lorbeerblatt, Piment- und Pfefferkörnern in einen Topf geben, etwas salzen und aufkochen. Dann auf sanftes Köcheln stellen.",
+      "Die Klopse in die Brühe geben und 10 Minuten ziehen lassen. Dann Lorbeer, Piment und Pfefferkörner herausnehmen und die Klopse weitere 10 Minuten ziehen lassen.",
+      "Klopse mit einer Schaumkelle herausnehmen, zugedeckt warm halten. Die Brühe aufbewahren: 375 ml brauchst du für die Sauce. Kapern abtropfen lassen.",
+      "Margarine oder Butter in einem Topf bei mittlerer Hitze schmelzen, das Mehl einrühren und kurz anschwitzen.",
+      "Die Brühe nach und nach dazugießen und dabei ständig mit dem Schneebesen rühren, damit es keine Klümpchen gibt.",
+      "Kapern und Sahne dazugeben. Mit Zitronensaft, Zucker, Salz und Pfeffer süß-sauer abschmecken.",
+      "Das Eigelb in einer Tasse mit 4-5 EL heißer Sauce verrühren, dann in die Sauce rühren. Ab jetzt darf sie nicht mehr kochen, nur heiß sein.",
+      "Klopse in die Sauce legen, kurz erwärmen und mit gehackter Petersilie bestreuen."
+    ]
+  },
+  "en": {
+    "title": "Königsberger Klopse (meatballs in caper sauce)",
+    "steps": [
+      "Soak the bread roll in water or milk for 5-10 minutes, then squeeze it out well.",
+      "Dice one large onion finely. Knead it with beef and pork mince, eggs, the squeezed roll, salt, pepper and, if you like, a little anchovy paste into an even mixture. If it is too soft, work in 2 tbsp breadcrumbs.",
+      "Roll the mixture into balls of about 50 g.",
+      "Put the meat stock into a pot with the second onion, roughly cut, the bay leaf, allspice and peppercorns, salt it lightly and bring to the boil. Then reduce to a gentle simmer.",
+      "Add the meatballs to the stock and let them poach for 10 minutes. Then take out bay, allspice and peppercorns and let the meatballs steep for another 10 minutes.",
+      "Lift the meatballs out with a slotted spoon and keep them warm, covered. Keep the stock: you need 375 ml for the sauce. Drain the capers.",
+      "Melt the margarine or butter in a pot over medium heat, stir in the flour and cook briefly.",
+      "Pour in the stock gradually, whisking constantly so there are no lumps.",
+      "Add capers and cream. Season sweet-sour with lemon juice, sugar, salt and pepper.",
+      "Stir the egg yolk in a cup with 4-5 tbsp of the hot sauce, then stir it into the sauce. From now on it must not boil, only stay hot.",
+      "Put the meatballs into the sauce, warm them through briefly and sprinkle with chopped parsley."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 8,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 10,
+        "amount": 1000,
+        "unit": "ml"
+      },
+      {
+        "index": 11,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 12,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 13,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 15,
+        "amount": 1,
+        "unit": "jar"
+      },
+      {
+        "index": 16,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 17,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 23,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 24,
+        "amount": 1,
+        "unit": "bunch"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

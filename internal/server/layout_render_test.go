@@ -739,6 +739,7 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	// The meal plan with recipes (ticket 281): a week with a recipe for all eight, one for five and an adjusted one,
 	// the child's reading view, the recipe page with the portions of the plan, and the states a form or a script reaches.
 	pages = append(pages, mealRecipePages(t, f, kid)...)
+	pages = append(pages, mealShopPages(t, f)...)
 
 	// The card of recovery codes (#176) is reached only by POST: rendered with
 	// the box's answer, in the wizard, the invitation and My account, and in
@@ -1801,4 +1802,27 @@ func contactPhotoPages(t *testing.T, f *layoutFixture) []layoutPage {
 		pages = append(pages, layoutPage{site: site, path: c.path + c.label, html: html})
 	}
 	return pages
+}
+
+// mealShopPages returns the tick lists of ticket 283 that the crawl does not reach: one meal and the week, and
+// the week page after a send with nothing ticked (the error at the count sentence).
+func mealShopPages(t *testing.T, f *layoutFixture) []layoutPage {
+	t.Helper()
+	parent := siteOf("app", f.box, f.client)
+	var pages []layoutPage
+	for _, path := range []string{"/meals/shop?meal=2026-11-16.dinner", "/meals/shop?week=2026-11-16"} {
+		if status, _ := parent.get(t, path); status != http.StatusOK {
+			t.Fatalf("%s = %d, want 200", path, status)
+		}
+		pages = append(pages, layoutPage{site: parent, path: path})
+	}
+	bad := map[string]string{}
+	for _, lang := range []string{"de", "en"} {
+		r := f.do(http.MethodPost, "/meals/shop", url.Values{"for": {"week:2026-11-16"}, "list": {""}}, map[string]string{"Accept-Language": lang})
+		if r.status != http.StatusUnprocessableEntity {
+			t.Fatalf("a send with no list = %d", r.status)
+		}
+		bad[lang] = r.body
+	}
+	return append(pages, layoutPage{site: parent, path: "/meals/shop?week=2026-11-16#no-list", html: bad})
 }

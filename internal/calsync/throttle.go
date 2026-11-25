@@ -95,8 +95,15 @@ func (s *Service) recordFailure(cal store.SyncedCalendar, msg i18n.Message, caus
 	return msg, nil
 }
 
-// throttled says the server of cal asked Hejmo to wait and the wait is not
-// over: nothing goes to it before then.
+// throttled says the server of cal's connection asked Hejmo to wait and the
+// wait is not over: nothing goes to it before then, from any calendar of the
+// connection, whether a push, a scheduled sync or one the user starts.
 func throttled(cal store.SyncedCalendar, now time.Time) bool {
-	return cal.Sync.LastError.Key == "sync.fail.throttled" && now.Before(cal.Sync.NextAttempt)
+	return now.Before(cal.ThrottledUntil)
+}
+
+// stillThrottled is what a sync gets while the connection waits: the answer
+// without a request to the server and without another entry in the sync log.
+func stillThrottled(cal store.SyncedCalendar, now time.Time) error {
+	return &throttledError{wait: cal.ThrottledUntil.Sub(now), cause: errors.New("the connection is waiting until " + cal.ThrottledUntil.UTC().Format(time.RFC3339))}
 }

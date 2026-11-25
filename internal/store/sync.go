@@ -44,6 +44,9 @@ type SyncedCalendar struct {
 	ConnectionID string
 	URL          string // the feed or calendar address
 	Sync         SyncState
+	// ThrottledUntil: the server of the connection asked to wait until then
+	// (zero: it did not).
+	ThrottledUntil time.Time
 }
 
 // NewICS describes an ICS subscription to create.
@@ -124,17 +127,29 @@ func (db *DB) DeferSync(calendarID string, at time.Time) error {
 	return expectOne(db.sql.Exec(`UPDATE calendar_sync SET next_attempt_at = ? WHERE calendar_id = ?`, stamp(at), calendarID))
 }
 
-// DeferConnection moves the next attempt of every calendar of a connection to
-// at, unless it is later already: the server of the connection asked to wait.
+// DeferConnection records that the server of a connection asked to wait until
+// at: the connection is throttled until then (unless it is later already), and
+// the next attempt of every calendar of it is not before then.
 func (db *DB) DeferConnection(householdID, connectionID string, at time.Time) error {
-	_, err := db.sql.Exec(`UPDATE calendar_sync SET next_attempt_at = ? WHERE next_attempt_at < ?
-		AND calendar_id IN (SELECT id FROM calendars WHERE connection_id = ? AND household_id = ?)`, stamp(at), stamp(at), connectionID, householdID)
-	return err
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`UPDATE calendar_connections SET throttled_until = ? WHERE id = ? AND household_id = ?
+		AND (throttled_until IS NULL OR throttled_until < ?)`, stamp(at), connectionID, householdID, stamp(at)); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`UPDATE calendar_sync SET next_attempt_at = ? WHERE next_attempt_at < ?
+		AND calendar_id IN (SELECT id FROM calendars WHERE connection_id = ? AND household_id = ?)`, stamp(at), stamp(at), connectionID, householdID); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 const syncedSelect = `SELECT c.id, c.household_id, c.name, c.kind, c.color, c.read_only, c.shared, c.waste, c.source_locked, c.source_owner, c.source_name, n.id, COALESCE(c.remote_url, n.url),
 	s.interval_minutes, s.started_at, s.last_attempt_at, s.last_success_at, s.next_attempt_at, s.failures, s.last_error_key, s.last_error_params,
-	s.last_run_events, s.last_run_new, s.last_run_changed, s.last_run_removed,
+	s.last_run_events, s.last_run_new, s.last_run_changed, s.last_run_removed, n.throttled_until,
 	(SELECT COUNT(*) FROM events ev WHERE ev.calendar_id = c.id AND ev.series_id IS NULL)
 	FROM calendars c JOIN calendar_connections n ON n.id = c.connection_id JOIN calendar_sync s ON s.calendar_id = c.id`
 
@@ -169,16 +184,17 @@ func (db *DB) syncedCalendars(query string, args ...any) ([]SyncedCalendar, erro
 	var out []SyncedCalendar
 	for rows.Next() {
 		var c SyncedCalendar
-		var started, attempt, success, next sql.NullString
+		var started, attempt, success, next, throttled sql.NullString
 		var errKey, errParams string
 		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly, &c.Shared, &c.Waste, &c.SourceLocked, &c.SourceOwner, &c.SourceName, &c.ConnectionID, &c.URL,
 			&c.Sync.IntervalMinutes, &started, &attempt, &success, &next, &c.Sync.Failures, &errKey, &errParams,
-			&c.Sync.LastRun.Events, &c.Sync.LastRun.New, &c.Sync.LastRun.Changed, &c.Sync.LastRun.Removed, &c.Sync.EventCount); err != nil {
+			&c.Sync.LastRun.Events, &c.Sync.LastRun.New, &c.Sync.LastRun.Changed, &c.Sync.LastRun.Removed, &throttled, &c.Sync.EventCount); err != nil {
 			rows.Close()
 			return nil, err
 		}
 		c.Sync.LastError = unpackMessage(errKey, errParams)
 		c.Sync.StartedAt, c.Sync.LastAttempt, c.Sync.LastSuccess, c.Sync.NextAttempt = parseStamp(started), parseStamp(attempt), parseStamp(success), parseStamp(next)
+		c.ThrottledUntil = parseStamp(throttled)
 		out = append(out, c)
 	}
 	rows.Close()

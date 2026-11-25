@@ -292,3 +292,95 @@ func TestOutlookPushKeepsChangesQueuedWhileThrottled(t *testing.T) {
 		t.Fatalf("pending = %d, want all 3 kept", len(pend))
 	}
 }
+
+// queueOn queues one change on cal, as an edit in the box does.
+func queueOn(t *testing.T, db *store.DB, householdID, calendarID string) {
+	t.Helper()
+	start := time.Date(2026, 11, 24, 9, 0, 0, 0, berlinZone)
+	if _, err := db.CreateEvent(householdID, calendar.Event{CalendarID: calendarID, Title: "Sibling event", Start: start, End: start.Add(time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCalDAVSiblingPushAndSyncSendNothingWhileTheConnectionWaits(t *testing.T) {
+	fx := newDAVFixture(t, caldavtest.Password)
+	fx.threeQueued(t)
+	sibling := fx.srv.MakeCalendar(t, "sibling", "Sibling")
+	cal2, err := fx.db.AddCalDAVCalendar(fx.h.ID, fx.cal.ConnectionID, store.NewCalDAVCalendar{Name: "Sibling", RemoteURL: sibling, IntervalMinutes: 5, Now: fx.clock})
+	if err != nil {
+		t.Fatal(err)
+	}
+	queueOn(t, fx.db, fx.h.ID, cal2.ID)
+	fx.tamper.RefuseWritesWait(429, "1800")
+	if err := fx.svc.Push(context.Background(), fx.h.ID, fx.cal.ID); err == nil {
+		t.Fatal("push to a throttling server succeeded")
+	}
+	requests := func() int {
+		return fx.tamper.Count("PUT") + fx.tamper.Count("DELETE") + fx.tamper.Count("REPORT") + fx.tamper.Count("PROPFIND")
+	}
+	before := requests()
+
+	fx.clock = fx.clock.Add(time.Minute)
+	if err := fx.svc.Push(context.Background(), fx.h.ID, cal2.ID); err != nil {
+		t.Fatalf("push of the sibling during the wait: %v", err)
+	}
+	// A sync the user starts waits as well, on either calendar.
+	for _, id := range []string{cal2.ID, fx.cal.ID} {
+		if err := fx.svc.Sync(context.Background(), fx.h.ID, id); err == nil {
+			t.Fatal("manual sync during the wait reported success")
+		}
+	}
+	if n := requests() - before; n != 0 {
+		t.Fatalf("%d requests reached the server during its wait", n)
+	}
+	if n := len(failures(t, fx.db, fx.h.ID)); n != 1 {
+		t.Fatalf("%d failures logged, want 1", n)
+	}
+	if pend, _ := fx.db.PendingObjects(cal2.ID); len(pend) != 1 {
+		t.Fatalf("sibling pending = %d, want 1 kept", len(pend))
+	}
+
+	fx.tamper.RefuseWritesWait(0, "")
+	fx.clock = fx.clock.Add(30 * time.Minute)
+	if err := fx.svc.Push(context.Background(), fx.h.ID, cal2.ID); err != nil {
+		t.Fatalf("push of the sibling after the wait: %v", err)
+	}
+	if pend, _ := fx.db.PendingObjects(cal2.ID); len(pend) != 0 {
+		t.Fatalf("sibling pending = %d after the wait", len(pend))
+	}
+}
+
+func TestOutlookSiblingPushAndSyncSendNothingWhileTheConnectionWaits(t *testing.T) {
+	fx := newOutlookFx(t)
+	fx.fake.AddCalendar("cal-2", "Zweiter")
+	cal2, err := fx.db.AddOutlookCalendar(fx.h.ID, fx.conn.ID, store.NewOutlookCalendar{Name: "Zweiter", RemoteID: "cal-2", IntervalMinutes: 5, Now: fx.clock})
+	if err != nil {
+		t.Fatal(err)
+	}
+	fx.threeQueued(t)
+	queueOn(t, fx.db, fx.h.ID, cal2.ID)
+	fx.fake.FailWrites, fx.fake.RetryAfter = 429, "1800"
+	if err := fx.svc.Push(context.Background(), fx.h.ID, fx.cal.ID); err == nil {
+		t.Fatal("push to a throttling server succeeded")
+	}
+	before := len(fx.fake.Requests)
+
+	fx.clock = fx.clock.Add(time.Minute)
+	if err := fx.svc.Push(context.Background(), fx.h.ID, cal2.ID); err != nil {
+		t.Fatalf("push of the sibling during the wait: %v", err)
+	}
+	for _, id := range []string{cal2.ID, fx.cal.ID} {
+		if err := fx.svc.Sync(context.Background(), fx.h.ID, id); err == nil {
+			t.Fatal("manual sync during the wait reported success")
+		}
+	}
+	if n := len(fx.fake.Requests) - before; n != 0 {
+		t.Fatalf("%d requests reached Graph during its wait: %v", n, fx.fake.Requests[before:])
+	}
+	if n := len(failures(t, fx.db, fx.h.ID)); n != 1 {
+		t.Fatalf("%d failures logged, want 1", n)
+	}
+	if pend, _ := fx.db.PendingObjects(cal2.ID); len(pend) != 1 {
+		t.Fatalf("sibling pending = %d, want 1 kept", len(pend))
+	}
+}

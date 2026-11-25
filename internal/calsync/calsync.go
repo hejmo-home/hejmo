@@ -276,6 +276,10 @@ func (s *Service) sync(ctx context.Context, householdID, calendarID string, run 
 		run.result, run.failure = "paused", "sync.paused"
 		return err
 	}
+	if throttled(cal, at) {
+		run.result, run.failure = "throttled", "sync.fail.throttled"
+		return stillThrottled(cal, at)
+	}
 	fail := func(msg i18n.Message, cause error) error {
 		msg, err := s.recordFailure(cal, msg, cause, at)
 		run.result, run.failure = "failed", msg.Key

@@ -191,3 +191,48 @@ func TestSyncedEventsMayHaveNoTitle(t *testing.T) {
 		t.Fatalf("titles = %q", got)
 	}
 }
+
+func TestDeferConnectionKeepsALaterAttemptAndRemembersTheLongestWait(t *testing.T) {
+	f := newDAVFixture(t)
+	next := func(c store.SyncedCalendar) time.Time {
+		got, err := f.db.SyncedCalendar(f.h.ID, c.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return got.Sync.NextAttempt
+	}
+	until := func(c store.SyncedCalendar) time.Time {
+		got, _ := f.db.SyncedCalendar(f.h.ID, c.ID)
+		return got.ThrottledUntil
+	}
+	if err := f.db.DeferConnection(f.h.ID, f.conn.ID, t0.Add(30*time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []store.SyncedCalendar{f.a, f.b} {
+		if !next(c).Equal(t0.Add(30*time.Minute)) || !until(c).Equal(t0.Add(30*time.Minute)) {
+			t.Fatalf("next %v, throttled until %v, want both %v", next(c), until(c), t0.Add(30*time.Minute))
+		}
+	}
+
+	// A shorter wait changes nothing; a later attempt of one calendar stays.
+	if err := f.db.DeferSync(f.a.ID, t0.Add(2*time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.db.DeferConnection(f.h.ID, f.conn.ID, t0.Add(10*time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if !next(f.a).Equal(t0.Add(2*time.Hour)) || !next(f.b).Equal(t0.Add(30*time.Minute)) {
+		t.Fatalf("next attempts %v and %v, want 2h and 30m after t0", next(f.a), next(f.b))
+	}
+	if !until(f.a).Equal(t0.Add(30 * time.Minute)) {
+		t.Fatalf("throttled until %v, want the longer wait", until(f.a))
+	}
+
+	// A longer wait moves the earlier calendar and the marker, not the later one.
+	if err := f.db.DeferConnection(f.h.ID, f.conn.ID, t0.Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if !next(f.a).Equal(t0.Add(2*time.Hour)) || !next(f.b).Equal(t0.Add(time.Hour)) || !until(f.b).Equal(t0.Add(time.Hour)) {
+		t.Fatalf("next %v and %v, until %v", next(f.a), next(f.b), until(f.b))
+	}
+}

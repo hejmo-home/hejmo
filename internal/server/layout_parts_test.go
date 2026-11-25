@@ -1,6 +1,12 @@
 package server_test
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+)
 
 // The rendered layout check is split in two tests, one per CI shard with Chrome
 // (ticket 347). A page lands in a part by a hash of its name, never by timing or
@@ -48,5 +54,36 @@ func TestLayoutPartsCoverEveryPageOnce(t *testing.T) {
 		if n < len(pages)/4 {
 			t.Errorf("part %d has %d of %d pages: the hash does not spread them", part, n, len(pages))
 		}
+	}
+}
+
+func TestLayoutPartSummaryShowsSlowestCasesAndHeadroom(t *testing.T) {
+	t.Parallel()
+	took := []layoutTook{{"de/a", time.Second}, {"en/b", 5 * time.Second}, {"de/c", 3 * time.Second}}
+	got := layoutPartSummary(1, took, layoutBudget/2)
+	for _, want := range []string{"layout part 2: 3 cases in 7m30s of 15m0s budget (50 % headroom)", "slow case: en/b took 5s", "slow case: de/a took 1s"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("summary lacks %q:\n%s", want, got)
+		}
+	}
+	if strings.Index(got, "en/b") > strings.Index(got, "de/c") {
+		t.Errorf("slowest case not first:\n%s", got)
+	}
+	if took[0].name != "de/a" {
+		t.Error("the summary reordered the caller's slice")
+	}
+}
+
+func TestLayoutSummaryIsAppendedToTheJobSummaryFile(t *testing.T) {
+	t.Parallel()
+	path := filepath.Join(t.TempDir(), "summary.md")
+	for _, text := range []string{"one\n", "two\n"} {
+		if err := appendLayoutSummary(path, text); err != nil {
+			t.Fatal(err)
+		}
+	}
+	b, _ := os.ReadFile(path)
+	if want := "```text\none\n```\n```text\ntwo\n```\n"; string(b) != want {
+		t.Errorf("got %q, want %q", b, want)
 	}
 }

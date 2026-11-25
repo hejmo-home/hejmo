@@ -1235,9 +1235,7 @@ func renderedLayout(t *testing.T, part int) {
 	}
 
 	names, _ := json.Marshal(layoutNames)
-	var mu sync.Mutex
-	seen := map[int]bool{} // the known problems that occurred
-	var took []layoutTook
+	run := &layoutRun{shots: shots, names: names, seen: map[int]bool{}}
 	// One browser per language, side by side. The group ends when both are done.
 	t.Run("lang", func(t *testing.T) {
 		for _, lang := range []string{"de", "en"} {
@@ -1253,105 +1251,25 @@ func renderedLayout(t *testing.T, part int) {
 						t.Run(name, func(t *testing.T) {
 							caseStart := time.Now()
 							defer func() {
-								mu.Lock()
-								took = append(took, layoutTook{lang + "/" + name, time.Since(caseStart)})
-								mu.Unlock()
+								run.mu.Lock()
+								run.took = append(run.took, layoutTook{lang + "/" + name, time.Since(caseStart)})
+								run.mu.Unlock()
 							}()
-							failing := false
-							baseURL, _ := url.Parse(page.site.chromeBase())
-							cookies := append([]*http.Cookie{{Name: langCookieForTest, Value: lang}}, page.site.cookies...)
-							err := func() error {
-								if _, err := chromedp.Call(ctx, network.ClearBrowserCookies, cdp.Empty{}); err != nil {
-									return err
-								}
-								for _, c := range cookies {
-									if _, err := chromedp.Call(ctx, network.SetCookie, network.SetCookieParams{Name: c.Name, Value: c.Value, URL: baseURL.String()}); err != nil {
-										return err
-									}
-								}
-								// Displays and personal devices follow the browser's language, the web pages the cookie.
-								if _, err := chromedp.Call(ctx, network.SetExtraHTTPHeaders, network.SetExtraHTTPHeadersParams{Headers: network.Headers{"Accept-Language": lang}}); err != nil {
-									return err
-								}
-								if _, err := chromedp.Call(ctx, emulation.SetDeviceMetricsOverride, emulation.SetDeviceMetricsOverrideParams{Width: int64(vp.w), Height: int64(vp.h), DeviceScaleFactor: 1}); err != nil {
-									return err
-								}
-								if page.html == nil {
-									return chromedp.Do(ctx, chromedp.Navigate(page.site.chromeBase()+page.path))
-								}
-								// A page only a form reaches: open the box, then write the answer into the document.
-								if err := chromedp.Do(ctx, chromedp.Navigate(page.site.chromeBase()+"/healthz")); err != nil {
-									return err
-								}
-								markup, _ := json.Marshal(page.html[lang])
-								_, err := chromedp.Run(ctx, chromedp.Evaluate[string](fmt.Sprintf(`(async () => {
-							await new Promise(r => setTimeout(r, 0));
-							document.open(); document.write(%s); document.close();
-							while (document.readyState !== "complete") await new Promise(r => setTimeout(r, 20));
-							return "ok";
-						})()`, markup), chromedp.EvalAwaitPromise))
-								return err
-							}()
-							if err != nil {
-								t.Fatalf("open: %v", err)
-							}
-							if got, err := chromedp.Run(ctx, chromedp.Evaluate[string](`document.documentElement.lang`)); err != nil || got != lang {
-								t.Fatalf("%s: the page is in %q (%v), not in %q: the check would measure the wrong language", page.path, got, err, lang)
-							}
-							for _, theme := range []string{"light", "bw"} {
-								script := fmt.Sprintf(`(async () => {
-							document.documentElement.setAttribute("data-theme", %q);
-							%s
-							return JSON.stringify(await probe(%d, %s));
-						})()`, theme, layoutProbeJS, vp.w, names)
-								got, err := chromedp.Run(ctx, chromedp.Evaluate[string](script, chromedp.EvalAwaitPromise))
-								if err != nil {
-									t.Fatalf("measure: %v", err)
-								}
-								// display.js sets data-theme to the server's on a state update (every 30 s);
-								// had one come in during the measurement, it measured the wrong theme.
-								if now, err := chromedp.Run(ctx, chromedp.Evaluate[string](`document.documentElement.getAttribute("data-theme")`)); err != nil || now != theme {
-									t.Fatalf("the page changed its theme to %q (%v) while it was measured as %q", now, err, theme)
-								}
-								var probs []layoutProblem
-								if err := json.Unmarshal([]byte(got), &probs); err != nil {
-									t.Fatalf("probe result %q: %v", got, err)
-								}
-								for _, p := range probs {
-									if i := slices.IndexFunc(knownLayoutProblems, func(k knownLayoutProblem) bool { return k.covers(page.path, vp.w, p) }); i >= 0 {
-										mu.Lock()
-										seen[i] = true
-										mu.Unlock()
-										t.Logf("known problem (#%d): %s %s, width %d, theme %s, language %s: %s: %s (%s)", knownLayoutProblems[i].issue, page.site.name, page.path, vp.w, theme, lang, p.Kind, p.El, p.Detail)
-										continue
-									}
-									failing = true
-									t.Errorf("%s %s, width %d, theme %s, language %s: %s: %s (%s)", page.site.name, page.path, vp.w, theme, lang, p.Kind, p.El, p.Detail)
-								}
-								if failing {
-									failing = false
-									if png, err := chromedp.Run(ctx, chromedp.FullScreenshot(90)); err == nil {
-										file := filepath.Join(shots, strings.NewReplacer("/", "_", "?", "_", "=", "_", "&", "_").Replace(name)+"-"+theme+".png")
-										if err := os.WriteFile(file, png, 0o644); err == nil {
-											t.Logf("screenshot: %s", file)
-										}
-									}
-								}
-							}
+							run.checkCase(t, ctx, page, vp, lang, name)
 						})
 					}
 				}
 			})
 		}
 	})
-	logSlowest(t, took, time.Since(started))
+	reportLayoutPart(t, part, run.took, time.Since(started))
 	// A known problem that no longer occurs is fixed: its entry goes. Not checked
 	// when a subtest was picked with -run, which sees only some of the pages.
-	if run := flag.Lookup("test.run"); run == nil || !strings.Contains(run.Value.String(), "/") {
+	if testRun := flag.Lookup("test.run"); testRun == nil || !strings.Contains(testRun.Value.String(), "/") {
 		for i, k := range knownLayoutProblems {
 			// An entry of a page of the other part occurs there.
 			here := slices.ContainsFunc(pages, func(p layoutPage) bool { return k.path == pageShape(p.path) })
-			if here && !seen[i] && !k.platform {
+			if here && !run.seen[i] && !k.platform {
 				t.Errorf("known layout problem #%d (%s, %s, width %d) did not occur: remove it from knownLayoutProblems", k.issue, k.path, k.kind, k.width)
 			}
 		}
@@ -1364,16 +1282,141 @@ type layoutTook struct {
 	d    time.Duration
 }
 
-// logSlowest logs the five slowest cases and how much of its budget the part
-// used, so a part that grows towards its budget shows in the log before it fails.
-// The two browsers run side by side, so the budget is compared with the wall time.
-func logSlowest(t *testing.T, took []layoutTook, total time.Duration) {
-	t.Helper()
+// layoutPartSummary is the five slowest cases of a part and how much of its
+// budget the part used, so a part that grows towards its budget shows before it
+// fails. The two browsers run side by side, so the budget is compared with the wall time.
+func layoutPartSummary(part int, took []layoutTook, total time.Duration) string {
+	took = slices.Clone(took)
 	slices.SortFunc(took, func(a, b layoutTook) int { return cmp.Compare(b.d, a.d) })
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "layout part %d: %d cases in %s of %s budget (%.0f %% headroom)\n", part+1, len(took), total.Round(time.Second), layoutBudget, 100*(1-float64(total)/float64(layoutBudget)))
 	for _, c := range took[:min(5, len(took))] {
-		t.Logf("slow case: %s took %s", c.name, c.d.Round(time.Millisecond))
+		fmt.Fprintf(&sb, "layout part %d slow case: %s took %s\n", part+1, c.name, c.d.Round(time.Millisecond))
 	}
-	t.Logf("layout part: %d cases in %s of %s budget (%.0f %% headroom)", len(took), total.Round(time.Second), layoutBudget, 100*(1-float64(total)/float64(layoutBudget)))
+	return sb.String()
+}
+
+// reportLayoutPart makes the summary visible on a green run: go test prints
+// t.Logf only for a failing test and drops the output of a passing package, so
+// CI gets it in the job summary ($GITHUB_STEP_SUMMARY). It is logged as well,
+// for -v and for a failing run.
+func reportLayoutPart(t *testing.T, part int, took []layoutTook, total time.Duration) {
+	t.Helper()
+	text := layoutPartSummary(part, took, total)
+	t.Log("\n" + text)
+	if path := os.Getenv("GITHUB_STEP_SUMMARY"); path != "" {
+		if err := appendLayoutSummary(path, text); err != nil {
+			t.Errorf("writing the layout summary: %v", err)
+		}
+	}
+}
+
+// appendLayoutSummary appends the summary, as a code block, to a job summary file.
+func appendLayoutSummary(path, text string) error {
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintf(f, "```text\n%s```\n", text)
+	if cerr := f.Close(); err == nil {
+		err = cerr
+	}
+	return err
+}
+
+// layoutRun is what the cases of one part share: where screenshots go, the
+// language-neutral names the probe needs, the known problems seen and the case times.
+type layoutRun struct {
+	shots string
+	names []byte
+	mu    sync.Mutex
+	seen  map[int]bool // the known problems that occurred
+	took  []layoutTook
+}
+
+// checkCase opens one page in one language and size and probes it in both themes.
+func (r *layoutRun) checkCase(t *testing.T, ctx context.Context, page layoutPage, vp viewport, lang, name string) {
+	failing := false
+	baseURL, _ := url.Parse(page.site.chromeBase())
+	cookies := append([]*http.Cookie{{Name: langCookieForTest, Value: lang}}, page.site.cookies...)
+	err := func() error {
+		if _, err := chromedp.Call(ctx, network.ClearBrowserCookies, cdp.Empty{}); err != nil {
+			return err
+		}
+		for _, c := range cookies {
+			if _, err := chromedp.Call(ctx, network.SetCookie, network.SetCookieParams{Name: c.Name, Value: c.Value, URL: baseURL.String()}); err != nil {
+				return err
+			}
+		}
+		// Displays and personal devices follow the browser's language, the web pages the cookie.
+		if _, err := chromedp.Call(ctx, network.SetExtraHTTPHeaders, network.SetExtraHTTPHeadersParams{Headers: network.Headers{"Accept-Language": lang}}); err != nil {
+			return err
+		}
+		if _, err := chromedp.Call(ctx, emulation.SetDeviceMetricsOverride, emulation.SetDeviceMetricsOverrideParams{Width: int64(vp.w), Height: int64(vp.h), DeviceScaleFactor: 1}); err != nil {
+			return err
+		}
+		if page.html == nil {
+			return chromedp.Do(ctx, chromedp.Navigate(page.site.chromeBase()+page.path))
+		}
+		// A page only a form reaches: open the box, then write the answer into the document.
+		if err := chromedp.Do(ctx, chromedp.Navigate(page.site.chromeBase()+"/healthz")); err != nil {
+			return err
+		}
+		markup, _ := json.Marshal(page.html[lang])
+		_, err := chromedp.Run(ctx, chromedp.Evaluate[string](fmt.Sprintf(`(async () => {
+	await new Promise(r => setTimeout(r, 0));
+	document.open(); document.write(%s); document.close();
+	while (document.readyState !== "complete") await new Promise(r => setTimeout(r, 20));
+	return "ok";
+						})()`, markup), chromedp.EvalAwaitPromise))
+		return err
+	}()
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if got, err := chromedp.Run(ctx, chromedp.Evaluate[string](`document.documentElement.lang`)); err != nil || got != lang {
+		t.Fatalf("%s: the page is in %q (%v), not in %q: the check would measure the wrong language", page.path, got, err, lang)
+	}
+	for _, theme := range []string{"light", "bw"} {
+		script := fmt.Sprintf(`(async () => {
+	document.documentElement.setAttribute("data-theme", %q);
+	%s
+	return JSON.stringify(await probe(%d, %s));
+						})()`, theme, layoutProbeJS, vp.w, r.names)
+		got, err := chromedp.Run(ctx, chromedp.Evaluate[string](script, chromedp.EvalAwaitPromise))
+		if err != nil {
+			t.Fatalf("measure: %v", err)
+		}
+		// display.js sets data-theme to the server's on a state update (every 30 s);
+		// had one come in during the measurement, it measured the wrong theme.
+		if now, err := chromedp.Run(ctx, chromedp.Evaluate[string](`document.documentElement.getAttribute("data-theme")`)); err != nil || now != theme {
+			t.Fatalf("the page changed its theme to %q (%v) while it was measured as %q", now, err, theme)
+		}
+		var probs []layoutProblem
+		if err := json.Unmarshal([]byte(got), &probs); err != nil {
+			t.Fatalf("probe result %q: %v", got, err)
+		}
+		for _, p := range probs {
+			if i := slices.IndexFunc(knownLayoutProblems, func(k knownLayoutProblem) bool { return k.covers(page.path, vp.w, p) }); i >= 0 {
+				r.mu.Lock()
+				r.seen[i] = true
+				r.mu.Unlock()
+				t.Logf("known problem (#%d): %s %s, width %d, theme %s, language %s: %s: %s (%s)", knownLayoutProblems[i].issue, page.site.name, page.path, vp.w, theme, lang, p.Kind, p.El, p.Detail)
+				continue
+			}
+			failing = true
+			t.Errorf("%s %s, width %d, theme %s, language %s: %s: %s (%s)", page.site.name, page.path, vp.w, theme, lang, p.Kind, p.El, p.Detail)
+		}
+		if failing {
+			failing = false
+			if png, err := chromedp.Run(ctx, chromedp.FullScreenshot(90)); err == nil {
+				file := filepath.Join(r.shots, strings.NewReplacer("/", "_", "?", "_", "=", "_", "&", "_").Replace(lang+"_"+name)+"-"+theme+".png")
+				if err := os.WriteFile(file, png, 0o644); err == nil {
+					t.Logf("screenshot: %s", file)
+				}
+			}
+		}
+	}
 }
 
 // langCookieForTest is the language cookie of the box (language.go).

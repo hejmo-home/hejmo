@@ -80,6 +80,8 @@ type extraField struct {
 	Value  string              `json:"v,omitempty"`
 	Raw    string              `json:"r,omitempty"`
 	First  bool                `json:"a,omitempty"`
+	// For is, on a kept N, the full name it belongs to: N goes back only while the name is that one.
+	For string `json:"f,omitempty"`
 }
 
 // rawKey is the key of a placeholder line in a card: its value is a kept line, base64 so the encoder leaves it
@@ -127,12 +129,17 @@ func Encode(c store.Contact, photo []byte, v Version) vcard.Card {
 		full = c.HejmoName
 	}
 	card.SetValue(vcard.FieldFormattedName, full)
-	card.SetValue(vcard.FieldName, structuredName(full))
 	card.SetValue(vcard.FieldNickname, c.HejmoName)
 	hasAddress := c.Street != "" || c.City != "" || c.Postcode != "" || c.Country != ""
 	var extras []extraField
 	if c.Extra != "" {
 		_ = json.Unmarshal([]byte(c.Extra), &extras)
+	}
+	// Hejmo does not store N: the phone's own goes back while the full name is the one it came with, else N is
+	// made from the full name.
+	keptN := slices.IndexFunc(extras, func(e extraField) bool { return e.Key == "N" && e.Raw != "" && e.For == strings.TrimSpace(full) })
+	if keptN < 0 {
+		card.SetValue(vcard.FieldName, structuredName(full))
 	}
 	firstAddress := slices.IndexFunc(extras, func(e extraField) bool { return e.First })
 	if hasAddress && firstAddress < 0 {
@@ -197,8 +204,10 @@ func Encode(c store.Contact, photo []byte, v Version) vcard.Card {
 	if firstAddress >= 0 && !hasAddress {
 		dropGroup = extras[firstAddress].Group
 	}
-	for _, e := range extras {
+	for i, e := range extras {
 		switch {
+		case e.Key == "N" && i != keptN:
+			continue // a stale N
 		case e.First && !hasAddress:
 			continue
 		case dropGroup != "" && e.Group == dropGroup:
@@ -481,12 +490,22 @@ func DecodeRaw(card vcard.Card, raw []byte) Incoming {
 		in.Org = firstPart(f.Value)
 	}
 	groups := map[string]bool{} // groups of lines Hejmo models: their labels go with them
+	overflow := map[string]map[int]bool{}
 	add := func(list *[]contact.Line, key string, email bool) {
-		for _, f := range card[key] {
+		for n, f := range card[key] {
+			l, ok := lineOf(f, labels, email)
+			if ok && len(*list) >= contact.MaxLines && !hasLine(*list, l) {
+				// Over the limit of Hejmo: the line stays on the card as it came, with its label.
+				if overflow[key] == nil {
+					overflow[key] = map[int]bool{}
+				}
+				overflow[key][n] = true
+				continue
+			}
 			if f.Group != "" {
 				groups[f.Group] = true
 			}
-			if l, ok := lineOf(f, labels, email); ok && !hasLine(*list, l) {
+			if ok && !hasLine(*list, l) {
 				*list = append(*list, l)
 			}
 		}
@@ -515,7 +534,7 @@ func DecodeRaw(card vcard.Card, raw []byte) Incoming {
 	if f := card.Get(vcard.FieldPhoto); f != nil {
 		in.Photo, in.PhotoLink = photoOf(f)
 	}
-	in.Extra = extraOf(rawLinesOf(card, raw), groups)
+	in.Extra = extraOf(rawLinesOf(card, raw), groups, in.Full, overflow)
 	return in
 }
 
@@ -557,7 +576,10 @@ func photoOf(f *vcard.Field) (data []byte, link bool) {
 }
 
 // rawLine is a line of a card as it was written: group, key and everything after the key.
-type rawLine struct{ Group, Key, Rest string }
+type rawLine struct {
+	Group, Key, Rest string
+	Nth              int // the place among the lines of the same key
+}
 
 // rawLinesOf reads the lines of the first card in raw, unfolded. Without raw the card is written out first.
 func rawLinesOf(card vcard.Card, raw []byte) []rawLine {
@@ -612,8 +634,17 @@ func rawLinesOf(card vcard.Card, raw []byte) []rawLine {
 
 // extraOf keeps every line Hejmo does not model as it was written, groups together (a web address with its
 // label) under group names of their own so they cannot meet the ones written for numbers.
-func extraOf(lines []rawLine, modeledGroups map[string]bool) string {
+//
+// N is kept with the full name it came with (fn). Of the numbers and addresses only those over the limit of ten
+// (overflow, by their place among the lines of their key) are kept: the others are modeled.
+func extraOf(lines []rawLine, modeledGroups map[string]bool, fn string, overflow map[string]map[int]bool) string {
 	sorted := slices.Clone(lines)
+	seen := map[string]int{}
+	for i := range sorted {
+		uk := strings.ToUpper(sorted[i].Key)
+		sorted[i].Nth = seen[uk]
+		seen[uk]++
+	}
 	sort.SliceStable(sorted, func(i, j int) bool { return strings.ToUpper(sorted[i].Key) < strings.ToUpper(sorted[j].Key) })
 	renamed := map[string]string{}
 	var out []extraField
@@ -622,7 +653,12 @@ func extraOf(lines []rawLine, modeledGroups map[string]bool) string {
 		uk := strings.ToUpper(l.Key)
 		first := false
 		switch {
-		case modeled[uk]:
+		case uk == "N" && l.Rest == ":"+structuredName(fn):
+			continue // what Hejmo would write itself
+		case uk == "N":
+			out = append(out, extraField{Key: l.Key, Raw: l.Rest, For: fn})
+			continue
+		case modeled[uk] && !overflow[uk][l.Nth]:
 			continue
 		case uk == vcard.FieldAddress:
 			first = addresses == 0

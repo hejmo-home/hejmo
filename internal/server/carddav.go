@@ -105,7 +105,8 @@ func (s *server) cardAuth(next http.Handler) http.Handler {
 }
 
 // cardWriter holds an answer back to write the lines a phone saved into the cards in it, as they were saved
-// (contactsync.ExpandRaw): go-vcard's encoder cannot write them back unchanged.
+// (contactsync.ExpandRaw): go-vcard's encoder cannot write them back unchanged. The whole answer is held in memory,
+// photos of an addressbook-multiget included: fine for a household, a cap is to be considered on the Pi.
 type cardWriter struct {
 	http.ResponseWriter
 	buf    bytes.Buffer

@@ -2,6 +2,7 @@ package contactsync_test
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -268,5 +269,75 @@ func TestWhatAPhoneSavedComesBackAsReceived(t *testing.T) {
 	cur.Street, cur.City, cur.Postcode, cur.Country = "", "", "", ""
 	if out := lines(t, cur, contactsync.V3); strings.Contains(out, "ADR") || strings.Contains(out, "Zuhause") {
 		t.Errorf("no address, no label:\n%s", out)
+	}
+}
+
+// Numbers and e-mail addresses over the limit of ten stay on the card: Hejmo keeps them raw and sends them
+// back, so the phone does not delete them on its next sync (CODING_STANDARDS 2).
+func TestLinesOverTheLimitComeBackAsReceived(t *testing.T) {
+	t.Parallel()
+	var b strings.Builder
+	b.WriteString("BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Gerda Müller\r\nN:Müller;Gerda;;;\r\n")
+	for i := 1; i <= 12; i++ {
+		b.WriteString("TEL;TYPE=CELL:+49 170 000" + strconv.Itoa(1000+i) + "\r\n")
+	}
+	for i := 1; i <= 11; i++ {
+		b.WriteString("EMAIL;TYPE=INTERNET;TYPE=WORK:m" + strconv.Itoa(i) + "@example.org\r\n")
+	}
+	b.WriteString("item1.TEL:+49 89 99999\r\nitem1.X-ABLabel:Büro\r\nEND:VCARD\r\n")
+	text := b.String()
+	in := contactsync.DecodeRaw(decode(t, text), []byte(text))
+	cur := store.Contact{ID: "c1", HejmoName: "Gerda", FullName: "Gerda Müller", Extra: in.Extra}
+	got, _ := contactsync.Apply(nil, in, nil)
+	cur.Numbers, cur.Emails = got.Numbers, got.Emails
+	if len(cur.Numbers) != contact.MaxLines || len(cur.Emails) != contact.MaxLines {
+		t.Fatalf("Hejmo models %d numbers and %d addresses", len(cur.Numbers), len(cur.Emails))
+	}
+	out := lines(t, cur, contactsync.V3)
+	for i := 1; i <= 12; i++ {
+		if want := "+49 170 000" + strconv.Itoa(1000+i) + "\r\n"; !strings.Contains(out, want) {
+			t.Errorf("number %d is lost:\n%s", i, out)
+		}
+	}
+	for i := 1; i <= 11; i++ {
+		if want := "m" + strconv.Itoa(i) + "@example.org\r\n"; !strings.Contains(out, want) {
+			t.Errorf("address %d is lost:\n%s", i, out)
+		}
+	}
+	m := regexp.MustCompile(`(?m)^(\w+)\.TEL:\+49 89 99999\r$`).FindStringSubmatch(out)
+	if m == nil || !strings.Contains(out, m[1]+".X-ABLabel:Büro\r\n") {
+		t.Errorf("a number over the limit keeps its label:\n%s", out)
+	}
+	if _, changed := contactsync.Apply(&cur, in, nil); changed {
+		t.Error("what the box sent, sent back, is no change")
+	}
+	// Decoding what the box sent gives the same again: nothing grows or shrinks.
+	again := contactsync.DecodeRaw(decode(t, out), []byte(out))
+	if again.Extra != in.Extra {
+		t.Errorf("the kept lines change on a second round:\n%s\n%s", in.Extra, again.Extra)
+	}
+}
+
+// Hejmo does not store N: the phone's own N goes back while the full name is unchanged, and is made from the
+// full name only when that was changed in Hejmo (CODING_STANDARDS 2).
+func TestStructuredNameComesBackAsReceived(t *testing.T) {
+	t.Parallel()
+	for name, c := range map[string]struct{ fn, n string }{
+		"prefix and middle name": {"Dr. Hans von Berg", "von Berg;Hans;Peter;Dr.;"},
+		"one word":               {"Max", ";Max;;;"},
+	} {
+		text := "BEGIN:VCARD\r\nVERSION:3.0\r\nFN:" + c.fn + "\r\nN:" + c.n + "\r\nEND:VCARD\r\n"
+		in := contactsync.DecodeRaw(decode(t, text), []byte(text))
+		cur := store.Contact{ID: "c1", HejmoName: "Hans", FullName: c.fn, Extra: in.Extra}
+		if out := lines(t, cur, contactsync.V3); !strings.Contains(out, "N:"+c.n+"\r\n") || strings.Count(out, "\nN:") != 1 {
+			t.Errorf("%s: N comes back as received:\n%s", name, out)
+		}
+		if _, changed := contactsync.Apply(&cur, in, nil); changed {
+			t.Errorf("%s: what the box sent, sent back, is no change", name)
+		}
+		cur.FullName = "Anna Berg"
+		if out := lines(t, cur, contactsync.V3); !strings.Contains(out, "N:Berg;Anna;;;\r\n") || strings.Count(out, "\nN:") != 1 {
+			t.Errorf("%s: a name changed in Hejmo makes a new N:\n%s", name, out)
+		}
 	}
 }

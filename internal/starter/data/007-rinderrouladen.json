@@ -1,0 +1,240 @@
+{
+  "n": 7,
+  "slug": "rinderrouladen",
+  "category": "Hauptgerichte",
+  "servings": 8,
+  "time_minutes": 180,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Sellerie",
+      "en": "Celery"
+    },
+    {
+      "de": "Senf",
+      "en": "Mustard"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/2133281343053838/Rinderrouladen-klassisch.html",
+    "site": "Chefkoch",
+    "ratings": 1930
+  },
+  "ingredients": [
+    {
+      "amount": 8,
+      "unit": "Stk",
+      "article_de": "Rinderrouladen",
+      "article_en": "Beef roulade slices",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 5,
+      "unit": "Stk",
+      "article_de": "Zwiebeln",
+      "article_en": "Onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Gewürzgurken",
+      "article_en": "Pickled gherkins",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Senf, mittelscharf",
+      "article_en": "Medium-hot mustard",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 12,
+      "unit": "Scheibe",
+      "article_de": "Frühstücksspeck",
+      "article_en": "Streaky bacon",
+      "note_de": "Scheiben",
+      "note_en": "slices"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Butterschmalz",
+      "article_en": "Clarified butter (ghee)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stück",
+      "article_de": "Knollensellerie",
+      "article_en": "Celeriac",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Stange",
+      "article_de": "Lauch",
+      "article_en": "Leek",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Möhre",
+      "article_en": "Carrot",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Flasche",
+      "article_de": "Rotwein, guter",
+      "article_en": "Good red wine",
+      "note_de": "ca. 375 ml",
+      "note_en": "about 375 ml"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Liter",
+      "article_de": "Rinderfond, kräftig",
+      "article_en": "Strong beef stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Speisestärke",
+      "article_en": "Cornstarch",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Schuss",
+      "article_de": "Gurkenflüssigkeit",
+      "article_en": "Gherkin brine",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Rinderrouladen",
+    "steps": [
+      "Rouladen mit Küchenpapier abtupfen. Von den Zwiebeln 4 in Halbmonde schneiden (für die Füllung), die übrige gemeinsam mit Sellerie, Lauch und Möhre klein hacken. Die Gurken längs in Streifen schneiden. Garn und Schere (oder Rouladennadeln bzw. Zahnstocher) bereitlegen.",
+      "Rouladen flach ausbreiten, den Senf dünn aufstreichen, mit Salz und Pfeffer würzen. Längs in die Mitte jeweils eine halbe Zwiebel, 1 1/2 Scheiben Speck und etwa eine halbe Gurke legen. Beide Längsränder etwas einklappen, aufrollen und mit Garn umwickeln oder mit Nadeln bzw. Zahnstochern fixieren.",
+      "Butterschmalz in einer Pfanne stark erhitzen, die Rouladen von allen Seiten braun anbraten und in einen Schmortopf setzen.",
+      "Im verbliebenen Bratfett das kleingeschnittene Gemüse rösten, bis es leicht Farbe hat, und kurz durchrühren. Einen Schuss Rotwein angießen und ohne Rühren einkochen lassen, sobald das Gemüse wieder bräunt, erneut Wein zugießen, einmal umrühren und einkochen. So fortfahren, bis die halbe Flasche aufgebraucht ist; das Gemüse wird dadurch tiefdunkel, bleibt aber feucht. Mit Rinderfond, Salz, Pfeffer und einem kräftigen Schuss Gurkenflüssigkeit auffüllen, zu den Rouladen in den Topf geben und Deckel drauf.",
+      "Den Topf auf kleiner Flamme oder im Ofen bei etwa 160 °C Ober-/Unterhitze 1 1/2 Stunden schmoren und bei Bedarf Flüssigkeit nachgießen. Dann mit dem Kochlöffel prüfen: Geben die Rouladen auf Druck nach, sind sie fertig, andernfalls eine halbe Stunde länger schmoren.",
+      "Rouladen vorsichtig herausnehmen und warm halten. Die Sauce durch ein Sieb in einen Topf gießen und aufkochen. 1 EL Senf und die Speisestärke mit etwas Wasser glatt rühren, nach und nach in die kochende Sauce rühren, bis sie die gewünschte Bindung hat. Mit Salz, Pfeffer, etwas Rotwein und Gurkenflüssigkeit nachschmecken."
+    ]
+  },
+  "en": {
+    "title": "Beef rolls (Rouladen)",
+    "steps": [
+      "Pat the rouladen dry with paper towel. Cut 4 of the onions into half-moons (for the filling) and chop the remaining one finely together with the celeriac, leek and carrot. Cut the gherkins lengthways into strips. Have kitchen twine and scissors (or roulade pins or toothpicks) ready.",
+      "Lay the rouladen out flat, spread a thin layer of mustard on them, and season with salt and pepper. Down the middle of each, lay half an onion, 1 1/2 slices of bacon and about half a gherkin. Fold the long edges in slightly, roll up, and either tie with twine or fix with pins or toothpicks.",
+      "Heat the clarified butter in a pan until very hot, brown the rouladen on all sides and transfer them to a braising pot.",
+      "In the fat left in the pan, roast the chopped vegetables until lightly coloured and stir briefly. Add a splash of red wine and let it cook down without stirring; when the vegetables start to brown again, add more wine, stir briefly and reduce again. Carry on like this until half the bottle is used up; this turns the vegetables deep brown while keeping them moist. Top up with beef stock, salt, pepper and a generous splash of gherkin liquid, add to the rouladen in the pot and put the lid on.",
+      "Braise on a low flame or in the oven at about 160 °C top and bottom heat for 1 1/2 hours, adding liquid if needed. Then test with a wooden spoon: if the rouladen give under pressure they are done, otherwise braise for another half hour.",
+      "Lift out the rouladen carefully and keep warm. Pour the sauce through a sieve into a pot and bring to the boil. Stir 1 tbsp mustard and the cornstarch smooth with a little water and stir it into the boiling sauce bit by bit until it is as thick as you like. Adjust with salt, pepper, a little red wine and gherkin liquid."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 8,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 5,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 12,
+        "unit": "slice"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 7,
+        "amount": 0.5,
+        "unit": "stalk"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 9,
+        "amount": 0.5,
+        "unit": "bottle"
+      },
+      {
+        "index": 11,
+        "amount": 500,
+        "unit": "ml"
+      },
+      {
+        "index": 12,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 13,
+        "amount": 1,
+        "unit": "dash"
+      }
+    ]
+  },
+  "originality": {
+    "overlap_5gram": 0.0,
+    "checked": "23/11/2026"
+  },
+  "review_note": "Steps restructured (own step division and order of work) after paraphrase spot-check 23/11/2026."
+}

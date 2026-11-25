@@ -1,0 +1,148 @@
+{
+  "n": 18,
+  "slug": "bulgur-gemuesebratlinge",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 55,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/504191145430107/Bulgur-Gemuesebratlinge.html",
+    "site": "Chefkoch",
+    "ratings": 128
+  },
+  "ingredients": [
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Bulgur",
+      "article_en": "Bulgur",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "ml",
+      "article_de": "Gemüsebrühe",
+      "article_en": "Vegetable stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel, groß",
+      "article_en": "Large onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Karotten",
+      "article_en": "Carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Champignons",
+      "article_en": "Button mushrooms",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Weizenvollkornmehl",
+      "article_en": "Whole wheat flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Fett zum Braten",
+      "article_en": "Fat for frying",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Bulgur-Gemüsebratlinge",
+    "steps": [
+      "Die Brühe in einem Topf aufkochen, den Bulgur einrühren und etwa 3 Minuten köcheln lassen.",
+      "Den Topf vom Herd nehmen, Deckel drauf und den Bulgur 15-20 Minuten quellen lassen.",
+      "Währenddessen die Zwiebel fein würfeln, die Karotten raspeln und die Champignons klein hacken.",
+      "Das Gemüse in einer Pfanne mit etwas Fett oder einem Schuss Wasser etwa 5 Minuten dünsten.",
+      "Das Gemüse unter den gequollenen Bulgur mischen.",
+      "Die Masse abkühlen lassen. Sonst stockt das Ei beim Unterrühren.",
+      "Eier und Vollkornmehl einarbeiten und kräftig mit Salz und Pfeffer würzen.",
+      "Aus der Masse mit feuchten Händen Bratlinge formen.",
+      "Fett in einer Pfanne erhitzen und die Bratlinge von beiden Seiten braun braten. Heiß servieren."
+    ]
+  },
+  "en": {
+    "title": "Bulgur veggie patties",
+    "steps": [
+      "Bring the stock to the boil in a pot, stir in the bulgur and simmer for about 3 minutes.",
+      "Take the pot off the heat, put the lid on and let the bulgur swell for 15-20 minutes.",
+      "Meanwhile dice the onion finely, grate the carrots and chop the mushrooms small.",
+      "Steam the vegetables in a pan with a little fat or a splash of water for about 5 minutes.",
+      "Mix the vegetables into the swollen bulgur.",
+      "Let the mixture cool. Otherwise the egg sets when you stir it in.",
+      "Work in the eggs and wholemeal flour and season boldly with salt and pepper.",
+      "Shape patties from the mixture with damp hands.",
+      "Heat fat in a pan and fry the patties until brown on both sides. Serve hot."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

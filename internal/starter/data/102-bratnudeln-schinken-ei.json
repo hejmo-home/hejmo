@@ -1,0 +1,178 @@
+{
+  "n": 102,
+  "slug": "bratnudeln-schinken-ei",
+  "category": "Hauptgerichte",
+  "servings": 2,
+  "time_minutes": 30,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Soja",
+      "en": "Soy"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/bratnudeln-mit-schinken-und-ei-2998.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Erbsen, tiefgefroren",
+      "article_en": "Frozen peas",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Champignons",
+      "article_en": "Button mushrooms",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Nudeln",
+      "article_en": "Pasta",
+      "note_de": "z. B. Spaghetti",
+      "note_en": "e.g. spaghetti"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Schinken, gekocht",
+      "article_en": "Cooked ham",
+      "note_de": "in Scheiben",
+      "note_en": "sliced"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Schlagsahne",
+      "article_en": "Whipping cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Sojasoße",
+      "article_en": "Soy sauce",
+      "note_de": "4 bis 6 EL",
+      "note_en": "4 to 6 tbsp"
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Schnittlauch",
+      "article_en": "Chives",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Bratnudeln mit Schinken und Ei",
+    "steps": [
+      "Wasser für die Nudeln mit Salz aufkochen. Erbsen darin 1 bis 2 Minuten blanchieren und mit einer Schaumkelle herausfischen. Im selben Wasser die Nudeln kochen. Kurz kalt abspülen und abtropfen lassen, damit sie nicht aneinanderkleben.",
+      "Champignons putzen und in Scheiben schneiden, Möhren in dünne Scheiben schneiden. Schinken in Streifen schneiden, Schnittlauch in Röllchen.",
+      "Öl in einer großen Pfanne erhitzen. Den Schinken 3 bis 4 Minuten knusprig braten und herausnehmen.",
+      "Möhren und Champignons in der Pfanne 5 bis 6 Minuten braten.",
+      "Eier, Sahne und 1 EL Sojasoße in einer Schüssel verquirlen.",
+      "Nudeln, Erbsen und Schinken in die Pfanne geben und 2 bis 3 Minuten braten.",
+      "Eiersahne darübergießen und alles ständig wenden, bis die Nudeln gelb überzogen sind. Mit der restlichen Sojasoße abschmecken und Schnittlauch darüberstreuen."
+    ]
+  },
+  "en": {
+    "title": "Fried noodles with ham and egg",
+    "steps": [
+      "Bring salted water for the noodles to the boil. Blanch the peas in it for 1 to 2 minutes and fish them out with a slotted spoon. Cook the noodles in the same water. Rinse them briefly under cold water and drain so they do not stick together.",
+      "Clean and slice the mushrooms, slice the carrots thinly. Cut the ham into strips and the chives into rolls.",
+      "Heat the oil in a large pan. Fry the ham for 3 to 4 minutes until crisp and take it out.",
+      "Fry the carrots and mushrooms in the pan for 5 to 6 minutes.",
+      "Whisk the eggs, cream and 1 tbsp soy sauce in a bowl.",
+      "Add the noodles, peas and ham to the pan and fry for 2 to 3 minutes.",
+      "Pour the egg cream over and keep tossing until the noodles are coated in yellow. Season with the remaining soy sauce and sprinkle with chives."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 9,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 10,
+        "amount": 1,
+        "unit": "bunch"
+      }
+    ]
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

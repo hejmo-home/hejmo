@@ -1,0 +1,154 @@
+{
+  "n": 121,
+  "slug": "krautsalat",
+  "category": "Beilagen",
+  "servings": 8,
+  "time_minutes": 30,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/614141161435086/Krautsalat-wie-im-griechischen-Restaurant.html",
+    "site": "Chefkoch",
+    "ratings": 1893
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Weißkohl",
+      "article_en": "White cabbage",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zwiebeln",
+      "article_en": "Onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Tasse",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "kleine Tasse",
+      "note_en": "small cup"
+    },
+    {
+      "amount": 1,
+      "unit": "Tasse",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": "kleine Tasse",
+      "note_en": "small cup"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Flasche",
+      "article_de": "Kräuteressig",
+      "article_en": "Herb vinegar",
+      "note_de": "ca. 250 bis 350 ml",
+      "note_en": "about 250 to 350 ml"
+    },
+    {
+      "amount": 1,
+      "unit": "Flasche",
+      "article_de": "Mineralwasser mit Kohlensäure",
+      "article_en": "Sparkling mineral water",
+      "note_de": "ca. 0,7 bis 1 Liter",
+      "note_en": "about 0.7 to 1 litre"
+    }
+  ],
+  "de": {
+    "title": "Krautsalat",
+    "steps": [
+      "Den Weißkohl vom Strunk befreien und sehr fein hobeln. In eine große Schüssel geben.",
+      "Die 2 Zwiebeln würfeln und dazugeben.",
+      "Für das Dressing in einem Gefäß 1 Tasse Zucker, 1 Tasse Öl, 2 EL Salz, 1 TL Pfeffer, 250–350 ml Kräuteressig und das Mineralwasser mischen. Das Wasser schäumt auf, das ist normal.",
+      "Rühren, bis sich der Zucker ganz aufgelöst hat.",
+      "Das Dressing über den Kohl gießen. Die Menge richtet sich nach der Kohlgröße: Der Kohl soll gut bedeckt sein.",
+      "Einen kleineren Deckel direkt auf den Kohl legen und mit 2–3 Dosen beschweren.",
+      "24 Stunden ziehen lassen, bis der Kohl weich geworden ist.",
+      "Vor dem Servieren die Flüssigkeit abgießen. In Gläsern hält sich der Salat gekühlt."
+    ]
+  },
+  "en": {
+    "title": "Cabbage salad",
+    "steps": [
+      "Core the white cabbage and shred it very finely. Put it in a large bowl.",
+      "Dice the 2 onions and add them.",
+      "For the dressing, mix 1 cup sugar, 1 cup oil, 2 tbsp salt, 1 tsp pepper, 250-350 ml herb vinegar and the mineral water in a container. The water foams up, which is normal.",
+      "Stir until the sugar has fully dissolved.",
+      "Pour the dressing over the cabbage. The amount depends on the cabbage size: the cabbage should be well covered.",
+      "Place a smaller lid directly on the cabbage and weigh it down with 2-3 tins.",
+      "Let it rest 24 hours, until the cabbage has softened.",
+      "Drain off the liquid before serving. In jars the salad keeps chilled."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "cup"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "cup"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 6,
+        "amount": 0.5,
+        "unit": "bottle"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "bottle"
+      }
+    ]
+  },
+  "review_note": "Cup sizes are 'kleine Tasse' as in the source (volume not stated); not converted. Page ratingCount 1894 (list: 1.893). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

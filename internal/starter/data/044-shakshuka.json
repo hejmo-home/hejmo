@@ -1,0 +1,155 @@
+{
+  "n": 44,
+  "slug": "shakshuka",
+  "category": "Hauptgerichte",
+  "servings": 2,
+  "time_minutes": 25,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/shakshuka",
+    "site": "BBC Good Food",
+    "ratings": 157
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Rote Zwiebeln",
+      "article_en": "Red onions",
+      "note_de": "gehackt",
+      "note_en": "chopped"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Rote Chilischote",
+      "article_en": "Red chilli",
+      "note_de": "entkernt, fein gehackt",
+      "note_en": "deseeded and finely chopped"
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": "in Scheiben",
+      "note_en": "sliced"
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Koriander",
+      "article_en": "Coriander",
+      "note_de": "klein, Stiele und Blätter getrennt gehackt",
+      "note_en": "small bunch, stalks and leaves chopped separately"
+    },
+    {
+      "amount": 2,
+      "unit": "Dose",
+      "article_de": "Kirschtomaten",
+      "article_en": "Cherry tomatoes",
+      "note_de": "Dosengröße nicht angegeben",
+      "note_en": "can size not stated in source"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Zucker, fein",
+      "article_en": "Caster sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Shakshuka",
+    "steps": [
+      "Zwiebeln hacken, Chili entkernen und fein hacken, Knoblauch in Scheiben schneiden. Koriander hacken, dabei Stiele und Blätter in zwei Häufchen trennen.",
+      "Das Olivenöl in einer Pfanne mit Deckel bei mittlerer Hitze erwärmen. Zwiebeln, Chili, Knoblauch und die Korianderstiele hineingeben und etwa 5 Minuten weich garen.",
+      "Kirschtomaten und Zucker dazugeben, gut umrühren und etwa 8 bis 10 Minuten einkochen lassen, bis die Soße schön dick ist.",
+      "Mit einem Löffel vier Mulden in die Soße drücken und in jede ein Ei aufschlagen.",
+      "Die Hitze auf niedrig stellen und den Deckel auflegen. Der Deckel muss die ganze Zeit drauf bleiben, sonst werden die Eier nicht oben gar. Je nach Geschmack 6 bis 8 Minuten garen: kürzer für flüssiges, länger für festes Eigelb.",
+      "Mit den Korianderblättern bestreuen und direkt aus der Pfanne servieren. Reste der Soße (ohne Eier) lassen sich bis zu 1 Monat einfrieren."
+    ]
+  },
+  "en": {
+    "title": "Shakshuka",
+    "steps": [
+      "Chop the onions, deseed and finely chop the chilli, and slice the garlic. Chop the coriander and keep stalks and leaves in two separate piles.",
+      "Warm the olive oil over medium heat in a frying pan with a lid. Add the onions, chilli, garlic and coriander stalks and cook for about 5 minutes until soft.",
+      "Add the cherry tomatoes and sugar, stir well and let it bubble down for about 8 to 10 minutes until the sauce is nice and thick.",
+      "Press four wells into the sauce with a spoon and crack an egg into each one.",
+      "Turn the heat to low and put the lid on. The lid has to stay on the whole time, otherwise the tops of the eggs will not cook. Cook for 6 to 8 minutes depending on taste: shorter for a runny yolk, longer for a firm one.",
+      "Sprinkle with the coriander leaves and serve straight from the pan. Leftover sauce (without eggs) can be frozen for up to 1 month."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "bunch"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "can"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 7,
+        "amount": 4,
+        "unit": "piece"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

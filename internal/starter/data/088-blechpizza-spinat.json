@@ -1,0 +1,186 @@
+{
+  "n": 88,
+  "slug": "blechpizza-spinat",
+  "category": "Hauptgerichte",
+  "servings": 8,
+  "time_minutes": 75,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/blechpizza-32990.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 42,
+      "unit": "g",
+      "article_de": "Hefe, frisch",
+      "article_en": "Fresh yeast",
+      "note_de": "1 Würfel",
+      "note_en": "1 cube"
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": "4 bis 5 EL",
+      "note_en": "4 to 5 tbsp"
+    },
+    {
+      "amount": 750,
+      "unit": "g",
+      "article_de": "Blattspinat",
+      "article_en": "Leaf spinach",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Butter oder Margarine",
+      "article_en": "Butter or margarine",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Gemüsezwiebel",
+      "article_en": "Large onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Champignons, groß",
+      "article_en": "Large mushrooms",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Käsescheibletten (Schmelzkäsezubereitung, 45 % Fett i. Tr.)",
+      "article_en": "Processed cheese slices (45% fat in dry matter)",
+      "note_de": "1/2 Packung",
+      "note_en": "half a pack"
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Tomaten, passiert",
+      "article_en": "Passata",
+      "note_de": "1 Packung",
+      "note_en": "1 pack"
+    },
+    {
+      "amount": 70,
+      "unit": "g",
+      "article_de": "Frühstücksspeck",
+      "article_en": "Streaky breakfast bacon",
+      "note_de": "1 Packung",
+      "note_en": "1 pack"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Knoblauchsalz",
+      "article_en": "Garlic salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Rosenpaprika",
+      "article_en": "Rose paprika",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Pizza vom Blech",
+    "steps": [
+      "Teig: Mehl mit einer Prise Salz in eine große Schüssel geben. Die Hefe zerbröseln und in lauwarmem Wasser auflösen. Das Wasser darf nur lauwarm sein, sonst leidet die Hefe. Hefewasser und Öl zum Mehl geben und alles mit den Knethaken des Handrührgeräts zu einem glatten Teig verkneten.",
+      "Schüssel abdecken und den Teig 20 Minuten an einem warmen Ort gehen lassen.",
+      "In der Zwischenzeit den Ofen auf 200 °C Ober-/Unterhitze (Gas Stufe 3) vorheizen.",
+      "Spinat in der Butter zusammenfallen lassen, mit Salz und Pfeffer würzen und in einem Sieb gut abtropfen lassen. Sonst wird der Belag matschig. Gemüsezwiebel in Ringe schneiden.",
+      "Champignons in Scheiben schneiden, Käsescheibletten in Streifen und den Frühstücksspeck in Stücke.",
+      "Den Teig noch einmal kräftig durchkneten. Ein Backblech (oder eine Fettpfanne) einfetten und mit Mehl bestäuben. Teig darauf ausrollen.",
+      "Passierte Tomaten mit Knoblauchsalz, Rosenpaprika und Pfeffer würzen und auf dem Teig verstreichen. Spinat, Zwiebel, Champignons und Speck darauf verteilen, Käse obenauf legen.",
+      "Die Pizza noch 15 Minuten gehen lassen, dann 30 Minuten backen. In etwa 8 Stücke schneiden."
+    ]
+  },
+  "en": {
+    "title": "Sheet-pan pizza",
+    "steps": [
+      "Dough: put the flour and a pinch of salt in a large bowl. Crumble the yeast and dissolve it in lukewarm water. The water must only be lukewarm, or the yeast suffers. Add the yeast water and the oil to the flour and knead everything with the dough hooks of a hand mixer into a smooth dough.",
+      "Cover the bowl and let the dough rise for 20 minutes in a warm place.",
+      "Meanwhile, preheat the oven to 200 °C top/bottom heat (gas mark 3).",
+      "Let the spinach wilt in the butter, season with salt and pepper and drain it well in a sieve. Otherwise the topping gets soggy. Cut the large onion into rings.",
+      "Slice the mushrooms, cut the cheese slices into strips and the breakfast bacon into pieces.",
+      "Knead the dough once more firmly. Grease a baking tray (or roasting pan) and dust it with flour. Roll the dough out on it.",
+      "Season the passata with garlic salt, sweet paprika and pepper and spread it on the dough. Distribute spinach, onion, mushrooms and bacon on top and lay the cheese over everything.",
+      "Let the pizza rise for another 15 minutes, then bake for 30 minutes. Cut into about 8 pieces."
+    ],
+    "amounts_converted": [
+      {
+        "index": 3,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "4-5 EL oil: lower value used. 1/2 pack cheese slices = 100 g per source. Ratings shown on page: 5; list says Redaktionsküche. Steps rewritten in own words on 23/11/2026 from the source steps (times, temperatures and order per source). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

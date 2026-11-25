@@ -1,0 +1,151 @@
+{
+  "n": 16,
+  "slug": "blumenkohl-gratin",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 50,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/blumenkohl-gratin-83466.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "etwas, für die Form",
+      "note_en": "a little, for the dish"
+    },
+    {
+      "amount": 80,
+      "unit": "g",
+      "article_de": "Gouda",
+      "article_en": "Gouda",
+      "note_de": "oder Bergkäse",
+      "note_en": "or mountain cheese"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Blumenkohl",
+      "article_en": "Cauliflower",
+      "note_de": "ca. 800 g",
+      "note_en": "about 800 g"
+    },
+    {
+      "amount": 200,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Mehl Type 405",
+      "article_en": "Plain flour (Type 405)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Muskatnuss",
+      "article_en": "Nutmeg",
+      "note_de": "frisch gerieben",
+      "note_en": "freshly grated"
+    }
+  ],
+  "de": {
+    "title": "Blumenkohl-Gratin",
+    "steps": [
+      "Den Ofen auf 200 °C Ober-/Unterhitze (180 °C Umluft) heizen. Eine Auflaufform mit etwas Butter ausstreichen und den Gouda raspeln.",
+      "Vom Blumenkohl Blätter und braune Stellen entfernen, ihn in Röschen teilen und waschen. Den Strunk schälen und klein würfeln.",
+      "Röschen und Strunkwürfel etwa 8 Minuten in kochendem Salzwasser garen, sodass sie noch Biss haben. Dann abgießen und gut abtropfen lassen.",
+      "Währenddessen 2 EL Butter im Topf zerlassen, 1 EL Mehl einrühren und etwa 2 Minuten anschwitzen, ohne dass es Farbe nimmt. Milch und Sahne mit dem Schneebesen einrühren und 5 bis 8 Minuten köcheln lassen, dabei immer wieder umrühren.",
+      "Die Soße mit Salz, Pfeffer und frisch geriebener Muskatnuss würzen. Den Kohl in die Form legen, die Soße darübergießen und den Käse darauf verteilen.",
+      "20 bis 25 Minuten im Ofen überbacken. Hat der Ofen eine Grillfunktion, geht es auch kurz bei starker Hitze, bis die gewünschte Bräune erreicht ist."
+    ]
+  },
+  "en": {
+    "title": "Cauliflower cheese gratin",
+    "steps": [
+      "Heat the oven to 200 °C top/bottom heat (180 °C fan). Grease a baking dish with a little butter and grate the Gouda.",
+      "Remove the leaves and brown spots from the cauliflower, divide it into florets and wash them. Peel the stalk and dice it small.",
+      "Cook the florets and stalk cubes in boiling salted water for about 8 minutes so they still have some bite. Then drain well.",
+      "Meanwhile melt 2 tbsp butter in a pot, stir in 1 tbsp flour and cook for about 2 minutes without letting it colour. Whisk in the milk and cream and simmer for 5 to 8 minutes, stirring regularly.",
+      "Season the sauce with salt, pepper and freshly grated nutmeg. Put the cauliflower in the dish, pour the sauce over it and spread the cheese on top.",
+      "Bake for 20 to 25 minutes. If your oven has a grill function you can instead brown it briefly at high heat until it looks right."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.014
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026."
+}

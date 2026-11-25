@@ -233,6 +233,10 @@ func New(opts Options) http.Handler {
 	s.pages = parsePages()
 	s.settleAtStart() // an installation that ended while the box was away, and what an upload left
 	s.syncUpdateSettings()
+	// A box updated to a version with badges gives everyone the badges their history already earned, dated that day (ticket 295).
+	if err := s.db.AwardAllBadges(s.now()); err != nil {
+		s.logger.Error("award badges at start", "err", err)
+	}
 
 	static, err := fs.Sub(web.Static, "static")
 	if err != nil {
@@ -351,6 +355,8 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /tasks/pauses/{id}", s.handlePauseEditPage)
 	mux.HandleFunc("POST /tasks/pauses/edit/{id}", s.handlePauseUpdate)
 	mux.HandleFunc("POST /tasks/pauses/remove/{id}", s.handlePauseRemove)
+	mux.HandleFunc("GET /tasks/badges", s.handleBadges)
+	mux.HandleFunc("GET /tasks/badges/{person}", s.handleBadgesOf)
 	mux.HandleFunc("GET /tasks/{id}", s.handleTaskPage)
 	mux.HandleFunc("POST /tasks/{id}/done", s.handleTaskDone)
 	mux.HandleFunc("POST /tasks/{id}/subtasks", s.handleSubtaskAdd)
@@ -385,6 +391,11 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /settings/lists/always", s.handleAlwaysSave)
 	mux.HandleFunc("GET /settings/lists/always/plan", s.handleAlwaysPlan)
 	mux.HandleFunc("GET /contacts", s.handleContacts)
+	mux.HandleFunc("GET /contacts/import", s.handleContactImportForm)
+	mux.HandleFunc("POST /contacts/import", s.handleContactImportUpload)
+	mux.HandleFunc("GET /contacts/import/{id}", s.handleContactImportReview)
+	mux.HandleFunc("POST /contacts/import/{id}", s.handleContactImportConfirm)
+	mux.HandleFunc("GET /contacts/import/{id}/photo/{n}", s.handleContactImportPhoto)
 	mux.HandleFunc("GET /contacts/new", s.handleContactNew)
 	mux.HandleFunc("POST /contacts/new", s.handleContactCreate)
 	mux.HandleFunc("GET /contacts/groups", s.handleContactGroups)
@@ -427,6 +438,15 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /lists/{id}/completed/delete", s.handleTickedDelete)
 	mux.HandleFunc("GET /meals", s.handleMealsPage)
 	mux.HandleFunc("POST /meals", s.handleMealsSave)
+	mux.HandleFunc("GET /meals/recipes", s.handleRecipes)
+	mux.HandleFunc("GET /meals/recipes/starter", s.handleStarterRecipes)
+	mux.HandleFunc("GET /meals/recipes/new", s.handleRecipeNew)
+	mux.HandleFunc("GET /meals/recipes/suggest", s.handleRecipeSuggest)
+	mux.HandleFunc("POST /meals/recipes", s.handleRecipeCreate)
+	mux.HandleFunc("GET /meals/recipes/{id}", s.handleRecipePage)
+	mux.HandleFunc("GET /meals/recipes/{id}/edit", s.handleRecipeEdit)
+	mux.HandleFunc("POST /meals/recipes/{id}", s.handleRecipeSave)
+	mux.HandleFunc("POST /meals/recipes/{id}/delete", s.handleRecipeDelete)
 	mux.HandleFunc("GET /meals/templates", s.handleTemplatesPage)
 	mux.HandleFunc("GET /meals/templates/new", s.handleTemplateNew)
 	mux.HandleFunc("POST /meals/templates", s.handleTemplateCreate)

@@ -1,0 +1,149 @@
+{
+  "n": 17,
+  "slug": "zucchinipuffer",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 30,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/zucchinipuffer-74266.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 120,
+      "unit": "g",
+      "article_de": "Mehl Type 405",
+      "article_en": "Plain flour (Type 405)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 6,
+      "unit": "EL",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 6,
+      "unit": "EL",
+      "article_de": "Schlagsahne",
+      "article_en": "Whipping cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    },
+    {
+      "amount": 600,
+      "unit": "g",
+      "article_de": "Zucchini",
+      "article_en": "Zucchini",
+      "note_de": "grün oder gelb",
+      "note_en": "green or yellow"
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": "zum Braten",
+      "note_en": "for frying",
+      "amount_max": 6
+    }
+  ],
+  "de": {
+    "title": "Zucchinipuffer",
+    "steps": [
+      "Mehl, Salz und Pfeffer in einer Schüssel mischen.",
+      "Milch, Sahne und Eier verquirlen und mit dem Schneebesen in die Mehlmischung rühren, bis ein glatter Teig entsteht.",
+      "Den Teig etwa 10 Minuten ruhen lassen.",
+      "Währenddessen die Zucchini raspeln.",
+      "Die Raspel in ein sauberes Küchentuch geben und kräftig ausdrücken, bis kaum noch Flüssigkeit herauskommt.",
+      "Zucchini unter den Teig rühren.",
+      "Den Ofen auf 50 °C stellen. Reichlich Öl in einer großen Pfanne erhitzen, sodass die Puffer fast darin schwimmen. Das macht sie knusprig. Gehäufte Esslöffel Teig hineingeben und leicht flachdrücken. Pro Seite 3-4 Minuten braten, bis sie goldbraun sind.",
+      "Auf Küchenpapier abtropfen lassen und im 50 °C warmen Ofen warm halten, bis alle fertig sind."
+    ]
+  },
+  "en": {
+    "title": "Zucchini fritters",
+    "steps": [
+      "Mix flour, salt and pepper in a bowl.",
+      "Whisk milk, cream and eggs and stir them into the flour mixture with a whisk until you have a smooth batter.",
+      "Let the batter rest for about 10 minutes.",
+      "Meanwhile grate the zucchini.",
+      "Put the shreds in a clean kitchen towel and squeeze hard until hardly any liquid comes out.",
+      "Stir the zucchini into the batter.",
+      "Set the oven to 50 °C. Heat plenty of oil in a large pan so the puffers almost swim in it. That makes them crisp. Add heaped tablespoons of batter and flatten slightly. Fry 3-4 minutes per side until golden brown.",
+      "Drain on paper towel and keep warm in the 50 °C oven until all are done."
+    ],
+    "amounts_converted": [
+      {
+        "index": 3,
+        "amount": 6,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 6,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 7,
+        "amount": 4,
+        "unit": "tbsp",
+        "amount_max": 6
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

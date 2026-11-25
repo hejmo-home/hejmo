@@ -159,3 +159,66 @@ func TestValidate(t *testing.T) {
 		t.Fatalf("normalized = %+v", n)
 	}
 }
+
+// Ticket 292: free stars, the check before a redemption, and how many stars
+// unticking deducts.
+
+func TestAnAskNeedsThePriceInFreeStarsAfterTheOtherOpenRequests(t *testing.T) {
+	cases := []struct {
+		balance, reserved, price int
+		want                     bool
+	}{
+		{12, 0, 8, true},
+		{12, 8, 4, true},
+		{12, 8, 5, false},
+		{12, 0, 12, true},
+		{-3, 0, 1, false},
+	}
+	for _, c := range cases {
+		if got := reward.Free(c.balance, c.reserved) >= c.price; got != c.want {
+			t.Errorf("balance %d reserved %d price %d: affordable = %v, want %v", c.balance, c.reserved, c.price, got, c.want)
+		}
+	}
+	if got := reward.Free(12, 20); got != 0 {
+		t.Errorf("free stars never go below zero: %d", got)
+	}
+}
+
+func TestRedeemingNeedsTheBalanceAndAnUnusedLimitAndNamesTheFirstReason(t *testing.T) {
+	loc := time.UTC
+	day := time.Date(2026, 11, 23, 12, 0, 0, 0, loc)
+	used := []time.Time{day.Add(-time.Hour)}
+	lim := reward.Limit{Period: reward.Day, Count: 1}
+	if got := reward.CanRedeem(8, 12, lim, nil, day, loc); !got.OK() {
+		t.Fatalf("enough stars and a fresh limit: %+v", got)
+	}
+	got := reward.CanRedeem(8, 5, lim, nil, day, loc)
+	if got.OK() || got.Reason != reward.NotEnoughStars || got.Missing != 3 {
+		t.Fatalf("5 stars for 8: %+v", got)
+	}
+	got = reward.CanRedeem(5, 12, lim, used, day, loc)
+	if got.Reason != reward.LimitReached || !got.AvailableAgain.Equal(time.Date(2026, 11, 24, 0, 0, 0, 0, loc)) {
+		t.Fatalf("limit used up: %+v", got)
+	}
+}
+
+func TestUntickingDeductsWhatWasCreditedOrAtMostTheBalanceWhenBelowZeroIsOff(t *testing.T) {
+	cases := []struct {
+		credited, balance int
+		below             bool
+		want              int
+	}{
+		{3, 10, true, 3},
+		{3, 1, true, 3},
+		{3, -2, true, 3},
+		{3, 10, false, 3},
+		{3, 1, false, 1},
+		{3, 0, false, 0},
+		{3, -2, false, 0},
+	}
+	for _, c := range cases {
+		if got := reward.Deduction(c.credited, c.balance, c.below); got != c.want {
+			t.Errorf("credited %d balance %d belowZero %v: deducts %d, want %d", c.credited, c.balance, c.below, got, c.want)
+		}
+	}
+}

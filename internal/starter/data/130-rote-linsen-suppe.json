@@ -1,0 +1,152 @@
+{
+  "n": 130,
+  "slug": "rote-linsen-suppe",
+  "category": "Suppen",
+  "servings": 3,
+  "time_minutes": 35,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/red-lentil-soup",
+    "site": "BBC Good Food",
+    "ratings": "1"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zwiebeln, mittelgroß",
+      "article_en": "Onions, medium",
+      "note_de": "fein gehackt",
+      "note_en": "finely chopped"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Paprika, rot",
+      "article_en": "Red pepper",
+      "note_de": "fein gewürfelt",
+      "note_en": "finely diced"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Tomatenmark",
+      "article_en": "Tomato purée",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Rote Linsen",
+      "article_en": "Red lentils",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Schinkenbrühwürfel",
+      "article_en": "Ham stock cubes",
+      "note_de": "oder Gemüsebrühwürfel für die vegetarische Variante",
+      "note_en": "or vegetable stock cubes for a vegetarian version"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Chiliflocken",
+      "article_en": "Chili flakes",
+      "note_de": "nach Belieben",
+      "note_en": "to taste"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": "zum Abschmecken",
+      "note_en": "to season"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Sauerteigbrot, knusprig",
+      "article_en": "Crusty sourdough bread",
+      "note_de": "optional, zum Servieren",
+      "note_en": "optional, to serve"
+    }
+  ],
+  "de": {
+    "title": "Rote-Linsen-Suppe",
+    "steps": [
+      "200 g rote Linsen im Sieb abspülen.",
+      "1 EL Olivenöl im Topf erhitzen. 2 fein gehackte Zwiebeln bei kleiner Hitze 5–10 Minuten weich und glasig dünsten.",
+      "2 EL Tomatenmark einrühren und 2 Minuten mitgaren.",
+      "1 fein gewürfelte rote Paprika zugeben.",
+      "2 Brühwürfel in 1 Liter heißem Wasser auflösen.",
+      "Linsen und Brühe in den Topf geben und 10–15 Minuten köcheln lassen.",
+      "Wer mag, püriert die Suppe nur teilweise mit dem Stabmixer, so bleibt sie schön stückig.",
+      "Mit Chiliflocken, Salz und Pfeffer abschmecken. Mit knusprigem Sauerteigbrot servieren. Die Suppe lässt sich aufwärmen und einfrieren."
+    ]
+  },
+  "en": {
+    "title": "Red lentil soup",
+    "steps": [
+      "Rinse 200 g red lentils in a sieve.",
+      "Heat 1 tbsp olive oil in a pot. Soften 2 finely chopped onions on low heat for 5-10 minutes until soft and translucent.",
+      "Stir in 2 tbsp tomato puree and cook 2 minutes.",
+      "Add 1 finely diced red pepper.",
+      "Dissolve 2 stock cubes in 1 litre hot water.",
+      "Add the lentils and stock to the pot and simmer 10-15 minutes.",
+      "If you like, blend the soup only partly with a stick blender, so it stays nicely chunky.",
+      "Season with chilli flakes, salt and pepper. Serve with crusty sourdough bread. The soup can be reheated and frozen."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Source states no water amount; steps say about 1 litre of hot water for the stock cubes, please check. Rating count from the list (the source page shows no rating data). The ham stock cubes are the source ingredient (list diet suggestion: contains meat). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

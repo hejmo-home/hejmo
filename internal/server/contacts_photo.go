@@ -54,6 +54,10 @@ func (e ctEnv) initialsPhrase(name string) string {
 func (e ctEnv) photoOrigin(c store.Contact) string {
 	when := e.p.dateTimeSeconds(c.PhotoAt)
 	switch {
+	case c.PhotoFile != "" && c.PhotoByName != "":
+		return e.t("contact.photo.file", "file", c.PhotoFile, "name", c.PhotoByName, "when", when)
+	case c.PhotoFile != "":
+		return e.t("contact.photo.file.anon", "file", c.PhotoFile, "when", when)
 	case c.PhotoOrigin == store.PhotoSync:
 		return e.t("contact.photo.sync", "when", when, "device", c.PhotoDevice)
 	case c.PhotoByName == "":
@@ -69,6 +73,10 @@ func (e ctEnv) photoHint(c store.Contact) string {
 	}
 	when := e.p.dateTimeSeconds(c.PhotoAt)
 	switch {
+	case c.PhotoFile != "" && c.PhotoByName != "":
+		return e.t("contact.hint.photo_file", "file", c.PhotoFile, "name", c.PhotoByName, "when", when)
+	case c.PhotoFile != "":
+		return e.t("contact.hint.photo_file.anon", "file", c.PhotoFile, "when", when)
 	case c.PhotoOrigin == store.PhotoSync:
 		return e.t("contact.hint.photo.sync", "when", when, "device", c.PhotoDevice)
 	case c.PhotoByName == "":

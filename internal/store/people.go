@@ -54,6 +54,8 @@ type Household struct {
 	MCPEnabled bool
 	// FirstStepsHidden is set when a parent hid the first steps card on the start page.
 	FirstStepsHidden bool
+	// BelowZero says unticking a task may take a star balance below zero (ticket 292); on by default.
+	BelowZero bool
 	// FirstStepsSkipped lists the steps of the card a parent skipped, in the
 	// order of FirstStepIDs.
 	FirstStepsSkipped []string
@@ -312,14 +314,14 @@ func (db *DB) CreateHousehold(h Household) (Household, error) {
 // Household loads a household by id.
 func (db *DB) Household(id string) (Household, error) {
 	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(home_place_id, 0), COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, date_format, time_format, temperature_unit, auto_update, update_ack,
-		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled
+		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled, below_zero
 		FROM households WHERE id = ?`, id))
 }
 
 // HomeHousehold returns the household this box serves (V1: exactly one).
 func (db *DB) HomeHousehold() (Household, error) {
 	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(home_place_id, 0), COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, date_format, time_format, temperature_unit, auto_update, update_ack,
-		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled
+		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled, below_zero
 		FROM households ORDER BY created_at, rowid LIMIT 1`))
 }
 
@@ -327,7 +329,7 @@ func (db *DB) scanHousehold(row *sql.Row) (Household, error) {
 	var h Household
 	var skipped string
 	err := row.Scan(&h.ID, &h.Name, &h.HomeName, &h.HomePlaceID, &h.Latitude, &h.Longitude, &h.Region, &h.Timezone, &h.DateFormat, &h.TimeFormat, &h.TemperatureUnit, &h.AutoUpdate, &h.UpdateAck,
-		&h.MealCutoffs.Breakfast, &h.MealCutoffs.Lunch, &h.MealCutoffs.Snack, &h.MealCutoffs.Dinner, &h.FirstStepsHidden, &skipped, &h.MCPEnabled)
+		&h.MealCutoffs.Breakfast, &h.MealCutoffs.Lunch, &h.MealCutoffs.Snack, &h.MealCutoffs.Dinner, &h.FirstStepsHidden, &skipped, &h.MCPEnabled, &h.BelowZero)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Household{}, ErrNotFound
 	}

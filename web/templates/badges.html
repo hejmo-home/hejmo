@@ -1,0 +1,21 @@
+{{template "head" (dict "Lang" .Lang "Title" .PageTitle "Frame" .Frame)}}
+  <h1>{{if .Parent}}<span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span> {{end}}{{.PageTitle}}</h1>
+  {{if not .Shown}}<p class="notice top">{{.Off}}</p>{{else}}
+  <div class="bdg-page" data-person="{{.Slot}}">
+    <p class="lead">{{.Lead}}</p>
+    <section class="bdg-group have">
+      <h2>{{template "badgeIcon" 22}}{{.HaveHead}}</h2>
+      {{if .Have}}<ul class="bdg-cards">{{range .Have}}
+        <li class="bdg-card">{{template "seal" (dict "Key" .Key "Size" 72)}}<div class="b">{{if .New}}<span class="bdg-pill">{{t "badge.pill"}}</span>{{end}}<h3>{{.Name}}</h3><p class="when">{{.When}}</p><p class="how">{{.How}}</p></div></li>{{end}}
+      </ul>{{else}}<p class="bdg-empty">{{.Empty}}</p>{{end}}
+    </section>
+    {{if .All}}<p class="msg ok bdg-all" role="status">{{template "tick" 20}}<span>{{.AllText}}</span></p>
+    {{else if .Open}}<section class="bdg-group more">
+      <h2>{{.MoreHead}}</h2>
+      <p class="hint">{{.Hint}}</p>
+      <ul class="bdg-cards">{{range .Open}}
+        <li class="bdg-card todo">{{template "seal" (dict "Key" .Key "Size" 72 "Todo" true)}}<div class="b"><h3>{{.Name}}</h3><p class="how">{{.How}}</p></div></li>{{end}}
+      </ul>
+    </section>{{end}}
+  </div>{{end}}
+{{template "foot"}}

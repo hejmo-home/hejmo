@@ -1,0 +1,112 @@
+{
+  "n": 177,
+  "slug": "mousse-au-chocolat",
+  "category": "Desserts",
+  "servings": 4,
+  "time_minutes": 20,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/90891035388170/Mousse-au-chocolat.html",
+    "site": "Chefkoch",
+    "ratings": 1280
+  },
+  "ingredients": [
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    },
+    {
+      "amount": 200,
+      "unit": "ml",
+      "article_de": "Sahne",
+      "article_en": "Double cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Zartbitterschokolade",
+      "article_en": "Dark chocolate",
+      "note_de": "über 70 % Kakaoanteil",
+      "note_en": "over 70% cocoa"
+    },
+    {
+      "amount": 40,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Schokostreusel",
+      "article_en": "Chocolate sprinkles",
+      "note_de": "optional zum Garnieren",
+      "note_en": "optional, to garnish"
+    }
+  ],
+  "de": {
+    "title": "Mousse au Chocolat",
+    "steps": [
+      "Hinweis: Die Mousse enthält rohes Ei. Das ist nichts für kleine Kinder.",
+      "Trenne die 3 Eier. Die Eiweiße kommen in eine große Schüssel, die Eigelbe in eine kleine.",
+      "Schlage die Eiweiße steif und stelle sie kalt. Schlage dann die 200 ml Sahne ebenfalls steif und stelle sie zu den Eiweißen.",
+      "Setze ein Wasserbad auf. Schmilz darin 50 g Butter mit 200 g Zartbitterschokolade (über 70 % Kakao). Danach etwas abkühlen lassen.",
+      "Verrühre die Eigelbe mit 2 bis 3 EL heißem Wasser und schlage sie dabei auf. Gib 40 g Zucker dazu und schlage weiter, bis die Masse hell und cremig ist.",
+      "Rühre die Schokoladenmasse unter die Eigelbcreme.",
+      "Hebe sofort danach Eischnee und Sahne vorsichtig unter. Mach das mit einem Löffel oder Teigschaber von Hand, nicht mit dem Mixer, sonst fällt die Luft wieder raus.",
+      "Stelle die Mousse mindestens 2 Stunden kalt. Serviere sie nicht eiskalt und streue nach Belieben Schokostreusel darüber."
+    ]
+  },
+  "en": {
+    "title": "Chocolate mousse",
+    "steps": [
+      "Note: the mousse contains raw egg. It is not suitable for small children.",
+      "Separate the 3 eggs. The whites go into a large bowl, the yolks into a small one.",
+      "Whip the whites until stiff and put them in the fridge. Then whip the 200 ml cream until stiff as well and put it with the whites.",
+      "Set up a bain-marie. Melt 50 g butter with 200 g dark chocolate (over 70% cocoa) in it. Let it cool a little afterwards.",
+      "Beat the yolks with 2 to 3 tbsp hot water. Add 40 g sugar and keep beating until the mixture is pale and creamy.",
+      "Stir the chocolate mixture into the yolk cream.",
+      "Straight after that, fold in the egg whites and cream gently. Do this by hand with a spoon or spatula, not with the mixer, or the air will be lost.",
+      "Chill the mousse for at least 2 hours. Do not serve it ice cold, and scatter chocolate sprinkles on top if you like."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 3,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Contains raw egg; flag for families with small children. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

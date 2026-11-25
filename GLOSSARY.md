@@ -323,9 +323,21 @@ _Avoid_: override (in prose), exception
 A dish with portions, ingredients and steps that can be put on the meal plan; entered by a parent, imported from a web page or from Hejmo's starter collection, always with its source.
 _Avoid_: dish (alone), cooking instructions
 
+**Starter recipe**:
+One of the 200 recipes that ship with the box in German and English (the starter collection). It is shown in the language of the person viewing it, names its source ("Ingredients after: Chefkoch") with a link, is read-only for everyone and is not part of a family's own recipes. Its id starts with `starter-`.
+_Avoid_: sample recipe, default recipe, template recipe
+
 **Ingredient**:
 One line of a recipe: an article, optionally with a variety, or free text, with a quantity for the recipe's portions.
 _Avoid_: component, item
+
+**Kitchen measure**:
+A unit of a recipe's ingredient that is no weight or volume Hejmo can convert: EL, TL, Prise, Messerspitze, Schuss, Spritzer, Handvoll and Tasse (tbsp, tsp, pinch, knife tip, dash, splash, handful, cup). It never converts into or adds up with g and ml, not even with another kitchen measure; on a shopping list the article goes on without a quantity.
+_Avoid_: spoon unit, small measure
+
+**Container and piece measure**:
+A unit of a recipe's ingredient that counts things: Dose, Päckchen, Becher, Bund, Glas, Flasche, Stange, Zehe, Scheibe, Würfel, Zweig, Stiel, Kugel, Blatt, Beet and Topf (can, packet, tub, bunch, jar, bottle, stick, clove, slice, cube, sprig, stalk, ball, leaf, punnet, pot). On a shopping list it keeps its quantity ("2 Dosen Tomaten"), and quantities add up only within the same unit.
+_Avoid_: pack unit, count word
 
 **Variety**:
 The more exact kind of an article, such as "Type 405" for flour, kept with an ingredient or list entry and written "Mehl · Type 405". Quantities add up only for the same article and variety (case, spaces and umlauts ignored); allergens and diets come from the article. Free text has no variety.
@@ -387,8 +399,19 @@ _Avoid_: prize, shop item
 Exchanging stars for a reward. A child asks and a parent confirms, or a parent redeems directly; the stars leave the person's star log only on confirmation, and never below zero.
 _Avoid_: purchase, payout
 
+**Request** (to redeem):
+A child's ask for a reward, open until a parent confirms or declines it or the child withdraws it. It keeps the reward's name, symbol, picture and price as they were when asked; nothing is booked while it is open. A child has at most one open request per reward. Decided requests stay visible to the child for 7 days.
+_Avoid_: order, wish
+
+**Free stars**:
+A child's balance minus the prices of their open requests: what they can still ask for. The balance itself stays whole until a parent says yes.
+_Avoid_: available points
+
+**Stars below zero**:
+A household switch (on by default). When on, unticking a task whose stars were already redeemed may take the balance below zero; when off, unticking deducts at most down to zero. Redeeming itself never goes below zero.
+
 **Savings goal**:
-The one reward a person has chosen to save for, by the person on their own device or by a parent; their personal view and the family view show the progress towards its star price. It sets no stars aside, and it ends by itself when that reward is redeemed for the person, archived or no longer meant for them.
+The one reward a person has chosen to save for, by the person on their own device or by a parent; their personal view and the family view show the progress towards its star price. Progress is the plain star balance on every screen, also while open requests set stars aside; only asking for the goal needs the price in free stars. The child's goal card then says "enough stars" and, once asked, that it waits for the parents. It sets no stars aside itself, and it ends by itself when that reward is redeemed for the person, archived or no longer meant for them.
 _Avoid_: wish, target
 
 **Streak**:
@@ -400,7 +423,7 @@ A day a parent marks for the whole family or for chosen people (ill, holiday), i
 _Avoid_: skip day, excuse
 
 **Badge**:
-A mark a person earns once for a milestone, such as a first complete routine or a 7-day streak; it is never taken away.
+A mark a person earns once for a milestone from Hejmo's fixed list of ten (first routine done, a whole day, a whole week, 7 and 30 days in a row, first star, 100 and 500 stars collected, first reward, savings goal reached); it is never taken away, even when the count behind it later drops. Earned also while the person's switch "week count and badges" is off, but shown only while it is on, and never on the family view. Stars collected count every star earned, including stars already redeemed.
 _Avoid_: achievement, trophy, medal
 
 **Waste collection calendar**:

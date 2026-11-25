@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	_ "embed"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -29,12 +30,14 @@ import (
 	"github.com/chromedp/chromedp"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
+	"github.com/hejmo-home/hejmo/internal/badge"
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/contact"
 	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/passkey/passkeytest"
+	"github.com/hejmo-home/hejmo/internal/recipe"
 	"github.com/hejmo-home/hejmo/internal/reward"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/streak"
@@ -268,6 +271,21 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	must(err)
 	must(db.SetLibrarySettings(h, store.LibrarySettings{HideAllergen: true, Everyone: true, ConfirmedBy: f.ids[0]}))
 	must(db.SetArticleHidden(h, "walnuts", true))
+	// Recipes (ticket 279): long names that break between words, a long variety and a long web address, several
+	// people of the same allergen named in one line, free-text ingredients, a recipe without anything but a name.
+	for _, r := range []recipe.Recipe{
+		{Name: "Omas schwäbische Käsespätzle mit Röstzwiebeln und Bergkäse aus dem Allgäu", Category: recipe.Main, Portions: 8, Minutes: 50, Mealtimes: []string{"lunch", "dinner"},
+			Tags: []string{"Kinder mögen es", "Sonntagsessen bei Oma und Opa"}, Tips: "Den Teig lieber zu fest als zu weich rühren.\nDie Spätzle schmecken am nächsten Tag in der Pfanne geröstet noch besser.",
+			Source: "https://www.beispiel-kochseite.de/rezepte/omas-schwaebische-kaesespaetzle-mit-roestzwiebeln-und-bergkaese-aus-dem-allgaeu",
+			Ingredients: []recipe.Ingredient{{Amount: 500, Unit: "g", Text: "Weizenmehl", ArticleID: "wheat-flour", Variety: "Type 405"}, {Amount: 6, Text: "Eier", ArticleID: "eggs"},
+				{Amount: 400, Unit: "g", Text: "Butter", ArticleID: "butter", Variety: "Allgäuer Bergkäse, mindestens 6 Monate gereift, aus der Sennerei"}, {Amount: 1, Unit: "pinch", Text: "Muskatnuss"}, {Amount: 2, Unit: "can", Text: "Röstzwiebeln"}},
+			Steps: []string{"Mehl, Eier, 1 TL Salz und etwa 150 ml Wasser mit dem Kochlöffel schlagen, bis der Teig Blasen wirft.", "Den Teig portionsweise durch die Spätzlepresse in kochendes Salzwasser drücken."}},
+		{Name: "Gurkensalat", Category: recipe.Side, Portions: 4},
+	} {
+		if _, err := db.CreateRecipe(h, f.ids[0], r); err != nil {
+			t.Fatal(err)
+		}
+	}
 
 	// Groups, a calendar, a day note.
 	_, err = db.CreateGroup(h, "Kindergartenkinder-Elternbeirat", f.ids[:3])
@@ -312,6 +330,8 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	}
 	f.outlook = f.addOutlook(t)
 	f.rewards = f.addRewards(t)
+	f.addRequests(t)
+	f.addBadges(t)
 	if r := f.post("/caldav/tokens", url.Values{"name": {"iPhone von Friedrich mit langem Gerätenamen"}}); r.status != http.StatusOK {
 		t.Fatalf("CalDAV token = %d\n%s", r.status, r.body)
 	}
@@ -539,17 +559,20 @@ var notRendered = map[string]string{
 
 	"/articles/{id}/picture":                  "an image",
 	"/tasks/rewards/{id}/picture":             "the photo of a reward, an image",
+	"/tasks/rewards/requests/{id}/picture":    "the photo a reward had when it was asked for, an image",
 	"/display/articles/{id}/picture":          "an image",
 	"/display/rewards/{id}/picture":           "an image",
 	"/settings/lists/library/picture/{token}": "an image",
+	"/contacts/import/{id}/photo/{n}":         "the photo of a card of an uploaded contact file, an image",
 	"/settings/lists/library/suggest":         "JSON for the live list under the name field",
 	"/settings/lists/library/plan/{id}":       "fragment: the sentence under the card of an article, rendered inside it",
 	"/settings/lists/always/plan":             "fragment: the sentence under the holiday, rendered inside its page",
+	"/meals/recipes/suggest":                  "fragment: the suggestions under an ingredient line, rendered inside the recipe form",
 }
 
 // matches reports whether a request path is served by a route pattern.
 func matches(pattern, path string) bool {
-	if i := strings.Index(path, "?"); i >= 0 {
+	if i := strings.IndexAny(path, "?#"); i >= 0 { // a query, or the "#state" a page of a POST is recorded under
 		path = path[:i]
 	}
 	re := regexp.QuoteMeta(pattern)
@@ -591,10 +614,18 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 		}
 	}
 	pages = append(pages, rewardFormPages(t, f)...)
+	// The badges of three children (#295): six of them two new, all ten, none. The crawl renders only the first
+	// person's page, so the others are added by hand.
+	for _, id := range []string{f.ids[3], f.ids[2], f.ids[4]} {
+		if p := "/tasks/badges/" + id; !have[p] {
+			add(parent, p)
+		}
+	}
 	// The child's personal device shows lists as tiles by default (#166): the tiles of articles with a picture, a symbol and the warning of several people, and of free text.
 	kid := siteOf("child personal device", f.box, f.kid.client)
 	add(kid, "/tasks")
 	add(kid, "/tasks/rewards")
+	add(kid, "/tasks/badges") // the child with all ten badges (#295)
 	add(kid, "/lists")
 	add(kid, "/lists/"+f.lists[0])
 	add(kid, "/lists/"+f.lists[1])
@@ -608,6 +639,8 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	add(display, "/display")
 	add(display, "/display/person/"+f.ids[1])
 	add(display, "/display/person/"+f.ids[3])
+	add(display, "/display/person/"+f.ids[2]) // the badges at the foot of the days (#295): all ten, six of them (two new), none
+	add(display, "/display/person/"+f.ids[4])
 	add(display, "/display/lists/"+f.lists[0])
 	add(display, "/display/lists/"+f.lists[1])
 	add(display, "/display/saver")
@@ -630,6 +663,9 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 		add(parent, p)
 	}
 	pages = append(pages, contactPages(t, f)...)
+	// Contacts from a vCard file (ticket 300): the upload page, its errors and the review in its states.
+	add(parent, "/contacts/import")
+	pages = append(pages, contactImportPages(t, f)...)
 
 	// The card of recovery codes (#176) is reached only by POST: rendered with
 	// the box's answer, in the wizard, the invitation and My account, and in
@@ -1334,7 +1370,7 @@ func (f *layoutFixture) addRewards(t *testing.T) []string {
 	}
 	redeem := func(id, person string) {
 		t.Helper()
-		if _, err := db.SQL().Exec(`INSERT INTO reward_redemptions (id, reward_id, person_id, status, price, requested_at, decided_at) VALUES (lower(hex(randomblob(8))), ?, ?, 'confirmed', 5, ?, ?)`, id, person, "2026-11-12T10:00:00Z", "2026-11-12T10:00:00Z"); err != nil {
+		if _, err := db.SQL().Exec(`INSERT INTO reward_redemptions (id, household_id, reward_id, person_id, status, price, requested_at, decided_at) SELECT lower(hex(randomblob(8))), household_id, id, ?, 'confirmed', 5, ?, ? FROM rewards WHERE id = ?`, person, "2026-11-12T10:00:00Z", "2026-11-12T10:00:00Z", id); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -1363,6 +1399,78 @@ func (f *layoutFixture) addRewards(t *testing.T) []string {
 		t.Fatal(err)
 	}
 	return []string{redeemed, never, byHand, gone}
+}
+
+// addBadges gives three children their badges (#295): Konstantin six, two of them new (today and yesterday),
+// Anna-Lena all ten (the child of the personal device), Wilhelmine none. The store awards by history only, so
+// the rows are written as if earned at these moments.
+func (f *layoutFixture) addBadges(t *testing.T) {
+	t.Helper()
+	give := func(who string, keys []badge.Key, days []int) {
+		t.Helper()
+		// What the fixture's own history awarded on the way is replaced by the dates below.
+		if _, err := f.db.SQL().Exec(`DELETE FROM badges WHERE person_id = ?`, f.people[who].ID); err != nil {
+			t.Fatal(err)
+		}
+		for i, k := range keys {
+			at := f.at(days[i], 9, 30).UTC().Format(time.RFC3339)
+			if _, err := f.db.SQL().Exec(`INSERT OR IGNORE INTO badges (household_id, person_id, key, earned_at, quiet) VALUES (?, ?, ?, ?, 0)`, f.householdID, f.people[who].ID, string(k), at); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	give("Konstantin", []badge.Key{badge.FirstStar, badge.FirstRoutine, badge.WholeDay, badge.Streak7, badge.Stars100, badge.FirstReward}, []int{2, 2, 5, 9, 13, 14})
+	give("Anna-Lena", badge.Catalogue, []int{1, 1, 3, 6, 8, 1, 9, 12, 7, 14})
+	give("Wilhelmine", nil, nil)
+}
+
+// addRequests makes the open requests of the layout fixture (#292): every child asks for two rewards, so
+// Start and the rewards page carry many rows with long names, and Anna-Lena's own page holds an open request,
+// a yes and a no with a note.
+func (f *layoutFixture) addRequests(t *testing.T) {
+	t.Helper()
+	db, h := f.db, f.householdID
+	rewards, err := db.Rewards(h)
+	if err != nil {
+		t.Fatal(err)
+	}
+	byName := map[string]string{}
+	for _, r := range rewards {
+		byName[r.Name] = r.ID
+	}
+	spiel, eis, kino := byName["Spielenachmittag mit Freundinnen und Freunden daheim"], byName["Eis aus der Eisdiele"], byName["Kinoabend"]
+	anna := f.people["Anna-Lena"].ID
+	ask := func(child, rw string, at time.Time) string {
+		t.Helper()
+		d, err := db.AskReward(h, child, rw, at, time.UTC)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return d.ID
+	}
+	for i, id := range f.ids {
+		p := f.people[layoutNames[i]]
+		if p.Role != store.RoleChild || id == anna {
+			continue
+		}
+		if _, err := db.BookStars(h, id, 40, "layout", f.ids[0], f.now.Add(-48*time.Hour)); err != nil {
+			t.Fatal(err)
+		}
+		ask(id, spiel, f.now.Add(-26*time.Hour))
+		ask(id, eis, f.now.Add(-3*time.Hour))
+	}
+	if _, err := db.BookStars(h, anna, 40, "layout", f.ids[0], f.now.Add(-48*time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	yes := ask(anna, spiel, f.now.Add(-30*time.Hour))
+	if _, err := db.ConfirmRedemption(h, yes, f.ids[0], f.now.Add(-29*time.Hour), time.UTC); err != nil {
+		t.Fatal(err)
+	}
+	no := ask(anna, kino, f.now.Add(-28*time.Hour))
+	if _, err := db.DeclineRedemption(h, no, f.ids[1], "Erst am Wochenende, heute ist Training und danach gibt es Abendessen bei Oma", f.now.Add(-27*time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	ask(anna, eis, f.now.Add(-2*time.Hour))
 }
 
 // rewardFormPages returns the reward form as the box answers a form with an error at every field.
@@ -1444,6 +1552,79 @@ func contactPages(t *testing.T, f *layoutFixture) []layoutPage {
 			t.Fatalf("contact form with errors = %d\n%s", refused.status, refused.body)
 		}
 		pages = append(pages, layoutPage{site: site, path: "/contacts/new#refused", html: map[string]string{lang: refused.body}})
+	}
+	return mergeCardPages(pages)
+}
+
+// contactImportPages are the pages of the contact import that an upload or a confirm reaches (ticket 300): the
+// upload refused, the review with duplicates of the fixture's contacts and long texts, the review with a
+// missing choice, a file with nothing new, a single card and an expired review, in both languages.
+func contactImportPages(t *testing.T, f *layoutFixture) []layoutPage {
+	t.Helper()
+	var pages []layoutPage
+	site := siteOf("contact import", f.box, f.client)
+	by := f.ids[0]
+	pic := base64.StdEncoding.EncodeToString(testJPEG(t, 640, 480))
+	file := func(cards ...string) []byte {
+		return []byte(strings.ReplaceAll(strings.Join(cards, ""), "\n", "\r\n"))
+	}
+	long := "Sehr-langer-Nachname-der-Familie-Müller-Schulze-Hohenstein-Wöllenstein"
+	cards := file(
+		"BEGIN:VCARD\nVERSION:3.0\nFN:Gerda "+long+"\nTEL;TYPE=CELL:+49 171 3456789\nTEL;TYPE=WORK:08031 40 12 77\nEMAIL:gerda.mueller-schulze@gartenfreunde-am-erlenbach-rosenheim.example\nPHOTO;ENCODING=b;TYPE=JPEG:"+pic+"\nEND:VCARD\n",
+		"BEGIN:VCARD\nVERSION:3.0\nFN:Kinderarztpraxis Dr. Elif Yılmaz-Hoffmann und Kollegen\nTEL;TYPE=WORK:089 1234 5670\nTEL;TYPE=FAX:089 1234 5679\nEND:VCARD\n",
+		"BEGIN:VCARD\nVERSION:3.0\nFN:Ärztlicher Bereitschaftsdienst\nTEL:116117\nTEL:0171 9988 7766\nEND:VCARD\n",
+		"BEGIN:VCARD\nVERSION:3.0\nFN:Herr Brandl\nTEL:0160 5544 3322\nPHOTO;ENCODING=b;TYPE=JPEG:"+pic+"\nEND:VCARD\nBEGIN:VCARD\nVERSION:3.0\nFN:Sepp Brandl\nTEL:0160 5544 3322\nTEL:089 700 12 34\nEND:VCARD\n",
+		"BEGIN:VCARD\nVERSION:3.0\nFN:Zahnarztpraxis Dr. Römer & Partner, Kieferorthopädie und Prophylaxe\nNICKNAME:"+layoutNames[3]+"\nTEL:089 3322 1100\nBDAY:1948-09-02\nADR:;;Lindwurmstraße 30;München;;80337;\nPHOTO;VALUE=uri:https://example.com/x.jpg\nEND:VCARD\n",
+		"BEGIN:VCARD\nVERSION:3.0\nNOTE:nichts\nEND:VCARD\n",
+		"BEGIN:VCARD\nVERSION:3.0\nFN:Rudi Wagn\nTEL:0171",
+	)
+	photos := map[int][]byte{1: testJPEG(t, 512, 512), 4: testJPEG(t, 512, 512)}
+	review, err := f.db.AddContactImport(f.householdID, by, "Kontakte "+long+".vcf", cards, photos, f.box.now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	single, err := f.db.AddContactImport(f.householdID, by, "Susanne Maier.vcf", file("BEGIN:VCARD\nVERSION:3.0\nFN:Tante Susanne\nTEL:0172 4455 6600\nEND:VCARD\n"), nil, f.box.now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	old, err := f.db.AddContactImport(f.householdID, by, "Kontakte Papa.vcf", cards, nil, f.box.now.Add(-2*time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	upload := func(lang, name string, data []byte) resp {
+		var buf bytes.Buffer
+		mw := multipart.NewWriter(&buf)
+		part, _ := mw.CreateFormFile("file", name)
+		_, _ = part.Write(data)
+		_ = mw.Close()
+		req, _ := http.NewRequest(http.MethodPost, f.srv.URL+"/contacts/import", &buf)
+		req.Header.Set("Content-Type", mw.FormDataContentType())
+		req.Header.Set("Origin", f.srv.URL)
+		req.Header.Set("Accept-Language", lang)
+		res, err := f.client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		var out bytes.Buffer
+		_, _ = out.ReadFrom(res.Body)
+		return resp{res.StatusCode, res.Header.Get("Location"), out.String()}
+	}
+	same := file("BEGIN:VCARD\nVERSION:3.0\nFN:Kinderarztpraxis Dr. Elif Yılmaz-Hoffmann und Kollegen\nTEL:089 1234 5670\nEND:VCARD\nBEGIN:VCARD\nVERSION:3.0\nNOTE:x\nEND:VCARD\n")
+	for _, lang := range []string{"de", "en"} {
+		hdr := map[string]string{"Accept-Language": lang}
+		capture := func(path, name string, r resp, want int) {
+			if r.status != want {
+				t.Fatalf("%s = %d, want %d\n%s", name, r.status, want, r.body)
+			}
+			pages = append(pages, layoutPage{site: site, path: path + "#" + name, html: map[string]string{lang: r.body}})
+		}
+		capture("/contacts/import", "refused", upload(lang, "Urlaub Gardasee mit sehr langem Dateinamen.jpg", testJPEG(t, 40, 30)), http.StatusUnprocessableEntity)
+		capture("/contacts/import", "nothing-new", upload(lang, "Kontakte Papa.vcf", same), http.StatusOK)
+		capture("/contacts/import/"+review.ID, "review", f.do(http.MethodGet, "/contacts/import/"+review.ID, nil, hdr), http.StatusOK)
+		capture("/contacts/import/"+review.ID, "missing", f.do(http.MethodPost, "/contacts/import/"+review.ID, url.Values{"take": {"1"}}, hdr), http.StatusUnprocessableEntity)
+		capture("/contacts/import/"+single.ID, "single", f.do(http.MethodGet, "/contacts/import/"+single.ID, nil, hdr), http.StatusOK)
+		capture("/contacts/import/"+old.ID, "expired", f.do(http.MethodGet, "/contacts/import/"+old.ID, nil, hdr), http.StatusOK)
 	}
 	return mergeCardPages(pages)
 }

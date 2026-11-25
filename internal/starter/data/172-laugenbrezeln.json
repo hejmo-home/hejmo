@@ -1,0 +1,170 @@
+{
+  "n": 172,
+  "slug": "laugenbrezeln",
+  "category": "Backen",
+  "servings": 10,
+  "time_minutes": 100,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/laugenbrezeln-63602",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Mehl Type 550",
+      "article_en": "Flour (German type 550)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Würfel",
+      "article_de": "Hefe",
+      "article_en": "Fresh yeast",
+      "note_de": "ca. 21 g",
+      "note_en": "about 21 g"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 25,
+      "unit": "g",
+      "article_de": "Schweineschmalz oder Butter",
+      "article_en": "Lard or butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "zum Verarbeiten",
+      "note_en": "for working the dough"
+    },
+    {
+      "amount": 20,
+      "unit": "g",
+      "article_de": "Natron",
+      "article_en": "Bicarbonate of soda",
+      "note_de": "für die Lauge",
+      "note_en": "for the soda bath"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Grobes Salz",
+      "article_en": "Coarse salt",
+      "note_de": "1 bis 2 EL zum Bestreuen",
+      "note_en": "1 to 2 tbsp for sprinkling"
+    },
+    {
+      "amount": 275,
+      "unit": "ml",
+      "article_de": "Wasser",
+      "article_en": "Water",
+      "note_de": "lauwarm, 100 ml für den Vorteig und 175 ml für den Teig (nur in der Zubereitung der Quelle genannt)",
+      "note_en": "lukewarm, 100 ml for the starter and 175 ml for the dough (listed only in the source method)"
+    },
+    {
+      "amount": 1,
+      "unit": "Liter",
+      "article_de": "Wasser",
+      "article_en": "Water",
+      "note_de": "für die Lauge",
+      "note_en": "for the soda bath"
+    }
+  ],
+  "de": {
+    "title": "Laugenbrezeln",
+    "steps": [
+      "Für den Vorteig 100 ml lauwarmes Wasser mit der zerbröckelten Hefe und dem Zucker verrühren. 15 Minuten stehen lassen.",
+      "Mehl, Salz und Schmalz (oder Butter) zum Vorteig geben, 175 ml lauwarmes Wasser dazugeben und alles zu einem glatten Teig kneten.",
+      "Den Teig in 10 gleich große Stücke teilen, zu Kugeln formen und 20 Minuten ruhen lassen.",
+      "Die Kugeln auf wenig Mehl zu etwa 20 cm langen Strängen rollen und 10 Minuten ruhen lassen.",
+      "Dann auf etwa 60 cm ausrollen. Die Stränge sollen in der Mitte dick und an den Enden dünn sein.",
+      "Brezeln formen: eine Schlaufe legen, die Enden verdrehen und auf den Bauch drücken. Auf zwei mit Backpapier belegte Bleche legen und 30 Minuten gehen lassen.",
+      "In einem 1-Liter-Topf 1 Liter Wasser zum Kochen bringen, dann das Natron einrühren. Vorsicht, es schäumt auf und ist heiß.",
+      "Jede Brezel etwa 20 Sekunden in die kochende Lauge tauchen, mit der Schaumkelle herausheben und abtropfen lassen. Wieder aufs Blech legen.",
+      "Mit grobem Salz bestreuen und danach den Bauch der Brezel einschneiden.",
+      "Den Ofen auf 200 °C Ober-/Unterhitze (180 °C Umluft) vorheizen, Rost in die Mitte. Eine hitzefeste Schale mit Wasser auf den Ofenboden stellen. Das gibt Dampf.",
+      "Etwa 25 Minuten hellbraun backen. Nach 10 Minuten die Bleche tauschen, damit alle gleichmäßig bräunen."
+    ]
+  },
+  "en": {
+    "title": "Soft pretzels",
+    "steps": [
+      "For the starter, mix 100 ml lukewarm water with the crumbled yeast and the sugar. Leave for 15 minutes.",
+      "Add the flour, salt and lard (or butter) to the starter, add 175 ml lukewarm water and knead everything into a smooth dough.",
+      "Divide the dough into 10 equal pieces, shape into balls and let rest for 20 minutes.",
+      "Roll the balls on a little flour into strands about 20 cm long and let rest 10 minutes.",
+      "Then roll out to about 60 cm. The strands should be thick in the middle and thin at the ends.",
+      "Shape the pretzels: lay a loop, twist the ends and press them onto the belly. Place them on two baking sheets lined with parchment and let rise for 30 minutes.",
+      "Bring 1 litre of water to the boil in a 1 litre pot, then stir in the bicarbonate of soda. Careful, it foams up and is hot.",
+      "Dip each pretzel into the boiling lye for about 20 seconds, lift out with a skimmer and let drain. Put it back on the sheet.",
+      "Sprinkle with coarse salt and then score the belly of the pretzel.",
+      "Preheat the oven to 200 °C top and bottom heat (180 °C fan), shelf in the middle. Put a heatproof dish of water on the oven floor. This makes steam.",
+      "Bake about 25 minutes until light brown. Swap the trays after 10 minutes so everything browns evenly."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 0.5,
+        "unit": "cube"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "tsp"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 9,
+        "amount": 1000,
+        "unit": "ml"
+      }
+    ]
+  },
+  "review_note": "Rating count from the list. diet_suggested null because the list shows a dash (lard option). Water quantities appear only in the source method. Baking paper not listed as an ingredient. Source states 100 min as its time. Source steps not copied. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

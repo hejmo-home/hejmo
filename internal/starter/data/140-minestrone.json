@@ -1,0 +1,190 @@
+{
+  "n": 140,
+  "slug": "minestrone",
+  "category": "Suppen",
+  "servings": 6,
+  "time_minutes": 45,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Sellerie",
+      "en": "Celery"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/minestrone-die-schnelle-9988",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1.5,
+      "unit": "Liter",
+      "article_de": "Gemüsebrühe, fertig",
+      "article_en": "Vegetable stock, ready-made",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Kartoffeln, festkochend",
+      "article_en": "Waxy potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stange",
+      "article_de": "Lauch, zart",
+      "article_en": "Leek, tender",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Möhren, mittelgroß",
+      "article_en": "Carrots, medium",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zucchini, klein",
+      "article_en": "Zucchini, small",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stange",
+      "article_de": "Staudensellerie",
+      "article_en": "Celery stalks",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Tomaten, reif",
+      "article_en": "Ripe tomatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Bohnen aus der Dose",
+      "article_en": "Canned beans",
+      "note_de": "weiße, rote oder gesprenkelte",
+      "note_en": "white, red or speckled"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer aus der Mühle",
+      "article_en": "Pepper, freshly ground",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Pesto aus dem Glas",
+      "article_en": "Pesto from a jar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Parmesan oder Pecorino",
+      "article_en": "Parmesan or pecorino",
+      "note_de": "frisch gerieben",
+      "note_en": "freshly grated"
+    }
+  ],
+  "de": {
+    "title": "Minestrone, die Schnelle",
+    "steps": [
+      "Die Brühe in einem großen Topf zugedeckt zum Kochen bringen. Währenddessen schneidest du das Gemüse. Wichtig: Das Gemüse kommt nacheinander in den Topf, das härteste zuerst.",
+      "Zuerst die geschälten Kartoffelwürfel in die kochende Brühe geben.",
+      "Dann den Lauch in Streifen und die Möhren in Scheiben schneiden und dazugeben.",
+      "Zucchini und Staudensellerie klein schneiden und als Letztes dazugeben.",
+      "Die Tomaten kreuzweise einritzen, kurz mit kochendem Wasser übergießen und die Haut abziehen. Dann würfeln.",
+      "Wenn die Suppe nach ca. 15 Min. langsam dicker wird, Tomaten und abgetropfte Bohnen zufügen.",
+      "Bei niedriger Hitze zugedeckt weitere 15–20 Min. köcheln lassen, bis die Suppe dick und bunt ist. Mit Salz und Pfeffer würzen.",
+      "Pesto und Käse erst ganz zum Schluss unterrühren. Sie werden nicht mehr gekocht."
+    ]
+  },
+  "en": {
+    "title": "Quick minestrone",
+    "steps": [
+      "Bring the stock to the boil in a large pot with the lid on. Meanwhile cut the vegetables. Important: the vegetables go into the pot one after the other, the hardest first.",
+      "First put the peeled potato cubes into the boiling stock.",
+      "Then cut the leek into strips and the carrots into slices and add them.",
+      "Cut the zucchini and celery into small pieces and add them last.",
+      "Score the tomatoes crosswise, pour boiling water over them briefly and pull off the skin. Then dice them.",
+      "When the soup slowly thickens after about 15 min, add the tomatoes and the drained beans.",
+      "Simmer covered over low heat for another 15-20 min until the soup is thick and colourful. Season with salt and pepper.",
+      "Stir in the pesto and cheese only at the very end. They are not cooked any more."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1500,
+        "unit": "ml"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "stalk"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "stalk"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 10,
+        "amount": 2,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

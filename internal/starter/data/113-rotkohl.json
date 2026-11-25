@@ -1,0 +1,188 @@
+{
+  "n": 113,
+  "slug": "rotkohl",
+  "category": "Beilagen",
+  "servings": 4,
+  "time_minutes": 80,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/1648441272467499/Blaukraut-Rotkraut-Rotkohl.html",
+    "site": "Chefkoch",
+    "ratings": 438
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "kg",
+      "article_de": "Rotkohl",
+      "article_en": "Red cabbage",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Schweineschmalz",
+      "article_en": "Pork lard",
+      "note_de": "oder Gänseschmalz",
+      "note_en": "or goose fat"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Äpfel",
+      "article_en": "Apples",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Essig",
+      "article_en": "Vinegar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "ml",
+      "article_de": "Wasser",
+      "article_en": "Water",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Lorbeerblatt",
+      "article_en": "Bay leaf",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Nelken",
+      "article_en": "Cloves",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "zum Binden",
+      "note_en": "to thicken"
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Rotwein",
+      "article_en": "Red wine",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Rotkohl",
+    "steps": [
+      "Vom Rotkohl (1 kg) die äußeren Blätter entfernen, ihn waschen, vierteln und den Strunk herausschneiden. Fein hobeln oder schneiden. Die Zwiebel würfeln und die 2 Äpfel schälen und fein schneiden.",
+      "50 g Schmalz im Topf erhitzen und Zwiebel, 1 EL Zucker und Äpfel darin andünsten. Den Kohl zugeben und sofort 2 EL Essig darübergießen, damit die Farbe schön rot bleibt. Zugedeckt 10 Minuten dünsten.",
+      "250 bis 375 ml Wasser angießen, Salz, 1 Lorbeerblatt und 2 Nelken zugeben und zugedeckt 30 bis 45 Minuten weich schmoren. Bei Bedarf heißes Wasser nachgießen.",
+      "Wer es sämiger mag, bindet mit 2 TL in kaltem Wasser angerührtem Mehl. Zum Schluss mit 4 EL Rotwein abschmecken."
+    ]
+  },
+  "en": {
+    "title": "Red cabbage",
+    "steps": [
+      "Remove the outer leaves from the red cabbage (1 kg), wash it, quarter it and cut out the core. Shred finely. Dice the onion and peel and finely chop the 2 apples.",
+      "Heat 50 g lard in a pot and sweat the onion, 1 tbsp sugar and the apples in it. Add the cabbage and pour 2 tbsp vinegar over it straight away so the colour stays a nice red. Steam covered for 10 minutes.",
+      "Add 250 to 375 ml water, salt, 1 bay leaf and 2 cloves and braise covered for 30 to 45 minutes until tender. Add hot water if needed.",
+      "If you like it thicker, thicken with 2 tsp flour mixed in cold water. Finish with 4 tbsp red wine."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 9,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 10,
+        "amount": 2,
+        "unit": "tsp"
+      },
+      {
+        "index": 11,
+        "amount": 4,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Source suggests 1/4 to 3/8 l water in the method; the ingredient line says 0.25 l (250 ml). Page ratingCount 439 (list: 438). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.0
+  }
+}

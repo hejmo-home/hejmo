@@ -1,0 +1,154 @@
+{
+  "n": 122,
+  "slug": "semmelknoedel",
+  "category": "Beilagen",
+  "servings": 4,
+  "time_minutes": 45,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/klassische-semmelknoedel-selber-machen-so-gehts-78561.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 5,
+      "unit": "Stk",
+      "article_de": "Brötchen, altbacken",
+      "article_en": "Day-old bread rolls",
+      "note_de": "ca. 300 g",
+      "note_en": "approx. 300 g"
+    },
+    {
+      "amount": 250,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zwiebeln, klein",
+      "article_en": "Small onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 5,
+      "unit": "Stiel",
+      "article_de": "Petersilie, glatt",
+      "article_en": "Flat-leaf parsley",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Muskat",
+      "article_en": "Nutmeg",
+      "note_de": "gerieben",
+      "note_en": "grated"
+    }
+  ],
+  "de": {
+    "title": "Semmelknödel",
+    "steps": [
+      "Schneide die Brötchen in Würfel von etwa 1 cm und gib sie in eine große Schüssel. Erwärme die Milch, gieße sie darüber, rühre kräftig um und lass die Masse etwa 20 Minuten einweichen.",
+      "Schäle die Zwiebeln und würfle sie sehr fein. Gare sie etwa eine Minute in der Butter, bis sie glasig sind, und stelle den Topf beiseite. Wasche die Petersilie, schüttle sie trocken und hacke die Blätter fein. Verquirle die Eier mit einer Gabel.",
+      "Gib Zwiebeln, Petersilie und Eier zu den eingeweichten Brötchen, knete alles mit den Händen gut durch und schmecke mit Muskat, Salz und Pfeffer ab.",
+      "Koche 3 bis 4 l gesalzenes Wasser in einem breiten, großen Topf auf. Würze die Masse bei Bedarf nach und forme mit feuchten Händen 8 bis 10 Knödel.",
+      "Lege die Knödel mit der Schaumkelle in das leicht siedende Wasser und lass sie bei schwacher Hitze 15 bis 20 Minuten ziehen, bis sie an die Oberfläche kommen und dort treiben. Nimm sie heraus, lass sie gut abtropfen und serviere sie in einer Schüssel."
+    ]
+  },
+  "en": {
+    "title": "Bread dumplings",
+    "steps": [
+      "Cut the rolls into cubes of about 1 cm and put them in a large bowl. Warm the milk, pour it over, stir vigorously and let the mixture soak for about 20 minutes.",
+      "Peel the onions and dice them very finely. Soften them in the hot butter for about 1 minute, stirring, until translucent, and take the pan off the heat. Wash the parsley, shake it dry and chop the leaves finely. Beat the eggs with a fork.",
+      "Add the onions, parsley and eggs to the soaked rolls, knead everything thoroughly by hand and season with salt, pepper and nutmeg.",
+      "Bring 3 to 4 litres of salted water to the boil in a large, wide pot. Taste the mixture once more and, with damp hands, shape 8 to 10 dumplings.",
+      "Slide the dumplings into the simmering water with a slotted spoon and cook over low heat for 15 to 20 minutes, until they rise and float on the surface. Lift them out, drain them well and serve in a bowl."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 5,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 5,
+        "unit": "sprig"
+      },
+      {
+        "index": 5,
+        "amount": 3,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Replacement for missing time in the previous source, approved by the product owner 23/11/2026. Replaces the earlier replacement (Essen & Trinken, 2 portions with 4 dumplings): this one gives 4 portions with 8 to 10 dumplings from 300 g of rolls. The page shows no ratings yet (0); chosen as an editorial recipe. Source has no weight for the parsley beyond '5 sprigs'. Dumplings: 8 to 10; 8 used for the step wording.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

@@ -53,12 +53,13 @@ var crumbTrails = map[string][]crumb{
 	"token.html": {crumbSettings, crumbCalDAV}, "token_once.html": {crumbSettings, crumbCalDAV},
 	"personal_device.html": {crumbSettings, crumbPersonalDevices},
 	"mcp_token.html":       {crumbSettings, crumbMCP}, "mcp_token_new.html": {crumbSettings, crumbMCP}, "mcp_token_once.html": {crumbSettings, crumbMCP},
-	"contacts.html": {crumbSettings}, "contacts_kids.html": {crumbSettings, crumbContacts}, "contact.html": {crumbSettings, crumbContacts}, "contact_groups.html": {crumbSettings, crumbContacts}, "contact_group.html": {crumbSettings, crumbContacts, crumbContactGroups},
+	"contacts.html": {crumbSettings}, "contacts_kids.html": {crumbSettings, crumbContacts}, "contact_import.html": {crumbSettings, crumbContacts}, "contact_import_review.html": {crumbSettings, crumbContacts}, "contact.html": {crumbSettings, crumbContacts}, "contact_groups.html": {crumbSettings, crumbContacts}, "contact_group.html": {crumbSettings, crumbContacts, crumbContactGroups},
 	"person_edit.html": {crumbSettings, crumbPeople}, "group.html": {crumbSettings, crumbPeople},
 	"account_reset.html": {crumbSettings, crumbAccount}, "passkey.html": {crumbSettings, crumbAccount}, "recovery_codes.html": {crumbSettings, crumbAccount},
 	"session.html": {crumbSettings, crumbSessions},
 
-	"pause.html":            {crumbTasks},
+	"pause.html":   {crumbTasks},
+	"recipes.html": {crumbMeals}, "starter.html": {crumbMeals, crumbRecipes}, "recipe.html": {crumbMeals, crumbRecipes},
 	"meal_template.html":    {crumbMeals, crumbMealTemplates},
 	"routine_template.html": {crumbTasks, crumbRoutineTemplates},
 	"reward_form.html":      {crumbTasks, crumbRewards}, "reward.html": {crumbTasks, crumbRewards}, "reward_goal.html": {crumbTasks, crumbRewards},
@@ -75,6 +76,11 @@ func crumbsFor(name string, data map[string]any) []crumb {
 			return []crumb{crumbSettings, crumbPeople, {Href: "/people/" + id, Name: who}}
 		}
 		return []crumb{crumbSettings, crumbPeople}
+	case "recipe_form.html":
+		if id, name := lookup(data, "RecipeID"), lookup(data, "RecipeName"); id != "" {
+			return []crumb{crumbMeals, crumbRecipes, {Href: recipesPath + "/" + id, Name: name}}
+		}
+		return []crumb{crumbMeals, crumbRecipes}
 	case "contact_form.html":
 		if id, who := lookup(data, "CT", "ID"), lookup(data, "CT", "Name"); id != "" {
 			return []crumb{crumbSettings, crumbContacts, {Href: "/contacts/" + id, Name: who}}

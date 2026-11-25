@@ -1,0 +1,151 @@
+{
+  "n": 173,
+  "slug": "zitronen-mohn-gugelhupf",
+  "category": "Backen",
+  "servings": 12,
+  "time_minutes": 80,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.essen-und-trinken.de/rezepte/61737-rzpt-zitronen-mohn-gugelhupf",
+    "site": "Essen & Trinken",
+    "ratings": 314
+  },
+  "ingredients": [
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "plus etwas für die Form",
+      "note_en": "plus some for the tin"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Eier, Bio",
+      "article_en": "Organic eggs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Zitronen, Bio",
+      "article_en": "Organic lemons",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Plain flour",
+      "note_de": "plus etwas für die Form",
+      "note_en": "plus some for the tin"
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Backpulver",
+      "article_en": "Baking powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 25,
+      "unit": "g",
+      "article_de": "Mohn",
+      "article_en": "Poppy seeds",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Puderzucker",
+      "article_en": "Icing sugar",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Zitronen-Mohn-Gugelhupf",
+    "steps": [
+      "Heize den Ofen auf 180 °C (Umluft 160 °C) vor. Fette eine Gugelhupfform mit Butter aus und stäube sie mit Mehl aus.",
+      "Rühre Butter, Zucker und Salz mit dem Handrührer 8 bis 10 Minuten hellcremig und rühre die Eier einzeln unter. Reibe von einer Zitrone die Schale fein ab und presse 5 EL Saft aus.",
+      "Vermenge Mohn, Zitronenschale, Mehl und Backpulver. Rühre die Mischung abwechselnd mit den 5 EL Zitronensaft unter den Teig.",
+      "Fülle den Teig in die Form und backe ihn auf einem Rost im unteren Ofendrittel 50 bis 60 Minuten.",
+      "Presse den Saft der übrigen Zitronen aus und stelle 2 EL davon beiseite. Steche den heißen Kuchen mit einem Holzspieß ein, verteile den Saft darauf und lass ihn kurz einziehen. Stürze den Kuchen dann auf ein Gitter und lass ihn etwas abkühlen.",
+      "Verrühre den Puderzucker mit den beiseitegestellten 2 EL Saft glatt und verziere den Kuchen damit."
+    ]
+  },
+  "en": {
+    "title": "Lemon and poppy seed Gugelhupf",
+    "steps": [
+      "Preheat the oven to 180 °C (160 °C fan). Grease a Gugelhupf tin with butter and dust it with flour.",
+      "Beat the butter, sugar and salt with a hand mixer for 8 to 10 minutes until pale and creamy and beat in the eggs one at a time. Finely grate the zest of one lemon and squeeze out 5 tbsp of juice.",
+      "Mix the flour, baking powder, poppy seeds and lemon zest. Stir the flour mixture into the batter alternately with the 5 tbsp of lemon juice.",
+      "Fill the batter into the tin and bake it on a rack in the lower third of the oven for 50 to 60 minutes.",
+      "Squeeze the juice from the remaining lemons and set 2 tbsp aside. Prick the hot cake with a wooden skewer, spread the juice over it and leave it to soak in briefly. Then turn the cake out onto a wire rack and let it cool a little.",
+      "Stir the icing sugar with the 2 tbsp of juice you set aside until smooth and decorate the cake with it."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 3,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "Replacement for missing servings in the previous source, approved by the product owner 23/11/2026. Not the same dish: lemon and poppy seed Gugelhupf instead of the Limoncello version. The source says 'restlichen Zitronensaft' for the glaze without naming the split; used 2 tbsp set aside for the glaze and the rest for soaking the cake, as the steps read. Number of lemons: 3 organic lemons in the list, 1 for zest and 5 tbsp of juice. Gugelhupf tin size is not stated.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

@@ -1,0 +1,228 @@
+{
+  "n": 95,
+  "slug": "linsen-spaetzle",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 45,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Sellerie",
+      "en": "Celery"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/linsen-mit-spaetzle-73106",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Tellerlinsen, braun",
+      "article_en": "Brown plate lentils",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zwiebeln",
+      "article_en": "Onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stange",
+      "article_de": "Lauch",
+      "article_en": "Leek",
+      "note_de": "klein",
+      "note_en": "small"
+    },
+    {
+      "amount": 2,
+      "unit": "Stange",
+      "article_de": "Staudensellerie",
+      "article_en": "Celery stalks",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Schinkenspeck",
+      "article_en": "Cured ham bacon",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Öl, neutral",
+      "article_en": "Neutral oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1.2,
+      "unit": "l",
+      "article_de": "Gemüsebrühe oder Rinderbrühe",
+      "article_en": "Vegetable or beef stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Aceto balsamico",
+      "article_en": "Balsamic vinegar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Saitenwürstle oder Wiener Würstchen",
+      "article_en": "Saitenwürstle or Vienna sausages",
+      "note_de": "nach Belieben; 4 oder 8",
+      "note_en": "optional; 4 or 8"
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Petersilie",
+      "article_en": "Parsley",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Spätzle",
+      "article_en": "Spaetzle",
+      "note_de": "selbst gemacht oder aus dem Kühlregal",
+      "note_en": "homemade or from the chilled shelf"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Linsen mit Spätzle",
+    "steps": [
+      "Linsen nach Packungsanleitung einweichen. Ungeweichte Linsen brauchen deutlich länger. Alle Zutaten abwiegen.",
+      "Zwiebeln und Möhren würfeln. Lauch längs einschneiden, gründlich waschen, weil sich dazwischen Erde versteckt, und in Ringe schneiden. Sellerie in Scheiben schneiden und die Blätter für später aufheben. Schinkenspeck würfeln, Petersilie hacken.",
+      "Öl in einem kleinen Topf erhitzen und den Speck darin knusprig anbraten.",
+      "Zwiebeln, Möhren, Lauch und Sellerie dazugeben und kurz mitdünsten. Die abgetropften Linsen und die Brühe dazugeben.",
+      "Alles 20 bis 30 Minuten köcheln lassen, bis die Linsen weich sind und leicht aufplatzen.",
+      "Mit Balsamico, Salz und Pfeffer abschmecken. Wenn du Würstchen magst, erhitzt du sie in den letzten Minuten mit.",
+      "Spätzle in einer Pfanne mit Butter und einem Schuss Wasser zugedeckt erwärmen. Ein- bis zweimal umrühren.",
+      "Linsen mit Spätzle anrichten und mit Selleriegrün und Petersilie bestreuen."
+    ]
+  },
+  "en": {
+    "title": "Lentils with spaetzle",
+    "steps": [
+      "Soak the lentils according to the packet instructions. Unsoaked lentils take much longer. Weigh out all ingredients.",
+      "Dice the onions and carrots. Slice the leek open lengthways, wash it thoroughly because soil hides between the layers, and cut it into rings. Slice the celery and keep the leaves for later. Dice the bacon and chop the parsley.",
+      "Heat the oil in a small pot and fry the bacon in it until crisp.",
+      "Add onions, carrots, leek and celery and sauté briefly. Add the drained lentils and the stock.",
+      "Simmer everything for 20 to 30 minutes until the lentils are soft and starting to break up slightly.",
+      "Season with balsamic vinegar, salt and pepper. If you like sausages, heat them in the lentils for the last few minutes.",
+      "Warm the spätzle in a pan with the butter and a splash of water, covered. Stir once or twice.",
+      "Serve the lentils with the spätzle and sprinkle with celery leaves and parsley."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "stalk"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "stalk"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 8,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 11,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 12,
+        "amount": 1,
+        "unit": "bunch"
+      },
+      {
+        "index": 14,
+        "amount": 1,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Time from source: 45 min, stated as Aufwand (the only time figure on the page). Sausages optional per source, lower count 4 used. Source shows 76 ratings; list says Redaktionsküche. Steps rewritten in own words on 23/11/2026 from the source steps (times, temperatures and order per source). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

@@ -1,0 +1,159 @@
+{
+  "n": 85,
+  "slug": "nudeln-pilze",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 55,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/nudeln-mit-pilzen-10162",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 10,
+      "unit": "g",
+      "article_de": "Steinpilze, getrocknet",
+      "article_en": "Dried porcini",
+      "note_de": "kann man auch weglassen, geben aber das volle Pilzaroma",
+      "note_en": "can be left out, but they give the full mushroom flavour"
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Champignons oder Egerlinge",
+      "article_en": "Button or cremini mushrooms",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Tagliatelle oder breitere Bandnudeln",
+      "article_en": "Tagliatelle or wider ribbon pasta",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Petersilie",
+      "article_en": "Parsley",
+      "note_de": "großes Bund",
+      "note_en": "large bunch"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer, schwarz",
+      "article_en": "Black pepper",
+      "note_de": "aus der Mühle",
+      "note_en": "freshly ground"
+    }
+  ],
+  "de": {
+    "title": "Nudeln mit Pilzen",
+    "steps": [
+      "Weiche 10 g getrocknete Steinpilze (kann man weglassen, sie geben aber das volle Pilzaroma) in warmem Wasser 30 Minuten ein. Hebe das Einweichwasser unbedingt auf.",
+      "Putze die Champignons (300 g) mit einem Tuch und schneide sie in Scheiben. Hacke 2 Knoblauchzehen und 1 großes Bund Petersilie.",
+      "Bringe 5 Liter Wasser mit 1 EL Salz zum Kochen. Gib 500 g Tagliatelle hinein und rühre am Anfang gut um, damit die Nudeln nicht zusammenkleben. Koche sie al dente.",
+      "Erhitze 2 EL Olivenöl in einer mittleren Pfanne bei mittlerer Hitze. Brate die frischen Pilze und die abgetropften, gehackten Steinpilze etwa 5 Minuten. Rühre oft um, bis die Flüssigkeit verdampft ist.",
+      "Gib Knoblauch, Petersilie, 100 g Sahne und 1 TL Zitronensaft dazu. Gieße etwas Einweichwasser durch ein Sieb dazu, bis die Soße die richtige Konsistenz hat. Würze mit Salz und Pfeffer.",
+      "Gieße die Nudeln ab und vermenge sie mit der Pilzsoße."
+    ]
+  },
+  "en": {
+    "title": "Pasta with mushrooms",
+    "steps": [
+      "Soak 10 g dried porcini (optional, but they give the full mushroom aroma) in warm water for 30 minutes. Be sure to keep the soaking water.",
+      "Clean the button mushrooms (300 g) with a cloth and slice them. Chop 2 garlic cloves and 1 large bunch of parsley.",
+      "Bring 5 litres of water with 1 tbsp salt to the boil. Add 500 g tagliatelle and stir well at the start so the pasta does not stick together. Cook until al dente.",
+      "Heat 2 tbsp olive oil in a medium pan over medium heat. Fry the fresh mushrooms and the drained, chopped porcini for about 5 minutes. Stir often until the liquid has evaporated.",
+      "Add garlic, parsley, 100 g cream and 1 tsp lemon juice. Add some soaking water through a sieve until the sauce has the right consistency. Season with salt and pepper.",
+      "Drain the pasta and toss it with the mushroom sauce."
+    ],
+    "amounts_converted": [
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "clove"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "bunch"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "Time from source: 25 min prep + 30 min cooking = 55 min (Aufwand shown on the page). Source shows 40 ratings; list says Redaktionsküche. Steps rewritten in own words on 23/11/2026 from the source steps (times, temperatures and order per source). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

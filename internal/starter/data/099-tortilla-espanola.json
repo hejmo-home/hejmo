@@ -1,0 +1,180 @@
+{
+  "n": 99,
+  "slug": "tortilla-espanola",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 80,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/spanish-tortilla",
+    "site": "BBC Good Food",
+    "ratings": 39
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel, weiß, groß",
+      "article_en": "Large white onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": "zum Braten",
+      "note_en": "for frying"
+    },
+    {
+      "amount": 25,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Kartoffeln, festkochend",
+      "article_en": "Waxy potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 6,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 8,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Handvoll",
+      "article_de": "Petersilie, glatt",
+      "article_en": "Flat-leaf parsley",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Baguette",
+      "article_en": "Baguette",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Strauchtomaten",
+      "article_en": "Vine tomatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": "zum Beträufeln",
+      "note_en": "for drizzling"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Meersalz",
+      "article_en": "Sea salt",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Tortilla española",
+    "steps": [
+      "Schneide die Zwiebel in Scheiben, schäle die Kartoffeln, viertle sie und schneide sie sehr fein. Ritze die Tomaten kreuzweise ein, übergieße sie mit frisch gekochtem Wasser, gieße es nach 2 bis 3 Minuten ab, ziehe die Haut ab und reibe das Fruchtfleisch grob.",
+      "Gare die Zwiebel in einer großen beschichteten Pfanne bei niedriger Hitze in Öl und Butter etwa 15 Minuten, bis sie weich, aber nicht braun ist.",
+      "Gib die Kartoffeln dazu, decke die Pfanne ab und gare alles 15 bis 20 Minuten weiter, dabei gelegentlich umrühren. Sobald die Kartoffeln weich sind und die Zwiebeln glänzen, presse 2 Knoblauchzehen hinein und gieße die verquirlten Eier darüber.",
+      "Setze den Deckel wieder auf und lass die Tortilla bei niedriger Hitze etwa 20 Minuten stocken, bis Rand und Boden goldgelb und die Oberseite fest sind, die Mitte aber noch leicht wackelt. Gleite sie zum Wenden auf einen Teller, lege einen zweiten Teller darauf, drehe alles um und lass die Tortilla zurück in die Pfanne gleiten, um sie fertig zu garen.",
+      "Serviere die Tortilla warm oder kalt mit gehackter Petersilie. Dazu: Baguettescheiben erwärmen, mit einer Gabel rundum einstechen, mit den übrigen Knoblauchzehen einreiben, mit den geriebenen Tomaten belegen und mit Meersalz und einem Schuss Olivenöl abrunden."
+    ]
+  },
+  "en": {
+    "title": "Spanish tortilla",
+    "steps": [
+      "Slice the onion. Peel the potatoes, cut them into quarters and slice them thinly. If you want the tomato bread on the side, prepare the tomatoes now: nick a cross into each one, cover them with boiling water for 2 to 3 minutes, then drain, slip off the skins and grate the flesh coarsely.",
+      "Warm the oil and butter in a big non-stick frying pan over a low heat and cook the onion gently for about 15 minutes, until it is soft and still pale.",
+      "Tip in the potatoes, put a lid on the pan and cook for 15 to 20 minutes more, stirring from time to time so they colour evenly. When the potatoes have softened and the onion looks shiny, crush 2 garlic cloves into the pan, then add the eggs.",
+      "Cover again and cook gently for around 20 minutes. It is ready to turn when the sides and underside are golden and the top is set while the centre still shakes a little. Slide it onto a plate, cover with a second plate, invert, and return it to the pan so the other side can cook.",
+      "Sprinkle with parsley and eat warm or at room temperature. For the garlic and tomato bread, warm slices of baguette, pierce them with a fork, rub them with the leftover garlic, spoon on the grated tomato and finish with sea salt and a little olive oil."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 6,
+        "unit": "clove"
+      },
+      {
+        "index": 5,
+        "amount": 8,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "handful"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 8,
+        "amount": 4,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Replacement for missing time in the previous source, approved by the product owner 23/11/2026. Time from source: 30 min prep + 50 min cooking = 80 min (total shown on the page). Source is English (BBC Good Food); German written from the facts. Tomato topping on baguette is a serving suggestion with the tomatoes optional ('if using') in the source; baguette and tomatoes are in the ingredient list. Oil quantity in the source: 4 tbsp plus a drizzle.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

@@ -188,7 +188,7 @@ func TestMealPlanTitlesFollowTheLanguageOfTheBrowserThatSaves(t *testing.T) {
 	}
 	page := c.b.do(http.MethodGet, "/meals?week=2026-11-16", nil, map[string]string{"Accept-Language": "de"})
 	for _, want := range []string{"Dienstag", "Abendessen", "Frühstück", "Woche 47 speichern", "<strong>Woche 47</strong>", "16.11. – 22.11.2026", "Vorherige Woche", "Zurück zu dieser Woche",
-		"Rezepte-Bibliothek kommt in einer späteren Version – bis dahin einfach das Gericht eintragen.", "Änderungen noch nicht gespeichert", "Plane die Mahlzeiten für die Woche."} {
+		`<a class="button secondary" href="/meals/recipes">`, "Eure Gerichte mit Zutaten und Schritten. Alle sehen sie, nur Erwachsene schreiben sie.", "Änderungen noch nicht gespeichert", "Plane die Mahlzeiten für die Woche."} {
 		if !strings.Contains(page.body, want) {
 			t.Errorf("German page lacks %q", want)
 		}
@@ -207,8 +207,8 @@ func TestChildSeesTheMealPlanButCannotChangeIt(t *testing.T) {
 	if strings.Contains(r.body, `<form method="post" action="/meals"`) || strings.Contains(r.body, "<input name=\"meal_") || strings.Contains(r.body, "<textarea") || strings.Contains(r.body, `class="savebar"`) {
 		t.Errorf("a child's page offers editing:\n%s", r.body)
 	}
-	if strings.Contains(r.body, `class="hint recipe"`) || strings.Contains(r.body, "recipe library") {
-		t.Error("a child sees the recipe note")
+	if !strings.Contains(r.body, `<a class="button secondary" href="/meals/recipes">`) || !strings.Contains(r.body, "You can read them; adults write them.") || strings.Contains(r.body, "only adults write them") {
+		t.Errorf("a child gets the way to the recipes with a sentence of their own:\n%s", r.body)
 	}
 	// Read view: the mealtime has its icon, the dish is large, an empty day says so.
 	for _, want := range []string{`<dt class="mt"><svg class="icon"`, "Dinner</dt><dd>Pasta bake</dd>", `<p class="none">Nothing planned.</p>`, "What the family is eating this week."} {
@@ -253,11 +253,11 @@ func TestMealsPageShowsAnEmptyHintWhileNothingIsPlanned(t *testing.T) {
 	}
 }
 
-func TestParentSeesTheRecipeNoteSaveBarAndDayHeaders(t *testing.T) {
+func TestParentSeesTheWayToTheRecipesSaveBarAndDayHeaders(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
 	body := b.do(http.MethodGet, "/meals", nil, map[string]string{"Accept-Language": "en"}).body
-	for _, want := range []string{`<p class="hint recipe"><svg class="icon"`, "A recipe library comes in a later version – until then, just type the dish.",
+	for _, want := range []string{`<div class="meal-tools"><a class="button secondary" href="/meals/recipes">`, "Your dishes with ingredients and steps. Everyone can read them, only adults write them.",
 		`<div class="savebar"><button class="button" type="submit">Save week 46</button><span class="dirty" hidden>Changes not saved yet</span></div>`,
 		"Plan the meals for the week. Every meal also shows in the calendar, and displays show today&#39;s meals until their time is over."} {
 		if !strings.Contains(body, want) {

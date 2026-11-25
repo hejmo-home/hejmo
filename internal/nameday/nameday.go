@@ -55,6 +55,8 @@ type Entry struct {
 	Move     string   `json:"move,omitempty"`   // MoveEasterMonday: a fixed day that moves
 	Usual    bool     `json:"usual,omitempty"`  // the day a name gets when it has several
 	Source   string   `json:"source"`           // key in the list's sources
+	// Unchecked says the day was written down but not yet checked against the source it names.
+	Unchecked bool `json:"unchecked,omitempty"`
 }
 
 // MoveEasterMonday moves a fixed day to the Monday after Easter when it falls
@@ -315,7 +317,7 @@ func (e Entry) On(year int) Occurrence {
 	o := Occurrence{Date: date}
 	if e.Move == MoveEasterMonday {
 		o.Easter = OrthodoxEaster(year)
-		if date.Before(o.Easter) {
+		if !date.After(o.Easter) {
 			o.From, o.Date, o.Moved = date, o.Easter.AddDate(0, 0, 1), true
 		}
 	}

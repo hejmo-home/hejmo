@@ -41,6 +41,18 @@ type NameDayChange struct {
 	Dropped []DroppedNameDay
 }
 
+// ValidateNameDays checks the choice of SetNameDays without writing anything,
+// so a caller can refuse a request before it saves any other part of it.
+func ValidateNameDays(on bool, list string) error {
+	if on && list == "" {
+		return &FieldError{Field: "name_day_list", Msg: "name_day_list: choose a church"}
+	}
+	if list != "" && !nameday.List(list).Valid() {
+		return &FieldError{Field: "name_day_list", Msg: "name_day_list: unknown list " + list}
+	}
+	return nil
+}
+
 // SetNameDays switches name days on or off and chooses the church (an empty list
 // leaves it as it is). Switching on needs a church (a *FieldError at name_day_list). Changing the church sets the
 // choices of contacts that the new list does not have back to auto and reports
@@ -48,11 +60,8 @@ type NameDayChange struct {
 // when it is missing, and every name-day event is written again.
 func (db *DB) SetNameDays(householdID string, on bool, list, calendarName, word string) (NameDayChange, error) {
 	var change NameDayChange
-	if on && list == "" {
-		return change, &FieldError{Field: "name_day_list", Msg: "name_day_list: choose a church"}
-	}
-	if list != "" && !nameday.List(list).Valid() {
-		return change, &FieldError{Field: "name_day_list", Msg: "name_day_list: unknown list " + list}
+	if err := ValidateNameDays(on, list); err != nil {
+		return change, err
 	}
 	tx, err := db.sql.Begin()
 	if err != nil {

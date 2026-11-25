@@ -15,7 +15,8 @@
    ],
    "saint": "Sfântul Vasile cel Mare",
    "day": "01-01",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "iordan-01-06",
@@ -26,7 +27,8 @@
    ],
    "saint": "Botezul Domnului (Boboteaza)",
    "day": "01-06",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "ioan-01-07",
@@ -46,7 +48,8 @@
    "saint": "Sfântul Ioan Botezătorul",
    "day": "01-07",
    "usual": true,
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "antonie-01-17",
@@ -59,7 +62,8 @@
    ],
    "saint": "Sfântul Antonie cel Mare",
    "day": "01-17",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "atanasie-01-18",
@@ -70,7 +74,8 @@
    ],
    "saint": "Sfântul Atanasie cel Mare",
    "day": "01-18",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "chiril-01-18",
@@ -81,7 +86,8 @@
    ],
    "saint": "Sfântul Chiril al Alexandriei",
    "day": "01-18",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "eftimie-01-20",
@@ -91,7 +97,8 @@
    ],
    "saint": "Sfântul Eftimie cel Mare",
    "day": "01-20",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "xenia-01-24",
@@ -101,7 +108,8 @@
    ],
    "saint": "Cuvioasa Xenia",
    "day": "01-24",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "grigore-01-25",
@@ -113,7 +121,8 @@
    ],
    "saint": "Sfântul Grigorie Teologul",
    "day": "01-25",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "simion-02-03",
@@ -124,7 +133,8 @@
    ],
    "saint": "Sfântul Simeon primitorul de Dumnezeu",
    "day": "02-03",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "teodor-02-08",
@@ -135,7 +145,8 @@
    ],
    "saint": "Sfântul Mare Mucenic Teodor Stratilat",
    "day": "02-08",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "haralambie-02-10",
@@ -146,7 +157,8 @@
    ],
    "saint": "Sfântul Haralambie",
    "day": "02-10",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "vlasie-02-11",
@@ -156,7 +168,8 @@
    ],
    "saint": "Sfântul Vlasie",
    "day": "02-11",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "teodora-easter-minus-42",
@@ -166,7 +179,8 @@
    ],
    "saint": "Duminica Ortodoxiei (Sfânta Teodora)",
    "easter": -42,
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "teodor-easter-minus-43",
@@ -176,7 +190,8 @@
    ],
    "saint": "Sâmbăta lui Teodor (Sfântul Teodor Tiron)",
    "easter": -43,
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "florin-easter-minus-7",
@@ -191,7 +206,8 @@
    ],
    "saint": "Intrarea Domnului în Ierusalim (Floriile)",
    "easter": -7,
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "toma-easter-plus-7",
@@ -203,7 +219,8 @@
    "saint": "Duminica Tomii (a doua duminică după Paști)",
    "easter": 7,
    "usual": true,
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "gheorghe-04-23",
@@ -219,7 +236,8 @@
    "day": "04-23",
    "move": "easter_monday",
    "usual": true,
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "marcu-04-25",
@@ -230,7 +248,8 @@
    ],
    "saint": "Sfântul Apostol și Evanghelist Marcu",
    "day": "04-25",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "irina-05-05",
@@ -241,7 +260,8 @@
    ],
    "saint": "Sfânta Muceniță Irina",
    "day": "05-05",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "constantin-05-21",
@@ -254,7 +274,8 @@
    ],
    "saint": "Sfinții Împărați Constantin și Elena",
    "day": "05-21",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "elena-05-21",
@@ -267,7 +288,8 @@
    ],
    "saint": "Sfinții Împărați Constantin și Elena",
    "day": "05-21",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "bartolomeu-06-11",
@@ -277,7 +299,8 @@
    ],
    "saint": "Sfântul Apostol Bartolomeu",
    "day": "06-11",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "varnava-06-11",
@@ -287,7 +310,8 @@
    ],
    "saint": "Sfântul Apostol Barnaba",
    "day": "06-11",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "petru-06-29",
@@ -300,7 +324,8 @@
    ],
    "saint": "Sfântul Apostol Petru",
    "day": "06-29",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "pavel-06-29",
@@ -312,14 +337,16 @@
    ],
    "saint": "Sfântul Apostol Pavel",
    "day": "06-29",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "marina-07-17",
    "name": "Marina",
    "saint": "Sfânta Muceniță Marina",
    "day": "07-17",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "ilie-07-20",
@@ -331,7 +358,8 @@
    ],
    "saint": "Sfântul Prooroc Ilie",
    "day": "07-20",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "cristina-07-24",
@@ -341,7 +369,8 @@
    ],
    "saint": "Sfânta Muceniță Cristina",
    "day": "07-24",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "ana-07-25",
@@ -353,7 +382,8 @@
    ],
    "saint": "Adormirea Sfintei Ana",
    "day": "07-25",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "paraschiva-07-26",
@@ -365,7 +395,8 @@
    ],
    "saint": "Sfânta Muceniță Paraschiva",
    "day": "07-26",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "pantelimon-07-27",
@@ -376,7 +407,8 @@
    ],
    "saint": "Sfântul Mare Mucenic Pantelimon",
    "day": "07-27",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "maria-08-15",
@@ -392,7 +424,8 @@
    "saint": "Adormirea Maicii Domnului",
    "day": "08-15",
    "usual": true,
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "alexandru-08-30",
@@ -405,7 +438,8 @@
    ],
    "saint": "Sfântul Alexandru, patriarhul Constantinopolului",
    "day": "08-30",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "sofia-09-17",
@@ -417,7 +451,8 @@
    ],
    "saint": "Sfânta Muceniță Sofia",
    "day": "09-17",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "speranta-09-17",
@@ -428,7 +463,8 @@
    ],
    "saint": "Sfânta Muceniță Nădejdea",
    "day": "09-17",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "iona-09-22",
@@ -439,7 +475,8 @@
    ],
    "saint": "Sfântul Prooroc Iona",
    "day": "09-22",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "toma-10-06",
@@ -450,7 +487,8 @@
    ],
    "saint": "Sfântul Apostol Toma",
    "day": "10-06",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "parascheva-10-14",
@@ -463,7 +501,8 @@
    "saint": "Cuvioasa Parascheva de la Iași",
    "day": "10-14",
    "usual": true,
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "luca-10-18",
@@ -474,7 +513,8 @@
    ],
    "saint": "Sfântul Apostol și Evanghelist Luca",
    "day": "10-18",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "iacob-10-23",
@@ -486,7 +526,8 @@
    ],
    "saint": "Sfântul Apostol Iacob, fratele Domnului",
    "day": "10-23",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "dumitru-10-26",
@@ -501,7 +542,8 @@
    ],
    "saint": "Sfântul Mare Mucenic Dumitru",
    "day": "10-26",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "cosma-11-01",
@@ -511,7 +553,8 @@
    ],
    "saint": "Sfinții Doctori fără de arginți Cosma și Damian",
    "day": "11-01",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "damian-11-01",
@@ -521,7 +564,8 @@
    ],
    "saint": "Sfinții Doctori fără de arginți Cosma și Damian",
    "day": "11-01",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "mihail-11-08",
@@ -534,7 +578,8 @@
    ],
    "saint": "Soborul Sfinților Arhangheli Mihail și Gavriil",
    "day": "11-08",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "gavril-11-08",
@@ -545,7 +590,8 @@
    ],
    "saint": "Soborul Sfinților Arhangheli Mihail și Gavriil",
    "day": "11-08",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "filip-11-14",
@@ -557,7 +603,8 @@
    ],
    "saint": "Sfântul Apostol Filip",
    "day": "11-14",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "matei-11-16",
@@ -568,7 +615,8 @@
    ],
    "saint": "Sfântul Apostol și Evanghelist Matei",
    "day": "11-16",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "ecaterina-11-25",
@@ -586,7 +634,8 @@
    ],
    "saint": "Sfânta Mare Muceniță Ecaterina",
    "day": "11-25",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "andrei-11-30",
@@ -599,7 +648,8 @@
    ],
    "saint": "Sfântul Apostol Andrei",
    "day": "11-30",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "varvara-12-04",
@@ -610,7 +660,8 @@
    ],
    "saint": "Sfânta Mare Muceniță Varvara",
    "day": "12-04",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "nicolae-12-06",
@@ -626,7 +677,8 @@
    ],
    "saint": "Sfântul Ierarh Nicolae",
    "day": "12-06",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "spiridon-12-12",
@@ -636,7 +688,8 @@
    ],
    "saint": "Sfântul Ierarh Spiridon",
    "day": "12-12",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "lucia-12-13",
@@ -647,7 +700,8 @@
    ],
    "saint": "Sfânta Muceniță Lucia",
    "day": "12-13",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "daniel-12-17",
@@ -657,7 +711,8 @@
    ],
    "saint": "Sfântul Prooroc Daniel",
    "day": "12-17",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "eugenia-12-24",
@@ -667,7 +722,8 @@
    ],
    "saint": "Sfânta Muceniță Eugenia",
    "day": "12-24",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   },
   {
    "id": "stefan-12-27",
@@ -682,7 +738,8 @@
    ],
    "saint": "Sfântul Întâi Mucenic Ștefan",
    "day": "12-27",
-   "source": "bor"
+   "source": "bor",
+   "unchecked": true
   }
  ]
 }

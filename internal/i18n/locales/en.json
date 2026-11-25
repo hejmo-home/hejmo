@@ -5384,7 +5384,7 @@
   "nd.err.list": "Choose a church. Otherwise Hejmo does not know on which days your name days are.",
   "nd.save": "Save",
   "flash.nd_on": "Name days on, from the {church} name days. {people} of {total} people and {others} other contacts now have their name day in the calendar.",
-  "flash.nd_changed": "Name days now from the {church} name days. These hand-picked name days do not exist here, they are no longer in the calendar: {dropped}.",
+  "flash.nd_changed": "Name days now from the {church} name days. These hand-picked name days do not exist here, so they are back on the usual day of their name: {dropped}.",
   "flash.nd_off": "Name days off. The birthdays stay in the calendar.",
   "nd.fam.title": "Name days in your family",
   "nd.fam.hint": "From the {church} name days. Tap a person to change their name day.",

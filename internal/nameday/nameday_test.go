@@ -150,9 +150,13 @@ func TestOccurrenceFixedEasterAndMoved(t *testing.T) {
 	if o.Moved || !o.Date.Equal(day(2026, 4, 23)) {
 		t.Fatalf("not moved: %+v", o)
 	}
-	// On Easter Sunday itself the day is not before Easter.
 	if o := get("georgios").On(2024); !o.Moved {
 		t.Fatalf("Easter 2024 is 5 May: 23 April moves: %+v", o)
+	}
+	// On Easter Sunday itself (2006) Greek practice moves it to Easter Monday too.
+	o = get("georgios").On(2006)
+	if !o.Easter.Equal(day(2006, 4, 23)) || !o.Moved || !o.Date.Equal(day(2006, 4, 24)) || !o.From.Equal(day(2006, 4, 23)) {
+		t.Fatalf("Easter Sunday 23 April 2006: %+v", o)
 	}
 }
 
@@ -256,5 +260,41 @@ func TestTitleNamesTheNameDayOnlyWhenItDiffers(t *testing.T) {
 	}
 	if got := Title("Namenstag", "Jonas", "Jónas"); got != "Namenstag Jonas" {
 		t.Fatal(got)
+	}
+}
+
+func TestCatholicMatthiasIsOn24February(t *testing.T) {
+	c, ok := Get(Catholic)
+	if !ok {
+		t.Fatal("no Catholic list")
+	}
+	e, ok := c.Entry("matthias-02-24")
+	if !ok || e.Day != "02-24" {
+		t.Fatalf("Matthias: %+v %v", e, ok)
+	}
+	if _, old := c.Entry("matthias-05-14"); old {
+		t.Error("Matthias on 14 May is the old date, not in the Regionalkalender")
+	}
+}
+
+func TestEveryEntryIsCheckedOrSaysItIsNot(t *testing.T) {
+	for _, l := range []List{Catholic, Protestant, GreekOrthodox, RomanianOrthodox} {
+		c, ok := Get(l)
+		if !ok {
+			t.Fatal(l)
+		}
+		var unchecked int
+		for _, e := range c.Entries {
+			if e.Unchecked {
+				unchecked++
+			}
+		}
+		if unchecked == 0 {
+			t.Errorf("%s: no entry is marked unchecked, yet no one has checked the dates against the sources", l)
+		}
+	}
+	c, _ := Get(Catholic)
+	if e, _ := c.Entry("matthias-02-24"); e.Unchecked {
+		t.Error("Matthias was checked against the Regionalkalender")
 	}
 }

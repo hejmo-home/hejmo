@@ -154,6 +154,19 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		writeError(w, http.StatusUnprocessableEntity, errMsg)
 		return
 	}
+	ndOn, ndList := p.household.NameDaysOn, p.household.NameDayList
+	if nd := in.NameDays; nd != nil {
+		if nd.On != nil {
+			ndOn = *nd.On
+		}
+		if nd.List != nil {
+			ndList = *nd.List
+		}
+		if err := store.ValidateNameDays(ndOn, ndList); err != nil { // before anything is saved
+			writeError(w, http.StatusUnprocessableEntity, err.Error())
+			return
+		}
+	}
 	if err := s.saveSettings(p.household, store.HouseholdSettings{DateFormat: d, TimeFormat: f, TemperatureUnit: u, AutoUpdate: a, MealCutoffs: c, FirstStepsHidden: in.FirstStepsHidden, FirstStepsSkipped: in.FirstStepsSkipped, Home: home}); err != nil {
 		var unknown *store.UnknownStepError
 		if errors.As(err, &unknown) {
@@ -173,16 +186,9 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 			return
 		}
 	}
-	if nd := in.NameDays; nd != nil {
-		on, list := p.household.NameDaysOn, p.household.NameDayList
-		if nd.On != nil {
-			on = *nd.On
-		}
-		if nd.List != nil {
-			list = *nd.List
-		}
+	if in.NameDays != nil {
 		lang := s.langOf(r)
-		if _, err := s.db.SetNameDays(p.household.ID, on, list, s.i18n.T(lang, "birthdays.calendar_name"), s.i18n.T(lang, "nd.ev.word")); err != nil {
+		if _, err := s.db.SetNameDays(p.household.ID, ndOn, ndList, s.i18n.T(lang, "birthdays.calendar_name"), s.i18n.T(lang, "nd.ev.word")); err != nil {
 			if errors.Is(err, store.ErrInvalid) {
 				writeError(w, http.StatusUnprocessableEntity, err.Error())
 				return

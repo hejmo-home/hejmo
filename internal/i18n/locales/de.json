@@ -5384,7 +5384,7 @@
   "nd.err.list": "Wähle eine Kirche. Sonst weiß Hejmo nicht, an welchen Tagen eure Namenstage sind.",
   "nd.save": "Speichern",
   "flash.nd_on": "Namenstage an, nach den {church} Namenstagen. {people} von {total} Personen und {others} weitere Kontakte haben jetzt ihren Namenstag im Kalender.",
-  "flash.nd_changed": "Namenstage jetzt nach den {church} Namenstagen. Diese von Hand gewählten Namenstage gibt es hier nicht, sie stehen nicht mehr im Kalender: {dropped}.",
+  "flash.nd_changed": "Namenstage jetzt nach den {church} Namenstagen. Diese von Hand gewählten Namenstage gibt es hier nicht, sie stehen wieder am üblichen Tag ihres Namens: {dropped}.",
   "flash.nd_off": "Namenstage aus. Die Geburtstage bleiben im Kalender.",
   "nd.fam.title": "Namenstage in eurer Familie",
   "nd.fam.hint": "Nach den {church} Namenstagen. Tippe eine Person an, um ihren Namenstag zu ändern.",

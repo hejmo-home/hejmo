@@ -113,10 +113,10 @@ func TestChangingTheChurchNamesTheContactsWhoseChoiceWentAway(t *testing.T) {
 		t.Fatalf("choose = %d\n%s", r.status, r.body)
 	}
 	page := nameDaysOn(t, c, "greek_orthodox")
-	ctHas(t, "page", page, "Namenstage jetzt nach den griechisch-orthodoxen Namenstagen.", "stehen nicht mehr im Kalender: Ben.")
+	ctHas(t, "page", page, "Namenstage jetzt nach den griechisch-orthodoxen Namenstagen.", "stehen wieder am üblichen Tag ihres Namens: Ben.")
 	// The same church again changes nothing.
 	page = nameDaysOn(t, c, "greek_orthodox")
-	ctHasNot(t, "page", page, "stehen nicht mehr im Kalender")
+	ctHasNot(t, "page", page, "stehen wieder am üblichen Tag ihres Namens")
 }
 
 func TestContactFormHasTheCardNamenstagOnlyWhileNameDaysAreOn(t *testing.T) {
@@ -331,5 +331,50 @@ func TestContactAPIHasTheNameDay(t *testing.T) {
 	_, got, _ = c.api.call(http.MethodPut, "/contacts/"+id, map[string]any{"name": "Oma Gerda", "full_name": "Gerda Müller"})
 	if got["name_day"].(map[string]any)["name"] != "Gertrud" {
 		t.Errorf("a PUT without name_day dropped the choice: %v", got["name_day"])
+	}
+}
+
+func TestAPIRefusesToEditOrDeleteANameDayEvent(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	c.add(t, contactForm("Mama K", "Katharina Maier", nil, nil))
+	nameDaysOn(t, c, "catholic")
+	status, _, list := c.api.call(http.MethodGet, "/events?from=2026-11-25T00:00:00Z&to=2026-11-26T00:00:00Z", nil)
+	id := ""
+	for _, x := range list {
+		if m := x.(map[string]any); strings.HasPrefix(m["title"].(string), "Namenstag") {
+			id = m["event_id"].(string)
+		}
+	}
+	if status != http.StatusOK || id == "" {
+		t.Fatalf("events = %d, no name day among %v", status, list)
+	}
+	if status, _, _ := c.api.call(http.MethodPatch, "/events/"+id, map[string]any{"title": "Anders"}); status != http.StatusUnprocessableEntity {
+		t.Errorf("editing a name day = %d, want 422", status)
+	}
+	if status, _, _ := c.api.call(http.MethodDelete, "/events/"+id, nil); status != http.StatusUnprocessableEntity {
+		t.Errorf("deleting a name day = %d, want 422", status)
+	}
+	_, _, again := c.api.call(http.MethodGet, "/events?from=2026-11-25T00:00:00Z&to=2026-11-26T00:00:00Z", nil)
+	if len(again) != len(list) {
+		t.Errorf("the name day went away: %d events before, %d after", len(list), len(again))
+	}
+}
+
+func TestSettingsPatchWithABadNameDayChoiceSavesNothing(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	for why, nd := range map[string]map[string]any{
+		"an unknown church":     {"on": true, "list": "anglican"},
+		"on without a church":   {"on": true},
+		"an unknown list alone": {"list": "anglican"},
+	} {
+		if status, _, _ := c.api.call(http.MethodPatch, "/settings", map[string]any{"date_format": "mdy", "name_days": nd}); status != http.StatusUnprocessableEntity {
+			t.Fatalf("%s = %d, want 422", why, status)
+		}
+		_, got, _ := c.api.call(http.MethodGet, "/settings", nil)
+		if got["date_format"] == "mdy" {
+			t.Fatalf("%s: 422, yet date_format was saved", why)
+		}
 	}
 }

@@ -115,9 +115,14 @@ func untilValue(until time.Time, allDay bool) string {
 	return until.UTC().Format(untilLayout)
 }
 
-// parseRule reads an RRULE value of a series in loc. A date-only UNTIL names
+// withUntil appends UNTIL to a rule that has none.
+func withUntil(rule string, until time.Time, allDay bool) string {
+	return rule + ";UNTIL=" + untilValue(until, allDay)
+}
+
+// ParseRule reads an RRULE value of a series in loc. A date-only UNTIL names
 // the last day of the series, so it counts until that day ends in loc.
-func parseRule(rule string, loc *time.Location) (*rrule.ROption, error) {
+func ParseRule(rule string, loc *time.Location) (*rrule.ROption, error) {
 	opt, err := rrule.StrToROptionInLocation(rule, loc)
 	if err != nil {
 		return nil, err
@@ -142,7 +147,7 @@ func RepeatRule(r Repeat, until time.Time, allDay bool) (string, error) {
 		return "", fmt.Errorf("calendar: unknown repeat %q", r)
 	}
 	if !until.IsZero() {
-		rule += ";UNTIL=" + untilValue(until, allDay)
+		rule = withUntil(rule, until, allDay)
 	}
 	return rule, nil
 }
@@ -154,7 +159,7 @@ func RepeatOf(rule string, loc *time.Location) (Repeat, time.Time) {
 	if rule == "" {
 		return RepeatNone, time.Time{}
 	}
-	opt, err := parseRule(rule, loc)
+	opt, err := ParseRule(rule, loc)
 	if err != nil || opt.Count > 0 {
 		return RepeatCustom, time.Time{}
 	}

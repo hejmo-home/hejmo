@@ -124,3 +124,27 @@ func TestExdateAndRecurrenceIDInUTCAcrossDaylightSaving(t *testing.T) {
 		}
 	}
 }
+
+// An all-day series with an EXDATE given in UTC across the October change:
+// Berlin midnight of 02/11 is 23:00Z the evening before.
+func TestAllDayExdateInUTCAcrossDaylightSaving(t *testing.T) {
+	master := calendar.Event{ID: "m", Title: "School trip week", AllDay: true, Start: at(2026, 10, 19, 0, 0), End: at(2026, 10, 20, 0, 0),
+		RRule:   "FREQ=WEEKLY;UNTIL=20261231",
+		ExDates: []time.Time{time.Date(2026, 11, 1, 23, 0, 0, 0, time.UTC)}}
+	occs, err := calendar.Expand([]calendar.Event{master}, day(2026, 10, 1), day(2026, 11, 20))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]bool{}
+	for _, o := range occs {
+		got[o.Start.In(berlin).Format("02.01.")] = true
+	}
+	if got["02.11."] {
+		t.Errorf("02.11. is still there in %v", got)
+	}
+	for _, present := range []string{"26.10.", "09.11."} {
+		if !got[present] {
+			t.Errorf("%s is missing in %v", present, got)
+		}
+	}
+}

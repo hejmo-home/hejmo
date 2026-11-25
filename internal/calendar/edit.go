@@ -298,7 +298,7 @@ func countBefore(master Event, occStart time.Time) (int, error) {
 // splitRule ends the old rule before occStart and returns the rule for the
 // new series. A COUNT is divided between both.
 func splitRule(master Event, occStart time.Time, before int) (oldRule, newRule string, err error) {
-	oldOpt, err := parseRule(master.RRule, master.Start.Location())
+	oldOpt, err := ParseRule(master.RRule, master.Start.Location())
 	if err != nil {
 		return "", "", err
 	}
@@ -315,5 +315,5 @@ func splitRule(master Event, occStart time.Time, before int) (oldRule, newRule s
 		end = occStart.In(master.Start.Location()).AddDate(0, 0, -1)
 	}
 	oldOpt.Until = time.Time{}
-	return oldOpt.RRuleString() + ";UNTIL=" + untilValue(end, master.AllDay), master.RRule, nil
+	return withUntil(oldOpt.RRuleString(), end, master.AllDay), master.RRule, nil
 }

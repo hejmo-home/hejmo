@@ -74,6 +74,13 @@ function rcpCounter(format, text, max) {
 // rcpLabel puts a line's number into the first number of a label: "Zutat 3 entfernen: Salz".
 function rcpLabel(label, n) { return String(label).replace(/\d+/, String(n)); }
 
+// rcpDirtyText is the state in words of the savebar of an imported recipe: nothing missing, or how many lines still
+// wait for the parent's choice (ticket 289). fmt holds the three texts, {n} is the number.
+function rcpDirtyText(n, fmt) {
+  if (n <= 0) return fmt.none;
+  return n === 1 ? fmt.one : String(fmt.other).replace("{n}", String(n));
+}
+
 // rcpAfterRemoving says which line the focus goes to after one was removed: the next, else the one before.
 function rcpFocusAfter(count, removed) { return Math.min(removed, count - 1); }
 
@@ -156,7 +163,13 @@ function rcpFocusAfter(count, removed) { return Math.min(removed, count - 1); }
 
   function dirty() {
     var d = form.querySelector(".savebar .dirty");
-    if (d) d.hidden = false;
+    if (!d) return;
+    d.hidden = false;
+    if (d.hasAttribute("data-other")) { // a recipe read from a web page: say how many choices are missing
+      var open = form.querySelectorAll("li.ing.needs"), missing = 0;
+      for (var i = 0; i < open.length; i++) if (!open[i].querySelector(".ing-pick input:checked")) missing++;
+      d.textContent = rcpDirtyText(missing, { none: d.getAttribute("data-none"), one: d.getAttribute("data-one"), other: d.getAttribute("data-other") });
+    }
   }
 
   form.addEventListener("click", function (e) {
@@ -218,6 +231,7 @@ function rcpFocusAfter(count, removed) { return Math.min(removed, count - 1); }
   });
   form.addEventListener("change", function (e) {
     var el = e.target;
+    if (el.matches && el.matches(".ing-pick input")) dirty();
     if (!(el.matches && el.matches("input.in"))) return;
     var li = el.closest("li.ing"), vi = li && li.querySelector('input[name="ing_variety"]');
     var parts = rcpSplitLine(el.getAttribute("data-was"), el.value, !!vi && vi.type !== "hidden");

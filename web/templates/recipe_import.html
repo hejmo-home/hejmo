@@ -1,0 +1,39 @@
+{{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
+  {{if .Which}}
+  <h1>{{t "recipes.import.which.title"}}</h1>
+  <p class="lead">{{.Lead}}</p>
+  <form class="steps imp-which-form" method="get" action="{{.Action}}">
+    <fieldset class="choice imp-which"><legend>{{t "recipes.import.which.legend"}}</legend>{{range .Options}}
+      <label><input type="radio" name="which" value="{{.N}}"{{if .Checked}} checked{{end}}><b>{{.Name}}</b><small>{{.Meta}}</small></label>{{end}}
+    </fieldset>
+    <div class="acts"><button class="button" type="submit">{{t "recipes.import.which.next"}}</button><a href="{{.CancelHref}}">{{t "recipes.cancel"}}</a></div>
+  </form>
+  {{else if .Expired}}
+  <h1>{{t "recipes.import.review.title"}}</h1>
+  <div class="empty" data-empty><p><b>{{t "recipes.import.expired.lead"}}</b> {{t "recipes.import.expired.text"}}</p><p class="row-actions"><a class="button secondary" href="{{.AgainHref}}">{{template "globeIcon"}}{{t "recipes.import.expired.again"}}</a></p></div>
+  {{else}}
+  <h1>{{.Title}}</h1>
+  <p class="lead">{{.Lead}}</p>
+  {{if .Off}}
+  <div class="notice imp-off" role="status"><p class="h"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">{{if .OffOffline}}<path d="M3 3l18 18"/><path d="M7 18h9.5M18.7 15.4A4 4 0 0 0 17 9.5a5.5 5.5 0 0 0-8-2.6M5.5 10.5A4 4 0 0 0 7 18"/>{{else}}<path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0z"/><path d="M12 17v4"/>{{end}}</svg><span>{{.OffTitle}}</span></p><p>{{.OffText}}</p></div>
+  <p class="imp-after"><a class="button" href="{{.NewHref}}">{{template "plusIcon"}}{{t "recipes.import.write"}}</a></p>
+  {{else}}
+  <form class="rcp-imp" method="post" action="/meals/recipes/import" novalidate data-wait="{{.WaitFormat}}">
+    <div class="f{{if .Page.ErrHTML}} invalid{{end}}">
+      <label>{{t "recipes.import.url.label"}}<input name="url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="{{t "recipes.import.url.placeholder"}}" value="{{.Page.URL}}"{{if .Page.ErrHTML}} aria-invalid="true" aria-describedby="err-url"{{end}}></label>
+      {{if .Page.ErrHTML}}<p class="ferr" id="err-url" role="alert">{{template "errIcon"}}<span>{{.Page.ErrHTML}}</span></p>{{end}}
+      {{if .Page.NoRecipe}}<p class="ferr-acts"><a class="button secondary" href="{{.WriteHref}}">{{template "plusIcon"}}{{t "recipes.import.err.write"}}</a></p>{{end}}
+      <p class="hint">{{t "recipes.import.url.hint"}}</p>
+    </div>
+    <p class="imp-takes-h">{{t "recipes.import.takes.h"}}</p>
+    <ul class="imp-takes"><li>{{template "tickIcon"}}<span>{{t "recipes.import.takes.1"}}</span></li><li>{{template "tickIcon"}}<span>{{t "recipes.import.takes.2"}}</span></li><li>{{template "tickIcon"}}<span>{{t "recipes.import.takes.3"}}</span></li><li>{{template "tickIcon"}}<span>{{t "recipes.import.takes.4"}}</span></li><li>{{template "tickIcon"}}<span>{{t "recipes.import.takes.5"}}</span></li></ul>
+    <div class="acts"><button class="button" type="submit">{{template "globeIcon"}}{{t "recipes.import.read"}}</button></div>
+    <p class="imp-wait" role="status" hidden><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg><span><b data-wait></b>{{t "recipes.import.wait.sub"}}</span></p>
+    <p class="hint">{{t "recipes.import.privacy"}}</p>
+  </form>
+  <script src="/static/recipe-import.js" defer></script>
+  {{end}}
+  {{end}}
+{{template "foot"}}
+
+{{define "tickIcon"}}<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>{{end}}

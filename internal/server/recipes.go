@@ -177,6 +177,8 @@ type recipeJSON struct {
 	Ingredients []recipeIngredientJSON `json:"ingredients"`
 	Steps       []string               `json:"steps"`
 	Diet        *string                `json:"diet"`
+	FavouriteOf []string               `json:"favourite_of"`
+	LastCooked  *string                `json:"last_cooked"`
 	Starter     bool                   `json:"starter"`
 	SourceName  *string                `json:"source_name"`
 	CreatedBy   *string                `json:"created_by"`
@@ -188,7 +190,7 @@ type recipeJSON struct {
 func (c *itemCtx) recipeToJSON(r store.Recipe) recipeJSON {
 	out := recipeJSON{ID: r.ID, Name: r.Name, Category: string(r.Category), Portions: r.Portions, Mealtimes: nonNil(r.Mealtimes), Tags: nonNil(r.Tags),
 		Tips: r.Tips, Source: r.Source, SourceURL: strPtr(recipe.SourceLink(r.Source)), Ingredients: []recipeIngredientJSON{}, Steps: nonNil(r.Steps),
-		CreatedBy: strPtr(r.CreatedBy), UpdatedBy: strPtr(r.UpdatedBy)}
+		CreatedBy: strPtr(r.CreatedBy), UpdatedBy: strPtr(r.UpdatedBy), FavouriteOf: nonNil(r.FavouriteOf), LastCooked: strPtr(r.LastCooked)}
 	if !r.CreatedAt.IsZero() { // a starter recipe was written by nobody in the household
 		created, updated := r.CreatedAt.UTC().Format(time.RFC3339), r.UpdatedAt.UTC().Format(time.RFC3339)
 		out.CreatedAt, out.UpdatedAt = &created, &updated
@@ -311,6 +313,10 @@ func (s *server) apiListRecipes(w http.ResponseWriter, r *http.Request, p princi
 		s.fail(w, "list recipes", err)
 		return
 	}
+	if err := c.withLastCooked(list); err != nil {
+		s.fail(w, "last cooked", err)
+		return
+	}
 	q, cat := r.URL.Query().Get("q"), r.URL.Query().Get("category")
 	out := []recipeJSON{}
 	for _, x := range list {
@@ -328,6 +334,10 @@ func (s *server) apiGetRecipe(w http.ResponseWriter, r *http.Request, p principa
 	}
 	got, entry, err := c.recipeOrStarter(p.household.ID, r.PathValue("id"))
 	if s.storeError(w, "get recipe", err) {
+		return
+	}
+	if err := c.withLastCookedOne(&got); err != nil {
+		s.fail(w, "last cooked", err)
 		return
 	}
 	out := c.recipeToJSON(got)
@@ -397,7 +407,65 @@ func (s *server) apiSaveRecipe(w http.ResponseWriter, r *http.Request, p princip
 	if s.recipeError(w, "save recipe", err) {
 		return
 	}
+	if err := c.withLastCookedOne(&saved); err != nil {
+		s.fail(w, "last cooked", err)
+		return
+	}
 	writeJSON(w, status, c.recipeToJSON(saved))
+}
+
+// withLastCooked sets LastCooked of each recipe: the latest planned day of
+// the recipe that is over (ticket 287). A starter recipe is never planned.
+func (c *itemCtx) withLastCooked(list []store.Recipe) error {
+	cooked, err := c.s.db.RecipesLastCooked(c.p.household.ID, c.s.today(c.p))
+	if err != nil {
+		return err
+	}
+	for i := range list {
+		list[i].LastCooked = cooked[list[i].ID]
+	}
+	return nil
+}
+
+func (c *itemCtx) withLastCookedOne(r *store.Recipe) error {
+	one := []store.Recipe{*r}
+	err := c.withLastCooked(one)
+	*r = one[0]
+	return err
+}
+
+// apiSetRecipeFavourites makes the recipe a favourite of exactly the people
+// named (ticket 287): "Mia likes it". An empty list clears the marks. Only
+// own recipes: a starter recipe cannot be planned.
+func (s *server) apiSetRecipeFavourites(w http.ResponseWriter, r *http.Request, p principal) {
+	var in struct {
+		PersonIDs *[]string `json:"person_ids"`
+	}
+	if !readJSON(r, &in) || in.PersonIDs == nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON: person_ids is required")
+		return
+	}
+	id := r.PathValue("id")
+	if starter.IsID(id) {
+		writeError(w, http.StatusForbidden, starterReadOnly)
+		return
+	}
+	c, ok := s.apiRecipeContext(w, r, p)
+	if !ok {
+		return
+	}
+	if s.recipeError(w, "set favourites", s.db.SetRecipeFavourites(p.household.ID, id, *in.PersonIDs)) {
+		return
+	}
+	got, err := s.db.Recipe(p.household.ID, id)
+	if s.storeError(w, "get recipe", err) {
+		return
+	}
+	if err := c.withLastCookedOne(&got); err != nil {
+		s.fail(w, "last cooked", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, c.recipeToJSON(got))
 }
 
 func (s *server) apiDeleteRecipe(w http.ResponseWriter, r *http.Request, p principal) {

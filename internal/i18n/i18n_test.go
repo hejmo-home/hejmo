@@ -85,6 +85,10 @@ func TestFormatFillsParameters(t *testing.T) {
 // ADR 0017: German texts address the user as "du". "eure"/"euer" stay only
 // where the whole family is meant; every such text is listed here with its key.
 var wholeFamilyTexts = map[string]bool{
+	"nd.lead":                                  true, // the family's name days and contacts
+	"nd.choice":                                true, // the family's name days and contacts
+	"nd.err.list":                              true, // the family's name days and contacts
+	"nd.fam.title":                             true, // the family's name days and contacts
 	"displays.none":                            true, // "euren Tag": the family's day on the wall
 	"connect.legend":                           true, // "eure Kalender": the family's calendars
 	"connect.lead":                             true, // "eure Termine": the family's events, kept by several people

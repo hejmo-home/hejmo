@@ -49,6 +49,8 @@ type mealRecipe struct {
 	Warns            []template.HTML
 	Unchecked        string
 	Diet             string
+	// ShopState says the meal is on a list already (ticket 283); ShopBtn is the button that puts the missing ingredients on one, "" for none.
+	ShopState, ShopBtn string
 }
 
 type mealDay struct {
@@ -225,6 +227,7 @@ func (s *server) renderMeals(w http.ResponseWriter, r *http.Request, p principal
 			hasRecipe = hasRecipe || c.RecipeID != ""
 		}
 	}
+	var data0 *shopWeekCard
 	var free []freeTextPerson
 	if hasRecipe {
 		c, err := s.itemContext(p, lang)
@@ -256,6 +259,29 @@ func (s *server) renderMeals(w http.ResponseWriter, r *http.Request, p principal
 			}
 		}
 	}
+	var flash *shopFlashView
+	if p.person.Role == store.RoleParent {
+		c, err := s.itemContext(p, lang)
+		if err != nil {
+			s.fail(w, "meals context", err)
+			return
+		}
+		if hasRecipe {
+			if err := c.attachShop(days, monday, values); err != nil {
+				s.fail(w, "meals shop", err)
+				return
+			}
+		}
+		if wk, err := c.shopWeekCard(monday); err != nil {
+			s.fail(w, "meals shop week", err)
+			return
+		} else if wk != nil {
+			data0 = wk
+		}
+		if status == http.StatusOK {
+			flash = s.shopFlash(r, c)
+		}
+	}
 	from, to := datefmt.RangeParts(p.household.DateFormat, monday, sunday)
 	planned := false
 	errDay, errMealtime := 0, ""
@@ -268,6 +294,7 @@ func (s *server) renderMeals(w http.ResponseWriter, r *http.Request, p principal
 		}
 	}
 	data := map[string]any{
+		"ShopWeek": data0, "ShopFlash": flash, "SuccessInline": flash != nil,
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Days": days, "Planned": planned,
 		"Week": monday.Format(task.DateLayout), "Prev": monday.AddDate(0, 0, -7).Format(task.DateLayout), "Next": monday.AddDate(0, 0, 7).Format(task.DateLayout),
 		"WeekNo": isoWeek(monday), "From": from, "To": to, "ErrorWeekday": errDay, "ErrorMealtime": errMealtime, "ThisWeek": monday.Format(task.DateLayout) == weekOf(mustDay(today)).Format(task.DateLayout),
@@ -440,6 +467,15 @@ func (s *server) handleMealsSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch err := s.saveMeals(r, p, changes); {
+	case err == nil && r.PostFormValue("shop") != "":
+		sel := "week:" + monday.Format(task.DateLayout)
+		if v := r.PostFormValue("shop"); v != "week" {
+			if day, mt, ok := parseMealField(v); ok {
+				sel = "meal:" + day + "." + string(mt)
+			}
+		}
+		kind, v, _ := strings.Cut(sel, ":")
+		http.Redirect(w, r, shopPath+"?"+url.Values{kind: {v}}.Encode(), http.StatusSeeOther)
 	case err == nil:
 		key := "flash.meals_saved:" + monday.Format(task.DateLayout)
 		if restore != "" {

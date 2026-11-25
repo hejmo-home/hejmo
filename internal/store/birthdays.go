@@ -46,13 +46,22 @@ func (db *DB) SyncAllBirthdays() error {
 // syncBirthdays makes the calendar of a household say what its contacts say:
 // one all-day yearly series per contact that has a birthday and is not switched
 // off, titled with the Hejmo name (the age comes with each occurrence, see
-// calendar.Expand). The calendar is generated on first use, read-only and
-// shared through the box like the meal plan. An event that is right already is
-// not touched, so CalDAV clients do not fetch it again.
+// calendar.Expand), and, while name days are on, the name days of the contacts
+// that have one (ticket 318, see nameDayEvents). The calendar is generated on
+// first use, read-only and shared through the box like the meal plan. An event
+// that is right already is not touched, so CalDAV clients do not fetch it
+// again.
 func syncBirthdays(tx *sql.Tx, householdID, calendarName string) error {
 	type want struct {
-		title                 string
-		day, month, birthYear int
+		title, rrule, nameDayContact string
+		start                        time.Time
+	}
+	loc := time.UTC
+	var tz string
+	if err := tx.QueryRow(`SELECT timezone FROM households WHERE id = ?`, householdID).Scan(&tz); err == nil {
+		if l, err := time.LoadLocation(tz); err == nil {
+			loc = l
+		}
 	}
 	rows, err := tx.Query(`SELECT id, hejmo_name, bday_day, bday_month, COALESCE(bday_year, 0) FROM contacts
 		WHERE household_id = ? AND bday_day IS NOT NULL AND hide_birthday = 0`, householdID)
@@ -61,16 +70,24 @@ func syncBirthdays(tx *sql.Tx, householdID, calendarName string) error {
 	}
 	wanted := map[string]want{}
 	for rows.Next() {
-		var id string
-		var w want
-		if err := rows.Scan(&id, &w.title, &w.day, &w.month, &w.birthYear); err != nil {
+		var id, title string
+		var day, month, birthYear int
+		if err := rows.Scan(&id, &title, &day, &month, &birthYear); err != nil {
 			rows.Close()
 			return err
 		}
-		wanted[birthday.EventID(id)] = w
+		year, rule := birthday.Series(day, month, birthYear)
+		wanted[birthday.EventID(id)] = want{title: title, rrule: rule, start: time.Date(year, time.Month(month), day, 0, 0, 0, 0, loc)}
 	}
 	if err := rows.Close(); err != nil {
 		return err
+	}
+	days, err := nameDayEvents(tx, householdID, loc)
+	if err != nil {
+		return err
+	}
+	for _, d := range days {
+		wanted[d.id] = want{title: d.title, rrule: d.rrule, start: d.start, nameDayContact: d.contactID}
 	}
 	type have struct{ title, start, rrule string }
 	haveEvents := map[string]have{}
@@ -108,22 +125,16 @@ func syncBirthdays(tx *sql.Tx, householdID, calendarName string) error {
 	if err != nil {
 		return err
 	}
-	loc := time.UTC
-	var tz string
-	if err := tx.QueryRow(`SELECT timezone FROM households WHERE id = ?`, householdID).Scan(&tz); err == nil {
-		if l, err := time.LoadLocation(tz); err == nil {
-			loc = l
-		}
-	}
 	for id, w := range wanted {
-		year, rule := birthday.Series(w.day, w.month, w.birthYear)
-		start := time.Date(year, time.Month(w.month), w.day, 0, 0, 0, 0, loc)
-		ev := calendar.Event{ID: id, CalendarID: calID, Title: w.title, AllDay: true, Start: start, End: start.AddDate(0, 0, 1), RRule: rule, Birthday: true}
+		ev := calendar.Event{ID: id, CalendarID: calID, Title: w.title, AllDay: true, Start: w.start, End: w.start.AddDate(0, 0, 1), RRule: w.rrule, Birthday: w.nameDayContact == ""}
 		old, exists := haveEvents[id]
 		switch {
 		case !exists:
 			err = insertEventRow(tx, householdID, ev)
-		case old.title != ev.Title || old.start != start.Format(dateLayout) || old.rrule != rule:
+			if err == nil && w.nameDayContact != "" {
+				_, err = tx.Exec(`UPDATE events SET name_day_contact = ? WHERE id = ?`, w.nameDayContact, id)
+			}
+		case old.title != ev.Title || old.start != w.start.Format(dateLayout) || old.rrule != w.rrule:
 			err = updateEventRow(tx, householdID, ev)
 		}
 		if err != nil {

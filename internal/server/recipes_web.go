@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -37,7 +38,8 @@ type rcpRow struct {
 	Tags             []string
 	Warns            []template.HTML
 	Unchecked        string
-	Pic              *rphPic // the small cover; nil shows the symbol of the category
+	Pic              *rphPic       // the small cover; nil shows the symbol of the category
+	Likes            template.HTML // "Mia likes it", empty when nobody does
 }
 
 func (c *itemCtx) t(key string, kv ...string) string {
@@ -91,6 +93,10 @@ func (c *itemCtx) row(r store.Recipe) rcpRow {
 		out.Meta = append(out.Meta, c.minutesShort(r.Minutes))
 	}
 	out.Meta = append(out.Meta, c.portionsText(r.Portions))
+	if r.LastCooked != "" {
+		out.Meta = append(out.Meta, c.t("recipes.cooked.short", "when", c.s.cookedText(c.p, c.lang, r.LastCooked)))
+	}
+	out.Likes = c.likes(r)
 	out.Diet = recipe.DietOf(r.Ingredients, c.lookup).Mark
 	if out.Diet != "" {
 		out.Diet = c.dietWord(out.Diet)
@@ -100,6 +106,25 @@ func (c *itemCtx) row(r store.Recipe) rcpRow {
 		out.Unchecked = c.t("recipes.unchecked.list", "names", strings.Join(free, ", "))
 	}
 	return out
+}
+
+// likes is the line "Mia likes it" or "Mia and Papa like it", HTML with the
+// names escaped; empty when nobody likes the recipe (ticket 287).
+func (c *itemCtx) likes(r store.Recipe) template.HTML {
+	var who []string
+	for _, id := range r.FavouriteOf {
+		if _, ok := c.st.chips[id]; ok {
+			who = append(who, id)
+		}
+	}
+	if len(who) == 0 {
+		return ""
+	}
+	key := "recipes.fav.one"
+	if len(who) > 1 {
+		key = "recipes.fav.many"
+	}
+	return template.HTML(repl(html.EscapeString(c.t(key, "who", "\x00")), "\x00", c.s.whoHTML(c.st, who))) // #nosec G203 -- names escaped, the text is ours
 }
 
 type rcpFilter struct {
@@ -139,6 +164,10 @@ func (s *server) handleRecipes(w http.ResponseWriter, r *http.Request) {
 	list, err := s.db.Recipes(p.household.ID)
 	if err != nil {
 		s.fail(w, "recipes", err)
+		return
+	}
+	if err := c.withLastCooked(list); err != nil {
+		s.fail(w, "last cooked", err)
 		return
 	}
 	q := strings.Join(strings.Fields(r.URL.Query().Get("q")), " ")
@@ -229,6 +258,12 @@ func (s *server) handleRecipePage(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "recipe", err)
 		return
 	}
+	if entry == nil {
+		if err := c.withLastCookedOne(&rec); err != nil {
+			s.fail(w, "last cooked", err)
+			return
+		}
+	}
 	parent := auth.RoleAllows(p.person.Role, auth.Perm("meals", auth.Write)) && entry == nil
 	n, plan := rec.Portions, ""
 	if v, ok := parsePortions(r.URL.Query().Get("portions")); ok {
@@ -250,6 +285,15 @@ func (s *server) handleRecipePage(w http.ResponseWriter, r *http.Request) {
 	if err := s.recipePhotoView(c, storeRecipeRef{rec.ID, rec.Name}, data); err != nil {
 		s.fail(w, "recipe photos", err)
 		return
+	}
+	if entry == nil {
+		data["OwnRecipe"] = true
+		data["Likes"] = c.likes(rec)
+		if rec.LastCooked != "" {
+			data["Cooked"] = s.cookedText(p, lang, rec.LastCooked)
+		}
+		data["FavForm"] = c.favouriteChips(rec)
+		data["FavAction"] = recipesPath + "/" + rec.ID + "/favourites"
 	}
 	if entry != nil {
 		data["Starter"] = c.t("recipes.starter.note")
@@ -313,6 +357,61 @@ func (s *server) handleRecipePage(w http.ResponseWriter, r *http.Request) {
 		data["DeletePlanned"] = planned
 	}
 	s.render(w, r, http.StatusOK, "recipe.html", data)
+}
+
+// favChip is one person of the form "Who likes it?".
+type favChip struct {
+	personChip
+	Checked bool
+}
+
+// favouriteChips are the people of the household, each with whether the recipe is a favourite of them.
+func (c *itemCtx) favouriteChips(r store.Recipe) []favChip {
+	var out []favChip
+	for _, x := range c.st.people {
+		out = append(out, favChip{personChip: c.st.chips[x.ID], Checked: slices.Contains(r.FavouriteOf, x.ID)})
+	}
+	return out
+}
+
+// handleRecipeFavourites saves who likes a recipe (ticket 287): the people
+// ticked are the whole set, nobody ticked clears it. Parents only, own recipes only.
+func (s *server) handleRecipeFavourites(w http.ResponseWriter, r *http.Request) {
+	p, ok := s.parentPage(w, r)
+	if !ok {
+		return
+	}
+	if starter.IsID(r.PathValue("id")) { // the same answer as the API
+		http.Error(w, starterReadOnly, http.StatusForbidden)
+		return
+	}
+	rec, err := s.db.Recipe(p.household.ID, r.PathValue("id"))
+	if errors.Is(err, store.ErrNotFound) {
+		http.NotFound(w, r)
+		return
+	}
+	if err != nil {
+		s.fail(w, "recipe", err)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "bad form", http.StatusBadRequest)
+		return
+	}
+	err = s.db.SetRecipeFavourites(p.household.ID, rec.ID, r.PostForm["person"])
+	var fe *store.FieldError
+	switch {
+	case errors.As(err, &fe):
+		http.Error(w, fe.Msg, http.StatusUnprocessableEntity)
+		return
+	case errors.Is(err, store.ErrNotFound): // deleted meanwhile
+		http.NotFound(w, r)
+		return
+	case err != nil:
+		s.fail(w, "save favourites", err)
+		return
+	}
+	s.redirectSavedNamed(w, r, recipesPath+"/"+rec.ID, "flash.recipe_favourites", rec.Name)
 }
 
 // planPattern is the origin of the portions of a recipe page: a day and a mealtime of the meal plan.

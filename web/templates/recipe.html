@@ -10,6 +10,8 @@
     <dt>{{t "recipes.p.portions"}}</dt><dd>{{.PortionsText}}</dd>
     {{with .Time}}<dt>{{t "recipes.p.time"}}</dt><dd>{{.}}</dd>{{end}}
     <dt>{{t "recipes.p.mealtimes"}}</dt><dd>{{range .Mealtimes}}<span class="mt">{{template "mealIcon" .}}{{t (printf "meals.mealtime.%s" .)}}</span> {{else}}{{t "recipes.mealtimes.every"}}{{end}}</dd>
+    {{if .OwnRecipe}}<dt>{{t "recipes.p.favourite"}}</dt><dd>{{with .Likes}}<span class="likes">{{.}}</span>{{else}}{{t "recipes.fav.nobody"}}{{end}}</dd>
+    <dt>{{t "recipes.p.cooked"}}</dt><dd>{{with .Cooked}}{{.}}{{else}}{{t "recipes.cooked.never"}}{{end}}</dd>{{end}}
     {{if .DietWhy}}<dt>{{t "recipes.p.diet"}}</dt><dd>{{with .Diet}}<span class="tag diet">{{template "leafIcon"}}{{.}}</span>{{end}}<p class="diet-why">{{.DietWhy}}</p></dd>{{end}}
     {{if .Tags}}<dt>{{t "recipes.p.tags"}}</dt><dd>{{range .Tags}}<span class="tag grp">{{.}}</span> {{end}}</dd>{{end}}
     {{if .Source}}<dt>{{t "recipes.p.source"}}</dt><dd>{{if .SourceLink}}<a class="ext" href="{{.SourceLink}}" rel="noopener noreferrer" target="_blank">{{if .SourceName}}{{.SourceName}}{{else}}{{.Source}}{{end}}</a>{{else}}{{.Source}}{{end}}</dd>{{end}}
@@ -23,6 +25,14 @@
     <ul class="ppl">{{range .FreeText}}<li><span class="who"><span class="marker" data-person="{{.Chip.Slot}}" data-shape="{{.Chip.Shape}}" aria-hidden="true"></span>{{printf "%s:" .Chip.Name}}</span> {{.Text}}</li>{{end}}</ul>{{end}}
     <p class="hint caveat"><b>{{t "food.allergens.caveat.lead"}}</b> {{t "food.allergens.caveat.text"}}</p>
   </section>
+  {{if and .Parent .FavForm}}<form class="rcp-fav" method="post" action="{{.FavAction}}">
+    <fieldset class="chips"><legend>{{t "recipes.fav.legend"}}</legend>
+      {{range .FavForm}}<label class="pchip" data-person="{{.Slot}}"><input type="checkbox" name="person" value="{{.ID}}"{{if .Checked}} checked{{end}}><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span>{{.Name}}<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+      {{end}}
+    </fieldset>
+    <p class="hint">{{t "recipes.fav.hint"}}</p>
+    <button class="button secondary" type="submit">{{t "recipes.fav.save"}}</button>
+  </form>{{end}}
   <div class="rcp-body"><div class="rcp-cols">
     <section class="rcp-part" aria-labelledby="ing">
       <h2 id="ing">{{t "recipes.ings.title"}}</h2>

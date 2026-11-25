@@ -41,8 +41,10 @@ import (
 	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/passkey/passkeytest"
 	"github.com/hejmo-home/hejmo/internal/recipe"
+	"github.com/hejmo-home/hejmo/internal/recipephoto"
 	rh "github.com/hejmo-home/hejmo/internal/religiousholiday"
 	"github.com/hejmo-home/hejmo/internal/reward"
+	"github.com/hejmo-home/hejmo/internal/starter"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/streak"
 	"github.com/hejmo-home/hejmo/internal/task"
@@ -137,6 +139,8 @@ type layoutFixture struct {
 	omaID         string   // the contact with a photo (ticket 297)
 	longVariety   string   // the entry of an article with a very long variety, on the first list
 	contactGroups []string // the ids of the contact groups in their order
+	photoRecipe   string   // the recipe with three photos (ticket 280)
+	fullRecipe    string   // a starter recipe with twelve photos
 	nutriRecipe   string   // the recipe whose nutrition card names what is not counted and what is missing (ticket 288)
 	foodArticle   string   // the own article with a chosen food
 	inviteToken   string   // the invitation of Maximilian, a parent without account
@@ -298,6 +302,18 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 			t.Fatal(err)
 		}
 		f.recipes = append(f.recipes, got.ID)
+	}
+
+	// Own photos of recipes (ticket 280): the long Käsespätzle with a cover and two more, a starter recipe with all twelve.
+	f.photoRecipe, f.fullRecipe = f.recipes[0], starter.All()[0].Recipe("de").ID
+	for ref, n := range map[string]int{f.photoRecipe: 3, f.fullRecipe: store.MaxRecipePhotos} {
+		for i := 0; i < n; i++ {
+			set, err := recipephoto.Prepare(context.Background(), bytes.NewReader(testJPEG(t, 1200+i, 900)))
+			must(err)
+			ph, err := db.AddRecipePhoto(h, ref, store.NewRecipePhoto{PersonID: f.ids[i%2], FileName: "IMG.jpg", Width: set.Width, Height: set.Height})
+			must(err)
+			must(recipephoto.NewFiles(filepath.Join(f.box.photoDir, "recipe-photos")).Put(ph.ID, set))
+		}
 	}
 
 	// Nutrition values (ticket 288): two of the five children see them, the card of a recipe that cannot count
@@ -510,7 +526,7 @@ var (
 	uuidRe     = regexp.MustCompile(`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`)
 	isoDayRe   = regexp.MustCompile(`\d{4}-\d{2}-\d{2}`)
 	// Links that are no framed pages: downloads, the API, assets, fragments.
-	notPageRe = regexp.MustCompile(`^/(static/|api/|healthz|manifest|sw\.js|logout|display(/|$|\?)|ca/|update/|\.well-known|i/|personal-devices/join/)|\.(ics|crt|mobileconfig)(\?|$)`)
+	notPageRe = regexp.MustCompile(`^/(static/|api/|healthz|manifest|sw\.js|logout|display(/|$|\?)|ca/|update/|\.well-known|i/|personal-devices/join/|meals/recipes/[^/]+/photos/[^/]+)|\.(ics|crt|mobileconfig)(\?|$)`)
 )
 
 // shape reduces a path to the page it is: IDs and days become placeholders.
@@ -596,31 +612,32 @@ func htmlRoutes(t *testing.T) []string {
 
 // notRendered are GET routes the check does not render, each with its reason.
 var notRendered = map[string]string{
-	"/healthz":                      "plain text",
-	"/static/":                      "assets",
-	"/api/v1/openapi.yaml":          "API document",
-	"/ca/hejmo-ca.crt":              "download",
-	"/ca/hejmo.mobileconfig":        "download",
-	"/manifest.webmanifest":         "JSON",
-	"/sw.js":                        "script",
-	"/display/state":                "JSON",
-	"/display/view":                 "fragment of /display, rendered inside it",
-	"/display/lists":                "redirect to the first list",
-	"/display/lists/{id}/view":      "fragment of a list, rendered inside it",
-	"/lists/{id}/suggest":           "fragment: the suggestions under the add card, rendered inside it",
-	"/lists/{id}/quantity":          "fragment: the quantity part of the add card, rendered inside it",
-	"/display/lists/{id}/suggest":   "fragment: the suggestions under the add card, rendered inside it",
-	"/display/lists/{id}/quantity":  "fragment: the quantity part of the add card, rendered inside it",
-	"/display/events":               "event stream",
-	"/display/person/{id}/view":     "fragment of the personal view, rendered inside it",
-	"/otp":                          "redirect",
-	"/i/{token}":                    "redirect",
-	"/setup/https/check":            "answers a fragment for the setup page's script",
-	"/places":                       "JSON list of places for the home location picker",
-	"/personal-devices/join/{code}": "one-time pairing link of a personal device",
-	"/display/saver/photos":         "JSON",
-	"/display/photo/{id}":           "image",
-	"/numbers/{id}/photo":           "the photo of a contact on the children's page, an image",
+	"/healthz":                         "plain text",
+	"/static/":                         "assets",
+	"/api/v1/openapi.yaml":             "API document",
+	"/ca/hejmo-ca.crt":                 "download",
+	"/ca/hejmo.mobileconfig":           "download",
+	"/manifest.webmanifest":            "JSON",
+	"/sw.js":                           "script",
+	"/display/state":                   "JSON",
+	"/display/view":                    "fragment of /display, rendered inside it",
+	"/display/lists":                   "redirect to the first list",
+	"/display/lists/{id}/view":         "fragment of a list, rendered inside it",
+	"/lists/{id}/suggest":              "fragment: the suggestions under the add card, rendered inside it",
+	"/lists/{id}/quantity":             "fragment: the quantity part of the add card, rendered inside it",
+	"/display/lists/{id}/suggest":      "fragment: the suggestions under the add card, rendered inside it",
+	"/display/lists/{id}/quantity":     "fragment: the quantity part of the add card, rendered inside it",
+	"/display/events":                  "event stream",
+	"/display/person/{id}/view":        "fragment of the personal view, rendered inside it",
+	"/otp":                             "redirect",
+	"/i/{token}":                       "redirect",
+	"/setup/https/check":               "answers a fragment for the setup page's script",
+	"/places":                          "JSON list of places for the home location picker",
+	"/personal-devices/join/{code}":    "one-time pairing link of a personal device",
+	"/display/saver/photos":            "JSON",
+	"/display/photo/{id}":              "image",
+	"/numbers/{id}/photo":              "the photo of a contact on the children's page, an image",
+	"/meals/recipes/{id}/photos/{pid}": "a photo of a recipe, an image (ticket 280)",
 
 	"/articles/{id}/picture":                  "an image",
 	"/tasks/rewards/{id}/picture":             "the photo of a reward, an image",
@@ -694,6 +711,16 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 			add(parent, p)
 		}
 	}
+	// Own photos of recipes (#280): the recipe page with a cover and the section Fotos, the page Fotos (with a photo just
+	// uploaded, and full), a recipe without photo, a child's view and a starter recipe with twelve photos.
+	for _, p := range []string{"/meals/recipes/" + f.photoRecipe, "/meals/recipes/" + f.photoRecipe + "/photos", "/meals/recipes/" + f.photoRecipe + "/photos?new=x",
+		"/meals/recipes/" + f.fullRecipe, "/meals/recipes/" + f.fullRecipe + "/photos", "/meals/recipes/" + f.recipes[1], "/meals/recipes", "/meals/recipes/starter"} {
+		if !have[p] { // the crawl renders the list and the starter page already: each page counts 20 renders of the budget
+			add(parent, p)
+		}
+	}
+	add(siteOf("child personal device", f.box, f.kid.client), "/meals/recipes/"+f.photoRecipe)
+	add(siteOf("child personal device", f.box, f.kid.client), "/meals/recipes")
 	// The badges of three children (#295): six of them two new, all ten, none. The crawl renders only the first
 	// person's page, so the others are added by hand.
 	for _, id := range []string{f.ids[3], f.ids[2], f.ids[4]} {

@@ -81,6 +81,8 @@ func crumbsFor(name string, data map[string]any) []crumb {
 			return []crumb{crumbMeals, crumbRecipes, {Href: recipesPath + "/" + id, Name: name}}
 		}
 		return []crumb{crumbMeals, crumbRecipes}
+	case "recipe_photos.html":
+		return []crumb{crumbMeals, crumbRecipes, {Href: recipesPath + "/" + lookup(data, "RecipeID"), Name: lookup(data, "RecipeName")}}
 	case "contact_form.html":
 		if id, who := lookup(data, "CT", "ID"), lookup(data, "CT", "Name"); id != "" {
 			return []crumb{crumbSettings, crumbContacts, {Href: "/contacts/" + id, Name: who}}

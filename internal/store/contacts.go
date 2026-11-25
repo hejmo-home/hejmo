@@ -128,7 +128,7 @@ const contactColumns = `c.id, COALESCE(c.person_id, ''), c.hejmo_name, c.full_na
 	COALESCE(c.bday_day, 0), COALESCE(c.bday_month, 0), COALESCE(c.bday_year, 0), c.hide_birthday, c.for_children, c.note,
 	COALESCE(c.created_by, ''), COALESCE(cp.name, ''), c.created_at, COALESCE(c.updated_by, ''), COALESCE(up.name, ''), c.updated_at,
 	c.photo IS NOT NULL, c.photo_origin, COALESCE(c.photo_by, ''), COALESCE(pp.name, ''), c.photo_device, c.photo_at,
-	c.created_file, c.updated_file, c.photo_file`
+	c.created_file, c.updated_file, c.photo_file, c.extra`
 
 const contactFrom = ` FROM contacts c LEFT JOIN people cp ON cp.id = c.created_by LEFT JOIN people up ON up.id = c.updated_by LEFT JOIN people pp ON pp.id = c.photo_by `
 
@@ -137,7 +137,7 @@ func scanContact(sc interface{ Scan(...any) error }) (Contact, error) {
 	var created, updated, photoAt string
 	err := sc.Scan(&c.ID, &c.PersonID, &c.HejmoName, &c.FullName, &c.Street, &c.Postcode, &c.City, &c.Country,
 		&c.BdayDay, &c.BdayMonth, &c.BdayYear, &c.HideBirthday, &c.ForChildren, &c.Note, &c.CreatedBy, &c.CreatedByName, &created, &c.UpdatedBy, &c.UpdatedByName, &updated,
-		&c.HasPhoto, &c.PhotoOrigin, &c.PhotoBy, &c.PhotoByName, &c.PhotoDevice, &photoAt, &c.CreatedFile, &c.UpdatedFile, &c.PhotoFile)
+		&c.HasPhoto, &c.PhotoOrigin, &c.PhotoBy, &c.PhotoByName, &c.PhotoDevice, &photoAt, &c.CreatedFile, &c.UpdatedFile, &c.PhotoFile, &c.Extra)
 	c.PhotoAt, _ = time.Parse(time.RFC3339, photoAt)
 	c.CreatedAt, _ = time.Parse(time.RFC3339, created)
 	c.UpdatedAt, _ = time.Parse(time.RFC3339, updated)
@@ -451,13 +451,27 @@ func createContact(tx *sql.Tx, householdID, by string, in ContactInput) (string,
 		return "", err
 	}
 	id, ts := newID(), now()
+	if in.ID != "" {
+		var have int
+		if err := tx.QueryRow(`SELECT COUNT(*) FROM contacts WHERE id = ?`, in.ID).Scan(&have); err != nil {
+			return "", err
+		}
+		if have > 0 {
+			return "", &FieldError{Field: "id", Msg: "the id is taken by another contact"}
+		}
+		id = in.ID
+	}
 	if err := checkContactName(tx, householdID, "", in.HejmoName); err != nil {
 		return "", err
 	}
-	if _, err := tx.Exec(`INSERT INTO contacts (id, household_id, hejmo_name, full_name, street, postcode, city, country, bday_day, bday_month, bday_year, hide_birthday, for_children, note, created_by, created_at, updated_by, updated_at, created_file)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+	extra := ""
+	if in.Extra != nil {
+		extra = *in.Extra
+	}
+	if _, err := tx.Exec(`INSERT INTO contacts (id, household_id, hejmo_name, full_name, street, postcode, city, country, bday_day, bday_month, bday_year, hide_birthday, for_children, note, created_by, created_at, updated_by, updated_at, created_file, extra)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		id, householdID, in.HejmoName, in.FullName, in.Street, in.Postcode, in.City, in.Country, nullInt(in.BdayDay), nullInt(in.BdayMonth), nullInt(in.BdayYear), in.HideBirthday, in.ForChildren, in.Note,
-		nullString(by), ts, nullString(by), ts, in.ImportFile); err != nil {
+		nullString(by), ts, nullString(by), ts, in.ImportFile, extra); err != nil {
 		return "", err
 	}
 	if err := writeContactParts(tx, householdID, id, in, false, by, ts); err != nil {
@@ -584,6 +598,11 @@ func updateContact(tx *sql.Tx, householdID, id, by string, isPerson bool, curNam
 		WHERE id = ? AND household_id = ?`,
 		in.HejmoName, in.FullName, in.Street, in.Postcode, in.City, in.Country, nullInt(in.BdayDay), nullInt(in.BdayMonth), nullInt(in.BdayYear), in.HideBirthday, in.ForChildren, in.Note, nullString(by), ts, in.ImportFile, id, householdID); err != nil {
 		return err
+	}
+	if in.Extra != nil {
+		if _, err := tx.Exec(`UPDATE contacts SET extra = ? WHERE id = ?`, *in.Extra, id); err != nil {
+			return err
+		}
 	}
 	if err := writeContactParts(tx, householdID, id, in, isPerson, by, ts); err != nil {
 		return err

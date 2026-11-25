@@ -46,6 +46,9 @@ type itemCtx struct {
 	st     libState
 	active []string
 	listID string // the list the context was made for, "" if none
+
+	covers       map[string]store.RecipePhoto // the covers of the recipes, read when a list needs them (ticket 280)
+	coversLoaded bool
 }
 
 func (s *server) itemContext(p principal, lang string) (*itemCtx, error) {

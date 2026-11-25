@@ -12,6 +12,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"path/filepath"
 	"runtime"
 	"slices"
 	"strings"
@@ -26,6 +27,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/places"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
+	"github.com/hejmo-home/hejmo/internal/recipephoto"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/update"
 	"github.com/hejmo-home/hejmo/internal/weather"
@@ -143,19 +145,20 @@ type server struct {
 	// passkeyTries counts refused passkey sign-ins per client address.
 	passkeyTries *loginLimiter
 	// ceremonies holds the passkey ceremonies that are begun and not finished.
-	ceremonies *passkey.Ceremonies
-	opens      *loginLimiter // pairing screens opened, per client address
-	sync       *calsync.Service
-	weather    *weather.Service
-	gate       *outbound.Gate // every connection to the outside, and its switches
-	places     *places.List   // the list of places on the box, loaded at start-up (ADR 0023)
-	live       time.Duration
-	countWait  time.Duration
-	done       <-chan struct{}
-	updateDir  string
-	kiosk      *KioskRunner // nil when displays are not driven
-	photos     *photoBox    // nil without a data directory for photos
-	flashTexts flashTexts
+	ceremonies   *passkey.Ceremonies
+	opens        *loginLimiter // pairing screens opened, per client address
+	sync         *calsync.Service
+	weather      *weather.Service
+	gate         *outbound.Gate // every connection to the outside, and its switches
+	places       *places.List   // the list of places on the box, loaded at start-up (ADR 0023)
+	live         time.Duration
+	countWait    time.Duration
+	done         <-chan struct{}
+	updateDir    string
+	kiosk        *KioskRunner       // nil when displays are not driven
+	photos       *photoBox          // nil without a data directory for photos
+	recipePhotos *recipephoto.Files // the own photos of recipes (ticket 280); nil without a data directory
+	flashTexts   flashTexts
 	// pictures holds pictures made from an upload or a web image until their article is saved (ticket 164).
 	pictures pendingPictures
 	// fetcher downloads web images, only from public addresses.
@@ -216,6 +219,7 @@ func New(opts Options) http.Handler {
 	}
 	if opts.PhotoDir != "" {
 		s.photos = newPhotoBox(opts.PhotoDir)
+		s.recipePhotos = recipephoto.NewFiles(filepath.Join(opts.PhotoDir, "recipe-photos"))
 		if opts.Done != nil {
 			go s.watchPhotoFolder(opts.Done)
 		}
@@ -460,6 +464,11 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /meals/recipes/{id}/edit", s.handleRecipeEdit)
 	mux.HandleFunc("POST /meals/recipes/{id}", s.handleRecipeSave)
 	mux.HandleFunc("POST /meals/recipes/{id}/delete", s.handleRecipeDelete)
+	mux.HandleFunc("GET /meals/recipes/{id}/photos", s.handleRecipePhotos)
+	mux.HandleFunc("POST /meals/recipes/{id}/photos", s.handleRecipePhotosUpload)
+	mux.HandleFunc("GET /meals/recipes/{id}/photos/{pid}", s.handleRecipePhotoFile)
+	mux.HandleFunc("POST /meals/recipes/{id}/photos/{pid}/cover", s.handleRecipePhotoCover)
+	mux.HandleFunc("POST /meals/recipes/{id}/photos/{pid}/delete", s.handleRecipePhotoDelete)
 	mux.HandleFunc("POST /meals/recipes/{id}/favourites", s.handleRecipeFavourites)
 	mux.HandleFunc("GET /meals/templates", s.handleTemplatesPage)
 	mux.HandleFunc("GET /meals/templates/new", s.handleTemplateNew)

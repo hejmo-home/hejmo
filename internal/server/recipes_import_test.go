@@ -41,10 +41,11 @@ type importBox struct {
 	web *httptest.Server
 }
 
-func newImportBox(t *testing.T) importBox {
+func newImportBox(t *testing.T, more ...boxOption) importBox {
 	t.Helper()
 	pages := map[string]string{}
 	jpeg := testJPEG(t, 600, 400)
+	var db *store.DB // set below: /offafter switches the recipes connection off once its page is being served
 	web := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case r.URL.Path == "/pic.jpg":
@@ -57,6 +58,10 @@ func newImportBox(t *testing.T) importBox {
 			w.WriteHeader(410)
 		case r.URL.Path == "/refused":
 			w.WriteHeader(403)
+		case r.URL.Path == "/offafter":
+			db.SetServiceEnabled(outbound.Recipes, false)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Write([]byte(pages["/lentils"]))
 		case pages[r.URL.Path] != "":
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.Write([]byte(pages[r.URL.Path]))
@@ -68,7 +73,8 @@ func newImportBox(t *testing.T) importBox {
 	pages["/lentils"] = ldPage(lentilLD)
 	pages["/none"] = ldPage(`{"@type":"Article"}`)
 	pages["/two"] = ldPage(`{"@graph":[` + lentilLD + `,{"@type":"Recipe","name":"Brot","recipeIngredient":["1 Ei"],"recipeInstructions":"Backen."}]}`)
-	b := signedInBox(t, withRecipeFetcher(loopbackRecipes()), withFetcher(loopbackFetcher()))
+	b := signedInBox(t, append([]boxOption{withRecipeFetcher(loopbackRecipes()), withFetcher(loopbackFetcher())}, more...)...)
+	db = b.db
 	h, _ := b.db.HomeHousehold()
 	child := childSession(t, b)
 	people, _ := b.db.People(h.ID)
@@ -484,6 +490,34 @@ func TestTheSamePageTwiceShowsANoticeAndATakenNameGetsAProposal(t *testing.T) {
 		t.Fatalf("a taken name = %d", second.status)
 	}
 	rcpHas(t, "the name error", second.body, `class="ferr"`, "gibt es schon", "Gib diesem Rezept einen eigenen Namen", "öffne das vorhandene</a>", `class="notice imp-again"`)
+}
+
+// The picture of a page counts as the connection "recipes" like the page itself: the switch of the web
+// images does not stop it, and a picture at a number address is not downloaded (ADR 0021).
+func TestThePictureOfAPageFollowsTheRecipesSwitchNotTheImagesSwitch(t *testing.T) {
+	t.Parallel()
+	ib := newImportBox(t)
+	if err := ib.b.db.SetServiceEnabled(outbound.Images, false); err != nil {
+		t.Fatal(err)
+	}
+	rcpHas(t, "the review with the web images off", ib.b.do(http.MethodGet, ib.draftOf(t, "/lentils"), nil, rcpDE).body, `class="imp-pic-card"`)
+}
+
+func TestThePictureIsNotDownloadedWhenTheRecipesSwitchIsOffByThen(t *testing.T) {
+	t.Parallel()
+	ib := newImportBox(t)
+	body := ib.b.do(http.MethodGet, ib.draftOf(t, "/offafter"), nil, rcpDE).body
+	rcpHas(t, "the review", body, `<h1>Rezept prüfen</h1>`)
+	rcpLacks(t, "the review", body, `class="imp-pic-card"`)
+}
+
+func TestAPictureAtANumberAddressIsNotDownloaded(t *testing.T) {
+	t.Parallel()
+	pics := loopbackFetcher()
+	pics.NoIPLiteral = true
+	ib := newImportBox(t, withFetcher(pics))
+	body := ib.b.do(http.MethodGet, ib.draftOf(t, "/lentils"), nil, rcpDE).body
+	rcpLacks(t, "the review", body, `class="imp-pic-card"`, "Von 127.0.0.1, verkleinert")
 }
 
 func TestWithTheSwitchOffTheRecipeHasNoCover(t *testing.T) {

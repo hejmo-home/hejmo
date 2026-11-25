@@ -73,6 +73,9 @@ type Fetcher struct {
 	// Service is the connection the download counts as; the zero value is outbound.Images. The recipe
 	// import (ticket 289) fetches the page's picture as outbound.Recipes.
 	Service outbound.Service
+	// NoIPLiteral refuses an address written as numbers ("http://93.184.216.34/a.jpg", also after a
+	// redirect) and "localhost": the recipe import takes names only (ADR 0021).
+	NoIPLiteral bool
 }
 
 func (f *Fetcher) public(a netip.Addr) bool {
@@ -80,6 +83,21 @@ func (f *Fetcher) public(a netip.Addr) bool {
 		return f.Public(a)
 	}
 	return IsPublic(a)
+}
+
+// literal refuses a number address or "localhost" when NoIPLiteral is set.
+func (f *Fetcher) literal(host string) error {
+	if !f.NoIPLiteral {
+		return nil
+	}
+	h := strings.Trim(strings.ToLower(host), "[].")
+	if a, err := netip.ParseAddr(h); err == nil {
+		return &PrivateError{Addr: a.String()}
+	}
+	if h == "localhost" || strings.HasSuffix(h, ".localhost") {
+		return &PrivateError{Addr: host}
+	}
+	return nil
 }
 
 // Fetch downloads and processes the picture at rawURL, at most MaxSide px.
@@ -101,6 +119,9 @@ func (f *Fetcher) FetchMax(ctx context.Context, rawURL string, maxSide int) (Fet
 	}
 	if u.Hostname() == "" || u.User != nil {
 		return Fetched{}, ErrAddress
+	}
+	if err := f.literal(u.Hostname()); err != nil {
+		return Fetched{}, err
 	}
 
 	timeout := f.Timeout
@@ -126,12 +147,13 @@ func (f *Fetcher) FetchMax(ctx context.Context, rawURL string, maxSide int) (Fet
 		ResponseHeaderTimeout: timeout,
 		NoKeepAlive:           true,
 		MaxHeaderBytes:        64 << 10,
-		RecordPath:            true,
-		CheckRedirect: func(_ *http.Request, via []*http.Request) error {
+		// One rule with the page download of the recipe import: the path of a recipe site stays out of the log.
+		RecordPath: svc != outbound.Recipes,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			if len(via) > maxRedirects {
 				return ErrTooManyRedirects
 			}
-			return nil
+			return f.literal(req.URL.Hostname())
 		},
 	})
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)

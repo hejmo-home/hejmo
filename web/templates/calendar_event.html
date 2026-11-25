@@ -9,6 +9,16 @@
     <dl class="facts"><dt>{{t "nd.ev.calendar"}}</dt><dd>{{.Calendar}}</dd><dt>{{t "nd.ev.for"}}</dt><dd>{{t "nd.ev.for.family"}}</dd><dt>{{t "nd.ev.saint"}}</dt><dd>{{.Saint}}</dd><dt>{{t "nd.ev.repeat"}}</dt><dd>{{.Repeat}}</dd><dt>{{t "nd.ev.source"}}</dt><dd>{{.Source}}</dd></dl>
     <div class="row-actions"><a class="button secondary" href="{{.ContactHref}}">{{.Open}}</a><a href="/contacts/birthdays">{{t "nd.link"}}</a></div>
   </div>
+{{end}}{{else if .RGen}}{{with .RGen}}
+  <div class="ev-gen">
+    <p><a href="/calendar">{{t "calendar.back"}}</a></p>
+    <h1>{{.Title}}</h1>
+    <p class="lead">{{.Lead}}</p>
+    {{with .Moved}}<p class="notice ev-moved" role="status"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg><span>{{.}}</span></p>{{end}}
+    <p class="notice" role="status" data-readonly>{{.Explain}}</p>
+    <dl class="facts"><dt>{{t "rh.ev.calendar"}}</dt><dd>{{.Calendar}}</dd><dt>{{t "rh.ev.for"}}</dt><dd>{{t "rh.ev.for.family"}}</dd><dt>{{t "rh.ev.religion"}}</dt><dd>{{.Religion}}</dd>{{if .Own}}<dt>{{.OwnLabel}}</dt><dd>{{.Own}}</dd>{{end}}<dt>{{t "rh.ev.repeat"}}</dt><dd>{{.Repeat}}</dd><dt>{{t "rh.ev.source"}}</dt><dd>{{.Source}}{{if .Unchecked}} <span class="vary">{{.UncheckedText}}</span>{{end}}</dd></dl>
+    <div class="row-actions"><a href="{{.Href}}">{{t "rh.ev.link"}}</a></div>
+  </div>
 {{end}}{{else}}  <p><a href="/calendar">{{t "calendar.back"}}</a></p>
   {{$f := .Form}}
   {{if eq .Mode "new"}}<h1>{{t "calendar.new.title"}}</h1>{{else}}<h1>{{.Item.Title}}</h1>{{end}}

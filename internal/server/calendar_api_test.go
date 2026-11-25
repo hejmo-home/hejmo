@@ -227,3 +227,30 @@ func TestCreateEventInItsOwnTimeZone(t *testing.T) {
 		t.Fatalf("unknown zone = %d, want 422", status)
 	}
 }
+
+// Ticket 307: a REST edit that reaches an old all-day series (title only, no
+// rrule in the body) writes its UNTIL again as a date.
+func TestAPIEditOfAnOldAllDaySeriesRewritesItsUntilAsADate(t *testing.T) {
+	t.Parallel()
+	for _, scope := range []string{"all", "following"} {
+		c := signedInAPI(t)
+		ev := c.createEvent(t, map[string]any{"title": "Camp", "all_day": true, "start": "2026-11-02", "end": "2026-11-03",
+			"rrule": "FREQ=WEEKLY;UNTIL=20261231T225959Z"})
+		q := "?occurrence=" + url.QueryEscape("2026-11-16") + "&scope=" + scope
+		if status, body, _ := c.call(http.MethodPatch, "/events/"+ev["id"].(string)+q, map[string]any{"title": "Camp 2"}); status != http.StatusNoContent {
+			t.Fatalf("%s: patch = %d %v", scope, status, body)
+		}
+		h, _ := c.b.db.HomeHousehold()
+		events, _ := c.b.db.CalendarEvents(h.ID, ev["calendar_id"].(string))
+		got := map[string]string{}
+		for _, e := range events {
+			got[e.Title] = e.RRule
+		}
+		if scope == "all" && got["Camp 2"] != "FREQ=WEEKLY;UNTIL=20261231" {
+			t.Errorf("all: rules = %v, want FREQ=WEEKLY;UNTIL=20261231", got)
+		}
+		if scope == "following" && (got["Camp"] != "FREQ=WEEKLY;UNTIL=20261115" || got["Camp 2"] != "FREQ=WEEKLY;UNTIL=20261231") {
+			t.Errorf("following: rules = %v, want old FREQ=WEEKLY;UNTIL=20261115, new FREQ=WEEKLY;UNTIL=20261231", got)
+		}
+	}
+}

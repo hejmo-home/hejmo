@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/meal"
+	"github.com/hejmo-home/hejmo/internal/recipe"
 )
 
 // Where the meal in a cell of the plan comes from.
@@ -81,6 +82,7 @@ func (o MealOptions) today() string {
 
 type queryer interface {
 	Query(query string, args ...any) (*sql.Rows, error)
+	QueryRow(query string, args ...any) *sql.Row
 }
 
 // layerEntry is what a hand-typed entry or an adjustment holds: free text, or a
@@ -96,12 +98,17 @@ type layerEntry struct {
 type mealLayers struct {
 	templates      []meal.Template
 	manual, adjust map[cell]layerEntry
+	recipeNames    map[string]string // the household's recipes by id, for the recipe slots of templates
+	people         int               // portions of a recipe a template plans: the people in the household, 1 to 99; loaded only when a template has a recipe slot (0 otherwise), so a comparison with it is meaningful only for recipe slots
 }
 
 func loadMealLayers(q queryer, householdID, fromDay string) (*mealLayers, error) {
 	l := &mealLayers{manual: map[cell]layerEntry{}, adjust: map[cell]layerEntry{}}
 	var err error
 	if l.templates, err = loadTemplates(q, householdID, ""); err != nil {
+		return nil, err
+	}
+	if err := l.loadTemplateRecipes(q, householdID); err != nil {
 		return nil, err
 	}
 	for table, into := range map[string]map[cell]layerEntry{"meal_manual": l.manual, "meal_adjustments": l.adjust} {
@@ -127,6 +134,46 @@ func loadMealLayers(q queryer, householdID, fromDay string) (*mealLayers, error)
 	return l, nil
 }
 
+// loadTemplateRecipes reads what a recipe slot of a template needs: the names of
+// the household's recipes and the number of people.
+func (l *mealLayers) loadTemplateRecipes(q queryer, householdID string) error {
+	l.recipeNames = map[string]string{}
+	var used bool
+	for _, t := range l.templates {
+		used = used || len(t.Recipes) > 0
+	}
+	if !used {
+		return nil
+	}
+	rows, err := q.Query(`SELECT id, name FROM recipes WHERE household_id = ?`, householdID)
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		var id, name string
+		if err := rows.Scan(&id, &name); err != nil {
+			rows.Close()
+			return err
+		}
+		l.recipeNames[id] = name
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return err
+	}
+	rows.Close()
+	var n int
+	if err := q.QueryRow(`SELECT COUNT(*) FROM household_members WHERE household_id = ?`, householdID).Scan(&n); err != nil {
+		return err
+	}
+	l.people = HouseholdPortions(n)
+	return nil
+}
+
+// HouseholdPortions is how many portions a recipe entry starts with for a
+// household of that many people: at least 1, at most recipe.MaxPortions.
+func HouseholdPortions(people int) int { return min(max(people, 1), recipe.MaxPortions) }
+
 // loadTemplates reads the household's templates by name, or only one.
 func loadTemplates(q queryer, householdID, id string) ([]meal.Template, error) {
 	query := `SELECT id, name, all_mealtimes, mealtime, every, start_week FROM meal_templates WHERE household_id = ?`
@@ -149,6 +196,7 @@ func loadTemplates(q queryer, householdID, id string) ([]meal.Template, error) {
 		}
 		t.AllMealtimes = all == 1
 		t.Entries = map[meal.Slot]string{}
+		t.Recipes = map[meal.Slot]string{}
 		out = append(out, t)
 	}
 	if err := rows.Err(); err != nil {
@@ -160,7 +208,7 @@ func loadTemplates(q queryer, householdID, id string) ([]meal.Template, error) {
 	for i := range out {
 		byID[out[i].ID] = &out[i]
 	}
-	er, err := q.Query(`SELECT e.template_id, e.weekday, e.mealtime, e.text FROM meal_template_entries e JOIN meal_templates t ON t.id = e.template_id WHERE t.household_id = ?`, householdID)
+	er, err := q.Query(`SELECT e.template_id, e.weekday, e.mealtime, e.text, e.recipe_id FROM meal_template_entries e JOIN meal_templates t ON t.id = e.template_id WHERE t.household_id = ?`, householdID)
 	if err != nil {
 		return nil, err
 	}
@@ -168,36 +216,47 @@ func loadTemplates(q queryer, householdID, id string) ([]meal.Template, error) {
 	for er.Next() {
 		var tid string
 		var s meal.Slot
-		var text string
-		if err := er.Scan(&tid, &s.Weekday, &s.Mealtime, &text); err != nil {
+		var text, recipeID string
+		if err := er.Scan(&tid, &s.Weekday, &s.Mealtime, &text, &recipeID); err != nil {
 			return nil, err
 		}
 		if t := byID[tid]; t != nil {
 			t.Entries[s] = text
+			if recipeID != "" {
+				t.Recipes[s] = recipeID
+			}
 		}
 	}
 	return out, er.Err()
 }
 
-// templateFor is the template that fills a cell, and its dish.
-func (l *mealLayers) templateFor(c cell) (*meal.Template, string) {
+// templateFor is the template that fills a cell, and its dish: the recipe's
+// current name for a recipe slot (then recipeID is the recipe), else the text.
+func (l *mealLayers) templateFor(c cell) (tpl *meal.Template, dish, recipeID string) {
 	d, err := time.Parse(dateLayout, c.day)
 	if err != nil {
-		return nil, ""
+		return nil, "", ""
 	}
 	for i := range l.templates {
-		if dish, ok := l.templates[i].Dish(d, c.mealtime); ok {
-			return &l.templates[i], dish
+		dish, ok := l.templates[i].Dish(d, c.mealtime)
+		if !ok {
+			continue
 		}
+		if id := l.templates[i].RecipeAt(d, c.mealtime); id != "" {
+			if name, known := l.recipeNames[id]; known {
+				return &l.templates[i], name, id
+			}
+		}
+		return &l.templates[i], dish, ""
 	}
-	return nil, ""
+	return nil, "", ""
 }
 
 // resolve is the meal of a cell from today on: this week's adjustment, else
 // the template that fills it, else the hand-typed entry.
 func (l *mealLayers) resolve(c cell) PlanMeal {
 	m := PlanMeal{Day: c.day, Mealtime: c.mealtime, Source: SourceManual}
-	tpl, dish := l.templateFor(c)
+	tpl, dish, recipeID := l.templateFor(c)
 	adj, hasAdj := l.adjust[c]
 	switch {
 	case tpl != nil && hasAdj:
@@ -205,6 +264,9 @@ func (l *mealLayers) resolve(c cell) PlanMeal {
 		m.Source, m.TemplateID, m.TemplateName, m.TemplateDish = SourceAdjusted, tpl.ID, tpl.Name, dish
 	case tpl != nil:
 		m.Text, m.Source, m.TemplateID, m.TemplateName, m.TemplateDish = dish, SourceTemplate, tpl.ID, tpl.Name, dish
+		if recipeID != "" {
+			m.RecipeID, m.Portions = recipeID, l.people
+		}
 	case hasAdj:
 		m.Text, m.RecipeID, m.Portions = adj.text, adj.recipeID, adj.portions // the template that was adjusted is gone: a plain entry
 	default:
@@ -215,8 +277,8 @@ func (l *mealLayers) resolve(c cell) PlanMeal {
 }
 
 // set stores an entry for a cell from today on: an adjustment where a template
-// fills it (none when the text is the template's own dish; a recipe is always
-// an adjustment), else the hand-typed entry.
+// fills it (none when the text is the template's own dish, or the recipe is the
+// template's own for the household's size), else the hand-typed entry.
 func (l *mealLayers) set(tx *sql.Tx, householdID string, c cell, e layerEntry) error {
 	put := func(table string, into map[cell]layerEntry, keep bool) error {
 		if !keep {
@@ -230,8 +292,14 @@ func (l *mealLayers) set(tx *sql.Tx, householdID string, c cell, e layerEntry) e
 			householdID, c.day, c.mealtime, e.text, e.recipeID, e.portions)
 		return err
 	}
-	if tpl, dish := l.templateFor(c); tpl != nil {
-		return put("meal_adjustments", l.adjust, e.recipeID != "" || e.text != dish)
+	if tpl, dish, recipeID := l.templateFor(c); tpl != nil {
+		own := false
+		if recipeID != "" {
+			own = e.recipeID == recipeID && e.portions == l.people
+		} else {
+			own = e.recipeID == "" && e.text == dish
+		}
+		return put("meal_adjustments", l.adjust, !own)
 	}
 	if _, stale := l.adjust[c]; stale {
 		if err := put("meal_adjustments", l.adjust, false); err != nil {
@@ -246,7 +314,7 @@ func (l *mealLayers) set(tx *sql.Tx, householdID string, c cell, e layerEntry) e
 // after is the edited template and only cells it no longer fills are released.
 func (l *mealLayers) releaseAdjustments(tx *sql.Tx, householdID, id string, after *meal.Template) error {
 	for c, e := range l.adjust {
-		if t, _ := l.templateFor(c); t == nil || t.ID != id {
+		if t, _, _ := l.templateFor(c); t == nil || t.ID != id {
 			continue
 		}
 		if after != nil {
@@ -303,6 +371,39 @@ func invalidTemplate(err error) error {
 	return err
 }
 
+// nameRecipeSlots checks that every recipe slot of t is a recipe of the
+// household and makes its entry the recipe's current name (ErrInvalid otherwise).
+func nameRecipeSlots(q rowQueryer, householdID string, t *meal.Template) error {
+	if len(t.Recipes) == 0 {
+		return nil
+	}
+	entries := map[meal.Slot]string{}
+	for s, text := range t.Entries {
+		entries[s] = text
+	}
+	recipes := map[meal.Slot]string{}
+	for s, id := range t.Recipes {
+		if id == "" {
+			continue
+		}
+		name, err := recipeName(q, householdID, id)
+		if errors.Is(err, ErrNotFound) {
+			return invalidMeal("entries", "unknown recipe")
+		}
+		if err != nil {
+			return err
+		}
+		entries[s], recipes[s] = name, id
+	}
+	t.Entries, t.Recipes = entries, recipes
+	return nil
+}
+
+// rowQueryer is what reads one row.
+type rowQueryer interface {
+	QueryRow(string, ...any) *sql.Row
+}
+
 // checkClashes refuses a template that fills a meal another one fills too.
 func checkClashes(t meal.Template, others []meal.Template, today string) error {
 	day, err := time.Parse(dateLayout, today)
@@ -338,6 +439,9 @@ func (db *DB) saveMealTemplate(householdID string, t meal.Template, o MealOption
 		return meal.Template{}, err
 	}
 	defer tx.Rollback()
+	if err := nameRecipeSlots(tx, householdID, &t); err != nil {
+		return meal.Template{}, err
+	}
 	others, err := loadTemplates(tx, householdID, "")
 	if err != nil {
 		return meal.Template{}, err
@@ -385,11 +489,16 @@ func (db *DB) saveMealTemplate(householdID string, t meal.Template, o MealOption
 	}
 	filled := t.Filled()
 	for s, text := range filled {
-		if _, err := tx.Exec(`INSERT INTO meal_template_entries (template_id, weekday, mealtime, text) VALUES (?, ?, ?, ?)`, t.ID, s.Weekday, s.Mealtime, text); err != nil {
+		if _, err := tx.Exec(`INSERT INTO meal_template_entries (template_id, weekday, mealtime, text, recipe_id) VALUES (?, ?, ?, ?, ?)`, t.ID, s.Weekday, s.Mealtime, text, t.Recipes[s]); err != nil {
 			return meal.Template{}, err
 		}
 	}
 	t.Entries = filled
+	for s := range t.Recipes {
+		if _, ok := filled[s]; !ok {
+			delete(t.Recipes, s)
+		}
+	}
 	if err := refreshMealPlan(tx, householdID, o); err != nil {
 		return meal.Template{}, err
 	}

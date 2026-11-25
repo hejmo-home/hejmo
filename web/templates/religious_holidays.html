@@ -1,0 +1,49 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "rh.title") "Frame" .Frame)}}
+  <h1>{{t "rh.title"}}</h1>
+  <p class="lead">{{t "rh.lead"}}</p>
+  <dl class="facts rh-now"><dt>{{t "rh.legal.label"}}</dt><dd>{{.Legal}}</dd><dt>{{t "rh.state.label"}}</dt><dd>{{.State}}</dd></dl>
+  <form class="steps" method="post" action="/settings/religious-holidays">
+    <fieldset class="rh">
+      <legend class="sr">{{t "rh.title"}}</legend>
+      {{template "switch" (dict "Name" "religious_holidays" "Label" (t "rh.switch") "OnText" (t "rh.switch.on") "OffText" (t "rh.switch.off") "Checked" .Form.On)}}
+      <div class="when-on">
+        <fieldset class="choice"{{if .Err}} aria-describedby="err-religions"{{end}}>
+          <legend>{{t "rh.choice.legend"}}</legend>
+          {{range .Cards}}<label><input type="checkbox" name="religions" value="{{.Code}}"{{if .Checked}} checked{{end}}{{if and $.Err (eq $.Err.Code "none")}} aria-invalid="true"{{end}}><b>{{.Name}}</b><small>{{.Hint}}</small></label>
+          {{end}}
+          {{with .Err}}<p class="ferr rh-ferr" id="err-religions" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{.HTML}}</span></p>{{end}}
+        </fieldset>
+        {{if or .HasIslamic .HasOrthodox}}<details class="more"{{if or (eq .Islamic "umm_al_qura") (eq .Orthodox "julian")}} open{{end}}>
+          <summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><span>{{t "rh.more"}}</span><span class="sum">{{.MoreSum}}</span></summary>
+          <div>
+            {{if .HasIslamic}}<fieldset class="choice">
+              <legend>{{t "rh.islamic.legend"}}</legend>
+              <label><input type="radio" name="islamic_calendar" value="diyanet"{{if eq .Islamic "diyanet"}} checked{{end}}><b>{{t "rh.islamic.diyanet"}}</b><small>{{t "rh.islamic.diyanet.hint"}}</small></label>
+              <label><input type="radio" name="islamic_calendar" value="umm_al_qura"{{if eq .Islamic "umm_al_qura"}} checked{{end}}><b>{{t "rh.islamic.umm_al_qura"}}</b><small>{{t "rh.islamic.umm_al_qura.hint"}}</small></label>
+            </fieldset>{{end}}
+            {{if .HasOrthodox}}<fieldset class="choice">
+              <legend>{{t "rh.orthodox.legend"}}</legend>
+              <label><input type="radio" name="orthodox_calendar" value="revised_julian"{{if eq .Orthodox "revised_julian"}} checked{{end}}><b>{{t "rh.orthodox.revised_julian"}}</b><small>{{t "rh.orthodox.revised_julian.hint"}}</small></label>
+              <label><input type="radio" name="orthodox_calendar" value="julian"{{if eq .Orthodox "julian"}} checked{{end}}><b>{{t "rh.orthodox.julian"}}</b><small>{{t "rh.orthodox.julian.hint"}}</small></label>
+              <p class="hint">{{t "rh.orthodox.hint"}}</p>
+            </fieldset>{{end}}
+          </div>
+        </details>{{end}}
+      </div>
+    </fieldset>
+    <button class="button" type="submit">{{t "rh.save"}}</button>
+  </form>
+  {{if .Rels}}<section aria-labelledby="days">
+    <h2 id="days">{{t "rh.days.title"}}</h2>
+    <p class="hint">{{tf "rh.days.hint" "year" (printf "%d" .CalendarEnd)}}</p>
+    <ul class="rh-list">
+      {{range .Rels}}<li class="rh-rel">
+        <h3>{{.Name}}</h3>
+        <p class="rh-note">{{.Note}}</p>
+        {{with .End}}<p class="rh-end">{{.}}</p>{{end}}
+        {{if .Days}}<ul class="rh-days">{{range .Days}}<li><span class="d">{{.Date}}</span><span class="n">{{.Name}}{{with .Detail}}<small>{{.}}</small>{{end}}</span>{{if .Vary}}<span class="vary">{{t "rh.vary"}}</span>{{end}}</li>{{end}}</ul>{{else}}<p class="hint">{{t "rh.days.none"}}</p>{{end}}
+        {{with .Dup}}<p class="rh-dup">{{.}}</p>{{end}}
+      </li>{{end}}
+    </ul>
+  </section>{{end}}
+{{template "foot"}}

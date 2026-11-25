@@ -39,7 +39,7 @@ func (s *server) householdPortions(p principal) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return min(max(len(people), 1), recipe.MaxPortions), nil
+	return store.HouseholdPortions(len(people)), nil
 }
 
 // planMeal is the meal a cell shows now, with where it comes from.

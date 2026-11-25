@@ -184,6 +184,7 @@ type hubItem struct {
 
 var hubItems = []hubItem{
 	{"/calendars", "hub.connections", "hub.connections.hint", auth.Perm("calendars", auth.Write)},
+	{"/settings/religious-holidays", "hub.religious_holidays", "hub.religious_holidays.hint", auth.Perm("settings", auth.Write)},
 	{"/caldav", "hub.caldav", "hub.caldav.hint", auth.Perm("tokens", auth.Read)},
 	{"/displays", "hub.displays", "hub.displays.hint", auth.Perm("displays", auth.Write)},
 	{"/photos", "hub.photos", "hub.photos.hint", auth.Perm("displays", auth.Write)},

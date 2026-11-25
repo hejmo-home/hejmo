@@ -172,6 +172,24 @@ type Tamper struct {
 	refuse   int      // status answered for REPORTs and for downloads of refused files
 	refusing []string // file names whose download is refused
 	writes   int      // status answered for PUT and DELETE
+	seen     map[string]int
+	after    string // Retry-After header sent with the refusals of PUT and DELETE
+}
+
+// RefuseWritesWait is RefuseWrites with a Retry-After header (seconds or an
+// HTTP date) on every refusal: a server that throttles.
+func (tp *Tamper) RefuseWritesWait(status int, retryAfter string) {
+	tp.mu.Lock()
+	defer tp.mu.Unlock()
+	tp.writes, tp.after = status, retryAfter
+}
+
+// Count returns how many requests with this method reached the Tamper, refused
+// ones included.
+func (tp *Tamper) Count(method string) int {
+	tp.mu.Lock()
+	defer tp.mu.Unlock()
+	return tp.seen[method]
 }
 
 // RefuseWrites makes every PUT and DELETE answer with status until it is
@@ -179,7 +197,7 @@ type Tamper struct {
 func (tp *Tamper) RefuseWrites(status int) {
 	tp.mu.Lock()
 	defer tp.mu.Unlock()
-	tp.writes = status
+	tp.writes, tp.after = status, ""
 }
 
 // Refuse makes every REPORT, and the download of the named objects, answer
@@ -235,11 +253,22 @@ var (
 )
 
 func (tr tamper) RoundTrip(req *http.Request) (*http.Response, error) {
+	tr.mu.Lock()
+	if tr.seen == nil {
+		tr.seen = map[string]int{}
+	}
+	tr.seen[req.Method]++
+	after := tr.after
+	tr.mu.Unlock()
 	if status := tr.refused(req); status != 0 {
+		header := http.Header{}
+		if after != "" && (req.Method == http.MethodPut || req.Method == http.MethodDelete) {
+			header.Set("Retry-After", after)
+		}
 		return &http.Response{
 			StatusCode: status,
 			Status:     fmt.Sprintf("%d %s", status, http.StatusText(status)),
-			Header:     http.Header{},
+			Header:     header,
 			Body:       io.NopCloser(strings.NewReader("")),
 			Request:    req,
 		}, nil

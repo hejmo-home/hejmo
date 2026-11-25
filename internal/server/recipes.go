@@ -227,7 +227,7 @@ type recipeInput struct {
 }
 
 // householdPortions is how many portions a new recipe starts with: the number of people.
-func (c *itemCtx) householdPortions() int { return min(max(len(c.st.people), 1), recipe.MaxPortions) }
+func (c *itemCtx) householdPortions() int { return store.HouseholdPortions(len(c.st.people)) }
 
 // fromInput builds the recipe a request describes. The error names the field
 // the way the API does ("ingredients[2].quantity").

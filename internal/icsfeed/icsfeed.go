@@ -221,7 +221,7 @@ func (p *parser) inWindow(e calendar.Event) bool {
 	if e.RRule == "" {
 		return e.End.After(p.cutoff)
 	}
-	opt, err := rrule.StrToROption(e.RRule)
+	opt, err := calendar.ParseRule(e.RRule, e.Start.Location())
 	if err != nil {
 		return false
 	}

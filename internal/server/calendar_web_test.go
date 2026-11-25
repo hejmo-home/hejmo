@@ -4,10 +4,12 @@ import (
 	"html"
 	"net/http"
 	"net/url"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
 
+	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -478,6 +480,118 @@ func TestNewEventFormOffersEveryWritableCalendarOnTheFirstVisit(t *testing.T) {
 		page := getEN(b, "/calendar/new").body
 		if !strings.Contains(page, `<select name="calendar">`) || !strings.Contains(page, `value="`+work.ID+`"`) || !strings.Contains(page, ">Family</option>") {
 			t.Fatalf("visit %d: no calendar choice with Work and Family:\n%s", visit, page)
+		}
+	}
+}
+
+// Ticket 307: an all-day series ends with a date (UNTIL=20261231), a timed one
+// with a UTC date-time; the edit page shows the same end date either way, and
+// "this and following" ends the old all-day part with a date the day before.
+func TestAllDaySeriesEndIsWrittenAsADateAndReadBackAsTheSameDay(t *testing.T) {
+	t.Parallel()
+	f := calendarBox(t)
+	allDay := eventForm("School trip week", "2026-11-02", "", "")
+	allDay.Set("all_day", "1")
+	allDay.Set("repeat", "weekly")
+	allDay.Set("until", "2026-12-31")
+	f.postEvent(t, allDay)
+	timed := eventForm("Choir", "2026-11-02", "17:00", "18:00")
+	timed.Set("repeat", "weekly")
+	timed.Set("until", "2026-12-31")
+	f.postEvent(t, timed)
+
+	rules := func() map[string]string {
+		h, _ := f.db.HomeHousehold()
+		events, _ := f.db.CalendarEvents(h.ID, f.family.ID)
+		out := map[string]string{}
+		for _, e := range events {
+			if e.SeriesID == "" {
+				out[e.Title] = e.RRule
+			}
+		}
+		return out
+	}
+	got := rules()
+	if got["School trip week"] != "FREQ=WEEKLY;UNTIL=20261231" || got["Choir"] != "FREQ=WEEKLY;UNTIL=20261231T225959Z" {
+		t.Fatalf("stored rules = %v", got)
+	}
+
+	untilOnPage := func(week string) string {
+		path, occ := occurrenceOf(t, linkTo(t, getEN(f.box, "/calendar?week="+week).body, "School trip week"))
+		page := getEN(f.box, path+"?occurrence="+url.QueryEscape(occ)).body
+		m := regexp.MustCompile(`name="until"[^>]*value="([^"]*)"|value="([^"]*)"[^>]*name="until"`).FindStringSubmatch(page)
+		if m == nil {
+			t.Fatalf("no end date on the edit page:\n%s", page)
+		}
+		return m[1] + m[2]
+	}
+	if u := untilOnPage("2026-11-02"); u != "2026-12-31" {
+		t.Fatalf("end date on the edit page = %q", u)
+	}
+	if !strings.Contains(getEN(f.box, "/calendar?week=2026-12-28").body, "School trip week") {
+		t.Fatal("the last occurrence (Monday 28/12) is missing")
+	}
+
+	path, occ := occurrenceOf(t, linkTo(t, getEN(f.box, "/calendar?week=2026-11-16").body, "School trip week"))
+	split := eventForm("School trip week 2", "2026-11-16", "", "")
+	split.Set("all_day", "1")
+	split.Set("repeat", "weekly")
+	split.Set("until", "2026-12-31")
+	split.Set("occurrence", occ)
+	split.Set("scope", "following")
+	if r := f.post(path, split); r.status != http.StatusSeeOther {
+		t.Fatalf("split = %d\n%s", r.status, r.body)
+	}
+	if got := rules()["School trip week"]; got != "FREQ=WEEKLY;UNTIL=20261115" {
+		t.Fatalf("old part = %q, want FREQ=WEEKLY;UNTIL=20261115", got)
+	}
+	if u := untilOnPage("2026-11-09"); u != "2026-11-15" {
+		t.Fatalf("end date of the old part on the edit page = %q", u)
+	}
+}
+
+// Ticket 307: an old all-day series with a date-time UNTIL is written again
+// with a date-only UNTIL on its next edit, whatever the edit changes, and on a
+// split also for the new part.
+func TestEditingAnOldAllDaySeriesRewritesItsUntilAsADate(t *testing.T) {
+	t.Parallel()
+	for _, scope := range []string{"all", "following"} {
+		f := calendarBox(t)
+		form := eventForm("School trip week", "2026-11-02", "", "")
+		form.Set("all_day", "1")
+		form.Set("repeat", "weekly")
+		form.Set("until", "2026-12-31")
+		f.postEvent(t, form)
+		h, _ := f.db.HomeHousehold()
+		events, _ := f.db.CalendarEvents(h.ID, f.family.ID)
+		old := events[0]
+		old.RRule = "FREQ=WEEKLY;UNTIL=20261231T225959Z"
+		if err := f.db.ApplyChange(h.ID, calendar.Change{Update: []calendar.Event{old}}); err != nil {
+			t.Fatal(err)
+		}
+		path, occ := occurrenceOf(t, linkTo(t, getEN(f.box, "/calendar?week=2026-11-16").body, "School trip week"))
+		edit := eventForm("School trip week 2", "2026-11-16", "", "")
+		edit.Set("all_day", "1")
+		edit.Set("repeat", "weekly")
+		edit.Set("until", "2026-12-31")
+		edit.Set("occurrence", occ)
+		edit.Set("scope", scope)
+		if r := f.post(path, edit); r.status != http.StatusSeeOther {
+			t.Fatalf("%s: edit = %d\n%s", scope, r.status, r.body)
+		}
+		events, _ = f.db.CalendarEvents(h.ID, f.family.ID)
+		got := map[string]string{}
+		for _, e := range events {
+			if e.SeriesID == "" {
+				got[e.Title] = e.RRule
+			}
+		}
+		want := map[string]string{"School trip week 2": "FREQ=WEEKLY;UNTIL=20261231"}
+		if scope == "following" {
+			want["School trip week"] = "FREQ=WEEKLY;UNTIL=20261115"
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("%s: rules = %v, want %v", scope, got, want)
 		}
 	}
 }

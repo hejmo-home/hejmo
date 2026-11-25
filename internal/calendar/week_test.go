@@ -77,34 +77,34 @@ func TestRepeatPresetsBecomeRulesAndBack(t *testing.T) {
 		{calendar.RepeatYearly, "FREQ=YEARLY"},
 	}
 	for _, c := range cases {
-		got, err := calendar.RepeatRule(c.repeat, time.Time{})
+		got, err := calendar.RepeatRule(c.repeat, time.Time{}, false)
 		if err != nil || got != c.rule {
 			t.Errorf("RepeatRule(%s) = %q, %v; want %q", c.repeat, got, err, c.rule)
 		}
-		if r, u := calendar.RepeatOf(c.rule); r != c.repeat || !u.IsZero() {
+		if r, u := calendar.RepeatOf(c.rule, berlin); r != c.repeat || !u.IsZero() {
 			t.Errorf("RepeatOf(%q) = %s, %v; want %s without end", c.rule, r, u, c.repeat)
 		}
 		if c.rule == "" {
 			continue
 		}
-		withEnd, err := calendar.RepeatRule(c.repeat, until)
+		withEnd, err := calendar.RepeatRule(c.repeat, until, false)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if err := calendar.ValidateRRule(withEnd); err != nil {
 			t.Errorf("%q is not a valid rule: %v", withEnd, err)
 		}
-		if r, u := calendar.RepeatOf(withEnd); r != c.repeat || !u.Equal(until) {
+		if r, u := calendar.RepeatOf(withEnd, berlin); r != c.repeat || !u.Equal(until) {
 			t.Errorf("RepeatOf(%q) = %s, %v; want %s until %v", withEnd, r, u, c.repeat, until)
 		}
 	}
-	if r, _ := calendar.RepeatOf("FREQ=WEEKLY;COUNT=5"); r != calendar.RepeatCustom {
+	if r, _ := calendar.RepeatOf("FREQ=WEEKLY;COUNT=5", berlin); r != calendar.RepeatCustom {
 		t.Errorf("a counted series is %s, want custom", r)
 	}
-	if r, _ := calendar.RepeatOf("FREQ=MONTHLY;BYMONTHDAY=-1"); r != calendar.RepeatCustom {
+	if r, _ := calendar.RepeatOf("FREQ=MONTHLY;BYMONTHDAY=-1", berlin); r != calendar.RepeatCustom {
 		t.Errorf("last day of month is %s, want custom", r)
 	}
-	if _, err := calendar.RepeatRule("sometimes", time.Time{}); err == nil {
+	if _, err := calendar.RepeatRule("sometimes", time.Time{}, false); err == nil {
 		t.Error("an unknown preset is accepted")
 	}
 }

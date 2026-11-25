@@ -143,7 +143,7 @@ func withAge(o *Occurrence, startYear int) bool {
 }
 
 func seriesStarts(e Event, after, before time.Time) ([]time.Time, error) {
-	opt, err := rrule.StrToROption(e.RRule)
+	opt, err := ParseRule(e.RRule, e.Start.Location())
 	if err != nil {
 		return nil, err
 	}

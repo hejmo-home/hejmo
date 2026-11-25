@@ -50,6 +50,9 @@ func TestStreaksMigrationBackfillsTheSwitchByRole(t *testing.T) {
 	if err := db.apply([]migration{mine}); err != nil {
 		t.Fatal(err)
 	}
+	if err := db.apply(all); err != nil { // the later migrations too: People reads their columns
+		t.Fatal(err)
+	}
 	people, err := db.People("h1")
 	if err != nil || len(people) != 2 {
 		t.Fatalf("People = %v, %v", people, err)

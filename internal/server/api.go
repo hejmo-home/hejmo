@@ -209,6 +209,9 @@ var apiRoutes = []APIRoute{
 	{"PUT", "/recipes/{id}", auth.Perm("meals", auth.Write), (*server).apiSaveRecipe},
 	{"DELETE", "/recipes/{id}", auth.Perm("meals", auth.Delete), (*server).apiDeleteRecipe},
 	{"GET", "/recipes/{id}/warnings", auth.Perm("health", auth.Read), (*server).apiRecipeWarnings},
+	{"GET", "/recipes/{id}/nutrition", auth.Perm("meals", auth.Read), (*server).apiRecipeNutrition},
+	{"GET", "/foods", auth.Perm("lists", auth.Read), (*server).apiSearchFoods},
+	{"GET", "/foods/{id}", auth.Perm("lists", auth.Read), (*server).apiGetNutritionFood},
 	{"GET", "/starter-recipes", auth.Perm("meals", auth.Read), (*server).apiListStarterRecipes},
 	{"GET", "/recipe-units", auth.Perm("meals", auth.Read), (*server).apiRecipeUnits},
 	{"GET", "/meal-templates", auth.Perm("meals", auth.Read), (*server).apiListMealTemplates},
@@ -351,10 +354,12 @@ type personJSON struct {
 	Symbol string     `json:"symbol"`
 	// StreaksShown is the switch "week count and badges" (ticket 294).
 	StreaksShown bool `json:"streaks_shown"`
+	// NutritionShown is the switch "nutrition values at recipes" (ticket 288).
+	NutritionShown bool `json:"nutrition_shown"`
 }
 
 func toJSON(p store.Person) personJSON {
-	return personJSON{p.ID, p.Name, p.Role, p.Color, p.Shape, p.Symbol, p.StreaksShown}
+	return personJSON{p.ID, p.Name, p.Role, p.Color, p.Shape, p.Symbol, p.StreaksShown, p.NutritionShown}
 }
 
 func (s *server) apiMe(w http.ResponseWriter, _ *http.Request, p principal) {

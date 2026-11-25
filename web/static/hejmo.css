@@ -4342,6 +4342,55 @@ li.ing .place-list.art-sugg li + li { border-top: 1px solid var(--border); }
   .rcp-steps li::before { width: 30px; height: 30px; }
 }
 
+/* ===== ticket 288: nutrition values per portion on the recipe page (no new tokens) ===== */
+.rcp-nutri { max-width: 880px; width: 100%; min-width: 0; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; justify-items: start; padding: 14px 16px; margin: 0 0 var(--gap-section); background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-tile); }
+.rcp-nutri > * { max-width: 100%; }
+.rcp-nutri h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: var(--fs-event-title); }
+.rcp-nutri h2 .icon { flex: none; stroke: currentColor; }
+.rcp-nutri .nut-lead { margin: 0; color: var(--text-secondary); font-size: var(--fs-label-large); }
+.rcp-nutri .none { display: flex; gap: 8px; align-items: flex-start; margin: 0; }
+.rcp-nutri .none .icon { flex: none; stroke: var(--accent); margin-top: 2px; }
+.nut-gap { display: grid; gap: 6px; justify-items: start; margin: 0; padding: 10px 12px; background: var(--notice-bg); color: var(--notice-text); border-radius: var(--radius-card); font-size: var(--fs-label-large); }
+.nut-gap p { margin: 0; }
+.nut-gap ul { margin: 0; padding: 0 0 0 1.1em; display: grid; gap: 4px; }
+.nut-gap li { overflow-wrap: break-word; hyphens: manual; }
+.nut-gap a { color: inherit; font-weight: 600; }
+.nut-gap .flag.warn { padding: 0; background: none; font-size: var(--fs-event-title); }
+.nut-table { border-collapse: collapse; width: 100%; max-width: 30rem; font-variant-numeric: tabular-nums; }
+.nut-table th, .nut-table td { padding: 9px 0; border-top: 1px solid var(--border); vertical-align: baseline; }
+.nut-table tr:first-child th, .nut-table tr:first-child td { border-top: 0; }
+.nut-table th { text-align: left; font-weight: 400; padding-right: 12px; overflow-wrap: break-word; }
+.nut-table td { text-align: right; font-weight: 700; white-space: nowrap; }
+.nut-table tr.nut-sub th { padding-left: 1.25em; color: var(--text-secondary); font-size: var(--fs-label-large); }
+.nut-table tr.nut-sub td { font-weight: 600; }
+.nut-table .kj { display: block; font-size: var(--fs-meta); font-weight: 400; color: var(--text-secondary); }
+.nut-table .kcal { font-size: var(--fs-key-figure); }
+.nut-na { display: inline-block; padding: 1px 8px; border: 1.5px dashed var(--notice-text); border-radius: var(--radius-field); background: var(--notice-bg); color: var(--notice-text); font-size: var(--fs-label); font-weight: 600; white-space: nowrap; }
+.nut-src { margin: 0; }
+.nut-who { margin: 0; padding-top: 10px; border-top: 1px solid var(--border); width: 100%; font-size: var(--fs-label-large); overflow-wrap: break-word; }
+.nut-who .who { display: inline; font-weight: 700; white-space: nowrap; }
+.nut-who .who .marker { display: inline-block; vertical-align: -0.1em; margin-right: 6px; }
+.nut-who a { white-space: nowrap; }
+[data-theme="bw"] .rcp-nutri { border: 2px solid var(--text); }
+[data-theme="bw"] .nut-gap { background: none; color: var(--text); border: 2px dashed var(--text); }
+[data-theme="bw"] .nut-na { background: none; color: var(--text); border: 2px dashed var(--text); }
+[data-theme="bw"] .nut-table th, [data-theme="bw"] .nut-table td { border-top-color: var(--text); }
+[data-theme="bw"] .nut-who { border-top: 2px solid var(--text); }
+[data-theme="bw"] .nut-who .who .marker { vertical-align: -0.15em; }
+/* Own article: the food behind its nutrition values */
+.food-pick { display: grid; gap: 10px; }
+.food-pick .choice small b { font-weight: 600; }
+.food-chosen { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 0; padding: 12px; border: 1.5px solid var(--accent); border-radius: var(--radius-card); }
+.food-chosen > span { flex: 1 1 220px; min-width: 0; display: grid; gap: 2px; }
+.food-chosen b { display: flex; gap: 6px; align-items: flex-start; font-size: var(--fs-event-title); overflow-wrap: break-word; }
+.food-chosen b .icon { flex: none; stroke: var(--accent); margin-top: 2px; }
+.food-chosen small { color: var(--text-secondary); font-size: var(--fs-label); }
+.food-none { margin: 0; padding: 10px 12px; border: 1.5px dashed var(--notice-text); background: var(--notice-bg); color: var(--notice-text); border-radius: var(--radius-card); font-size: var(--fs-label-large); }
+[data-theme="bw"] .food-chosen { border: 2px solid var(--text); }
+[data-theme="bw"] .food-chosen b .icon { stroke: var(--text); }
+[data-theme="bw"] .food-none { background: none; color: var(--text); border: 2px dashed var(--text); }
+[data-theme="bw"] .nut-gap .flag { border: 0; padding: 0; }
+
 /* ---- ticket 295: badges ---- */
 /* Badges (issue #295, preview docs/design/preview-295.html). --pc is the person's colour.
    The seal is a 12-point rosette, never a circle: circles are person markers. */

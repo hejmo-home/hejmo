@@ -133,6 +133,8 @@ type layoutFixture struct {
 	omaID         string   // the contact with a photo (ticket 297)
 	longVariety   string   // the entry of an article with a very long variety, on the first list
 	contactGroups []string // the ids of the contact groups in their order
+	nutriRecipe   string   // the recipe whose nutrition card names what is not counted and what is missing (ticket 288)
+	foodArticle   string   // the own article with a chosen food
 	inviteToken   string   // the invitation of Maximilian, a parent without account
 	hint          *screen  // a display that shows the screensaver's hint
 	outlook       []string // the Outlook pages (#177) that no link leads to
@@ -266,7 +268,6 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	knusper, err := db.CreateArticle(h, f.ids[0], store.OwnArticle{Name: "Haselnuss-Mandel-Knusperflocken mit Schokostückchen", Dept: "pantry", Kind: "veg", Allergens: []string{"nuts", "milk", "soy", "gluten"}, Unit1: "pack", Unit2: "g"},
 		&store.ArticlePicture{JPEG: testJPEG(t, 400, 512), Source: "upload", FromW: 3024, FromH: 4032, FromBytes: 3 << 20})
 	must(err)
-	_ = knusper
 	_, err = db.CreateArticle(h, f.ids[1], store.OwnArticle{Name: "Katzenfutter Huhn", Dept: "other", Kind: "nonfood", Unit1: "pack", PicSource: "symbol", Symbol: "🐈"}, nil)
 	must(err)
 	must(db.SetLibrarySettings(h, store.LibrarySettings{HideAllergen: true, Everyone: true, ConfirmedBy: f.ids[0]}))
@@ -286,6 +287,22 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 			t.Fatal(err)
 		}
 	}
+
+	// Nutrition values (ticket 288): two of the five children see them, the card of a recipe that cannot count
+	// everything (a long free-text line, a unit without weight, an own article without a food, a value the food lacks),
+	// and an own article with a chosen food.
+	for _, who := range []string{"Anna-Lena", "Konstantin"} {
+		must(db.SetNutritionShown(h, f.people[who].ID, true))
+	}
+	food, err := db.CreateArticle(h, f.ids[0], store.OwnArticle{Name: "Omas Zwetschgenmus nach Familienrezept aus dem Allgäu", Dept: "pantry", Kind: "vegan", Unit1: "pack", Food: "bls:S161000", PieceG: 350}, nil)
+	must(err)
+	f.foodArticle = food.ID
+	nr, err := db.CreateRecipe(h, f.ids[0], recipe.Recipe{Name: "Zwetschgenmus-Pfannkuchen mit Röstzwiebeln und Bergkäse aus dem Allgäu", Category: recipe.Main, Portions: 8,
+		Ingredients: []recipe.Ingredient{{Amount: 500, Unit: "g", Text: "Weizenmehl", ArticleID: "wheat-flour"}, {Amount: 6, Text: "Eier", ArticleID: "eggs"},
+			{Amount: 1, Unit: "jar", Text: "Röstzwiebeln aus dem Glas vom Wochenmarkt in Kempten"}, {Amount: 1, Unit: "handful", Text: "Heidelbeeren", ArticleID: "blueberries"},
+			{Amount: 2, Unit: "piece", Text: "Haselnuss-Mandel-Knusperflocken mit Schokostückchen", ArticleID: knusper.ID}, {Amount: 200, Unit: "ml", Text: "Apfelsaft", ArticleID: "apple-juice"}, {Text: "Salz", ArticleID: "salt"}}})
+	must(err)
+	f.nutriRecipe = nr.ID
 
 	// Groups, a calendar, a day note.
 	_, err = db.CreateGroup(h, "Kindergartenkinder-Elternbeirat", f.ids[:3])
@@ -613,6 +630,12 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 		}
 	}
 	pages = append(pages, rewardFormPages(t, f)...)
+	// Nutrition values (#288): the card with everything it can say, a child's switch, the section of an own article.
+	for _, p := range []string{"/meals/recipes/" + f.nutriRecipe, "/people/" + f.ids[2], "/settings/lists/library/" + f.foodArticle} {
+		if !have[p] {
+			add(parent, p)
+		}
+	}
 	// The badges of three children (#295): six of them two new, all ten, none. The crawl renders only the first
 	// person's page, so the others are added by hand.
 	for _, id := range []string{f.ids[3], f.ids[2], f.ids[4]} {

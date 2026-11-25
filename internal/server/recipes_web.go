@@ -238,6 +238,9 @@ func (s *server) handleRecipePage(w http.ResponseWriter, r *http.Request) {
 			data["Diet"] = c.dietWord(d.Mark)
 		}
 	}
+	if n := c.nutritionView(rec.Recipe); n != nil {
+		data["Nut"] = n
+	}
 	free := c.freeNames(rec.Recipe)
 	if len(free) > 0 {
 		key := "recipes.check.unchecked.many"

@@ -57,6 +57,9 @@ func TestBuddhistDaysAreTheMayAndJulyFullMoonsLosarAndBodhiDay(t *testing.T) {
 	if got := find(t, hs, "bodhi_day", 2027).Start; !got.Equal(d(2027, 12, 8)) {
 		t.Errorf("Bodhi day: %v", got)
 	}
+	if got := find(t, hs, "bodhi_day", 2027).Source; got != rh.SrcFixed {
+		t.Errorf("Bodhi day is a fixed date, its source is %q", got)
+	}
 	losar := find(t, hs, "losar", 2027)
 	if !losar.Start.Equal(d(2027, 2, 7)) || losar.Days() != 3 || losar.Source != rh.SrcLosar || !losar.Unchecked {
 		t.Errorf("Losar: %v for %d days from %q, unchecked %v", losar.Start, losar.Days(), losar.Source, losar.Unchecked)
@@ -85,5 +88,19 @@ func TestSikhDaysComeFromTheSGPCTableAndStopWhereItStops(t *testing.T) {
 	}
 	if got := rh.TableEnd(rh.Sikh, rh.Options{}); got != 2027 {
 		t.Errorf("SGPC table ends in %d", got)
+	}
+}
+
+// Guru Gobind Singh's Prakash Purab falls twice in 2025 (6 January and 27 December).
+func TestSGPCTableHasBothPrakashPuraabsOf2025(t *testing.T) {
+	t.Parallel()
+	var got []string
+	for _, h := range rh.Compute(rh.Sikh, rh.Options{}, 2025, 2025) {
+		if h.Key == "guru_gobind_singh" {
+			got = append(got, h.Start.Format("2006-01-02"))
+		}
+	}
+	if len(got) != 2 || got[0] != "2025-01-06" || got[1] != "2025-12-27" {
+		t.Errorf("Guru Gobind Singh 2025: %v", got)
 	}
 }

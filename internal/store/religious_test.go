@@ -355,3 +355,25 @@ func TestReligiousEventIDsAreValidAndStable(t *testing.T) {
 		}
 	}
 }
+
+// The window of years follows the clock of the box, not the wall clock: a
+// household that has it set to 2040 gets the festivals of 2041.
+func TestTheCalendarWindowFollowsTheBoxClock(t *testing.T) {
+	t.Parallel()
+	db, h := religiousHousehold(t, "DE-BY", 0, 0)
+	db.SetClock(func() time.Time { return time.Date(2040, 6, 1, 12, 0, 0, 0, time.UTC) })
+	ch, err := db.SaveReligiousHolidays(h.ID, on(rh.Jewish), "Religiöse Feiertage", "de")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ch.Count == 0 {
+		t.Error("no holiday counted between mid 2040 and the end of 2041")
+	}
+	var years = map[int]bool{}
+	for _, e := range religiousEvents(t, db, h) {
+		years[e.Start.Year()] = true
+	}
+	if !years[2041] || years[time.Now().Year()] {
+		t.Errorf("years of the events: %v", years)
+	}
+}

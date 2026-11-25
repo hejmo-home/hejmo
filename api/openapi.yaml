@@ -6612,7 +6612,7 @@ components:
           description: "Switch the religious holidays on or off and choose the religions; omitted parts stay as they are. `on: true` needs at least one religion (the stored ones or `religions`) and, for `hindu`, a home location (stored or given in the same request), else 422; an unknown religion or calendar is 422. Nothing is saved when the request is refused."
           properties:
             on: { type: boolean }
-            religions: { type: array, items: { type: string }, description: "Replaces the chosen religions: alevi, bahai, buddhist, christian, orthodox, hindu, muslim, jewish, sikh" }
+            religions: { type: array, items: { type: string }, description: "Replaces the chosen religions (an empty list is ignored, the stored choice stays: switch `on` to false to stop the calendar): alevi, bahai, buddhist, christian, orthodox, hindu, muslim, jewish, sikh" }
             islamic_calendar: { type: string, description: "diyanet or umm_al_qura" }
             orthodox_calendar: { type: string, description: "revised_julian or julian" }
         meal_cutoffs:

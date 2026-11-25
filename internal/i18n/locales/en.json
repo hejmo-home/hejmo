@@ -5485,6 +5485,7 @@
   "rh.source.sgpc": "Nanakshahi Jantri of the SGPC, table {from}–{to}",
   "rh.source.meeus_moon": "Worked out from the phases of the moon (meeus)",
   "rh.source.panchang": "Worked out from the sun and the moon for the place of your home (rules of the Panchang)",
+  "rh.source.fixed_date": "A fixed day of the year (8 December)",
   "lic.rh.title": "Religious holidays",
   "lic.rh.hint": "The libraries and tables the box works the days of the religions out from, without the internet.",
   "lic.rh.lib.hebcal": "hebcal-go, GPL-2.0 or later (with hdate and greg, GPL-2.0 or later, noaa-go, LGPL-2.1, and locales and gematriya, BSD-2-Clause): Hebrew calendar",

@@ -257,7 +257,7 @@ func (db *DB) syncReligious(tx *sql.Tx, householdID, calendarName string) (Relig
 	}
 	wanted := map[string]religiousWant{}
 	if on {
-		today := time.Now().In(loc)
+		today := db.today().In(loc)
 		year := today.Year()
 		start := date0(today)
 		endOfNext := time.Date(year+1, 12, 31, 0, 0, 0, 0, time.UTC)

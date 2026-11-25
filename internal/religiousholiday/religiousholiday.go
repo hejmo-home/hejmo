@@ -118,6 +118,7 @@ const (
 	SrcSGPC     = "sgpc"
 	SrcMoon     = "meeus_moon"
 	SrcPanchang = "panchang"
+	SrcFixed    = "fixed_date"
 )
 
 // CalDate is a date in the calendar of the religion itself, for the event page

@@ -69,7 +69,8 @@ func pointOn(d time.Time, p dayPoint, o Options) time.Time {
 }
 
 // tithiDay finds the civil day within a lunar month on which the tithi prevails at the day point.
-// If it is skipped at that time, the day it ends on is used.
+// If it is skipped at that time (kshaya), the civil day it ends on is used, so
+// a festival is never dropped.
 func tithiDay(m lunarMonth, tithiNo int, p dayPoint, o Options) (time.Time, bool) {
 	zone := o.zone()
 	first := m.start.In(zone)
@@ -85,7 +86,27 @@ func tithiDay(m lunarMonth, tithiNo int, p dayPoint, o Options) (time.Time, bool
 			return d, true
 		}
 	}
-	return time.Time{}, false
+	end := tithiEnd(m, tithiNo)
+	l := end.In(zone)
+	return date(l.Year(), l.Month(), l.Day()), true
+}
+
+// tithiEnd is the moment the tithi ends within the lunar month: the first
+// moment a later one is at hand, or the end of the month for the last tithi.
+func tithiEnd(m lunarMonth, tithiNo int) time.Time {
+	if tithiNo >= 30 {
+		return m.end
+	}
+	lo, hi := m.start, m.end
+	for hi.Sub(lo) > time.Second {
+		mid := lo.Add(hi.Sub(lo) / 2)
+		if tithi(mid) > tithiNo {
+			hi = mid
+		} else {
+			lo = mid
+		}
+	}
+	return hi
 }
 
 // festival describes a Hindu festival by month, lunar day and day point.

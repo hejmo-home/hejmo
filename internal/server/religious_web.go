@@ -23,7 +23,7 @@ import (
 
 const religiousPath = "/settings/religious-holidays"
 
-// rhWindow is how far the page lists days: the next twelve months. The calendar itself reaches further.
+// rhMonths is how far the page lists days: the next twelve months. The calendar itself reaches further.
 const rhMonths = 12
 
 // religionText is the locale text of a religion: its label, its name in a sentence or its holidays.
@@ -140,7 +140,7 @@ func (s *server) rhCards(lang string, f rhForm) []rhCard {
 	return cards
 }
 
-// dateText is a date or a range of days in words: "29. November 2026", "9. – 11. März 2027".
+// rhRange is a date or a range of days in words: "29. November 2026", "9. – 11. März 2027".
 func (s *server) rhRange(lang string, from, to time.Time) string {
 	msg := func(key string, kv ...string) string { return s.i18n.Format(lang, i18n.Msg(key, kv...)) }
 	month := func(t time.Time) string { return s.i18n.T(lang, "month."+strconv.Itoa(int(t.Month()))) }
@@ -322,7 +322,7 @@ func orthodoxKey(h store.Household) rh.OrthodoxCalendar {
 	return rh.RevisedJulian
 }
 
-// religiousMoreSum is the choice shown on the closed "More options" line, for the religions chosen.
+// rhMoreSum is the choice shown on the closed "More options" line, for the religions chosen.
 func (s *server) rhMoreSum(lang string, f rhForm) string {
 	var parts []string
 	if f.Religion[rh.Muslim] || f.Religion[rh.Alevi] {

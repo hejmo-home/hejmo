@@ -85,3 +85,37 @@ func TestNavaratriHasNineDays(t *testing.T) {
 		t.Errorf("Navaratri 2026: %v to %v", n.Start, n.End)
 	}
 }
+
+// A tithi that no sunrise, midday or midnight meets (kshaya) still has its
+// festival, on the day the tithi ends. Every festival must therefore come
+// exactly once a year, wherever the household lives and in every year of the window.
+func TestEveryHinduFestivalComesOnceAYear(t *testing.T) {
+	t.Parallel()
+	keys := []string{"makar_sankranti", "maha_shivaratri", "holi", "rama_navami", "raksha_bandhan", "janmashtami", "ganesh_chaturthi", "navaratri", "dussehra", "diwali"}
+	places := map[string]rh.Place{
+		"munich": {Lat: 48.137, Lon: 11.575}, "new_delhi": {Lat: 28.6139, Lon: 77.2090},
+		"london": {Lat: 51.5074, Lon: -0.1278}, "auckland": {Lat: -36.85, Lon: 174.76},
+		"new_york": {Lat: 40.7128, Lon: -74.006},
+	}
+	zones := map[string]string{"munich": "Europe/Berlin", "new_delhi": "Asia/Kolkata", "london": "Europe/London", "auckland": "Pacific/Auckland", "new_york": "America/New_York"}
+	const from, to = 2026, 2035
+	for name, pl := range places {
+		zone, err := time.LoadLocation(zones[name])
+		if err != nil {
+			t.Fatal(err)
+		}
+		pl := pl
+		hs := rh.Compute(rh.Hindu, rh.Options{Place: &pl, Zone: zone}, from, to)
+		count := map[string]int{}
+		for _, h := range hs {
+			count[h.Key+"/"+h.Start.Format("2006")]++
+		}
+		for y := from; y <= to; y++ {
+			for _, k := range keys {
+				if n := count[k+"/"+time.Date(y, 1, 1, 0, 0, 0, 0, time.UTC).Format("2006")]; n != 1 {
+					t.Errorf("%s %s %d: %d times, want once", name, k, y, n)
+				}
+			}
+		}
+	}
+}

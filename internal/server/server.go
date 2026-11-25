@@ -233,6 +233,7 @@ func New(opts Options) http.Handler {
 	s.pages = parsePages()
 	// The generated calendar of religious holidays is written in the language of the parent who chose it, and again at every start so the years move on (ticket 339).
 	s.db.SetReligiousTitler(s.religiousTitle)
+	s.db.SetClock(s.now)
 	if err := s.db.SyncAllReligious(); err != nil {
 		s.logger.Error("sync religious holidays at start", "err", err)
 	}

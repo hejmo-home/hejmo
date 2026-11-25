@@ -26,6 +26,19 @@ type DB struct {
 	secrets *secret.Sealer // seals stored credentials; set with SetSecrets
 	// religiousTitle titles the events of the religious holidays calendar (ticket 339); set with SetReligiousTitler.
 	religiousTitle atomic.Pointer[ReligiousTitler]
+	// clock tells the date for the window of the religious holidays; nil: the wall clock. Set with SetClock.
+	clock atomic.Pointer[func() time.Time]
+}
+
+// SetClock sets the clock the box runs on (the server's, which tests set).
+func (db *DB) SetClock(f func() time.Time) { db.clock.Store(&f) }
+
+// today is the time of the box.
+func (db *DB) today() time.Time {
+	if f := db.clock.Load(); f != nil {
+		return (*f)()
+	}
+	return time.Now()
 }
 
 type migration struct {

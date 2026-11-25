@@ -109,7 +109,7 @@ func buddhist(o Options, from, to int) []Holiday {
 		if t, ok := first(time.July); ok {
 			out = append(out, Holiday{Key: "asalha_puja", Start: t, End: t, Source: SrcMoon})
 		}
-		out = append(out, Holiday{Key: "bodhi_day", Start: date(y, time.December, 8), End: date(y, time.December, 8), Source: SrcMoon})
+		out = append(out, Holiday{Key: "bodhi_day", Start: date(y, time.December, 8), End: date(y, time.December, 8), Source: SrcFixed})
 	}
 	return out
 }
@@ -117,7 +117,7 @@ func buddhist(o Options, from, to int) []Holiday {
 func sgpcTable() []keyed {
 	x := func(key, iso string) keyed { return keyed{key, e(SrcSGPC, iso, true)} }
 	return []keyed{
-		x("guru_gobind_singh", "2025-01-06"), x("hola_mohalla", "2025-03-14"), x("vaisakhi", "2025-04-14"), x("bandi_chhor", "2025-10-20"), x("guru_nanak", "2025-11-05"),
+		x("guru_gobind_singh", "2025-01-06"), x("hola_mohalla", "2025-03-14"), x("vaisakhi", "2025-04-14"), x("bandi_chhor", "2025-10-20"), x("guru_nanak", "2025-11-05"), x("guru_gobind_singh", "2025-12-27"),
 		x("hola_mohalla", "2026-03-04"), x("vaisakhi", "2026-04-14"), x("bandi_chhor", "2026-11-08"), x("guru_nanak", "2026-11-24"),
 		x("guru_gobind_singh", "2027-01-15"), x("hola_mohalla", "2027-03-23"), x("vaisakhi", "2027-04-14"), x("bandi_chhor", "2027-10-29"), x("guru_nanak", "2027-11-14"),
 	}

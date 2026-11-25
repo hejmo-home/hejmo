@@ -440,3 +440,28 @@ func TestAnUnknownCalendarOrReligionIsRefusedAtTheChoiceAndSavesNothing(t *testi
 		t.Error("something was saved")
 	}
 }
+
+func TestMCPListEventsCarriesTheSightingFlag(t *testing.T) {
+	t.Parallel()
+	b := newRhBox(t)
+	b.save(rhForm("muslim", "jewish"), "de")
+	b.api.switchMCP(t, true)
+	s := b.api.mcpSession(t, b.api.newMCPToken(t, "Claude", allAreas))
+	out, failed := callTool(s, "list_events", map[string]any{"from": "2027-03-01T00:00:00Z", "to": "2027-04-30T00:00:00Z"})
+	if failed {
+		t.Fatalf("list_events: %s", out)
+	}
+	flag := func(title string) string {
+		m := regexp.MustCompile(`(?s)"title":\s*"` + regexp.QuoteMeta(title) + `".*?"varies_by_sighting":\s*(true|false)`).FindStringSubmatch(out)
+		if m == nil {
+			return "missing"
+		}
+		return m[1]
+	}
+	if got := flag("Zuckerfest (Eid al-Fitr)"); got != "true" {
+		t.Errorf("Zuckerfest varies_by_sighting = %s\n%s", got, out)
+	}
+	if got := flag("Pessach"); got != "false" {
+		t.Errorf("Pessach varies_by_sighting = %s\n%s", got, out)
+	}
+}

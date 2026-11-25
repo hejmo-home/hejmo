@@ -520,11 +520,15 @@ func pageShape(path string) string {
 	if libraryNotArticle[p] {
 		return p
 	}
+	p = shippedStarterRe.ReplaceAllString(p, "$1/{starter}$2")
 	return shippedArticleRe.ReplaceAllString(p, "$1/{article}")
 }
 
 // shippedArticleRe is the page of an article Hejmo ships: 248 pages of one kind, rendered once (ticket 164).
 var shippedArticleRe = regexp.MustCompile(`^(/settings/lists/library)/(?:[a-z0-9]+-)*[a-z0-9]+$`)
+
+// shippedStarterRe is the page of a starter recipe Hejmo ships (about 100 of one kind) and its cook view.
+var shippedStarterRe = regexp.MustCompile(`^(/meals/recipes)/starter-[a-z0-9-]+(/cook)?$`)
 
 // libraryNotArticle are the paths under the library that the shape above would take for an article.
 var libraryNotArticle = map[string]bool{"/settings/lists/library/new": true, "/settings/lists/library/suggest": true}
@@ -1375,6 +1379,23 @@ func TestTheFormAndAShippedArticleAreDifferentPages(t *testing.T) {
 	}
 	if pageShape("/settings/lists/library/apples") != article {
 		t.Error("two shipped articles are two pages of one kind")
+	}
+}
+
+// The starter recipes Hejmo ships are pages of one kind, like the shipped
+// articles: rendering each of about 100 of them, its cook view too, in two
+// languages at five widths took more than the 15 minutes of the check on CI.
+func TestShippedStarterRecipesAreOneKindOfPage(t *testing.T) {
+	t.Parallel()
+	a, cook := pageShape("/meals/recipes/starter-haehnchen-nuggets"), pageShape("/meals/recipes/starter-haehnchen-nuggets/cook")
+	if a == cook {
+		t.Errorf("a recipe and its cook view share the shape %q", a)
+	}
+	if pageShape("/meals/recipes/starter-wraps-mit-avocado-und-feta") != a || pageShape("/meals/recipes/starter-wraps-mit-avocado-und-feta/cook") != cook {
+		t.Error("two starter recipes are two pages of one kind")
+	}
+	if pageShape("/meals/recipes/new") == a {
+		t.Error("the new-recipe form is no starter recipe")
 	}
 }
 

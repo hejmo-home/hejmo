@@ -81,7 +81,11 @@ func articleFood(it articleItem) (*nutFoodJSON, *float64) {
 // maxFoods is the most foods one search answers.
 const maxFoods = 50
 
-func (s *server) apiSearchFoods(w http.ResponseWriter, r *http.Request, _ principal) {
+func (s *server) apiSearchFoods(w http.ResponseWriter, r *http.Request, p principal) {
+	if !p.mayWatchNutrition() {
+		writeError(w, http.StatusNotFound, "not found")
+		return
+	}
 	limit := 10
 	if v := r.URL.Query().Get("limit"); v != "" {
 		n, err := strconv.Atoi(v)
@@ -98,7 +102,11 @@ func (s *server) apiSearchFoods(w http.ResponseWriter, r *http.Request, _ princi
 	writeJSON(w, http.StatusOK, out)
 }
 
-func (s *server) apiGetNutritionFood(w http.ResponseWriter, r *http.Request, _ principal) {
+func (s *server) apiGetNutritionFood(w http.ResponseWriter, r *http.Request, p principal) {
+	if !p.mayWatchNutrition() {
+		writeError(w, http.StatusNotFound, "not found")
+		return
+	}
 	f, ok := nutrition.Lookup(r.PathValue("id"))
 	if !ok {
 		writeError(w, http.StatusNotFound, "food not found")
@@ -132,9 +140,6 @@ type recipeNutritionJSON struct {
 	Note          string           `json:"note"`
 }
 
-// recipeNutritionNote is part of every answer: what the values are.
-const recipeNutritionNote = "Richtwerte, aus den Zutaten berechnet (BLS 4.0, Max Rubner-Institut, CC BY 4.0; USDA FoodData Central, CC0). Unbekannte Werte sind null, nie 0. Guide values calculated from the ingredients; unknown values are null, never 0."
-
 // apiRecipeNutrition gives the nutrition values of a recipe per portion. A
 // child whose switch is off gets 404, as if the recipe had none.
 func (s *server) apiRecipeNutrition(w http.ResponseWriter, r *http.Request, p principal) {
@@ -153,7 +158,7 @@ func (s *server) apiRecipeNutrition(w http.ResponseWriter, r *http.Request, p pr
 	res := c.nutritionOf(got.Recipe)
 	out := recipeNutritionJSON{RecipeID: got.ID, Portions: got.Portions, Counted: res.Counted, PerPortion: valuesToJSON(res.Values),
 		NotCounted: []notCountedJSON{}, MissingValues: []missingJSON{}, Sources: []string{},
-		Complete: res.Counted > 0 && len(res.Skipped) == 0 && len(res.Gaps) == 0, Note: recipeNutritionNote}
+		Complete: res.Counted > 0 && len(res.Skipped) == 0 && len(res.Gaps) == 0, Note: s.i18n.T(s.langOf(r), "nutrition.api.note")}
 	for _, sk := range res.Skipped {
 		j := notCountedJSON{Name: sk.Name, ArticleID: strPtr(sk.ArticleID), Unit: strPtr(sk.Unit)}
 		switch sk.Reason {

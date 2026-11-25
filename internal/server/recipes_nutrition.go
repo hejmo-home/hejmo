@@ -20,8 +20,11 @@ import (
 
 // mayWatchNutrition says whether the person sees nutrition values: parents
 // always, a child only when a parent switched them on for that child.
-func (c *itemCtx) mayWatchNutrition() bool {
-	return c.p.person.Role == store.RoleParent || c.p.person.NutritionShown
+func (c *itemCtx) mayWatchNutrition() bool { return c.p.mayWatchNutrition() }
+
+// mayWatchNutrition is the same rule for the API, where there is no itemCtx.
+func (p principal) mayWatchNutrition() bool {
+	return p.person.Role == store.RoleParent || p.person.NutritionShown
 }
 
 // nutritionLines turns the ingredients into the lines the calculation takes.
@@ -44,7 +47,7 @@ func (c *itemCtx) nutritionLines(r recipe.Recipe) []nutrition.Line {
 		if it.own != nil {
 			foodID, l.PieceG = it.own.Food, it.own.PieceG
 		} else if link, ok := nutrition.ForArticle(it.ID); ok {
-			foodID, l.PieceG, l.GPerML = link.FoodID, link.PieceG, link.GPerML
+			foodID, l.PieceG, l.GPerML, l.NoWeight = link.FoodID, link.PieceG, link.GPerML, link.NoWeight
 		}
 		if f, ok := nutrition.Lookup(foodID); ok && foodID != "" {
 			l.Food = &f

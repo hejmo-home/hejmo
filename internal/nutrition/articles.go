@@ -17,6 +17,10 @@ type Link struct {
 	// PieceG is the weight of one piece (0: not known); GPerML the weight of a
 	// millilitre (0: not known).
 	PieceG, GPerML float64
+	// NoWeight says a weight of the article is not the weight of the food:
+	// grams of coffee beans or tea leaves are not the brewed drink. Written "-"
+	// in the piece column; no unit counts, the line is listed as not counted.
+	NoWeight bool
 }
 
 //go:embed data/articles.tsv
@@ -41,6 +45,9 @@ func articleLinks() map[string]Link {
 				panic("nutrition: malformed line in articles.tsv: " + line)
 			}
 			l := Link{FoodID: f[1]}
+			if f[2] == "-" {
+				l.NoWeight, f[2] = true, ""
+			}
 			for i, dst := range []*float64{&l.PieceG, &l.GPerML} {
 				if f[2+i] == "" {
 					continue

@@ -2807,6 +2807,8 @@ paths:
         name (case, umlauts and ue for ü ignored); names that are the query come
         first, then names that start with it. From two letters on; fewer find nothing.
         Offline: nothing is looked up on the internet. An article's `food` is one of them.
+        Nutrition values are hidden from a child unless a parent switched them on for that
+        child: otherwise 404, and an article carries no `food` or `piece_g`.
       parameters:
         - { name: q, in: query, required: true, schema: { type: string } }
         - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 50, default: 10 } }
@@ -2820,11 +2822,13 @@ paths:
                 items: { $ref: "#/components/schemas/NutritionFood" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
   /foods/{id}:
     get:
       operationId: getNutritionFood
       summary: One food of the food data (scope lists:read)
+      description: A child whose nutrition switch is off gets 404.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string }, description: "For example bls:C133000 or usda:170848" }
       responses:
@@ -5638,7 +5642,7 @@ components:
         pantry: { type: boolean, description: "A pantry article, usually at home (salt, oil): recipes leave it out of the shopping list by default. Shipped articles come with a default mark that a parent can change per article." }
         food:
           nullable: true
-          description: The food behind the nutrition values of recipes. Shipped articles have one (except what is not food); an own article may have one or none, then recipes do not count it.
+          description: The food behind the nutrition values of recipes. Shipped articles have one (except what is not food); an own article may have one or none, then recipes do not count it. Always null for a child whose nutrition switch is off.
           allOf:
             - { $ref: "#/components/schemas/NutritionFood" }
         piece_g: { type: number, nullable: true, description: "The weight of one piece in grams, null when not known; recipes in piece, jar or tub need it" }

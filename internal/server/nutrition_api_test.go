@@ -282,3 +282,45 @@ func TestNutritionNeverReachesADisplay(t *testing.T) {
 		t.Errorf("the display state carries nutrition values: %s", raw)
 	}
 }
+
+// A child whose switch is off gets no nutrition value anywhere over the API:
+// not on an article, not from the food data.
+func TestAChildWithoutTheSwitchGetsNoFoodValuesFromArticlesOrFoods(t *testing.T) {
+	t.Parallel()
+	tb := newTaskBox(t)
+	noFood := func(label string) {
+		t.Helper()
+		status, one, _ := tb.child.call(http.MethodGet, "/articles/rolled-oats", nil)
+		if status != http.StatusOK || one["food"] != nil || one["piece_g"] != nil {
+			t.Errorf("%s: GET /articles/rolled-oats = %d food %v piece_g %v, want no food", label, status, one["food"], one["piece_g"])
+		}
+		_, _, list := tb.child.call(http.MethodGet, "/articles", nil)
+		for _, a := range list {
+			if a.(map[string]any)["food"] != nil {
+				t.Fatalf("%s: GET /articles carries a food: %v", label, a)
+			}
+		}
+		for _, path := range []string{"/foods?q=Hafer%20Flocken", "/foods/bls:C133000"} {
+			if status, got, _ := tb.child.call(http.MethodGet, path, nil); status != http.StatusNotFound {
+				t.Errorf("%s: GET %s = %d %v, want 404", label, path, status, got)
+			}
+		}
+	}
+	noFood("switch off")
+
+	if status, _, _ := tb.parent.call(http.MethodPatch, "/people/"+tb.miaID, map[string]any{"nutrition_shown": true}); status != http.StatusOK {
+		t.Fatalf("patch = %d", status)
+	}
+	if _, one, _ := tb.child.call(http.MethodGet, "/articles/rolled-oats", nil); one["food"] == nil {
+		t.Error("switch on: the article has no food")
+	}
+	if status, _, list := tb.child.call(http.MethodGet, "/foods?q=Hafer%20Flocken", nil); status != http.StatusOK || len(list) == 0 {
+		t.Errorf("switch on: /foods = %d %v", status, list)
+	}
+	if status, _, _ := tb.child.call(http.MethodGet, "/foods/bls:C133000", nil); status != http.StatusOK {
+		t.Errorf("switch on: /foods/{id} = %d", status)
+	}
+	if _, one, _ := tb.parent.call(http.MethodGet, "/articles/rolled-oats", nil); one["food"] == nil {
+		t.Error("a parent's article has no food")
+	}
+}

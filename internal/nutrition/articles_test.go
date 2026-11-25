@@ -58,3 +58,19 @@ func TestWeightsOfAnArticle(t *testing.T) {
 		t.Fatal("a piece of garlic is not known (bulb or clove?): it must not be guessed")
 	}
 }
+
+// Beans and leaves are not the brewed drink: a weight of them has no value of
+// its own, so the line is listed as not counted instead of counting about 2 kcal/100 g.
+func TestGramsOfCoffeeBeansAndTeaAreNotCounted(t *testing.T) {
+	for _, key := range []string{"coffee-beans", "coffee", "tea"} {
+		l, ok := ForArticle(key)
+		if !ok {
+			t.Fatalf("%s has no food", key)
+		}
+		f, _ := Lookup(l.FoodID)
+		res := Calculate(1, []Line{{Name: key, Amount: 20, Unit: "g", ArticleID: key, Food: &f, PieceG: l.PieceG, GPerML: l.GPerML, NoWeight: l.NoWeight}})
+		if res.Counted != 0 || len(res.Skipped) != 1 || res.Skipped[0].Reason != ReasonNoWeight {
+			t.Errorf("%s: 20 g = counted %d skipped %+v, want listed as not counted (no weight)", key, res.Counted, res.Skipped)
+		}
+	}
+}

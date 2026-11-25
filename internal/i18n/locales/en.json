@@ -5020,6 +5020,7 @@
   "recipes.sugg.variety": "Variety of {name}, used before",
   "recipes.sugg.free": "Use “{q}” as free text",
   "recipes.sugg.free.hint": "Hejmo does not know it then and does not warn about allergens.",
+  "nutrition.api.note": "Guide values calculated from the ingredients (BLS 4.0, Max Rubner-Institut, CC BY 4.0; USDA FoodData Central, CC0). Unknown values are null, never 0.",
   "nutrition.title": "Nutrition per portion",
   "nutrition.lead.other": "Guide values, calculated from the ingredients. The recipe makes {n} portions.",
   "nutrition.lead.one": "Guide values, calculated from the ingredients. The recipe makes 1 portion.",

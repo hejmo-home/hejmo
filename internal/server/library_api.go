@@ -45,7 +45,11 @@ type articleJSON struct {
 func (s *server) articleToJSON(p principal, it articleItem) articleJSON {
 	j := articleJSON{ID: it.ID, Source: "hejmo", NameDE: it.De, NameEN: it.En, Dept: it.Dept, Kind: string(it.Kind), Allergens: nonNil(it.Allergens),
 		Units: it.Units, OfferedUnits: s.offeredUnits(p, it.Article), Symbol: it.Symbol, HiddenByHand: it.handHidden, Pantry: it.Pantry}
-	j.Food, j.PieceG = articleFood(it)
+	// The food and its values are nutrition values: a child whose switch is off
+	// gets none (ticket 288).
+	if p.mayWatchNutrition() {
+		j.Food, j.PieceG = articleFood(it)
+	}
 	if it.own == nil {
 		j.Symbol = it.Symbol
 		return j

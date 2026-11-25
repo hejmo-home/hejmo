@@ -20,11 +20,11 @@ const (
 // a weight: it says so instead of guessing.
 //
 //   - weights (g, kg, oz, lb) always convert;
-//   - volumes (ml, l, fl oz, cup, pint, quart, gallon), tablespoon, teaspoon and
+//   - volumes (ml, l, fl oz, cup_us, pint, quart, gallon), tablespoon, teaspoon and
 //     pinch need the article's grams per millilitre (gPerML > 0);
 //   - piece, dozen, jar and tub (and a quantity without a unit) need the weight of
 //     one piece of the article (pieceG > 0);
-//   - everything else (knife tip, dash, splash, handful, cup, can, packet, clove,
+//   - everything else (knife tip, dash, splash, handful, kitchen cup, can, packet, clove,
 //     slice, pack, bunch ...) has no weight.
 func Grams(amount float64, key string, pieceG, gPerML float64) (float64, bool) {
 	if amount <= 0 {
@@ -85,6 +85,8 @@ type Line struct {
 	// PieceG is the weight of one piece, GPerML the grams of a millilitre; 0:
 	// not known.
 	PieceG, GPerML float64
+	// NoWeight: no weight of the article counts (see Link).
+	NoWeight bool
 }
 
 // Reason says why a line is not counted.
@@ -194,7 +196,7 @@ func classify(l Line) (float64, Reason) {
 		return 0, ReasonNoAmount
 	}
 	g, ok := Grams(l.Amount, l.Unit, l.PieceG, l.GPerML)
-	if !ok {
+	if !ok || l.NoWeight {
 		return 0, ReasonNoWeight
 	}
 	return g, 0

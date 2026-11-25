@@ -41,6 +41,12 @@ var size = map[string]float64{
 	"pint_us": 473.176473, "pint_uk": 568.26125, "quart_us": 946.352946, "gallon_us": 3785.411784, "gallon_uk": 4546.09,
 }
 
+func init() {
+	for _, k := range Containers { // a container counts itself (ticket 283)
+		size[k] = 1
+	}
+}
+
 // KindOf is the kind of a unit, "" for a key that is no unit.
 func KindOf(key string) Kind {
 	switch key {
@@ -169,6 +175,9 @@ func fits(base float64, key string) bool {
 // given kind) is shown in: the first of the article's default units that fits,
 // else the largest active unit of the kind that gives at least 1.
 func ShowUnit(base float64, kind Kind, defaults, active []string) string {
+	if IsContainer(string(kind)) { // a can is shown as cans
+		return string(kind)
+	}
 	for _, u := range Effective(defaults, active) {
 		if KindOf(u) == kind && fits(base, u) {
 			return u

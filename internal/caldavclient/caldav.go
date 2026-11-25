@@ -9,6 +9,7 @@ package caldavclient
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -55,11 +56,41 @@ type StatusError struct {
 	// RetryAfter is the server's Retry-After header (seconds or an HTTP date),
 	// empty when it sent none.
 	RetryAfter string
+	// Reason is the reason Google names in the JSON body of a 403
+	// (rateLimitExceeded, forbidden, ...); empty for any other answer.
+	Reason string
+}
+
+// RateLimited says Google refused with 403 because of a rate limit
+// (rateLimitExceeded, userRateLimitExceeded): a throttle like 429, not a
+// missing permission.
+func (e *StatusError) RateLimited() bool {
+	return e.Code == http.StatusForbidden && (e.Reason == "rateLimitExceeded" || e.Reason == "userRateLimitExceeded")
+}
+
+// googleReason reads the reason of the first entry of error.errors in a Google
+// API error body; empty when the body is no such JSON.
+func googleReason(body io.Reader) string {
+	var v struct {
+		Error struct {
+			Errors []struct {
+				Reason string `json:"reason"`
+			} `json:"errors"`
+		} `json:"error"`
+	}
+	if json.NewDecoder(io.LimitReader(body, 16<<10)).Decode(&v) != nil || len(v.Error.Errors) == 0 {
+		return ""
+	}
+	return v.Error.Errors[0].Reason
 }
 
 // statusError is the StatusError for an answer.
 func statusError(res *http.Response) *StatusError {
-	return &StatusError{Code: res.StatusCode, Status: res.Status, RetryAfter: res.Header.Get("Retry-After")}
+	e := &StatusError{Code: res.StatusCode, Status: res.Status, RetryAfter: res.Header.Get("Retry-After")}
+	if res.StatusCode == http.StatusForbidden {
+		e.Reason = googleReason(res.Body)
+	}
+	return e
 }
 
 func (e *StatusError) Error() string { return "the server answered " + e.Status }
@@ -244,7 +275,7 @@ func (a *authClient) Do(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	if res.StatusCode == http.StatusUnauthorized || res.StatusCode == http.StatusForbidden {
-		res.Body.Close()
+		defer res.Body.Close()
 		return nil, statusError(res)
 	}
 	return res, nil
@@ -891,7 +922,7 @@ func (c *Client) Changes(ctx context.Context, calendarURL, token string) (Change
 	res, err := c.auth.Do(req)
 	if err != nil {
 		var se *StatusError
-		if errors.As(err, &se) && se.Code == http.StatusForbidden {
+		if errors.As(err, &se) && se.Code == http.StatusForbidden && !se.RateLimited() {
 			return Changes{}, fmt.Errorf("%w: %v", ErrSyncUnavailable, err) // valid-sync-token precondition
 		}
 		return Changes{}, err

@@ -156,7 +156,7 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (Page, error) {
 		return Page{}, &StatusError{Code: resp.StatusCode}
 	}
 	ct := resp.Header.Get("Content-Type")
-	if mt, _, _ := mime.ParseMediaType(ct); mt != "" && mt != "text/html" && mt != "application/xhtml+xml" && mt != "text/plain" {
+	if mt, _, _ := mime.ParseMediaType(ct); mt != "" && mt != "text/html" && mt != "application/xhtml+xml" {
 		return Page{}, &NotHTMLError{Type: mt}
 	}
 	if resp.ContentLength > MaxBytes {

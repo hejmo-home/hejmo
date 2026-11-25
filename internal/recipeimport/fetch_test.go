@@ -61,6 +61,9 @@ func TestFetchErrors(t *testing.T) {
 		case "/pdf":
 			w.Header().Set("Content-Type", "application/pdf")
 			w.Write([]byte("%PDF"))
+		case "/txt":
+			w.Header().Set("Content-Type", "text/plain")
+			w.Write([]byte("Mehl"))
 		case "/big":
 			w.Header().Set("Content-Type", "text/html")
 			w.Write([]byte(big))
@@ -84,6 +87,7 @@ func TestFetchErrors(t *testing.T) {
 		"/410":  func(e error) bool { return errors.As(e, &st) && st.Code == 410 },
 		"/403":  func(e error) bool { return errors.As(e, &st) && st.Code == 403 },
 		"/pdf":  func(e error) bool { return errors.As(e, &nh) && nh.Type == "application/pdf" },
+		"/txt":  func(e error) bool { return errors.As(e, &nh) && nh.Type == "text/plain" },
 		"/big":  func(e error) bool { return errors.Is(e, recipeimport.ErrTooLarge) },
 		"/slow": func(e error) bool { return errors.Is(e, recipeimport.ErrTimeout) },
 		"/loop": func(e error) bool { return errors.Is(e, recipeimport.ErrTooManyRedirects) },

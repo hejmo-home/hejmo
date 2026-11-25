@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/outbound"
+	"github.com/hejmo-home/hejmo/internal/server"
 )
 
 // Ticket 289 (ADR 0015): the import of a recipe from a web page over the REST API, contract-checked against openapi.yaml.
@@ -137,5 +139,40 @@ func TestAPIDraftExpiresAndCanBeDiscarded(t *testing.T) {
 	c.b.now = c.b.now.Add(61 * time.Minute)
 	if status, _, _ := c.call(http.MethodGet, "/recipe-imports/"+d["id"].(string), nil); status != http.StatusGone {
 		t.Errorf("an old draft = %d, want 410", status)
+	}
+}
+
+func TestMCPToolsReadCheckAndSaveARecipeFromAWebPage(t *testing.T) {
+	t.Parallel()
+	c, web := importAPI(t)
+	c.switchMCP(t, true)
+	s := c.mcpSession(t, c.newMCPToken(t, "Claude", map[string]string{"meals": "write"}))
+	for _, tool := range server.MCPTools() {
+		switch tool.Name {
+		case "read_recipe_page", "get_recipe_draft", "save_recipe_draft", "discard_recipe_draft":
+			if tool.Permission.Resource != "meals" {
+				t.Errorf("%s needs %s, want the meals area", tool.Name, tool.Permission)
+			}
+		}
+	}
+	out, failed := callTool(s, "read_recipe_page", map[string]any{"url": web.URL + "/lentils"})
+	if failed || !strings.Contains(out, "Rote Linsensuppe mit Harissa") {
+		t.Fatalf("read_recipe_page = %v %s", failed, out)
+	}
+	var d struct{ ID string }
+	if err := json.Unmarshal([]byte(out), &d); err != nil || d.ID == "" {
+		t.Fatalf("no draft id in %s", out)
+	}
+	if out, failed := callTool(s, "get_recipe_draft", map[string]any{"id": d.ID}); failed || !strings.Contains(out, "needs_choice") {
+		t.Errorf("get_recipe_draft = %v %s", failed, out)
+	}
+	if out, failed := callTool(s, "save_recipe_draft", map[string]any{"id": d.ID, "name": "Suppe", "ingredients": []any{map[string]any{"name": "Harissa"}}}); !failed || !strings.Contains(out, "choice") {
+		t.Errorf("saving without a choice = %v %s", failed, out)
+	}
+	if out, failed := callTool(s, "save_recipe_draft", map[string]any{"id": d.ID, "name": "Suppe", "ingredients": []any{map[string]any{"name": "Harissa", "choice": "own"}}}); failed || !strings.Contains(out, web.URL+"/lentils") {
+		t.Errorf("save_recipe_draft = %v %s", failed, out)
+	}
+	if out, failed := callTool(s, "discard_recipe_draft", map[string]any{"id": d.ID}); !failed {
+		t.Errorf("discarding a saved draft = %v %s", failed, out)
 	}
 }

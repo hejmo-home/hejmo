@@ -76,7 +76,21 @@
       <p class="hint">{{t "contact.f.birthday.hint"}}</p>
       <label class="check"><input type="checkbox" name="hide_birthday" value="1"{{if .F.HideBirthday}} checked{{end}}> {{t "contact.f.birthday.hide"}}</label>
     </fieldset>
-    <fieldset id="groups" class="chips grp-pick">
+    {{with .ND}}<fieldset id="nameday" class="nd-pick">
+      <legend>{{t "nd.f.title"}}</legend>
+      <p class="hint">{{.Hint}}</p>
+      {{if .Notice}}<p class="notice" role="status"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg><span>{{.Notice}}</span></p>{{end}}
+      <fieldset class="choice"><legend class="sr">{{t "nd.f.sr"}}</legend>
+        {{range .Cards}}<label><input type="radio" name="name_day" value="{{.Value}}"{{if .Checked}} checked{{end}}><b>{{if .Date}}<span class="tdate">{{.Date}}</span> · {{end}}{{.Title}}</b><small>{{.Small}}</small></label>
+        {{end}}
+      </fieldset>
+      <div class="f other{{if .NameErr}} invalid{{end}}"><label>{{t "nd.f.other.label"}}<input name="name_day_name" type="text" list="nd-list" maxlength="40" value="{{.Name}}"{{if .NameErr}} aria-invalid="true"{{end}} aria-describedby="{{if .NameErr}}err-nd_name {{end}}hint-nd_name"></label>
+        {{if .NameErr}}<p class="ferr" id="err-nd_name" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{.NameErr}}</span></p>{{end}}
+        <p class="hint" id="hint-nd_name">{{t "nd.f.other.hint"}}</p></div>
+      <datalist id="nd-list">{{range .Names}}<option value="{{.}}">{{end}}</datalist>
+      <p class="nd-src">{{.SrcBefore}}<a href="/contacts/birthdays">{{.SrcLink}}</a>{{.SrcAfter}}</p>
+    </fieldset>
+    {{end}}    <fieldset id="groups" class="chips grp-pick">
       <legend>{{t "contact.f.groups"}}</legend>
       {{template "ctErr" (dict "ID" "groups" "Text" .Errs.groups)}}
       {{if .FamChip}}<span class="pchip plain static">{{.FamChip}}{{template "tickIcon" 16}}</span>

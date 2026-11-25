@@ -320,7 +320,7 @@ One of breakfast, lunch, snack or dinner, in the order of the day.
 _Avoid_: meal type, course
 
 **Meal plan template**:
-A week pattern from Monday to Sunday that fills one mealtime or all mealtimes of the meal plan by itself, every X weeks (1 to 52) from a start week. Two templates may never fill the same mealtime on the same day of the same week. Edited only in the Templates menu; its changes reach today and later, never days before today.
+A week pattern from Monday to Sunday that fills one mealtime or all mealtimes of the meal plan by itself, every X weeks (1 to 52) from a start week. Each slot is free text or a recipe, planned with the number of people in the household as portions; a deleted recipe leaves its slot as its name in free text. Two templates may never fill the same mealtime on the same day of the same week. Edited only in the Templates menu; its changes reach today and later, never days before today.
 _Avoid_: template (alone; clashes with routine template), preset, default plan
 
 **Adjusted meal**:
@@ -330,6 +330,14 @@ _Avoid_: override (in prose), exception
 **Recipe**:
 A dish with portions, ingredients and steps that can be put on the meal plan; entered by a parent, imported from a web page or from Hejmo's starter collection, always with its source.
 _Avoid_: dish (alone), cooking instructions
+
+**Favourite**:
+A mark on a recipe for a person: "Mia likes it". A recipe can be the favourite of several people; only a parent sets it. The meal plan suggests favourites before other recipes. Only the household's own recipes have it, never a starter recipe.
+_Avoid_: liked, starred (stars are rewards)
+
+**Last cooked**:
+The latest day a recipe stood on the meal plan that is over (before today). It is never stored: it follows the plan, so it moves on by itself when a planned day passes, and a recipe planned only for today or later has none yet. Shown in the recipe list and on the recipe.
+_Avoid_: cooked on, last made
 
 **Starter recipe**:
 One of the 200 recipes that ship with the box in German and English (the starter collection). It is shown in the language of the person viewing it, names its source ("Ingredients after: Chefkoch") with a link, is read-only for everyone and is not part of a family's own recipes. Its id starts with `starter-`.
@@ -354,6 +362,14 @@ _Avoid_: variant, subtype
 **Pantry article**:
 An article usually at home, such as salt or oil, left out by default when a recipe's ingredients go onto a list.
 _Avoid_: staple, stock item
+
+**Shopping run**:
+One tap of "Zutaten auf die Liste" for a meal or a week: the ticked ingredients go onto a list through the one adding rule, and the run records per list entry and meal how much each meal contributed (the contribution). A meal already on a list is never added twice, only its missing portions; Undo takes back exactly one run.
+_Avoid_: import, sync
+
+**Contribution**:
+What one meal brought to one list entry in a shopping run: meal day and mealtime, recipe, portions and the base quantity (none for a kitchen measure or free text). It is the line under the entry ("Für Erdnuss-Curry (Di)") and the basis for taking quantities back later.
+_Avoid_: source row, link
 
 **Cooking view**:
 A recipe shown for cooking on a device: large text, ingredients to tick and one step at a time, with the screen kept on.
@@ -461,8 +477,16 @@ The one square JPEG (at most 512 by 512 pixels, no metadata) of a contact, set b
 _Avoid_: avatar, profile picture
 
 **Birthdays calendar**:
-The generated, read-only calendar of the birthdays in the address book: one yearly all-day event per contact, titled with the Hejmo name and, when the year of birth is known, the age ("Mia (7)"). 29 February repeats on the last day of February in years without one. Every contact can be switched out of it; it is made when the first birthday is saved. Name days are not part of it yet: they follow as an option with a household switch (decided on ticket 302, ticket 318).
+The generated, read-only calendar of the birthdays in the address book: one yearly all-day event per contact, titled with the Hejmo name and, when the year of birth is known, the age ("Mia (7)"). 29 February repeats on the last day of February in years without one. Every contact can be switched out of it; it is made when the first birthday is saved. With the household's **name days** switched on it also holds one yearly all-day event per contact with a name day (ticket 318).
 _Avoid_: birthday list, anniversary calendar
+
+**Name day**:
+The yearly feast of the saint a contact's first name belongs to, from the **name day list** the household chose. An all-day event in the Birthdays calendar titled "Namenstag <Hejmo name>", with the name of the name day in brackets when it differs ("Namenstag Mama (Katharina)"). The name comes from the first given name of the full name, otherwise the Hejmo name; a contact can choose another day of the list, another name or none. A name the list does not know gets no name day; nothing is guessed. Off by default.
+_Avoid_: saint's day, Namenstagskalender (for the setting)
+
+**Name day list**:
+One church's compiled list of names and days that a household chooses for its name days: Catholic (Regionalkalender DE/AT/CH), Protestant (Namenkalender), Romanian Orthodox, Greek Orthodox (ticket 318; more Orthodox lists in ticket 338). Every entry records its source. German UI: "Nach welcher Kirche feiert ihr Namenstage?" with the church names; the word "Kalender" stays reserved for calendars.
+_Avoid_: name day calendar, tradition
 
 **Relation**:
 The link of a contact to one or more people of the household, with what they are to them, such as "friend of Mia" or "paediatrician": one free-text word (at most 40 characters) plus the people it is for, or the whole family. The whole family stores no people, so a person who joins later is included. Only further contacts have relations, never the contact of a household person. A relation alone does not make a contact visible to children.

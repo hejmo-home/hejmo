@@ -1,0 +1,745 @@
+{
+ "list": "romanian_orthodox",
+ "sources": {
+  "bor": "Calendarul ortodox der Rumänischen Orthodoxen Kirche (Patriarhia Română, calendar.patriarhia.ro)"
+ },
+ "entries": [
+  {
+   "id": "vasile-01-01",
+   "name": "Vasile",
+   "variants": [
+    "Vasilica",
+    "Basil",
+    "Basilius",
+    "Basilios"
+   ],
+   "saint": "Sfântul Vasile cel Mare",
+   "day": "01-01",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "iordan-01-06",
+   "name": "Iordan",
+   "variants": [
+    "Iordana",
+    "Teofan"
+   ],
+   "saint": "Botezul Domnului (Boboteaza)",
+   "day": "01-06",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "ioan-01-07",
+   "name": "Ioan",
+   "variants": [
+    "Ion",
+    "Ioana",
+    "Ionel",
+    "Ionuț",
+    "Ionela",
+    "Johannes",
+    "Johann",
+    "Jan",
+    "Hans",
+    "Ioniță"
+   ],
+   "saint": "Sfântul Ioan Botezătorul",
+   "day": "01-07",
+   "usual": true,
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "antonie-01-17",
+   "name": "Antonie",
+   "variants": [
+    "Anton",
+    "Antonius",
+    "Antonio",
+    "Toni"
+   ],
+   "saint": "Sfântul Antonie cel Mare",
+   "day": "01-17",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "atanasie-01-18",
+   "name": "Atanasie",
+   "variants": [
+    "Atanasia",
+    "Athanasius"
+   ],
+   "saint": "Sfântul Atanasie cel Mare",
+   "day": "01-18",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "chiril-01-18",
+   "name": "Chiril",
+   "variants": [
+    "Kyrill",
+    "Cyrill"
+   ],
+   "saint": "Sfântul Chiril al Alexandriei",
+   "day": "01-18",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "eftimie-01-20",
+   "name": "Eftimie",
+   "variants": [
+    "Eutimie"
+   ],
+   "saint": "Sfântul Eftimie cel Mare",
+   "day": "01-20",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "xenia-01-24",
+   "name": "Xenia",
+   "variants": [
+    "Xenia"
+   ],
+   "saint": "Cuvioasa Xenia",
+   "day": "01-24",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "grigore-01-25",
+   "name": "Grigore",
+   "variants": [
+    "Grigorie",
+    "Gregor",
+    "Grigori"
+   ],
+   "saint": "Sfântul Grigorie Teologul",
+   "day": "01-25",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "simion-02-03",
+   "name": "Simion",
+   "variants": [
+    "Simeon",
+    "Simon"
+   ],
+   "saint": "Sfântul Simeon primitorul de Dumnezeu",
+   "day": "02-03",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "teodor-02-08",
+   "name": "Teodor",
+   "variants": [
+    "Theodor",
+    "Theodore"
+   ],
+   "saint": "Sfântul Mare Mucenic Teodor Stratilat",
+   "day": "02-08",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "haralambie-02-10",
+   "name": "Haralambie",
+   "variants": [
+    "Haralamb",
+    "Charalambos"
+   ],
+   "saint": "Sfântul Haralambie",
+   "day": "02-10",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "vlasie-02-11",
+   "name": "Vlasie",
+   "variants": [
+    "Blasius"
+   ],
+   "saint": "Sfântul Vlasie",
+   "day": "02-11",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "teodora-easter-minus-42",
+   "name": "Teodora",
+   "variants": [
+    "Theodora"
+   ],
+   "saint": "Duminica Ortodoxiei (Sfânta Teodora)",
+   "easter": -42,
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "teodor-easter-minus-43",
+   "name": "Teodor",
+   "variants": [
+    "Theodor"
+   ],
+   "saint": "Sâmbăta lui Teodor (Sfântul Teodor Tiron)",
+   "easter": -43,
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "florin-easter-minus-7",
+   "name": "Florin",
+   "variants": [
+    "Florian",
+    "Florica",
+    "Floarea",
+    "Floriana",
+    "Florentin",
+    "Florentina"
+   ],
+   "saint": "Intrarea Domnului în Ierusalim (Floriile)",
+   "easter": -7,
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "toma-easter-plus-7",
+   "name": "Toma",
+   "variants": [
+    "Tomiță",
+    "Thomas"
+   ],
+   "saint": "Duminica Tomii (a doua duminică după Paști)",
+   "easter": 7,
+   "usual": true,
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "gheorghe-04-23",
+   "name": "Gheorghe",
+   "variants": [
+    "Gheorghiță",
+    "Georgică",
+    "George",
+    "Georg",
+    "Georgiana"
+   ],
+   "saint": "Sfântul Mare Mucenic Gheorghe",
+   "day": "04-23",
+   "move": "easter_monday",
+   "usual": true,
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "marcu-04-25",
+   "name": "Marcu",
+   "variants": [
+    "Marcus",
+    "Markus"
+   ],
+   "saint": "Sfântul Apostol și Evanghelist Marcu",
+   "day": "04-25",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "irina-05-05",
+   "name": "Irina",
+   "variants": [
+    "Irene",
+    "Irinel"
+   ],
+   "saint": "Sfânta Muceniță Irina",
+   "day": "05-05",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "constantin-05-21",
+   "name": "Constantin",
+   "variants": [
+    "Costel",
+    "Costin",
+    "Dinu",
+    "Konstantin"
+   ],
+   "saint": "Sfinții Împărați Constantin și Elena",
+   "day": "05-21",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "elena-05-21",
+   "name": "Elena",
+   "variants": [
+    "Helene",
+    "Helena",
+    "Lenuța",
+    "Lena"
+   ],
+   "saint": "Sfinții Împărați Constantin și Elena",
+   "day": "05-21",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "bartolomeu-06-11",
+   "name": "Bartolomeu",
+   "variants": [
+    "Bartholomäus"
+   ],
+   "saint": "Sfântul Apostol Bartolomeu",
+   "day": "06-11",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "varnava-06-11",
+   "name": "Varnava",
+   "variants": [
+    "Barnabas"
+   ],
+   "saint": "Sfântul Apostol Barnaba",
+   "day": "06-11",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "petru-06-29",
+   "name": "Petru",
+   "variants": [
+    "Petre",
+    "Petrică",
+    "Peter",
+    "Petrus"
+   ],
+   "saint": "Sfântul Apostol Petru",
+   "day": "06-29",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "pavel-06-29",
+   "name": "Pavel",
+   "variants": [
+    "Paul",
+    "Paulus",
+    "Paula"
+   ],
+   "saint": "Sfântul Apostol Pavel",
+   "day": "06-29",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "marina-07-17",
+   "name": "Marina",
+   "saint": "Sfânta Muceniță Marina",
+   "day": "07-17",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "ilie-07-20",
+   "name": "Ilie",
+   "variants": [
+    "Iliuță",
+    "Elias",
+    "Elija"
+   ],
+   "saint": "Sfântul Prooroc Ilie",
+   "day": "07-20",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "cristina-07-24",
+   "name": "Cristina",
+   "variants": [
+    "Christina"
+   ],
+   "saint": "Sfânta Muceniță Cristina",
+   "day": "07-24",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "ana-07-25",
+   "name": "Ana",
+   "variants": [
+    "Anna",
+    "Anca",
+    "Anișoara"
+   ],
+   "saint": "Adormirea Sfintei Ana",
+   "day": "07-25",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "paraschiva-07-26",
+   "name": "Paraschiva",
+   "variants": [
+    "Parascheva",
+    "Paraskevi",
+    "Veta"
+   ],
+   "saint": "Sfânta Muceniță Paraschiva",
+   "day": "07-26",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "pantelimon-07-27",
+   "name": "Pantelimon",
+   "variants": [
+    "Panteleimon",
+    "Pantelie"
+   ],
+   "saint": "Sfântul Mare Mucenic Pantelimon",
+   "day": "07-27",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "maria-08-15",
+   "name": "Maria",
+   "variants": [
+    "Marie",
+    "Mary",
+    "Marioara",
+    "Mariana",
+    "Marian",
+    "Măriuța"
+   ],
+   "saint": "Adormirea Maicii Domnului",
+   "day": "08-15",
+   "usual": true,
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "alexandru-08-30",
+   "name": "Alexandru",
+   "variants": [
+    "Alexander",
+    "Alexandra",
+    "Alex",
+    "Sandu"
+   ],
+   "saint": "Sfântul Alexandru, patriarhul Constantinopolului",
+   "day": "08-30",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "sofia-09-17",
+   "name": "Sofia",
+   "variants": [
+    "Sophia",
+    "Sophie",
+    "Sofie"
+   ],
+   "saint": "Sfânta Muceniță Sofia",
+   "day": "09-17",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "speranta-09-17",
+   "name": "Speranța",
+   "variants": [
+    "Nădejde",
+    "Elpida"
+   ],
+   "saint": "Sfânta Muceniță Nădejdea",
+   "day": "09-17",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "iona-09-22",
+   "name": "Iona",
+   "variants": [
+    "Jonas",
+    "Jona"
+   ],
+   "saint": "Sfântul Prooroc Iona",
+   "day": "09-22",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "toma-10-06",
+   "name": "Toma",
+   "variants": [
+    "Tomiță",
+    "Thomas"
+   ],
+   "saint": "Sfântul Apostol Toma",
+   "day": "10-06",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "parascheva-10-14",
+   "name": "Parascheva",
+   "variants": [
+    "Paraschiva",
+    "Paraskevi",
+    "Veta"
+   ],
+   "saint": "Cuvioasa Parascheva de la Iași",
+   "day": "10-14",
+   "usual": true,
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "luca-10-18",
+   "name": "Luca",
+   "variants": [
+    "Lukas",
+    "Luke"
+   ],
+   "saint": "Sfântul Apostol și Evanghelist Luca",
+   "day": "10-18",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "iacob-10-23",
+   "name": "Iacob",
+   "variants": [
+    "Jakob",
+    "Jakobus",
+    "James"
+   ],
+   "saint": "Sfântul Apostol Iacob, fratele Domnului",
+   "day": "10-23",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "dumitru-10-26",
+   "name": "Dumitru",
+   "variants": [
+    "Dimitrie",
+    "Dumitrel",
+    "Dimitri",
+    "Demetrius",
+    "Mitru",
+    "Dumitrița"
+   ],
+   "saint": "Sfântul Mare Mucenic Dumitru",
+   "day": "10-26",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "cosma-11-01",
+   "name": "Cosma",
+   "variants": [
+    "Kosmas"
+   ],
+   "saint": "Sfinții Doctori fără de arginți Cosma și Damian",
+   "day": "11-01",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "damian-11-01",
+   "name": "Damian",
+   "variants": [
+    "Damianus"
+   ],
+   "saint": "Sfinții Doctori fără de arginți Cosma și Damian",
+   "day": "11-01",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "mihail-11-08",
+   "name": "Mihail",
+   "variants": [
+    "Mihai",
+    "Michael",
+    "Mihaela",
+    "Mihăiță"
+   ],
+   "saint": "Soborul Sfinților Arhangheli Mihail și Gavriil",
+   "day": "11-08",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "gavril-11-08",
+   "name": "Gavril",
+   "variants": [
+    "Gabriel",
+    "Gabriela"
+   ],
+   "saint": "Soborul Sfinților Arhangheli Mihail și Gavriil",
+   "day": "11-08",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "filip-11-14",
+   "name": "Filip",
+   "variants": [
+    "Philipp",
+    "Philippus",
+    "Philip"
+   ],
+   "saint": "Sfântul Apostol Filip",
+   "day": "11-14",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "matei-11-16",
+   "name": "Matei",
+   "variants": [
+    "Matthäus",
+    "Matthew"
+   ],
+   "saint": "Sfântul Apostol și Evanghelist Matei",
+   "day": "11-16",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "ecaterina-11-25",
+   "name": "Ecaterina",
+   "variants": [
+    "Katharina",
+    "Katherina",
+    "Catherine",
+    "Cătălina",
+    "Catrina",
+    "Katrin",
+    "Kathrin",
+    "Katja",
+    "Karin"
+   ],
+   "saint": "Sfânta Mare Muceniță Ecaterina",
+   "day": "11-25",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "andrei-11-30",
+   "name": "Andrei",
+   "variants": [
+    "Andreas",
+    "Andrew",
+    "Andrea",
+    "Andreea"
+   ],
+   "saint": "Sfântul Apostol Andrei",
+   "day": "11-30",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "varvara-12-04",
+   "name": "Varvara",
+   "variants": [
+    "Barbara",
+    "Bărbulea"
+   ],
+   "saint": "Sfânta Mare Muceniță Varvara",
+   "day": "12-04",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "nicolae-12-06",
+   "name": "Nicolae",
+   "variants": [
+    "Nikolaus",
+    "Nicolas",
+    "Nicu",
+    "Nicoleta",
+    "Nicușor",
+    "Niculae",
+    "Niklas"
+   ],
+   "saint": "Sfântul Ierarh Nicolae",
+   "day": "12-06",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "spiridon-12-12",
+   "name": "Spiridon",
+   "variants": [
+    "Spyridon"
+   ],
+   "saint": "Sfântul Ierarh Spiridon",
+   "day": "12-12",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "lucia-12-13",
+   "name": "Lucia",
+   "variants": [
+    "Luzia",
+    "Lucie"
+   ],
+   "saint": "Sfânta Muceniță Lucia",
+   "day": "12-13",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "daniel-12-17",
+   "name": "Daniel",
+   "variants": [
+    "Daniela"
+   ],
+   "saint": "Sfântul Prooroc Daniel",
+   "day": "12-17",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "eugenia-12-24",
+   "name": "Eugenia",
+   "variants": [
+    "Evghenia"
+   ],
+   "saint": "Sfânta Muceniță Eugenia",
+   "day": "12-24",
+   "source": "bor",
+   "unchecked": true
+  },
+  {
+   "id": "stefan-12-27",
+   "name": "Ștefan",
+   "variants": [
+    "Stefan",
+    "Stephan",
+    "Ștefania",
+    "Ștefănel",
+    "Stefanie",
+    "Stephanus"
+   ],
+   "saint": "Sfântul Întâi Mucenic Ștefan",
+   "day": "12-27",
+   "source": "bor",
+   "unchecked": true
+  }
+ ]
+}

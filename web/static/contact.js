@@ -185,16 +185,6 @@ function relSentence(word, names, whole, texts) {
     };
   })();
 
-  form.addEventListener("input", function (ev) {
-    markDirty();
-    var li = rels && rels.lineOf(ev.target);
-    if (li) rels.update(li, ev.target);
-  });
-  form.addEventListener("change", function (ev) {
-    markDirty();
-    var li = rels && rels.lineOf(ev.target);
-    if (li) rels.update(li, ev.target);
-  });
   if (rels) form.addEventListener("submit", function () { rels.beforeSubmit(); });
   // The photo card (ticket 297): choosing a file sends the form with picture=upload. The box prepares the photo,
   // shows it as it will appear and keeps everything typed; "Speichern" stores it. A HEIC photo is converted to
@@ -235,10 +225,16 @@ function relSentence(word, names, whole, texts) {
       .then(submitUpload, submitUpload);
   }
 
-  form.addEventListener("input", markDirty);
+  form.addEventListener("input", function (ev) {
+    markDirty();
+    var li = rels && rels.lineOf(ev.target);
+    if (li) rels.update(li, ev.target);
+  });
   form.addEventListener("change", function (ev) {
     markDirty();
     var el = ev && ev.target;
+    var li = rels && rels.lineOf(el);
+    if (li) rels.update(li, el);
     if (el && el.matches && el.matches('input[type="file"][name="photo"]')) choosePhoto(el);
   });
 })();

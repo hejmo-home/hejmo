@@ -56,6 +56,11 @@ type Contact struct {
 	// Extra holds the lines of a card a phone saved that Hejmo does not model (organisation, web address, ...), so
 	// they come back to the phone unchanged (ticket 299); empty for a contact no phone has saved.
 	Extra string
+	// NameDayMode, NameDayEntry and NameDayName say which name day the contact has (ticket 318): nameday.ModeAuto,
+	// ModeEntry (the id of an entry of the household's list), ModeName (another name) or ModeNone. NameDayBy is
+	// the person who chose, empty for auto.
+	NameDayMode, NameDayEntry, NameDayName string
+	NameDayBy, NameDayByName               string
 }
 
 // Where a contact photo came from.
@@ -128,16 +133,16 @@ const contactColumns = `c.id, COALESCE(c.person_id, ''), c.hejmo_name, c.full_na
 	COALESCE(c.bday_day, 0), COALESCE(c.bday_month, 0), COALESCE(c.bday_year, 0), c.hide_birthday, c.for_children, c.note,
 	COALESCE(c.created_by, ''), COALESCE(cp.name, ''), c.created_at, COALESCE(c.updated_by, ''), COALESCE(up.name, ''), c.updated_at,
 	c.photo IS NOT NULL, c.photo_origin, COALESCE(c.photo_by, ''), COALESCE(pp.name, ''), c.photo_device, c.photo_at,
-	c.created_file, c.updated_file, c.photo_file, c.extra`
+	c.created_file, c.updated_file, c.photo_file, c.extra, c.name_day_mode, c.name_day_entry, c.name_day_name, COALESCE(c.name_day_by, ''), COALESCE(np.name, '')`
 
-const contactFrom = ` FROM contacts c LEFT JOIN people cp ON cp.id = c.created_by LEFT JOIN people up ON up.id = c.updated_by LEFT JOIN people pp ON pp.id = c.photo_by `
+const contactFrom = ` FROM contacts c LEFT JOIN people cp ON cp.id = c.created_by LEFT JOIN people up ON up.id = c.updated_by LEFT JOIN people pp ON pp.id = c.photo_by LEFT JOIN people np ON np.id = c.name_day_by `
 
 func scanContact(sc interface{ Scan(...any) error }) (Contact, error) {
 	var c Contact
 	var created, updated, photoAt string
 	err := sc.Scan(&c.ID, &c.PersonID, &c.HejmoName, &c.FullName, &c.Street, &c.Postcode, &c.City, &c.Country,
 		&c.BdayDay, &c.BdayMonth, &c.BdayYear, &c.HideBirthday, &c.ForChildren, &c.Note, &c.CreatedBy, &c.CreatedByName, &created, &c.UpdatedBy, &c.UpdatedByName, &updated,
-		&c.HasPhoto, &c.PhotoOrigin, &c.PhotoBy, &c.PhotoByName, &c.PhotoDevice, &photoAt, &c.CreatedFile, &c.UpdatedFile, &c.PhotoFile, &c.Extra)
+		&c.HasPhoto, &c.PhotoOrigin, &c.PhotoBy, &c.PhotoByName, &c.PhotoDevice, &photoAt, &c.CreatedFile, &c.UpdatedFile, &c.PhotoFile, &c.Extra, &c.NameDayMode, &c.NameDayEntry, &c.NameDayName, &c.NameDayBy, &c.NameDayByName)
 	c.PhotoAt, _ = time.Parse(time.RFC3339, photoAt)
 	c.CreatedAt, _ = time.Parse(time.RFC3339, created)
 	c.UpdatedAt, _ = time.Parse(time.RFC3339, updated)
@@ -299,6 +304,10 @@ type ContactInput struct {
 	ID string
 	// Extra, when set, replaces what a phone saved that Hejmo does not model; nil keeps it.
 	Extra *string
+	// NameDayMode, NameDayEntry and NameDayName are the choice of the name day (ticket 318, see nameday.Choice).
+	// An empty mode keeps what the contact has (a new contact: auto), so a save that does not know about name
+	// days, such as the contact import, changes nothing.
+	NameDayMode, NameDayEntry, NameDayName string
 }
 
 func (in *ContactInput) clean() error {
@@ -464,6 +473,9 @@ func createContact(tx *sql.Tx, householdID, by string, in ContactInput) (string,
 	if err := checkContactName(tx, householdID, "", in.HejmoName); err != nil {
 		return "", err
 	}
+	if err := checkNameDayChoice(tx, householdID, &in); err != nil {
+		return "", err
+	}
 	extra := ""
 	if in.Extra != nil {
 		extra = *in.Extra
@@ -472,6 +484,9 @@ func createContact(tx *sql.Tx, householdID, by string, in ContactInput) (string,
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		id, householdID, in.HejmoName, in.FullName, in.Street, in.Postcode, in.City, in.Country, nullInt(in.BdayDay), nullInt(in.BdayMonth), nullInt(in.BdayYear), in.HideBirthday, in.ForChildren, in.Note,
 		nullString(by), ts, nullString(by), ts, in.ImportFile, extra); err != nil {
+		return "", err
+	}
+	if err := writeNameDayChoice(tx, id, by, in, "", "", ""); err != nil {
 		return "", err
 	}
 	if err := writeContactParts(tx, householdID, id, in, false, by, ts); err != nil {
@@ -594,6 +609,13 @@ func updateContact(tx *sql.Tx, householdID, id, by string, isPerson bool, curNam
 	if err := checkContactName(tx, householdID, id, in.HejmoName); err != nil {
 		return err
 	}
+	if err := checkNameDayChoice(tx, householdID, &in); err != nil {
+		return err
+	}
+	var ndMode, ndEntry, ndName string
+	if err := tx.QueryRow(`SELECT name_day_mode, name_day_entry, name_day_name FROM contacts WHERE id = ? AND household_id = ?`, id, householdID).Scan(&ndMode, &ndEntry, &ndName); err != nil {
+		return err
+	}
 	if _, err := tx.Exec(`UPDATE contacts SET hejmo_name = ?, full_name = ?, street = ?, postcode = ?, city = ?, country = ?, bday_day = ?, bday_month = ?, bday_year = ?, hide_birthday = ?, for_children = ?, note = ?, updated_by = ?, updated_at = ?, updated_file = ?
 		WHERE id = ? AND household_id = ?`,
 		in.HejmoName, in.FullName, in.Street, in.Postcode, in.City, in.Country, nullInt(in.BdayDay), nullInt(in.BdayMonth), nullInt(in.BdayYear), in.HideBirthday, in.ForChildren, in.Note, nullString(by), ts, in.ImportFile, id, householdID); err != nil {
@@ -603,6 +625,9 @@ func updateContact(tx *sql.Tx, householdID, id, by string, isPerson bool, curNam
 		if _, err := tx.Exec(`UPDATE contacts SET extra = ? WHERE id = ?`, *in.Extra, id); err != nil {
 			return err
 		}
+	}
+	if err := writeNameDayChoice(tx, id, by, in, ndMode, ndEntry, ndName); err != nil {
+		return err
 	}
 	if err := writeContactParts(tx, householdID, id, in, isPerson, by, ts); err != nil {
 		return err

@@ -53,10 +53,11 @@ func typedLetters(q string) (string, bool) {
 }
 
 // SuggestRecipes returns up to limit recipes whose name holds the typed text
-// anywhere (case and umlauts ignored); from two letters on. Those that fit the
-// mealtime come first (a recipe without mealtimes fits every one), then the
-// rest, each from A to Z. An empty mealtime prefers none.
-func SuggestRecipes(list []Recipe, q string, mt meal.Mealtime, limit int) []Recipe {
+// anywhere (case and umlauts ignored); from two letters on. Favourites (by
+// recipe id, ticket 287; nil for none) come first, then those that fit the
+// mealtime (a recipe without mealtimes fits every one), then the rest, each
+// from A to Z. An empty mealtime prefers none.
+func SuggestRecipes(list []Recipe, q string, mt meal.Mealtime, limit int, liked map[string]bool) []Recipe {
 	q, ok := typedLetters(q)
 	if !ok {
 		return nil
@@ -73,6 +74,7 @@ func SuggestRecipes(list []Recipe, q string, mt meal.Mealtime, limit int) []Reci
 	}
 	SortByName(out)
 	sort.SliceStable(out, func(i, j int) bool { return fits(out[i]) && !fits(out[j]) })
+	sort.SliceStable(out, func(i, j int) bool { return liked[out[i].ID] && !liked[out[j].ID] })
 	if len(out) > limit {
 		out = out[:limit]
 	}

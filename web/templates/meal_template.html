@@ -19,7 +19,7 @@
       {{if .ErrClash}}<p class="ferr" id="err-schedule" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{range .ErrClash}}{{.}} {{end}}{{t "meals.tpl.clash.advice"}}</span></p>{{end}}
     </fieldset>
     <h2>{{t "meals.tpl.week.title"}}</h2>
-    <p class="hint">{{t "meals.tpl.week.hint"}}</p>
+    <p class="hint">{{t "meals.tpl.week.hint"}} {{t "meals.tpl.week.recipe.hint"}}</p>
     <div class="meal-week">
       {{range .Days}}
       <fieldset class="meal-day"><legend>{{t (printf "meals.weekday.%d" .Weekday)}}</legend>

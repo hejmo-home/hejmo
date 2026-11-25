@@ -44,6 +44,8 @@ type entryView struct {
 	// AutoSrc and TileAuto say a rule of "always on the list" put the entry on
 	// the list: the line under it, and the short one on its tile (ticket 168).
 	AutoSrc, TileAuto string
+	// RcpSrc and TileRcp say which meals brought the quantity (ticket 283).
+	RcpSrc, TileRcp string
 }
 
 // Plain is the entry in words for labels: "Mehl · Type 405".

@@ -83,3 +83,16 @@ func TestRecipeUnitsAreTheHouseholdsPlusBothGroups(t *testing.T) {
 		t.Error("only recipes know kitchen measures; the lists' catalogue is unchanged")
 	}
 }
+
+// Ticket 283: a container keeps its quantity on a list, and adds up only within the same unit.
+func TestAContainerKeepsItsQuantityAndShowsInItsOwnUnit(t *testing.T) {
+	t.Parallel()
+	for _, k := range unit.Containers {
+		if got := unit.FromBase(unit.ToBase(2.5, k), k); got != 2.5 {
+			t.Errorf("%s: 2.5 comes back as %v", k, got)
+		}
+		if got := unit.ShowUnit(unit.ToBase(2, k), unit.KindOf(k), []string{"piece"}, []string{"piece", "g", "ml"}); got != k {
+			t.Errorf("%s is shown as %q", k, got)
+		}
+	}
+}

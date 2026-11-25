@@ -11,7 +11,7 @@ import (
 // "Weizenmehl"). It exists so the allergy check does not miss a line only
 // because the name differs. Each entry was read against the article and its
 // allergens in internal/library/articles.txt; add a name only when the article
-// IS the ingredient. A near miss (Spätzle are not
+// IS the ingredient. A near miss (Cheddar is not Gouda, Spätzle are not
 // Nudeln, Rinderbrühe is not Gemüsebrühe) stays free text rather than carry
 // the wrong allergens or the wrong shopping line. Keys are written folded
 // (library.Fold).
@@ -33,8 +33,8 @@ var spellings = map[string]string{
 	"vollmilch": "milk", "magerquark": "quark", "topfen": "quark", "naturjoghurt": "yoghurt", "sahnejoghurt": "yoghurt",
 	"butterschmalz": "butter", "bratbutter": "butter", "ghee": "butter",
 	"kase, gerieben": "grated-cheese", "gratinkase, gerieben": "grated-cheese",
-	// celery, cheese: names the library knows under another name
-	"stangensellerie": "celery-stalks", "cheddar": "cheddar",
+	// celery: a name the library knows under another name
+	"stangensellerie": "celery-stalks",
 	// soy
 	"sojasauce": "soy-sauce",
 	// mustard

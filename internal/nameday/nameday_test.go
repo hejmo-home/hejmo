@@ -205,3 +205,56 @@ func TestEventIDs(t *testing.T) {
 		t.Fatal("not deterministic")
 	}
 }
+
+func TestForAppliesTheChoiceOfTheContact(t *testing.T) {
+	c := testCal(t)
+	// auto: the usual day of the name.
+	r := c.For("Thomas Maier", "Papa", Choice{Mode: ModeAuto})
+	if !r.Found || r.Entry.ID != "thomas-apostle" || r.Via != ViaName {
+		t.Fatalf("auto: %+v", r)
+	}
+	// an empty mode is auto
+	if r := c.For("Thomas Maier", "Papa", Choice{}); !r.Found || r.Entry.ID != "thomas-apostle" {
+		t.Fatalf("empty: %+v", r)
+	}
+	// a part of a double name says so
+	if r := c.For("Mia-Sophie Maier", "x", Choice{}); !r.Found || r.Via != ViaPart || r.Match.Part != 2 {
+		t.Fatalf("part: %+v", r)
+	}
+	// entry: another day of the same list
+	r = c.For("Thomas Maier", "Papa", Choice{Mode: ModeEntry, Entry: "thomas-aquinas"})
+	if !r.Found || r.Entry.ID != "thomas-aquinas" || r.Via != ViaEntry {
+		t.Fatalf("entry: %+v", r)
+	}
+	// an entry that the list does not have falls back to auto
+	if r := c.For("Thomas Maier", "Papa", Choice{Mode: ModeEntry, Entry: "nope"}); !r.Found || r.Entry.ID != "thomas-apostle" || r.Via != ViaName {
+		t.Fatalf("fallback: %+v", r)
+	}
+	// name: another name (any recorded form)
+	r = c.For("Mia Maier", "Mia", Choice{Mode: ModeName, Name: "sophie"})
+	if !r.Found || r.Entry.ID != "sophia" || r.Via != ViaOther {
+		t.Fatalf("name: %+v", r)
+	}
+	// none: no name day, whatever the name is
+	r = c.For("Thomas Maier", "Papa", Choice{Mode: ModeNone})
+	if r.Found || r.Why != WhyNone {
+		t.Fatalf("none: %+v", r)
+	}
+	// no match
+	r = c.For("Mia Maier", "Mia", Choice{})
+	if r.Found || r.Why != WhyUnknown {
+		t.Fatalf("no match: %+v", r)
+	}
+}
+
+func TestTitleNamesTheNameDayOnlyWhenItDiffers(t *testing.T) {
+	if got := Title("Namenstag", "Mama", "Katharina"); got != "Namenstag Mama (Katharina)" {
+		t.Fatal(got)
+	}
+	if got := Title("Namenstag", "Sebastian", "Sebastian"); got != "Namenstag Sebastian" {
+		t.Fatal(got)
+	}
+	if got := Title("Namenstag", "Jonas", "Jónas"); got != "Namenstag Jonas" {
+		t.Fatal(got)
+	}
+}

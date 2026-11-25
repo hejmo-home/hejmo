@@ -41,6 +41,9 @@ type Event struct {
 	// birthdays: their occurrences carry the age (see Expand). It is not stored
 	// on the event.
 	Birthday bool
+	// NameDayContact is the id of the contact a generated name-day event is made from (ticket 318); empty for
+	// every other event. It is set by the store, not stored from the event.
+	NameDayContact string
 }
 
 // Invitation says who invited and what the family's account answered, with a

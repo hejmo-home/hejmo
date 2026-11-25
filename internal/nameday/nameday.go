@@ -355,3 +355,77 @@ func EventID(contactID string, year int) string {
 	b[8] = b[8]&0x3f | 0x80
 	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
 }
+
+// How a contact's name day is chosen (the column name_day_mode).
+const (
+	ModeAuto  = "auto"  // the usual day of the name that counts
+	ModeEntry = "entry" // another day of the list, chosen by a parent
+	ModeName  = "name"  // another name, chosen by a parent
+	ModeNone  = "none"  // no name day
+)
+
+// Choice is what a contact says about its name day.
+type Choice struct{ Mode, Entry, Name string }
+
+// Via says where a name day comes from.
+type Via string
+
+const (
+	ViaName  Via = "name"  // the first given name
+	ViaPart  Via = "part"  // a part of a hyphenated first name
+	ViaEntry Via = "entry" // a day a parent chose
+	ViaOther Via = "other" // another name a parent chose
+)
+
+// Why a contact has no name day.
+const (
+	WhyNone    = "none"    // a parent chose no name day
+	WhyUnknown = "unknown" // the list does not know the name
+)
+
+// Result is the name day of a contact in a list.
+type Result struct {
+	Found bool
+	Entry Entry
+	Via   Via
+	Match Match  // the name that counted, for ViaName and ViaPart
+	Why   string // when not Found
+}
+
+// For is the name day of a contact: what the parents chose, else the first
+// given name. A choice the list cannot satisfy (a day or a name it does not
+// have) falls back to the name; the settings page drops such choices when the
+// list changes, so this is a guard.
+func (c *Calendar) For(fullName, hejmoName string, ch Choice) Result {
+	switch ch.Mode {
+	case ModeNone:
+		return Result{Why: WhyNone}
+	case ModeEntry:
+		if e, ok := c.Entry(ch.Entry); ok {
+			return Result{Found: true, Entry: e, Via: ViaEntry}
+		}
+	case ModeName:
+		if es := c.Lookup(ch.Name); es != nil {
+			return Result{Found: true, Entry: es[0], Via: ViaOther}
+		}
+	}
+	m, ok := c.Resolve(fullName, hejmoName)
+	if !ok {
+		return Result{Why: WhyUnknown}
+	}
+	via := ViaName
+	if m.Part > 0 {
+		via = ViaPart
+	}
+	return Result{Found: true, Entry: m.Entries[0], Via: via, Match: m}
+}
+
+// Title is the title of the event: the word, the Hejmo name, and the name of
+// the name day in brackets when it is another name.
+func Title(word, hejmoName, nameDayName string) string {
+	t := word + " " + hejmoName
+	if !Same(hejmoName, nameDayName) {
+		t += " (" + nameDayName + ")"
+	}
+	return t
+}

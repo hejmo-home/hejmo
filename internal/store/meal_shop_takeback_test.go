@@ -352,3 +352,40 @@ func TestUndoAfterAFullTakeBackKeepsAQuantityTypedIntoAnEmptyEntry(t *testing.T)
 		t.Errorf("after undo = %v, the typed quantity must stay", got)
 	}
 }
+
+// One run puts two meals on the same entry. When one of them leaves, the run
+// still has a part on the entry, so its step stays and Undo takes the rest off.
+func TestUndoAfterATakeBackOfOneOfTwoMealsOfTheSameRunLeavesWhatWasThere(t *testing.T) {
+	f := newTakeBackFixture(t)
+	f.addByHand(t, "Süßkartoffeln", "sweet-potatoes", list.NewQuantity(500, "g"))
+	f.plan(t, f.curry.ID, "2026-11-19", 4)
+	f.plan(t, f.curry.ID, "2026-11-20", 2)
+	var ms []shop.Meal
+	var sm []store.ShopMeal
+	for _, m := range []struct {
+		day      string
+		portions int
+	}{{"2026-11-19", 4}, {"2026-11-20", 2}} {
+		ms = append(ms, shop.Meal{Key: m.day + ".dinner", Day: m.day, Mealtime: meal.Dinner, RecipeID: f.curry.ID, RecipeName: f.curry.Name, Portions: m.portions, Base: 2, Ingredients: []recipe.Ingredient{potatoes}})
+		sm = append(sm, store.ShopMeal{Day: m.day, Mealtime: meal.Dinner, RecipeID: f.curry.ID, RecipeName: f.curry.Name, Portions: m.portions})
+	}
+	rows := shop.Rows(ms, func(in recipe.Ingredient) shop.Article { return shop.Article{ID: in.ArticleID, Text: in.Text} })
+	run, err := f.db.AddMealShop(f.h.ID, store.ShopInput{ListID: f.l.ID, Day: "2026-11-14", Rows: rows, Meals: sm,
+		Show: func(shop.Row) list.Show { return show("piece", "g", "kg") }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := f.lines(t); !reflect.DeepEqual(got, []string{"Süßkartoffeln 1.4 kg"}) {
+		t.Fatalf("after the run = %v", got)
+	}
+	f.clear(t, "2026-11-19")
+	if got := f.lines(t); !reflect.DeepEqual(got, []string{"Süßkartoffeln 0.8 kg"}) {
+		t.Fatalf("after the take-back = %v", got)
+	}
+	if _, err := f.db.UndoMealShop(f.h.ID, run.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got := f.lines(t); !reflect.DeepEqual(got, []string{"Süßkartoffeln 0.5 kg"}) {
+		t.Errorf("after undo = %v, the run's remaining 300 g must go", got)
+	}
+}

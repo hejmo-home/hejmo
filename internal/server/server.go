@@ -408,6 +408,8 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /settings/lists/always", s.handleAlways)
 	mux.HandleFunc("POST /settings/lists/always", s.handleAlwaysSave)
 	mux.HandleFunc("GET /settings/lists/always/plan", s.handleAlwaysPlan)
+	mux.HandleFunc("GET /settings/lists/meal-shopping", s.handleShopAuto)
+	mux.HandleFunc("POST /settings/lists/meal-shopping", s.handleShopAutoSave)
 	mux.HandleFunc("GET /contacts", s.handleContacts)
 	mux.HandleFunc("GET /contacts/import", s.handleContactImportForm)
 	mux.HandleFunc("POST /contacts/import", s.handleContactImportUpload)

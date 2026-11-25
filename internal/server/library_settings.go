@@ -99,6 +99,13 @@ func (s *server) renderListsSettingsUnits(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	auto, err := s.db.MealShopAuto(p.household.ID)
+	if err != nil {
+		s.fail(w, "meal shop settings", err)
+		return
+	}
+	shopAutoState := s.shopAutoState(lang, auto)
+
 	var withAllergies []allergyPerson
 	var without []string
 	var holders []personChip // people with ticked allergens: the ones hiding can be chosen for
@@ -138,6 +145,7 @@ func (s *server) renderListsSettingsUnits(w http.ResponseWriter, r *http.Request
 	data := map[string]any{
 		"Units":  s.unitsForm(p, lang, unitsOn, unitsErr),
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID),
+		"ShopAutoState": shopAutoState, "ShopAutoPath": shopAutoPath,
 		"LibrarySymbol": hejmoSymbol, "ShippedState": shipped, "OwnState": own, "AlwaysRow": alwaysRow,
 		"Anyone": len(withAllergies) > 0, "CanHide": len(holders) > 0,
 		"AllergyPeople": withAllergies, "WithoutText": withoutText, "Sample": sample,

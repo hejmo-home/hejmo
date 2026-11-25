@@ -3,8 +3,9 @@
 # Food id: "bls:<BLS code>" or "usda:<FDC id>" of a food in foods.tsv.gz. Every article that is food has one;
 # articles that are not food (kind nonfood) have none. The food is the plain, raw or ready-to-eat one a recipe
 # means (flour is the flour, tea and coffee are the brewed drink).
-# Piece column "-": no weight counts for the article (tea, coffee, coffee beans: grams of leaves or beans are not the
-# brewed drink), the recipe lists the line as not counted.
+# Piece column "-": no weight or spoon counts for the article (tea, coffee, coffee beans: grams of leaves or beans are
+# not the brewed drink), the recipe lists the line as not counted. Tea and coffee keep a density, so ml of the brewed
+# drink counts; coffee beans have none, so nothing of them counts.
 # Grams of one piece: the edible weight of one "Stück" (empty: Hejmo does not know one, a recipe in Stück then
 # says the line is not counted). Grams per millilitre: the density (empty: not known); it turns ml, l, EL, TL and
 # Prise into grams. Both are guide values for a household kitchen, never a promise.
@@ -223,7 +224,7 @@ sparkling-wine|bls:P2A6000||0.99
 cocoa-drink|bls:M206300||1.03
 smoothie|bls:F033600||1.04
 baby-tea|bls:N720100||1.0
-coffee-beans|bls:N410100|-|1.0
+coffee-beans|bls:N410100|-|
 mineral-water-still|bls:N128000||1.0
 # baby
 baby-food-jar|bls:X5B1110||

@@ -431,7 +431,7 @@ A day a parent marks for the whole family or for chosen people (ill, holiday), i
 _Avoid_: skip day, excuse
 
 **Badge**:
-A mark a person earns once for a milestone, such as a first complete routine or a 7-day streak; it is never taken away.
+A mark a person earns once for a milestone from Hejmo's fixed list of ten (first routine done, a whole day, a whole week, 7 and 30 days in a row, first star, 100 and 500 stars collected, first reward, savings goal reached); it is never taken away, even when the count behind it later drops. Earned also while the person's switch "week count and badges" is off, but shown only while it is on, and never on the family view. Stars collected count every star earned, including stars already redeemed.
 _Avoid_: achievement, trophy, medal
 
 **Waste collection calendar**:

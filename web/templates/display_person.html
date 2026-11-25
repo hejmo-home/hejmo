@@ -25,12 +25,22 @@
       </section>{{end}}
     </aside>
     <main class="pv-days">
+      <div class="days">
       {{range .Days}}<section class="pv-day" data-day="{{.Date.Format "2006-01-02"}}"{{if .Today}} data-today{{end}}>
         <div class="lab">{{if .Today}}{{t "personal.today"}} · {{end}}{{t (printf "weekday.%d" .Date.Weekday)}} {{.Date.Day}}{{t "family.day_suffix"}} {{t (printf "month.%d" .Date.Month)}}</div>
         {{range .Events}}<div class="event"><div class="meta">{{if .AllDay}}{{t "personal.all_day"}}{{else}}{{.Time}}{{end}}</div><div class="title">{{.Title}}</div></div>
         {{else}}<div class="none">{{t "personal.nothing"}}</div>{{end}}
       </section>
       {{end}}
+      </div>
+      {{if or .NewBadges .Badges}}<section class="pv-badges" aria-label="{{t "badge.title"}}">
+        <p class="lab">{{template "badgeIcon" 16}}{{t "badge.title"}}</p>
+        {{with .NewBadges}}<div class="bdg-new">
+          <p class="k">{{if gt (len .) 1}}{{t "badge.new.many"}}{{else}}{{t "badge.new.one"}}{{end}}</p>
+          {{range .}}<p class="bdg-won">{{template "seal" (dict "Key" .Key "Size" 44)}}<b>{{.Name}}</b></p>
+          {{end}}</div>{{end}}
+        {{with .Badges}}<ul class="bdg-chips">{{range .}}<li class="bdg-chip">{{template "seal" (dict "Key" .Key "Size" 30)}}<span>{{.Name}}</span></li>{{end}}</ul>{{end}}
+      </section>{{end}}
     </main>
   </div>
 </div>{{end}}

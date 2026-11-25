@@ -72,5 +72,10 @@ func TestGramsOfCoffeeBeansAndTeaAreNotCounted(t *testing.T) {
 		if res.Counted != 0 || len(res.Skipped) != 1 || res.Skipped[0].Reason != ReasonNoWeight {
 			t.Errorf("%s: 20 g = counted %d skipped %+v, want listed as not counted (no weight)", key, res.Counted, res.Skipped)
 		}
+		// 250 ml is the brewed drink: counted for tea and coffee, never for the beans.
+		res = Calculate(1, []Line{{Name: key, Amount: 250, Unit: "ml", ArticleID: key, Food: &f, PieceG: l.PieceG, GPerML: l.GPerML, NoWeight: l.NoWeight}})
+		if beans := key == "coffee-beans"; beans && res.Counted != 0 || !beans && res.Counted != 1 {
+			t.Errorf("%s: 250 ml = counted %d skipped %+v", key, res.Counted, res.Skipped)
+		}
 	}
 }

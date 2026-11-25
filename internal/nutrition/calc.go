@@ -85,7 +85,7 @@ type Line struct {
 	// PieceG is the weight of one piece, GPerML the grams of a millilitre; 0:
 	// not known.
 	PieceG, GPerML float64
-	// NoWeight: no weight of the article counts (see Link).
+	// NoWeight: a weight or a spoon of the article does not count (see Link).
 	NoWeight bool
 }
 
@@ -182,6 +182,18 @@ func Calculate(portions int, lines []Line) Result {
 	return r
 }
 
+// refusedByNoWeight says whether NoWeight refuses the unit: a weight and a spoon
+// (or pinch) measure the leaves, the grounds or the beans, not the brewed drink.
+// A volume (ml, l, cup) is the drink itself and counts when the article has a
+// density.
+func refusedByNoWeight(key string) bool {
+	switch key {
+	case "tbsp", "tsp", "pinch":
+		return true
+	}
+	return unit.KindOf(key) == unit.Weight
+}
+
 // classify returns the grams a line counts, or why it does not count.
 func classify(l Line) (float64, Reason) {
 	switch {
@@ -196,7 +208,7 @@ func classify(l Line) (float64, Reason) {
 		return 0, ReasonNoAmount
 	}
 	g, ok := Grams(l.Amount, l.Unit, l.PieceG, l.GPerML)
-	if !ok || l.NoWeight {
+	if !ok || l.NoWeight && refusedByNoWeight(l.Unit) {
 		return 0, ReasonNoWeight
 	}
 	return g, 0

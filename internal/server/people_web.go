@@ -261,7 +261,7 @@ func (s *server) renderPerson(w http.ResponseWriter, r *http.Request, p principa
 		nutritionShown = v
 	}
 	data := map[string]any{
-		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Subject": chip, "Role": person.Role, "StreaksShown": streaksShown, "NutritionShown": nutritionShown,
+		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Subject": chip, "Role": person.Role, "StreaksShown": streaksShown, "NutritionShown": nutritionShown, "Possessive": possessive(s.langOf(r), person.Name),
 		"Form": form, "Error": form["Error"], "ErrorField": form["ErrorField"],
 	}
 	f, err := s.db.PersonFood(p.household.ID, person.ID)

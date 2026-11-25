@@ -19,7 +19,8 @@ type Link struct {
 	PieceG, GPerML float64
 	// NoWeight says a weight of the article is not the weight of the food:
 	// grams of coffee beans or tea leaves are not the brewed drink. Written "-"
-	// in the piece column; no unit counts, the line is listed as not counted.
+	// in the piece column; weights and spoons are listed as not counted, a
+	// volume (ml of the brewed drink) counts when the article has a density.
 	NoWeight bool
 }
 

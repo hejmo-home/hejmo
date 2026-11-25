@@ -195,8 +195,8 @@ func TestAllDaySeriesEndDateIsTheUntilDayInEveryZone(t *testing.T) {
 	}
 }
 
-// An all-day series imported from Outlook gets a date-only UNTIL, a timed one
-// a UTC date-time (#353, #307).
+// An all-day series imported from Outlook gets a date-only UNTIL (#353, #307); the
+// timed case is in TestRecurrenceBecomesAnRRule.
 func TestRecurrenceEndDateIsWrittenInTheValueTypeOfTheSeries(t *testing.T) {
 	rec := graph.Recurrence{Pattern: graph.Pattern{Type: "daily", Interval: 1}, Range: graph.Range{Type: "endDate", EndDate: "2027-03-01"}}
 	for _, zone := range []string{"Europe/Berlin", "Pacific/Auckland", "America/New_York"} {
@@ -208,10 +208,6 @@ func TestRecurrenceEndDateIsWrittenInTheValueTypeOfTheSeries(t *testing.T) {
 		if want := "FREQ=DAILY;INTERVAL=1;UNTIL=20270301"; err != nil || got != want {
 			t.Errorf("%s all-day: RRuleOf = %q, %v; want %q", zone, got, err, want)
 		}
-	}
-	got, err := graph.RRuleOf(rec, berlin, false)
-	if want := "FREQ=DAILY;INTERVAL=1;UNTIL=20270301T225959Z"; err != nil || got != want {
-		t.Errorf("timed: RRuleOf = %q, %v; want %q", got, err, want)
 	}
 }
 
@@ -226,5 +222,23 @@ func TestImportedAllDaySeriesHasADateOnlyUntil(t *testing.T) {
 	}
 	if !strings.HasSuffix(got.Event.RRule, ";UNTIL=20261228") {
 		t.Errorf("RRule = %q, want a date-only UNTIL=20261228", got.Event.RRule)
+	}
+}
+
+func TestUnchangedAllDayOutlookSeriesIsNotSentAgain(t *testing.T) {
+	remote := graph.Event{ID: "m3", Type: "seriesMaster", Subject: "Ferien", IsAllDay: true,
+		Start:      &graph.DateTimeZone{DateTime: "2026-11-02T00:00:00", TimeZone: "W. Europe Standard Time"},
+		End:        &graph.DateTimeZone{DateTime: "2026-11-03T00:00:00", TimeZone: "W. Europe Standard Time"},
+		Recurrence: &graph.Recurrence{Pattern: graph.Pattern{Type: "weekly", Interval: 1, DaysOfWeek: []string{"monday"}, FirstDayOfWeek: "monday"}, Range: graph.Range{Type: "endDate", EndDate: "2026-12-28"}}}
+	e := calendar.Event{Title: "Ferien", AllDay: true,
+		Start: time.Date(2026, 11, 2, 0, 0, 0, 0, berlin),
+		End:   time.Date(2026, 11, 3, 0, 0, 0, 0, berlin),
+		RRule: "FREQ=WEEKLY;INTERVAL=1;BYDAY=MO;WKST=MO;UNTIL=20261228"}
+	got, err := graph.ChangesOf(e, "", remote, berlin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := got["recurrence"]; ok {
+		t.Errorf("ChangesOf = %v, want no recurrence key for an unchanged all-day series", got)
 	}
 }

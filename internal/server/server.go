@@ -231,6 +231,12 @@ func New(opts Options) http.Handler {
 	s.passkeyTries = newLoginLimiter(10, 10*time.Minute, s.now)
 	s.ceremonies = passkey.NewCeremonies(s.now)
 	s.pages = parsePages()
+	// The generated calendar of religious holidays is written in the language of the parent who chose it, and again at every start so the years move on (ticket 339).
+	s.db.SetReligiousTitler(s.religiousTitle)
+	s.db.SetClock(s.now)
+	if err := s.db.SyncAllReligious(); err != nil {
+		s.logger.Error("sync religious holidays at start", "err", err)
+	}
 	s.settleAtStart() // an installation that ended while the box was away, and what an upload left
 	s.syncUpdateSettings()
 	// A box updated to a version with badges gives everyone the badges their history already earned, dated that day (ticket 295).
@@ -509,6 +515,8 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /settings", s.handleSettingsHub)
 	mux.HandleFunc("GET /places", s.handlePlaces)
 	mux.HandleFunc("GET /settings/licences", s.handleLicences)
+	mux.HandleFunc("GET /settings/religious-holidays", s.handleReligious)
+	mux.HandleFunc("POST /settings/religious-holidays", s.handleReligiousSave)
 	mux.HandleFunc("GET /settings/household", s.handleSettingsPage)
 	mux.HandleFunc("POST /settings/household", s.handleSettingsSave)
 	mux.HandleFunc("GET /settings/connections", s.handleConnectionsPage)

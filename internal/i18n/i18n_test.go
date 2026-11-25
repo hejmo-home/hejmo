@@ -192,6 +192,9 @@ var wholeFamilyTexts = map[string]bool{
 	"meals.rcp.error.portions":                 true,
 	"meals.rcp.error.portions.empty":           true,
 	"meals.sugg.unchecked":                     true, // "Prüft Hejmo nicht:" is no imperative: Hejmo is the subject (ticket 281)
+	// The religious holidays are for the whole household: "eurer Religion", "Welche Religionen feiert ihr?" (ticket 339).
+	"hub.religious_holidays.hint": true, "rh.lead": true, "rh.legal.region": true, "rh.choice.legend": true, "rh.rel.christian.hint": true,
+	"rh.rel.hindu.hint": true, "rh.err.hindu": true, "rh.note.hindu": true, "rh.moved.hindu": true, "rh.source.panchang": true, "rh.orthodox.legend": true,
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

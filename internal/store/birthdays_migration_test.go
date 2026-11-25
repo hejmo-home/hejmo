@@ -66,7 +66,7 @@ func TestBirthdaysMigrationWritesTheCalendarForExistingContacts(t *testing.T) {
 	}
 	// The migration makes the calendar; the events are written by the box at
 	// its next start (an SQL migration cannot make the UUIDv5 ids).
-	if err := db.apply(after); err != nil { // the sync reads the columns of later migrations (name days, ticket 318)
+	if err := db.apply(after); err != nil { // the sync reads the columns of later migrations (name days, ticket 318; religious holidays, ticket 339)
 		t.Fatal(err)
 	}
 	if err := db.SyncAllBirthdays(); err != nil {

@@ -41,6 +41,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/passkey/passkeytest"
 	"github.com/hejmo-home/hejmo/internal/recipe"
+	rh "github.com/hejmo-home/hejmo/internal/religiousholiday"
 	"github.com/hejmo-home/hejmo/internal/reward"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/streak"
@@ -360,6 +361,10 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	f.rewards = f.addRewards(t)
 	f.addRequests(t)
 	f.addBadges(t)
+	// Religious holidays (ticket 339): all nine religions on, so the page lists every kind of row and the calendar has the festivals.
+	if _, err := db.SaveReligiousHolidays(h, store.ReligiousInput{On: true, Religions: rh.Religions(), Islamic: rh.UmmAlQura, Orthodox: rh.Julian}, "Religiöse Feiertage", "de"); err != nil {
+		t.Fatal(err)
+	}
 	if r := f.post("/caldav/tokens", url.Values{"name": {"iPhone von Friedrich mit langem Gerätenamen"}}); r.status != http.StatusOK {
 		t.Fatalf("CalDAV token = %d\n%s", r.status, r.body)
 	}
@@ -518,11 +523,15 @@ func pageShape(path string) string {
 	if libraryNotArticle[p] {
 		return p
 	}
+	p = shippedStarterRe.ReplaceAllString(p, "$1/{starter}$2")
 	return shippedArticleRe.ReplaceAllString(p, "$1/{article}")
 }
 
 // shippedArticleRe is the page of an article Hejmo ships: 248 pages of one kind, rendered once (ticket 164).
 var shippedArticleRe = regexp.MustCompile(`^(/settings/lists/library)/(?:[a-z0-9]+-)*[a-z0-9]+$`)
+
+// shippedStarterRe is the page of a starter recipe Hejmo ships (about 100 of one kind) and its cook view.
+var shippedStarterRe = regexp.MustCompile(`^(/meals/recipes)/starter-[a-z0-9-]+(/cook)?$`)
 
 // libraryNotArticle are the paths under the library that the shape above would take for an article.
 var libraryNotArticle = map[string]bool{"/settings/lists/library/new": true, "/settings/lists/library/suggest": true}
@@ -705,6 +714,7 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	tablet := pairedPersonalDeviceAs(t, f.box, f.people["Anna-Lena"], "Tablet von Anna-Lena", uaIPad)
 	add(siteOf("child tablet", f.box, tablet.client), "/numbers") // ... and the numbers as text on a tablet
 	add(parent, "/contacts/for-children")
+	pages = append(pages, religiousPages(t, f, parent, add)...)
 	add(parent, "/contacts/birthdays")                      // the Birthdays calendar page with name days off (ticket 318)
 	add(parent, "/lists/"+f.lists[0]+"?qty="+f.longVariety) // the editor with the Sorte row and the long variety as its pill
 	// The display: the family view and the personal views of two people.
@@ -1497,6 +1507,23 @@ func TestTheFormAndAShippedArticleAreDifferentPages(t *testing.T) {
 	}
 }
 
+// The starter recipes Hejmo ships are pages of one kind, like the shipped
+// articles: rendering each of about 100 of them, its cook view too, in two
+// languages at five widths took more than the 15 minutes of the check on CI.
+func TestShippedStarterRecipesAreOneKindOfPage(t *testing.T) {
+	t.Parallel()
+	a, cook := pageShape("/meals/recipes/starter-haehnchen-nuggets"), pageShape("/meals/recipes/starter-haehnchen-nuggets/cook")
+	if a == cook {
+		t.Errorf("a recipe and its cook view share the shape %q", a)
+	}
+	if pageShape("/meals/recipes/starter-wraps-mit-avocado-und-feta") != a || pageShape("/meals/recipes/starter-wraps-mit-avocado-und-feta/cook") != cook {
+		t.Error("two starter recipes are two pages of one kind")
+	}
+	if pageShape("/meals/recipes/new") == a {
+		t.Error("the new-recipe form is no starter recipe")
+	}
+}
+
 // A name wider than the line breaks inside the word at the line's edge, in
 // every heading, whatever the heading's layout (#175): headings that are grid
 // items (the wizard's) or flex containers (the personal view's, the child's
@@ -1926,6 +1953,49 @@ func contactPhotoPages(t *testing.T, f *layoutFixture) []layoutPage {
 		pages = append(pages, layoutPage{site: site, path: c.path + c.label, html: html})
 	}
 	return pages
+}
+
+// religiousPages returns the pages of ticket 339 that the crawl does not reach: the weeks of the Mawlid (a long name
+// with the sighting note), of Rosh Hashanah (the eve) and of the Opferfest (four days), all before the fixture's meal plan, the page of a festival of each kind, and the form
+// with its error and its success line, which only a POST reaches.
+func religiousPages(t *testing.T, f *layoutFixture, parent layoutSite, add func(layoutSite, string)) []layoutPage {
+	t.Helper()
+	var pages []layoutPage
+	href := regexp.MustCompile(`href="(/calendar/events/[^"]+)">([^<]+)</a>`)
+	seen := map[string]bool{}
+	for _, week := range []string{"/calendar?week=2026-08-24", "/calendar?week=2026-09-07", "/calendar?week=2026-05-25"} {
+		add(parent, week)
+		for _, m := range href.FindAllStringSubmatch(f.do(http.MethodGet, week, nil, nil).body, -1) {
+			if title := m[2]; !seen[title] && (strings.HasPrefix(title, "Geburtstag") || strings.HasPrefix(title, "Rosch") || strings.HasPrefix(title, "Opferfest")) {
+				seen[title] = true
+				add(parent, strings.ReplaceAll(m[1], "&amp;", "&"))
+			}
+		}
+	}
+	add(parent, "/calendar/search?q=Propheten")
+	for _, lang := range []string{"de", "en"} {
+		hdr := map[string]string{"Accept-Language": lang}
+		refused := f.do(http.MethodPost, "/settings/religious-holidays", url.Values{"religious_holidays": {"on"}}, hdr)
+		if refused.status != http.StatusUnprocessableEntity {
+			t.Fatalf("religious holidays, nothing chosen = %d\n%s", refused.status, refused.body)
+		}
+		all := url.Values{"religious_holidays": {"on"}, "islamic_calendar": {"diyanet"}, "orthodox_calendar": {"revised_julian"}}
+		for _, r := range rh.Religions() {
+			all.Add("religions", string(r))
+		}
+		saved := f.do(http.MethodPost, "/settings/religious-holidays", all, hdr)
+		if saved.status != http.StatusOK {
+			t.Fatalf("religious holidays, saved = %d\n%s", saved.status, saved.body)
+		}
+		pages = append(pages,
+			layoutPage{site: parent, path: "/settings/religious-holidays#refused", html: map[string]string{lang: refused.body}},
+			layoutPage{site: parent, path: "/settings/religious-holidays#saved", html: map[string]string{lang: saved.body}})
+	}
+	// Back to the state the fixture started in (Umm al-Qura, old Orthodox calendar), as the other pages expect it.
+	if _, err := f.db.SaveReligiousHolidays(f.householdID, store.ReligiousInput{On: true, Religions: rh.Religions(), Islamic: rh.UmmAlQura, Orthodox: rh.Julian}, "Religiöse Feiertage", "de"); err != nil {
+		t.Fatal(err)
+	}
+	return mergeCardPages(pages)
 }
 
 // mealShopPages returns the tick lists of ticket 283 that the crawl does not reach: one meal and the week, and

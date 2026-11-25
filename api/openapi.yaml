@@ -2584,6 +2584,104 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /meal-shopping:
+    get:
+      operationId: previewMealShopping
+      summary: Look first, then add - what putting a meal or a week of recipes on a list would do (scope lists:write, parents only)
+      description: |
+        The tick list of the web interface as data (ticket 283). Give `meal`
+        (`<day>.<mealtime>`, for example `2026-11-17.dinner`) for one meal, or
+        `week` (a day of the week, or an ISO week such as `2026-W47`) for the
+        recipe meals of that week from today on. Quantities are scaled to the
+        planned portions (a meal that is on a list already offers only the
+        missing portions). Kitchen measures (tbsp, tsp, pinch, ...) go on the
+        list without a quantity; containers keep their quantity and add up only
+        within the same unit. `list_id` names a list with suggestions; without it
+        the list last used for meals is taken, else the first one. Every row says
+        what adding does (`outcome`) through `list.PlanAdd`, so nothing lands
+        twice. Pantry articles are in `group: pantry` and `tick: false`.
+      parameters:
+        - { name: meal, in: query, schema: { type: string, example: "2026-11-17.dinner" } }
+        - { name: week, in: query, schema: { type: string, example: "2026-W47" } }
+        - { name: list_id, in: query, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The preview with its counts
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MealShopping" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    post:
+      operationId: addMealShopping
+      summary: Put the ingredients of a meal or a week on a list (scope lists:write, parents only)
+      description: |
+        Adds the ticked rows through `list.PlanAdd` in one step and records, per
+        list entry and meal, how much each meal contributed (the `sources` of the
+        entries; basis for taking quantities back). A meal that is on a list
+        already is never added twice: only missing portions are. `versions` are
+        the recipe versions from the preview: if a recipe changed since, nothing is
+        added and the answer is 409 with the ids in `changed`. Without `versions` this check is skipped
+        (send them). If the meal got on a list since the preview (a double send), the
+        answer is 409 too and nothing is added. Without `picks` the
+        rows the preview ticks are added; `meals` (week only) leaves out whole
+        meals. Undo the run with `POST /meal-shopping/runs/{id}/undo`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [list_id]
+              properties:
+                meal: { type: string, example: "2026-11-17.dinner" }
+                week: { type: string, example: "2026-W47" }
+                list_id: { type: string, format: uuid }
+                meals: { type: array, items: { type: string }, description: "Week only: the meal keys to take; all by default" }
+                picks: { type: array, items: { type: string }, description: "The row keys to add; the ticked rows of the preview by default" }
+                versions: { type: object, additionalProperties: { type: string }, description: "Recipe id to the version the preview gave" }
+      responses:
+        "201":
+          description: What was added
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MealShoppingRun" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409":
+          description: A recipe changed (`changed` names it) or a meal is not planned as a recipe any more. Nothing was added.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MealShoppingConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /meal-shopping/runs/{id}/undo:
+    post:
+      operationId: undoMealShopping
+      summary: Take back exactly that run (scope lists:write, parents only)
+      description: |
+        Deletes the open entries the run made, subtracts the quantities it
+        added, empties entries that took a quantity from it, and forgets its
+        contributions, so the meals count as not on a list. Entries that were
+        ticked off meanwhile stay and are named in `ticked`. A run can be taken
+        back once (409 afterwards).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: What was taken back
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MealShoppingUndo" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: The run was taken back already
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /meal-templates:
     get:
       operationId: listMealTemplates
@@ -6053,7 +6151,8 @@ components:
         experimental: { type: boolean, description: "Always true" }
     UnitKey:
       type: string
-      enum: [piece, dozen, pack, bunch, g, kg, ml, l, oz, lb, floz_us, floz_uk, cup_us, pint_us, pint_uk, quart_us, gallon_us, gallon_uk]
+      description: "The household's units, and the containers a recipe's ingredients bring to a list (can, packet, tub, jar, ...; ticket 283). Kitchen measures never reach a list."
+      enum: [piece, dozen, pack, bunch, g, kg, ml, l, oz, lb, floz_us, floz_uk, cup_us, pint_us, pint_uk, quart_us, gallon_us, gallon_uk, can, packet, tub, jar, bottle, stick, clove, slice, cube, sprig, stalk, ball, leaf, punnet, pot]
     ListEntry:
       type: object
       required: [id, text, done, article_id, variety, symbol, picture]
@@ -6067,6 +6166,10 @@ components:
         picture: { type: string, nullable: true, description: "Path of the own article's picture, `GET /articles/{id}/picture`. Null without one." }
         amount: { type: number, description: "How much, as shown (rounded: g and ml whole, else at most two decimals); missing without a quantity" }
         unit: { $ref: "#/components/schemas/UnitKey" }
+        sources:
+          type: array
+          description: "The meals that brought quantities to this entry (ticket 283); absent for none"
+          items: { $ref: "#/components/schemas/MealShoppingSource" }
     ListEntryResult:
       allOf:
         - { $ref: "#/components/schemas/ListEntry" }
@@ -6749,6 +6852,112 @@ components:
             template, or a template's meal that was changed for this week.
         template_id: { type: string, format: uuid, description: "The template that fills this meal (source template or adjusted)" }
         template_dish: { type: string, description: "What the template fills in (source template or adjusted)" }
+    MealShoppingSource:
+      type: object
+      description: What one meal brought to a row or to a list entry
+      required: [date, mealtime, recipe_id, recipe_name, portions]
+      properties:
+        date: { type: string, format: date }
+        mealtime: { $ref: "#/components/schemas/Mealtime" }
+        recipe_id: { type: string }
+        recipe_name: { type: string }
+        portions: { type: integer, description: "The portions this meal put on the list" }
+        amount: { type: number, description: "How much it brought; missing for a kitchen measure or free text" }
+        unit: { $ref: "#/components/schemas/UnitKey" }
+    MealShopping:
+      type: object
+      required: [meal, week, list_id, list_name, meals, versions, rows, same, counts]
+      properties:
+        meal: { type: string, nullable: true }
+        week: { type: string, nullable: true, format: date, description: "The Monday of the week" }
+        list_id: { type: string, nullable: true, format: uuid }
+        list_name: { type: string, nullable: true }
+        meals:
+          type: array
+          items:
+            type: object
+            required: [key, date, mealtime, recipe_id, recipe_name, portions, on_list, to_add, status, selected]
+            properties:
+              key: { type: string }
+              date: { type: string, format: date }
+              mealtime: { $ref: "#/components/schemas/Mealtime" }
+              recipe_id: { type: string }
+              recipe_name: { type: string }
+              portions: { type: integer, description: "Planned portions" }
+              on_list: { type: integer, description: "Portions on a list already" }
+              to_add: { type: integer, description: "Portions this run would put on the list" }
+              status: { type: string, enum: [open, done, empty] }
+              selected: { type: boolean }
+        versions: { type: object, additionalProperties: { type: string }, description: "Recipe id to its version: send them back when adding" }
+        rows:
+          type: array
+          items:
+            type: object
+            required: [key, name, article_id, variety, group, outcome, tick, sources]
+            properties:
+              key: { type: string }
+              name: { type: string }
+              article_id: { type: string, nullable: true }
+              variety: { type: string, nullable: true }
+              amount: { type: number, description: "Missing without a quantity (kitchen measures, free text)" }
+              unit: { $ref: "#/components/schemas/UnitKey" }
+              group: { type: string, enum: [new, on_list, pantry] }
+              outcome: { type: string, enum: [new, added, filled, separate] }
+              tick: { type: boolean }
+              kitchen: { type: string, description: "What the recipe says in kitchen measures, for the sentence" }
+              sources:
+                type: array
+                items: { $ref: "#/components/schemas/MealShoppingSource" }
+        same: { type: array, items: { type: string }, description: "Entries that stay exactly as they are" }
+        counts:
+          type: object
+          required: [new, on_list, same, pantry, ticked]
+          properties:
+            new: { type: integer }
+            on_list: { type: integer }
+            same: { type: integer }
+            pantry: { type: integer }
+            ticked: { type: integer }
+    MealShoppingRun:
+      type: object
+      required: [run_id, list_id, list_name, added, left_out]
+      properties:
+        run_id: { type: string, format: uuid }
+        list_id: { type: string, format: uuid }
+        list_name: { type: string }
+        added:
+          type: array
+          items:
+            type: object
+            required: [entry_id, name, action]
+            properties:
+              entry_id: { type: string, format: uuid }
+              name: { type: string }
+              action: { type: string, enum: [new, added, filled] }
+              amount: { type: number, description: "How much the meals brought" }
+              unit: { $ref: "#/components/schemas/UnitKey" }
+        left_out: { type: array, items: { type: string }, description: "Pantry articles that were not put on the list" }
+    MealShoppingConflict:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+        changed: { type: array, items: { type: string }, description: "Ids of the recipes that changed" }
+    MealShoppingUndo:
+      type: object
+      required: [removed, reverted, ticked]
+      properties:
+        removed: { type: array, items: { type: string } }
+        reverted:
+          type: array
+          items:
+            type: object
+            required: [name]
+            properties:
+              name: { type: string }
+              amount: { type: number }
+              unit: { $ref: "#/components/schemas/UnitKey" }
+        ticked: { type: array, items: { type: string }, description: "Entries that were ticked off meanwhile and stay" }
     MealTemplateEntry:
       type: object
       required: [weekday, mealtime, text]

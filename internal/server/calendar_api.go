@@ -455,3 +455,8 @@ func (s *server) apiCreateGroup(w http.ResponseWriter, r *http.Request, p princi
 	}
 	writeJSON(w, http.StatusCreated, groupJSON{g.ID, g.Name, nonNil(g.Members)})
 }
+
+// clock is the time of day without seconds in the household's format.
+func (p principal) clock(t time.Time) string {
+	return datefmt.Clock(p.household.TimeFormat, t.In(p.location()))
+}

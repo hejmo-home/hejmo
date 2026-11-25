@@ -11,6 +11,7 @@
     {{end}}
     {{if .Address}}<dt>{{t "contact.fact.address"}}</dt><dd><address class="adr">{{range .Address}}<span>{{.}}</span>{{end}}</address></dd>{{end}}
     {{if .Birthday}}<dt>{{t "contact.fact.birthday"}}</dt><dd>{{.Birthday}}</dd>{{end}}
+    {{if .NameDay}}<dt>{{t "contact.fact.nameday"}}</dt><dd>{{.NameDay}}</dd>{{end}}
     {{if .Groups}}<dt>{{t "contact.fact.groups"}}</dt><dd class="grps">{{range .Groups}}<span class="tag grp">{{.}}</span>{{end}}</dd>{{end}}
     <dt>{{t "contact.fact.kids"}}</dt><dd><span class="kid-fact">{{template "kidIcon" 18}}{{.KidsFact}}</span></dd>
     {{if .Note}}<dt>{{t "contact.fact.note"}}</dt><dd class="note">{{.Note}}</dd>{{end}}

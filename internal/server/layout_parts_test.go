@@ -1,51 +1,90 @@
 package server_test
 
 import (
-	"slices"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 )
 
-// posixCksum is the checksum cksum(1) prints, which ci/test-shard.sh uses to
-// put a test in shard 1 or 2.
-func posixCksum(b []byte) uint32 {
-	var crc uint32
-	feed := func(c byte) {
-		crc ^= uint32(c) << 24
-		for range 8 {
-			if crc&0x80000000 != 0 {
-				crc = crc<<1 ^ 0x04C11DB7
-			} else {
-				crc <<= 1
+// The rendered layout check is split in two tests, one per CI shard with Chrome
+// (ticket 347). A page lands in a part by a hash of its name, never by timing or
+// map order, so the same page is always checked by the same shard.
+
+func TestLayoutPartOfAPageIsStable(t *testing.T) {
+	t.Parallel()
+	// Worked values of FNV-1a (32 bit) of "site/path", modulo 2, computed outside the code.
+	for key, want := range map[string]int{
+		"parent/lists":         1,
+		"display/display":      0,
+		"child tablet/numbers": 0,
+		"household box under its name/setup/passkey": 1,
+	} {
+		for range 3 {
+			if got := layoutPartOfKey(key); got != want {
+				t.Errorf("layoutPartOfKey(%q) = %d, want %d", key, got, want)
 			}
 		}
-	}
-	for _, c := range b {
-		feed(c)
-	}
-	for n := len(b); n > 0; n >>= 8 {
-		feed(byte(n))
-	}
-	return ^crc
-}
-
-func TestLayoutPartsRunInDifferentShards(t *testing.T) {
-	t.Parallel()
-	if got := posixCksum([]byte("TestRenderedLayout")) % 2; got != 1 {
-		t.Fatalf("self-check of the cksum: TestRenderedLayout is in shard %d, CI put it in shard 2", got+1)
-	}
-	a := posixCksum([]byte("TestRenderedLayout")) % 2
-	b := posixCksum([]byte("TestRenderedLayoutPart2")) % 2
-	if a == b {
-		t.Errorf("TestRenderedLayout and TestRenderedLayoutPart2 are both in shard %d: one shard runs the whole layout check again; rename part 2", a+1)
 	}
 }
 
 func TestLayoutPartsCoverEveryPageOnce(t *testing.T) {
 	t.Parallel()
-	pages := []int{0, 1, 2, 3, 4, 5, 6}
-	got := append(layoutPart(pages, 0), layoutPart(pages, 1)...)
-	slices.Sort(got)
-	if !slices.Equal(got, pages) {
-		t.Errorf("the two parts = %v, want every page once", got)
+	f := newLayoutFixture(t)
+	pages := append(layoutPages(t, f), wizardPages(t)...)
+	seen := map[string]int{}
+	sizes := [layoutParts]int{}
+	for part := range layoutParts {
+		for _, p := range layoutPartPages(pages, part) {
+			seen[p.site.name+p.path]++
+			sizes[part]++
+		}
+	}
+	want := map[string]int{} // a page listed twice stays listed twice, in one part
+	for _, p := range pages {
+		want[p.site.name+p.path]++
+	}
+	for key, n := range want {
+		if seen[key] != n {
+			t.Errorf("%s: %d times in the parts, want %d: a page must be in exactly one part", key, seen[key], n)
+		}
+	}
+	for part, n := range sizes {
+		if n < len(pages)/4 {
+			t.Errorf("part %d has %d of %d pages: the hash does not spread them", part, n, len(pages))
+		}
+	}
+}
+
+func TestLayoutPartSummaryShowsSlowestCasesAndHeadroom(t *testing.T) {
+	t.Parallel()
+	took := []layoutTook{{"de/a", time.Second}, {"en/b", 5 * time.Second}, {"de/c", 3 * time.Second}}
+	got := layoutPartSummary(1, took, layoutBudget/2)
+	for _, want := range []string{fmt.Sprintf("layout part 2: 3 cases in %s of %s budget (50 %% headroom)", layoutBudget/2, layoutBudget), "slow case: en/b took 5s", "slow case: de/a took 1s"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("summary lacks %q:\n%s", want, got)
+		}
+	}
+	if strings.Index(got, "en/b") > strings.Index(got, "de/c") {
+		t.Errorf("slowest case not first:\n%s", got)
+	}
+	if took[0].name != "de/a" {
+		t.Error("the summary reordered the caller's slice")
+	}
+}
+
+func TestLayoutSummaryIsAppendedToTheJobSummaryFile(t *testing.T) {
+	t.Parallel()
+	path := filepath.Join(t.TempDir(), "summary.md")
+	for _, text := range []string{"one\n", "two\n"} {
+		if err := appendLayoutSummary(path, text); err != nil {
+			t.Fatal(err)
+		}
+	}
+	b, _ := os.ReadFile(path)
+	if want := "```text\none\n```\n```text\ntwo\n```\n"; string(b) != want {
+		t.Errorf("got %q, want %q", b, want)
 	}
 }

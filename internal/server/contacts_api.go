@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/hejmo-home/hejmo/internal/contact"
+	"github.com/hejmo-home/hejmo/internal/nameday"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -40,6 +41,31 @@ type contactJSON struct {
 	CreatedAt   string                `json:"created_at"`
 	UpdatedBy   *string               `json:"updated_by"`
 	UpdatedAt   string                `json:"updated_at"`
+	// NameDay is the choice of the name day and what it makes of the contact while name days are on (ticket 318).
+	NameDay contactNameDay `json:"name_day"`
+}
+
+// contactNameDay is what a contact says about its name day: the mode (auto, entry, name, none), the entry id or the
+// other name that goes with it, and, while the household has name days on and the contact has one, the next day.
+type contactNameDay struct {
+	Mode     string               `json:"mode"`
+	Entry    *string              `json:"entry"`
+	Name     *string              `json:"name"`
+	Resolved *contactNameDayFound `json:"resolved"`
+}
+
+type contactNameDayFound struct {
+	Date  string `json:"date"`  // the next day it falls on, YYYY-MM-DD
+	Name  string `json:"name"`  // the name of the name day, as the list writes it
+	Saint string `json:"saint"` // the saint or feast
+	Entry string `json:"entry"` // the id of the entry in the list
+}
+
+// contactNameDayIn is the name day of a contact written by the API; an omitted name_day keeps what the contact has.
+type contactNameDayIn struct {
+	Mode  string  `json:"mode"`
+	Entry *string `json:"entry"`
+	Name  *string `json:"name"`
 }
 
 type contactPhotoJSON struct {
@@ -107,6 +133,12 @@ func (s *server) contactToJSON(p principal, c store.Contact) contactJSON {
 		ShowInBirthdays: !c.HideBirthday, ForChildren: c.ForChildren, Note: c.Note, Groups: append([]string{}, c.GroupIDs...), Relations: relationsJSON(c.Relations), CreatedBy: strPtr(c.CreatedBy), CreatedAt: rfc3339(c.CreatedAt, loc),
 		UpdatedBy: strPtr(c.UpdatedBy), UpdatedAt: rfc3339(c.UpdatedAt, loc),
 	}
+	out.NameDay = contactNameDay{Mode: c.NameDayMode, Entry: strPtr(c.NameDayEntry), Name: strPtr(c.NameDayName)}
+	if cal, ok := p.household.NameDayCalendar(); ok {
+		if info := ndOf(c, cal, s.householdNow(p.household)); info.Res.Found {
+			out.NameDay.Resolved = &contactNameDayFound{Date: info.Occ.Date.Format("2006-01-02"), Name: info.Res.Entry.Name, Saint: info.Res.Entry.Saint, Entry: info.Res.Entry.ID}
+		}
+	}
 	if c.HasPhoto {
 		out.Photo = &contactPhotoJSON{Origin: c.PhotoOrigin, By: strPtr(c.PhotoBy), Device: c.PhotoDevice, At: rfc3339(c.PhotoAt, loc)}
 	}
@@ -162,6 +194,8 @@ type contactIn struct {
 	Groups      []string `json:"groups"`
 	// Relations replace the contact's relations; a person's contact has none (422).
 	Relations []contactRelationJSON `json:"relations"`
+	// NameDay chooses the name day; omitted it stays as it is (ticket 318).
+	NameDay *contactNameDayIn `json:"name_day"`
 }
 
 func jsonLines(in []contactLineJSON, number bool) ([]contact.Line, string) {
@@ -188,6 +222,15 @@ func (in contactIn) draft(isPerson bool) (ctDraft, string) {
 	}
 	if d.Emails, bad = jsonLines(in.Emails, false); bad != "" {
 		return d, "emails." + bad
+	}
+	if n := in.NameDay; n != nil {
+		d.NameDayMode = n.Mode
+		if n.Entry != nil {
+			d.NameDayEntry = *n.Entry
+		}
+		if n.Name != nil {
+			d.NameDayName = *n.Name
+		}
 	}
 	if b := in.Birthday; b != nil {
 		d.Day, d.Month = b.Day, b.Month
@@ -231,7 +274,17 @@ func (s *server) saveContactAPI(w http.ResponseWriter, r *http.Request, p princi
 		writeError(w, http.StatusUnprocessableEntity, bad)
 		return
 	}
-	if problems := checkContact(d, s.householdNow(p.household), nameTakenIn(all, id), func(string) bool { return false }); len(problems) > 0 {
+	problems := checkContact(d, s.householdNow(p.household), nameTakenIn(all, id), func(string) bool { return false })
+	if len(problems) == 0 {
+		switch d.NameDayMode {
+		case "", nameday.ModeAuto, nameday.ModeNone, nameday.ModeEntry, nameday.ModeName:
+			problems = ctEnv{s: s, lang: s.langOf(r), p: p}.nameDayProblems(d)
+		default:
+			writeFieldError(w, http.StatusUnprocessableEntity, "name_day", "name_day: unknown mode "+d.NameDayMode)
+			return
+		}
+	}
+	if len(problems) > 0 {
 		writeFieldError(w, http.StatusUnprocessableEntity, problems[0].Field, problems[0].String())
 		return
 	}

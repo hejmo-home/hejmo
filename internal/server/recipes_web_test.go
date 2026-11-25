@@ -305,7 +305,7 @@ func TestParentsSeeChangeDeleteAndWhoWroteIt(t *testing.T) {
 	rb := newRecipeBox(t)
 	r := rb.curry(t)
 	page := rb.b.do(http.MethodGet, "/meals/recipes/"+r.ID, nil, enHeader).body
-	rcpHas(t, "parent", page, `<a class="button" href="/meals/recipes/`+r.ID+`/edit">`, "Change recipe", `<details class="danger">`, "Delete recipe",
+	rcpHas(t, "parent", page, `<a class="button secondary" href="/meals/recipes/`+r.ID+`/edit">`, "Change recipe", `<details class="danger">`, "Delete recipe",
 		"“Erdnuss-Curry mit Süßkartoffeln” disappears with its ingredients, steps and tips for the whole family. This cannot be undone.",
 		`action="/meals/recipes/`+r.ID+`/delete"`, "Yes, delete “Erdnuss-Curry mit Süßkartoffeln”", "No, change nothing", `class="hint rcp-who"`, "Added by")
 }

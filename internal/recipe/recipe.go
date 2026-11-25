@@ -455,3 +455,29 @@ func SortByName(list []Recipe) {
 // FormatAmountNumber rounds a quantity to the two decimals pages show, as the
 // number a JSON client reads.
 func FormatAmountNumber(v float64) float64 { return math.Floor(v*100+0.5+1e-9) / 100 }
+
+// ScaleAmount is a quantity for another number of portions (ADR 0021): the
+// quantity of the base portions times portions over base, rounded to one
+// decimal (2.25 is 2.3, 4.5 stays 4.5, never up to a whole number) and never
+// down to nothing. For the base portions themselves the quantity stays as stored.
+func ScaleAmount(amount float64, base, portions int) float64 {
+	if portions == base || base < 1 || amount <= 0 {
+		return amount
+	}
+	v := math.Floor(amount*float64(portions)/float64(base)*10+0.5+1e-9) / 10
+	return max(v, 0.1)
+}
+
+// ParsePortions reads portions as a person types them: a whole number from 1
+// to MaxPortions, no sign and no decimals; spaces around it are ignored.
+func ParsePortions(s string) (int, bool) {
+	s = strings.TrimSpace(s)
+	if s == "" || len(s) > 2 {
+		return 0, false
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil || n < 1 || n > MaxPortions || s[0] == '+' {
+		return 0, false
+	}
+	return n, true
+}

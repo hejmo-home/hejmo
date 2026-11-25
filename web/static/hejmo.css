@@ -62,6 +62,10 @@
   --fs-title-phone: 28px; /* h1 under 600 px */
   --fs-emergency-number: 28px; --fw-emergency-number: 700; /* phone numbers read across the room (ticket 303) */
   --fs-secret: 19px;      /* a secret shown once, monospace */
+  --fs-cook-step: 28px; --fw-cook-step: 500;                 /* the step of the cooking view, read at arm's length (ticket 286) */
+  --fs-cook-step-phone: 24px;
+  --fs-cook-ingredient: 22px; --fw-cook-ingredient: 500; /* an ingredient to tick */
+  --fs-cook-ingredient-phone: 20px;
   /* shapes and spacing */
   --radius-tile: 22px;
   --radius-chip: 18px;
@@ -4462,6 +4466,122 @@ li.ing .place-list.art-sugg li + li { border-top: 1px solid var(--border); }
   .rcp-steps li::before { width: 30px; height: 30px; }
 }
 
+/* ===== ticket 286: cooking view (its four type tokens are in :root) ===== */
+/* Recipe page: "Jetzt kochen" is the one primary, "Rezept ändern" secondary beside it. */
+.rcp-act { display: flex; flex-wrap: wrap; gap: 10px; }
+/* The cooking page has its own frame: no navigation, no language or theme menu. */
+body.web.cook-page { padding: 0; }
+.cook { display: grid; gap: var(--gap); align-content: start; min-height: 100vh; box-sizing: border-box; padding: var(--gap) var(--margin) 0; }
+.cook-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; }
+.cook-exit { display: inline-flex; align-items: center; gap: 8px; }
+.cook-exit .icon { stroke: currentColor; }
+.cook-wake { display: inline-flex; align-items: center; gap: 10px; min-height: var(--touch-target); margin-left: auto; color: var(--text); font-size: var(--fs-label-large); cursor: pointer; }
+.cook-wake .state { font-weight: 700; min-width: 2.4em; }
+.cook-wake .switch { margin-left: 0; }
+.cook-title { margin: 0; font-size: var(--fs-title-phone); line-height: 1.2; overflow-wrap: break-word; hyphens: manual; }
+.cook .notice { max-width: none; display: flex; gap: 8px; align-items: flex-start; margin: 0; }
+.cook .notice .icon { flex: none; stroke: currentColor; margin-top: 2px; }
+/* The form reaches into the page margin, so the bottom bar can run edge to edge inside it. */
+form.cook-form { display: grid; gap: var(--gap); margin: 0 calc(-1 * var(--margin)); padding: 0 var(--margin); }
+.cook-cols { display: grid; gap: var(--gap); align-items: start; }
+.cook-card { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; min-width: 0; display: grid; gap: 12px; align-content: start; }
+[data-theme="bw"] .cook-card { border: 2px solid var(--text); }
+.cook-card > h2 { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; font-size: var(--fs-key-figure); }
+.cook-card > h2 .cnt { font-size: var(--fs-label-large); font-weight: 700; color: var(--text-secondary); font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 6px; }
+.cook-card > h2 .cnt .icon { stroke: var(--accent); stroke-width: 2.4; }
+.cook-card > .hint { margin: -6px 0 0; }
+/* Portions: the #165 stepper; + and - are submit buttons, so it works without script. */
+.cook-portions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 8px 0 12px; border-bottom: 1px solid var(--border); }
+.cook-portions > label { font-size: var(--fs-label-large); color: var(--text); font-weight: 700; }
+.cook-portions .stepper input { width: 3.2em; }
+.cook-portions .hint { flex-basis: 100%; margin: 0; }
+.cook-portions .ferr { flex-basis: 100%; }
+.cook-portions.invalid .stepper input { border: 2px solid var(--error-text); }
+[data-theme="bw"] .cook-portions { border-bottom-color: var(--text); }
+/* Ingredients to tick: the whole row is the target; ticked rows stay where they are. */
+ul.cook-ings { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.cook-tick { display: grid; grid-template-columns: var(--touch-target) 36px minmax(0, 1fr); gap: 4px 12px; align-items: center; min-height: 64px; padding: 8px 12px 8px 8px; box-sizing: border-box; border: 1.5px solid var(--border); border-radius: var(--radius-card); background: var(--surface); color: var(--text); font-size: var(--fs-cook-ingredient); font-weight: var(--fw-cook-ingredient); line-height: 1.25; cursor: pointer; }
+[data-theme="bw"] .cook-tick { border: 2px solid var(--text); }
+.cook-tick input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.cook-tick .box { width: var(--touch-target); height: var(--touch-target); box-sizing: border-box; border: 3px solid var(--text); border-radius: var(--radius-field); display: grid; place-items: center; }
+.cook-tick .box .icon { display: none; stroke: var(--accent-text); stroke-width: 3.2; }
+.cook-tick .e { width: 36px; font-size: 28px; line-height: 1; text-align: center; }
+.cook-tick .e .icon { stroke: var(--text-secondary); }
+.cook-tick .e img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-field); }
+.cook-tick .t { min-width: 0; overflow-wrap: break-word; hyphens: manual; }
+.cook-tick .q { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cook-tick .variety { font-weight: 400; }
+.cook-tick .allergen-warn .who { white-space: normal; }
+.cook-tick .allergen-warn, .cook-tick .tag.unchk { grid-column: 2 / -1; justify-self: start; font-size: var(--fs-label); }
+.cook-tick .tag.unchk { border: 1.5px dashed var(--notice-text); color: var(--notice-text); background: var(--notice-bg); font-weight: 600; height: auto; }
+[data-theme="bw"] .cook-tick .tag.unchk { background: none; color: var(--text); border: 2px dashed var(--text); }
+.cook-tick:has(input:focus-visible) { outline: 3px solid var(--accent); outline-offset: 2px; }
+.cook-tick:has(input:checked) { background: transparent; border-style: dashed; }
+.cook-tick:has(input:checked) .box { background: var(--accent); border-color: var(--accent); }
+.cook-tick:has(input:checked) .box .icon { display: block; }
+.cook-tick:has(input:checked) .t { text-decoration: line-through; text-decoration-thickness: 2px; color: var(--text-secondary); font-weight: 400; }
+[data-theme="bw"] .cook-tick:has(input:checked) .box { background: var(--text); border-color: var(--text); }
+[data-theme="bw"] .cook-tick:has(input:checked) .box .icon { stroke: var(--surface); }
+/* The current step, large; the numbers above jump to any step. */
+.cook-dots { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.cook-dots button { width: var(--touch-target); height: var(--touch-target); padding: 0; border-radius: 50%; border: 2px solid var(--accent); background: var(--surface); color: var(--accent); font: inherit; font-weight: 700; font-variant-numeric: tabular-nums; display: grid; place-items: center; cursor: pointer; }
+.cook-dots button .icon { stroke: currentColor; stroke-width: 2.6; }
+.cook-dots button[aria-current="step"] { background: var(--accent); color: var(--accent-text); }
+.cook-dots button.done { border-color: var(--border); color: var(--text-secondary); }
+[data-theme="bw"] .cook-dots button { border-color: var(--text); color: var(--text); }
+[data-theme="bw"] .cook-dots button[aria-current="step"] { background: var(--text); color: var(--surface); border-width: 3px; }
+[data-theme="bw"] .cook-dots button.done { border-style: dashed; }
+.cook-text { margin: 0; font-size: var(--fs-cook-step); font-weight: var(--fw-cook-step); line-height: 1.45; white-space: pre-line; max-width: 34em; overflow-wrap: break-word; hyphens: manual; }
+.cook-next { margin: 0; padding-top: 12px; border-top: 1px solid var(--border); color: var(--text-secondary); line-height: 1.45; overflow-wrap: break-word; }
+.cook-next b { color: var(--text); }
+[data-theme="bw"] .cook-next { border-top-color: var(--text); color: var(--text); }
+.cook-done-line { display: flex; gap: 8px; align-items: center; margin: 0; font-size: var(--fs-event-title); font-weight: 700; }
+.cook-done-line .icon { stroke: var(--accent); stroke-width: 2.4; flex: none; }
+.cook .empty { max-width: none; margin: 0; }
+/* Phones: one part at a time, chosen with two tabs that say where you are. */
+.cook-tabs { display: none; }
+.cook-tabs button { flex: 1 1 0; min-height: var(--touch-target); padding: 8px 10px; margin-left: -1px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-size: var(--fs-label-large); line-height: 1.2; cursor: pointer; }
+.cook-tabs button:first-child { border-radius: var(--radius-field) 0 0 var(--radius-field); margin-left: 0; }
+.cook-tabs button:last-child { border-radius: 0 var(--radius-field) var(--radius-field) 0; }
+.cook-tabs button[aria-current="true"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 700; position: relative; z-index: 1; }
+.cook-tabs button small { display: block; font-size: var(--fs-label); font-weight: 400; }
+[data-theme="bw"] .cook-tabs button { border-color: var(--text); }
+[data-theme="bw"] .cook-tabs button[aria-current="true"] { background: var(--text); color: var(--surface); }
+/* The step buttons stay at the bottom of the screen. */
+.cook-nav { position: sticky; bottom: 0; z-index: 2; display: flex; gap: 10px; justify-content: flex-end; margin: 0 calc(-1 * var(--margin)); padding: 12px var(--margin) calc(12px + env(safe-area-inset-bottom)); background: var(--background); border-top: 1.5px solid var(--border); }
+[data-theme="bw"] .cook-nav { border-top: 2px solid var(--text); }
+.cook-nav .button { min-height: 56px; font-size: var(--fs-person-name); display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.cook-nav .button .icon { stroke: currentColor; stroke-width: 2.2; flex: none; }
+.cook-nav .back { margin-right: auto; }
+.cook-nav .for-ings, .cook-nav .narrow-only { display: none; }
+@media (min-width: 700px) {
+  .cook-cols { grid-template-columns: minmax(300px, 5fr) minmax(0, 6fr); }
+}
+@media (min-width: 700px) and (max-width: 899px) {
+  .cook-tick { grid-template-columns: var(--touch-target) 30px minmax(0, 1fr); gap: 4px 10px; padding-right: 10px; }
+  .cook-tick .e { width: 30px; font-size: 24px; }
+  .cook-card { padding: 14px; }
+}
+@media (max-width: 699px) {
+  .cook { padding: 10px var(--gap) 0; gap: 12px; }
+  form.cook-form { margin: 0 calc(-1 * var(--gap)); padding: 0 var(--gap); }
+  .cook-nav { margin: 0 calc(-1 * var(--gap)); padding-left: var(--gap); padding-right: var(--gap); }
+  .cook-title { font-size: 24px; }
+  .cook-tabs { display: flex; }
+  .cook[data-view="ings"] .cook-step, .cook[data-view="steps"] .cook-ings-part { display: none; }
+  .cook[data-view="ings"] .cook-nav .for-steps { display: none; }
+  .cook[data-view="ings"] .cook-nav .for-ings { display: inline-flex; flex: 1; }
+  .cook-nav .narrow-only { display: inline-flex; }
+  .cook-nav .button { flex: 1 1 0; padding-left: 12px; padding-right: 12px; font-size: var(--fs-event-title); }
+  .cook-nav .back { flex: 0 1 auto; }
+  .cook-text { font-size: var(--fs-cook-step-phone); }
+  .cook-card { padding: 14px; }
+  .cook-tick { grid-template-columns: var(--touch-target) 30px minmax(0, 1fr); gap: 4px 10px; font-size: var(--fs-cook-ingredient-phone); }
+  .cook-tick .e { width: 30px; font-size: 24px; }
+  .cook-wake { font-size: var(--fs-label); gap: 8px; }
+  .cook-ings-part > h2 .cnt { display: none; }
+}
+@supports (hyphenate-limit-chars: 12 5 5) { .cook-title, .cook-text, .cook-tick .t, .cook-next { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }
 /* Recipe on the meal plan (ticket 281). A recipe entry is a framed box in
    place of the text field: symbol, name (link to the recipe with the entry's
    portions), "Rezept · category · time", portions stepper with its meaning in

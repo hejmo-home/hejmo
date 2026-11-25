@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -382,6 +383,57 @@ func TestMCPToolsWriteAndReadRecipesUnderTheMealsArea(t *testing.T) {
 	for _, n := range toolNames(t, read) {
 		if n == "get_recipe_warnings" {
 			t.Errorf("the meals area does not reach health data")
+		}
+	}
+}
+
+// Ticket 286 (ADR 0015: API parity with the cooking view; ADR 0021): the recipe
+// for other portions has its quantities scaled and rounded to one decimal.
+func TestARecipeForOtherPortionsHasScaledQuantitiesWithOneDecimal(t *testing.T) {
+	t.Parallel()
+	c := signedInAPI(t)
+	in := curryBody() // 4 portions: 600 g, 2 (none), 3 tbsp, 3 tbsp, salt, 2 can, 1 tsp
+	_, r := createRecipe(t, c, in)
+	id := r["id"].(string)
+	status, got, _ := c.call(http.MethodGet, "/recipes/"+id+"?portions=6", nil)
+	if status != http.StatusOK || got["portions"] != float64(6) {
+		t.Fatalf("get for 6 = %d %v", status, got)
+	}
+	ings := got["ingredients"].([]any)
+	want := []any{float64(900), float64(3), 4.5, 4.5, nil, float64(3), 1.5}
+	for i, w := range want {
+		if q := ings[i].(map[string]any)["quantity"]; q != w {
+			t.Errorf("ingredient %d quantity for 6 portions = %v, want %v", i, q, w)
+		}
+	}
+	// 3 of 4 is 0.75 per portion: one decimal, never a whole number.
+	_, one, _ := c.call(http.MethodGet, "/recipes/"+id+"?portions=1", nil)
+	if q := one["ingredients"].([]any)[2].(map[string]any)["quantity"]; q != 0.8 {
+		t.Errorf("3 tbsp for 1 of 4 portions = %v, want 0.8", q)
+	}
+	// Without portions, and with the base portions, the stored quantities.
+	_, plain, _ := c.call(http.MethodGet, "/recipes/"+id, nil)
+	_, same, _ := c.call(http.MethodGet, "/recipes/"+id+"?portions=4", nil)
+	for _, g := range []map[string]any{plain, same} {
+		if g["portions"] != float64(4) || g["ingredients"].([]any)[0].(map[string]any)["quantity"] != float64(600) {
+			t.Errorf("stored recipe = %v", g)
+		}
+	}
+	// The stored recipe did not change.
+	if _, again, _ := c.call(http.MethodGet, "/recipes/"+id, nil); again["portions"] != float64(4) {
+		t.Errorf("scaling changed the recipe: %v", again["portions"])
+	}
+	// What the contract forbids, a crafted request can still send: refused, field named.
+	for _, bad := range []string{"0", "100", "-1", "x", "1.5", "%2B3", ""} {
+		req, _ := http.NewRequest(http.MethodGet, c.b.srv.URL+"/api/v1/recipes/"+id+"?portions="+bad, nil)
+		res, err := c.b.client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		body, _ := io.ReadAll(res.Body)
+		res.Body.Close()
+		if res.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(string(body), `"field":"portions"`) {
+			t.Errorf("portions=%q = %d %s, want 422 at portions (an empty value too)", bad, res.StatusCode, body)
 		}
 	}
 }

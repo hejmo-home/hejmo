@@ -138,6 +138,7 @@ type layoutFixture struct {
 	inviteToken   string   // the invitation of Maximilian, a parent without account
 	hint          *screen  // a display that shows the screensaver's hint
 	outlook       []string // the Outlook pages (#177) that no link leads to
+	recipes       []string // recipe IDs: the long one with twelve steps, then the plain one
 	rewards       []string // reward IDs (#291): redeemed, never redeemed, archived by hand, archived because its person left
 	recipeIDs     []string // recipe IDs (#279): the long Käsespätzle, then the Gurkensalat
 }
@@ -281,12 +282,18 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 			Source: "https://www.beispiel-kochseite.de/rezepte/omas-schwaebische-kaesespaetzle-mit-roestzwiebeln-und-bergkaese-aus-dem-allgaeu",
 			Ingredients: []recipe.Ingredient{{Amount: 500, Unit: "g", Text: "Weizenmehl", ArticleID: "wheat-flour", Variety: "Type 405"}, {Amount: 6, Text: "Eier", ArticleID: "eggs"},
 				{Amount: 400, Unit: "g", Text: "Butter", ArticleID: "butter", Variety: "Allgäuer Bergkäse, mindestens 6 Monate gereift, aus der Sennerei"}, {Amount: 1, Unit: "pinch", Text: "Muskatnuss"}, {Amount: 2, Unit: "can", Text: "Röstzwiebeln"}},
-			Steps: []string{"Mehl, Eier, 1 TL Salz und etwa 150 ml Wasser mit dem Kochlöffel schlagen, bis der Teig Blasen wirft.", "Den Teig portionsweise durch die Spätzlepresse in kochendes Salzwasser drücken."}},
+			// Twelve steps for the cooking view (#286): the numbers wrap to a second line, a long step keeps its line break.
+			Steps: []string{"Mehl, Eier, 1 TL Salz und etwa 150 ml Wasser mit dem Kochlöffel schlagen, bis der Teig Blasen wirft.", "Den Teig portionsweise durch die Spätzlepresse in kochendes Salzwasser drücken.",
+				"Die Spätzle mit der Schaumkelle herausnehmen, sobald sie oben schwimmen, und kurz in kaltem Wasser abschrecken.", "Für die Röstzwiebeln die Zwiebeln in feine Ringe schneiden und in Butter goldbraun braten.\nWichtig: nicht aus den Augen lassen, sonst werden sie bitter.",
+				"Den Bergkäse reiben.", "Eine Auflaufform einfetten.", "Spätzle und Käse schichten.", "Mit Muskatnuss würzen.", "Im Ofen bei 180 Grad Umluft überbacken, bis der Käse Blasen wirft.",
+				"Die Röstzwiebeln darüberstreuen.", "Fünf Minuten ruhen lassen.", "Mit Salat servieren und Oma Gerda zum Probieren rufen, bevor die Kinder alles aufgegessen haben."}},
 		{Name: "Gurkensalat", Category: recipe.Side, Portions: 4},
 	} {
-		if _, err := db.CreateRecipe(h, f.ids[0], r); err != nil {
+		got, err := db.CreateRecipe(h, f.ids[0], r)
+		if err != nil {
 			t.Fatal(err)
 		}
+		f.recipes = append(f.recipes, got.ID)
 	}
 
 	// Nutrition values (ticket 288): two of the five children see them, the card of a recipe that cannot count
@@ -662,6 +669,13 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 		}
 	}
 	pages = append(pages, rewardFormPages(t, f)...)
+	// The cooking view (#286): the crawl reaches it once; the phone's two parts, a middle and the last of twelve
+	// steps, other portions with ticks, a wrong number in the field, and a recipe with only a name.
+	cook := "/meals/recipes/" + f.recipes[0] + "/cook"
+	for _, q := range []string{"?view=steps&step=4", "?view=steps&step=12&have=0&have=2", "?portions=12&have=1&have=3&have=4", "?portions=0&step=2", "?view=steps"} {
+		add(parent, cook+q)
+	}
+	add(parent, "/meals/recipes/"+f.recipes[1]+"/cook?view=steps")
 	// Nutrition values (#288): the card with everything it can say, a child's switch, the section of an own article.
 	for _, p := range []string{"/meals/recipes/" + f.nutriRecipe, "/people/" + f.ids[2], "/settings/lists/library/" + f.foodArticle} {
 		if !have[p] {
@@ -683,7 +697,8 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	add(kid, "/lists")
 	add(kid, "/lists/"+f.lists[0])
 	add(kid, "/lists/"+f.lists[1])
-	add(kid, "/numbers") // the children's important numbers (ticket 301): buttons on a phone ...
+	add(kid, "/meals/recipes/"+f.recipes[0]+"/cook?step=3") // a child reads the cooking view too (#286)
+	add(kid, "/numbers")                                    // the children's important numbers (ticket 301): buttons on a phone ...
 	tablet := pairedPersonalDeviceAs(t, f.box, f.people["Anna-Lena"], "Tablet von Anna-Lena", uaIPad)
 	add(siteOf("child tablet", f.box, tablet.client), "/numbers") // ... and the numbers as text on a tablet
 	add(parent, "/contacts/for-children")

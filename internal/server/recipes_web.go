@@ -244,7 +244,7 @@ func (s *server) handleRecipePage(w http.ResponseWriter, r *http.Request) {
 		"PortionsText": c.t("recipes.facts.portions_written", "n", strconv.Itoa(rec.Portions)), "PV": s.portionsView(c, p, rec, n, planDay, planMeal, plan),
 		"Tags": rec.Tags, "Tips": rec.Tips, "Source": rec.Source, "SourceLink": recipe.SourceLink(rec.Source),
 		"Steps": rec.Steps, "Warns": c.warnLines(c.warnings(rec.Recipe)), "HasWarn": len(c.warnings(rec.Recipe)) > 0,
-		"FreeText": s.freeText(c.st), "EditHref": recipesPath + "/" + rec.ID + "/edit",
+		"FreeText": s.freeText(c.st), "EditHref": recipesPath + "/" + rec.ID + "/edit", "CookHref": recipesPath + "/" + rec.ID + "/cook",
 	}
 	if entry != nil {
 		data["Starter"] = c.t("recipes.starter.note")

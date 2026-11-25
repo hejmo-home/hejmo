@@ -35,3 +35,14 @@ nyaruka/phonenumbers (Go library, MIT, linked into the Hejmo binary)
   (Apache License 2.0). Reads, checks and normalises phone numbers (ADR 0026). No network connections.
   Licence: https://github.com/nyaruka/phonenumbers/blob/master/LICENSE
   Also named on the licences page of the web interface (Settings -> Licences).
+
+Religious holidays calendar (ticket 339): Go libraries linked into the Hejmo binary, and date tables embedded in it
+  hebcal/hebcal-go (GPL-2.0-or-later) with hebcal/hdate and hebcal/greg (GPL-2.0-or-later), hebcal/noaa-go (LGPL-2.1),
+    hebcal/locales and hebcal/gematriya (BSD-2-Clause): the Hebrew calendar, Diaspora schedule. https://github.com/hebcal/hebcal-go
+    GPL-2.0-or-later is compatible with the AGPL-3.0 of Hejmo. No network connections.
+  hablullah/go-hijri and hablullah/go-juliandays (MIT): the Umm al-Qura calendar. https://github.com/hablullah/go-hijri
+  soniakeys/meeus/v3 and soniakeys/unit (MIT): sun, moon, equinox and Easter (after Jean Meeus, Astronomical Algorithms).
+    https://github.com/soniakeys/meeus
+  Tables (internal/religiousholiday): the Diyanet table of religious days 2020-2030, Losar, the SGPC Nanakshahi Jantri. Every entry
+    names its source; entries not yet checked against it are marked, in the code and on the licences page.
+  All named on the licences page of the web interface (Settings -> Licences).

@@ -364,15 +364,15 @@ func (s *server) apiSaveRecipeImport(w http.ResponseWriter, r *http.Request, p p
 	}
 	cand := st.data.Candidates[in.Candidate]
 	imp := store.Imported{URL: st.d.URL, Host: st.d.Host, Lang: cand.Lang, DraftID: st.d.ID, Nutrition: pageNutrition(cand.Nutrition)}
-	if in.Picture == nil || *in.Picture {
-		imp.Cover = st.data.Pictures[in.Candidate]
-	}
 	saved, err := s.db.CreateImportedRecipe(p.household.ID, p.person.ID, rec, imp)
 	if err != nil {
 		s.undoArticles(p, made)
 		if s.recipeError(w, "save imported recipe", err) {
 			return
 		}
+	}
+	if in.Picture == nil || *in.Picture {
+		s.addWebRecipePhoto(r.Context(), p, saved.ID, st.data.Pictures[in.Candidate])
 	}
 	writeJSON(w, http.StatusCreated, c.recipeToJSON(saved))
 }

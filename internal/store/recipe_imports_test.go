@@ -19,7 +19,7 @@ func importedIn(t *testing.T, f calFixture, name string) store.Recipe {
 	r := recipe.Recipe{Name: name, Category: recipe.Main, Portions: 4, Source: "ignored",
 		Ingredients: []recipe.Ingredient{{Amount: 250, Unit: "g", Text: "Linsen", ArticleID: "lentils"}}}
 	got, err := f.db.CreateImportedRecipe(f.h.ID, f.mama.ID, r, store.Imported{
-		URL: "https://www.beispielrezepte.de/r/1", Host: "www.beispielrezepte.de", Lang: "de", At: at, Cover: []byte("jpeg"),
+		URL: "https://www.beispielrezepte.de/r/1", Host: "www.beispielrezepte.de", Lang: "de", At: at,
 		Nutrition: &store.PageNutrition{KCal: f64(380), Fat: f64(17)},
 	})
 	if err != nil {
@@ -28,7 +28,7 @@ func importedIn(t *testing.T, f calFixture, name string) store.Recipe {
 	return got
 }
 
-func TestImportedRecipeKeepsItsSourceAndCover(t *testing.T) {
+func TestImportedRecipeKeepsItsSource(t *testing.T) {
 	f := newCalFixture(t)
 	got := importedIn(t, f, "Linsensuppe")
 	if got.Source != "https://www.beispielrezepte.de/r/1" {
@@ -37,10 +37,6 @@ func TestImportedRecipeKeepsItsSourceAndCover(t *testing.T) {
 	imp, ok, err := f.db.RecipeImport(f.h.ID, got.ID)
 	if err != nil || !ok || imp.Host != "www.beispielrezepte.de" || imp.ByName != "Mama" || imp.Lang != "de" || !imp.At.Equal(time.Date(2026, 11, 25, 15, 43, 2, 0, time.UTC)) {
 		t.Errorf("RecipeImport = %+v, %v, %v", imp, ok, err)
-	}
-	cover, host, err := f.db.RecipeCover(f.h.ID, got.ID)
-	if err != nil || string(cover) != "jpeg" || host != "www.beispielrezepte.de" {
-		t.Errorf("cover = %q %q %v", cover, host, err)
 	}
 	if _, ok, _ := f.db.RecipeImport(f.h.ID, "nope"); ok {
 		t.Error("a recipe that is not imported has no import")

@@ -148,12 +148,12 @@ func TestTheListShowsRecipesFromAToZWithWarningsThatNameThePerson(t *testing.T) 
 	rcpHas(t, "the list", r.body,
 		`<h1>Recipes</h1>`, `<a class="button" href="/meals/recipes/new">`, "New recipe", `<span aria-current="page">Recipes</span>`, `<a href="/meals">Meals</a>`,
 		`role="search"`, `placeholder="Name, ingredient or tag"`, `class="lib-filter rcp-filter"`, `<a href="/meals/recipes?category=main"><span class="e" aria-hidden="true">🍲</span>Main dish</a>`,
-		`<ul class="list-rows recipes">`, `<span class="art-sym" aria-hidden="true">🍲</span>`, "<b>Erdnuss-Curry mit Süßkartoffeln</b>",
+		`<ul class="list-rows recipes">`, `<span class="art-sym rcp-pic" aria-hidden="true">🍲</span>`, "<b>Erdnuss-Curry mit Süßkartoffeln</b>",
 		"<span>Main dish</span><span>·</span><span>45 min</span><span>·</span><span>4 servings</span>",
 		"<span>Side</span><span>·</span><span>2 h 30 min</span><span>·</span><span>1 serving</span>",
 		`<span class="tag grp">schnell</span>`, `<span class="tag grp">Kinder mögen es</span>`)
 	var names []string
-	for _, m := range regexp.MustCompile(`<b>([^<]+)</b></?[^>]*><span class="meta">|<a href="/meals/recipes/[^"]+"><span class="art-sym" aria-hidden="true">[^<]+</span><span class="t"><b>([^<]+)</b>`).FindAllStringSubmatch(r.body, -1) {
+	for _, m := range regexp.MustCompile(`<b>([^<]+)</b></?[^>]*><span class="meta">|<a href="/meals/recipes/[^"]+"><span class="art-sym rcp-pic" aria-hidden="true">[^<]+</span><span class="t"><b>([^<]+)</b>`).FindAllStringSubmatch(r.body, -1) {
 		names = append(names, m[2])
 	}
 	if strings.Join(names, "|") != "Erdnuss-Curry mit Süßkartoffeln|Gurkensalat|Pfannkuchen" {

@@ -26,12 +26,7 @@ CREATE TABLE recipe_imported (
 );
 CREATE INDEX recipe_imported_url ON recipe_imported (url);
 
--- The picture of the page as the recipe's cover (at most 1600 px, no metadata); ticket 280 builds its gallery on it.
-CREATE TABLE recipe_cover (
-    recipe_id TEXT PRIMARY KEY REFERENCES recipes(id) ON DELETE CASCADE,
-    jpeg      BLOB NOT NULL,
-    host      TEXT NOT NULL DEFAULT ''
-);
+-- The picture of the page is kept as a recipe photo of origin 'web' (ticket 280), not here.
 
 -- The nutrition values the page stated, per portion (NULL: the page did not state it, never 0). They only fit
 -- the page's ingredients and portions: when someone changes either, dropped_* says who changed what and when,

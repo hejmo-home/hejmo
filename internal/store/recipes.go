@@ -311,6 +311,12 @@ func (db *DB) UpdateRecipe(householdID, personID string, r recipe.Recipe, o Meal
 // renameInPlan makes every meal plan entry that is the recipe say its new
 // name, in the layers and in the plan rows with their calendar events.
 func renameInPlan(tx *sql.Tx, householdID, id, name string, o MealOptions) error {
+	if _, err := tx.Exec(`UPDATE meal_template_entries SET text = ? WHERE recipe_id = ? AND template_id IN (SELECT id FROM meal_templates WHERE household_id = ?)`, name, id, householdID); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`UPDATE meal_plan SET template_dish = ? WHERE household_id = ? AND recipe_id = ? AND source = 'template'`, name, householdID, id); err != nil {
+		return err
+	}
 	for _, t := range []string{"meal_manual", "meal_adjustments"} {
 		if _, err := tx.Exec(`UPDATE `+t+` SET text = ? WHERE household_id = ? AND recipe_id = ?`, name, householdID, id); err != nil {
 			return err
@@ -342,8 +348,8 @@ func renameInPlan(tx *sql.Tx, householdID, id, name string, o MealOptions) error
 }
 
 // DeleteRecipe removes a recipe with its ingredients, steps and tags. Meal
-// plan entries that are the recipe stay as free text with its name, without
-// portions.
+// plan entries and template slots that are the recipe stay as free text with
+// its name, without portions.
 func (db *DB) DeleteRecipe(householdID, id string) error {
 	tx, err := db.sql.Begin()
 	if err != nil {
@@ -358,6 +364,10 @@ func (db *DB) DeleteRecipe(householdID, id string) error {
 		if _, err := tx.Exec(`UPDATE `+t+` SET text = ?, recipe_id = '', portions = 0 WHERE household_id = ? AND recipe_id = ?`, name, householdID, id); err != nil {
 			return err
 		}
+	}
+	// A template slot that was the recipe is its name in free text from now on.
+	if _, err := tx.Exec(`UPDATE meal_template_entries SET text = ?, recipe_id = '' WHERE recipe_id = ? AND template_id IN (SELECT id FROM meal_templates WHERE household_id = ?)`, name, id, householdID); err != nil {
+		return err
 	}
 	if err := expectOne(tx.Exec(`DELETE FROM recipes WHERE household_id = ? AND id = ?`, householdID, id)); err != nil {
 		return err

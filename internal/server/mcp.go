@@ -91,7 +91,7 @@ var (
 		opt("mealtime", "string", "With mealtimes one: breakfast, lunch, snack or dinner"),
 		req("interval", "integer", "Repeats every n weeks"),
 		req("start_week", "string", "Monday of the first week it fills, YYYY-MM-DD"),
-		req("entries", "array", "A list of {weekday (1 Monday to 7 Sunday), mealtime, text}"),
+		req("entries", "array", "A list of {weekday (1 Monday to 7 Sunday), mealtime, text or recipe_id (a recipe of the household, planned with the household's number of people as portions)}"),
 	}
 )
 
@@ -235,6 +235,9 @@ var mcpTools = []mcpTool{
 		opt("ingredients", "array", "A list of {quantity, unit, name, article_id, variety, choice (own or free, for a line that is no library article)}"),
 		opt("steps", "strings", "The steps in order"), opt("picture", "boolean", "Keep the page's picture as the cover (default true)")}},
 	{name: "discard_recipe_draft", desc: "Discard a draft read from a web page.", method: "DELETE", path: "/recipe-imports/{id}", params: []mcpParam{idOf("draft")}},
+	{name: "list_recipe_photos", desc: "List the own photos of a recipe (an own or a starter recipe), the cover first, then the newest first. The image of a photo is at its image_path.", method: "GET", path: "/recipes/{id}/photos", params: []mcpParam{idOf("recipe")}},
+	{name: "set_recipe_photo_cover", desc: "Make a photo the cover of its recipe: it shows at the top of the recipe and in the recipe list.", method: "POST", path: "/recipes/{id}/photos/{photo_id}/cover", params: []mcpParam{idOf("recipe"), req("photo_id", "string", "The id of the photo (see list_recipe_photos)")}},
+	{name: "delete_recipe_photo", desc: "Remove a photo of a recipe for the whole family. When it was the cover, the newest remaining photo becomes the cover.", method: "DELETE", path: "/recipes/{id}/photos/{photo_id}", params: []mcpParam{idOf("recipe"), req("photo_id", "string", "The id of the photo (see list_recipe_photos)")}},
 	{name: "set_recipe_favourites", desc: "Say who likes a recipe (\"Mia likes it\"): the recipe is afterwards a favourite of exactly these people, of nobody with an empty list. The meal plan suggests favourites first. Own recipes only. last_cooked in a recipe is the latest planned day that is over.", method: "PUT", path: "/recipes/{id}/favourites", params: []mcpParam{
 		idOf("recipe"), req("person_ids", "strings", "The ids of the people who like the recipe")}},
 	{name: "list_recipe_units", desc: "List the units an ingredient can have: the household's, kitchen measures and containers.", method: "GET", path: "/recipe-units"},

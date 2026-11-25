@@ -177,3 +177,26 @@ func TestClashesBeforeTodayDoNotCount(t *testing.T) {
 		t.Fatalf("on the day = %+v %v", c, ok)
 	}
 }
+
+// Ticket 282: a template slot can hold a recipe.
+
+func TestATemplateSlotCanHoldARecipeInsteadOfText(t *testing.T) {
+	tpl := dinners("2026-11-16", 1, map[meal.Slot]string{})
+	tpl.Recipes = map[meal.Slot]string{meal.At(2, meal.Dinner): "r-curry"}
+	if err := tpl.Validate(); err != nil {
+		t.Fatalf("a template of one recipe is not empty: %v", err)
+	}
+	if got := tpl.RecipeAt(day("2026-11-17"), meal.Dinner); got != "r-curry" {
+		t.Errorf("recipe on Tuesday = %q", got)
+	}
+	if got := tpl.RecipeAt(day("2026-11-18"), meal.Dinner); got != "" {
+		t.Errorf("recipe on Wednesday = %q, want none", got)
+	}
+	if got := tpl.RecipeAt(day("2026-11-24"), meal.Dinner); got != "r-curry" {
+		t.Errorf("a recipe slot follows the interval, got %q", got)
+	}
+	tpl.Mealtime = meal.Lunch
+	if got := tpl.RecipeAt(day("2026-11-17"), meal.Dinner); got != "" {
+		t.Errorf("a slot of a mealtime the template does not fill holds no recipe, got %q", got)
+	}
+}

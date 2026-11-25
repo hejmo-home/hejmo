@@ -2688,7 +2688,8 @@ paths:
       summary: Meal plan templates, by name (scope meals:read)
       description: |
         A template is a week pattern from Monday to Sunday that fills the meal
-        plan by itself, every `interval` weeks from `start_week`.
+        plan by itself, every `interval` weeks from `start_week`. A slot is free
+        text or a recipe (`recipe_id`).
       responses:
         "200":
           description: Templates
@@ -2914,6 +2915,123 @@ paths:
         - { name: id, in: path, required: true, schema: { type: string } }
       responses:
         "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /recipes/{id}/photos:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string }, description: "An own recipe or a starter recipe (`starter-...`); each household has its own photos of a starter recipe" }
+    get:
+      operationId: listRecipePhotos
+      summary: The own photos of a recipe, the cover first, then the newest first (scope meals:read)
+      description: Everyone reads them, children included. The files are at `image_path`.
+      responses:
+        "200":
+          description: The photos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/RecipePhoto" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      operationId: addRecipePhotos
+      summary: Add photos to a recipe (scope meals:write, parents only)
+      description: |
+        Send one or more JPEG, PNG, WebP or GIF pictures as `multipart/form-data` in the part `file`
+        (the web interface converts HEIC to JPEG in the browser first; HEIC sent here is refused). The
+        box turns each upright, shrinks it to at most 1600 pixels on the long side, stores it as a JPEG
+        without location or camera data and makes two smaller files for lists and the grid. The first
+        photo of a recipe becomes its cover; later ones never change it. A file over 15 MB, one that is
+        no picture, one with more than 24 million pixels and any file beyond the 12 photos a recipe holds
+        are listed in `refused` with the reason. 201 when at least one photo was added; else 422, or 413
+        when the only file was over 15 MB. Works for starter recipes too.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "201":
+          description: What was added, and what was refused
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecipePhotosAdded" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "413":
+          description: The file is over 15 MB
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422":
+          description: No photo could be added
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - { $ref: "#/components/schemas/RecipePhotosAdded" }
+                  - { $ref: "#/components/schemas/Error" }
+        "503":
+          description: This box keeps no photos (no data directory for them)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /recipes/{id}/photos/{photo_id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: photo_id, in: path, required: true, schema: { type: string } }
+    delete:
+      operationId: deleteRecipePhoto
+      summary: Remove a photo of a recipe (scope meals:delete, parents only)
+      description: The photo and its files go for the whole family. When it was the cover, the newest remaining photo becomes the cover; the last photo removed leaves the recipe without a cover.
+      responses:
+        "204": { description: Removed }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /recipes/{id}/photos/{photo_id}/cover:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: photo_id, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: setRecipePhotoCover
+      summary: Make a photo the cover of its recipe (scope meals:write, parents only)
+      responses:
+        "200":
+          description: The photo, now the cover
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecipePhoto" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /recipes/{id}/photos/{photo_id}/image:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: photo_id, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getRecipePhotoImage
+      summary: The file of a photo (scope meals:read)
+      description: |
+        A JPEG. `size` picks the file: without it the full photo (at most 1600 pixels), `medium` (at most 640 pixels,
+        for the cover and the grid), `small` (a square crop of at most 168 pixels, for rows of lists). Any other `size` is answered with 400. Children read it too.
+      parameters:
+        - { name: size, in: query, required: false, schema: { type: string } }
+      responses:
+        "200":
+          description: A JPEG
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+        "400": { $ref: "#/components/responses/Invalid" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
@@ -6383,7 +6501,7 @@ components:
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
-        kind: { type: string, enum: [local, ics, caldav, google, outlook, meals, birthdays], description: "meals is the meal plan, generated by the box: read-only, its events change only in the meal plan. birthdays is the calendar of the birthdays of the contacts (`birthday`, `show_in_birthdays` of a contact), generated by the box: read-only, one yearly all-day event per contact, made when the first birthday is saved. A birthday shows with the age when the year is known (`Mia (7)`); 29 February repeats on the last day of February in other years" }
+        kind: { type: string, enum: [local, ics, caldav, google, outlook, meals, birthdays, religious], description: "religious is the calendar of the religious holidays (ticket 339, `religious_holidays` of the settings), generated by the box: read-only, all-day, for the whole family, made when the first religion is chosen; its events carry `varies_by_sighting` where the day depends on moon sighting. meals is the meal plan, generated by the box: read-only, its events change only in the meal plan. birthdays is the calendar of the birthdays of the contacts (`birthday`, `show_in_birthdays` of a contact), generated by the box: read-only, one yearly all-day event per contact, made when the first birthday is saved. A birthday shows with the age when the year is known (`Mia (7)`); 29 February repeats on the last day of February in other years" }
         color: { type: string }
         read_only: { type: boolean, description: "The box never changes this calendar's events outside (always true for ICS; false by default for CalDAV and Google, where a parent can switch it on)" }
         waste_collection: { type: boolean, description: "A read-only calendar marked as the household's waste collection calendar: its events show only in the family view's tomorrow tile (reminder from 18:00) and on the night page, not in the strip, person columns or personal view" }
@@ -6820,7 +6938,7 @@ components:
         region_code: { type: string, description: "ISO 3166-2 code of the state or canton, one of the regions of the setup form", example: DE-BY }
     Settings:
       type: object
-      required: [date_format, time_format, temperature_unit, auto_update, home_name, home_place_id, latitude, longitude, below_zero, first_steps_hidden, first_steps_skipped, meal_cutoffs, name_days]
+      required: [date_format, time_format, temperature_unit, auto_update, home_name, home_place_id, latitude, longitude, below_zero, first_steps_hidden, first_steps_skipped, meal_cutoffs, name_days, religious_holidays]
       properties:
         date_format: { type: string, enum: [dmy, mdy], description: "Day first DD.MM.YYYY (default) or month first MM/DD/YYYY. Only how the web interface writes dates in numbers; this API, CalDAV and iCalendar stay ISO 8601" }
         home_name: { type: string, description: "The name of the home place; the name of the place picked from the list" }
@@ -6837,6 +6955,19 @@ components:
           items: { type: string, enum: [family, parents, calendars, tasks, meals, display] }
         auto_update: { type: string, enum: [on, off, notify], description: "Auto-update (ADR 0018; has no effect unless GET /update says managed): on (default) installs new published versions at 03:30, off never checks, notify only tells parents that an update is available" }
         meal_cutoffs: { $ref: "#/components/schemas/MealCutoffs" }
+        religious_holidays: { $ref: "#/components/schemas/ReligiousHolidays" }
+    ReligiousHolidays:
+      type: object
+      description: "Whether the holidays of the chosen religions are in the generated calendar of kind `religious` (ticket 339). Off by default: Hejmo never guesses a faith. Switching off keeps the religions and the two calendar choices. A holiday that is a public holiday of the household's region is not added again."
+      required: [on, religions, islamic_calendar, orthodox_calendar]
+      properties:
+        on: { type: boolean }
+        religions:
+          type: array
+          description: "The chosen religions, alphabetical by code; kept while `on` is false"
+          items: { type: string, enum: [alevi, bahai, buddhist, christian, orthodox, hindu, muslim, jewish, sikh] }
+        islamic_calendar: { type: string, enum: [diyanet, umm_al_qura], description: "Which table the Islamic dates (Islam and Alevism) follow: the Diyanet table (default, as most mosques in DACH) or Umm al-Qura" }
+        orthodox_calendar: { type: string, enum: [revised_julian, julian], description: "When the Orthodox church celebrates Christmas: revised Julian, 25 December (default), or Julian, 7 January. Easter is always the Orthodox Easter" }
         name_days: { $ref: "#/components/schemas/NameDays" }
     NameDays:
       type: object
@@ -6872,6 +7003,14 @@ components:
           type: array
           description: "Replaces the list of skipped steps; an unknown step refuses the whole request with 422. Steps: family, parents, calendars, tasks, meals, display."
           items: { type: string }
+        religious_holidays:
+          type: object
+          description: "Switch the religious holidays on or off and choose the religions; omitted parts stay as they are. `on: true` needs at least one religion (the stored ones or `religions`) and, for `hindu`, a home location (stored or given in the same request), else 422; an unknown religion or calendar is 422. Nothing is saved when the request is refused."
+          properties:
+            on: { type: boolean }
+            religions: { type: array, items: { type: string }, description: "Replaces the chosen religions (an empty list is ignored, the stored choice stays: switch `on` to false to stop the calendar): alevi, bahai, buddhist, christian, orthodox, hindu, muslim, jewish, sikh" }
+            islamic_calendar: { type: string, description: "diyanet or umm_al_qura" }
+            orthodox_calendar: { type: string, description: "revised_julian or julian" }
         name_days:
           type: object
           description: "Switch name days on or off and choose the church; omitted parts stay as they are. `on: true` needs a church (the stored one or `list`), else 422; an unknown list is 422. Changing the church sets contacts whose `entry` or `name` the new list does not have back to `auto`."
@@ -7100,11 +7239,19 @@ components:
         ticked: { type: array, items: { type: string }, description: "Entries that were ticked off meanwhile and stay" }
     MealTemplateEntry:
       type: object
-      required: [weekday, mealtime, text]
+      required: [weekday, mealtime]
+      description: |
+        One slot of a template's week: free text, or a recipe of the household.
+        Give `text` or `recipe_id`, not both (else 422). Applying the template
+        plans a recipe slot with as many portions as there are people in the
+        household. A recipe slot is read with the recipe's current name as
+        `text`; when the recipe is deleted the slot stays as that name in free
+        text, without `recipe_id`.
       properties:
         weekday: { type: integer, minimum: 1, maximum: 7, description: "1 Monday to 7 Sunday" }
         mealtime: { $ref: "#/components/schemas/Mealtime" }
-        text: { type: string, maxLength: 200 }
+        text: { type: string, maxLength: 200, description: "Free text; with `recipe_id` (as read) the recipe's name" }
+        recipe_id: { type: string, description: "A recipe of the household (`/recipes`); an unknown one is 422. Not with a text in a request" }
     NewMealTemplate:
       type: object
       required: [name, mealtimes, interval, start_week, entries]
@@ -7291,6 +7438,34 @@ components:
           maxItems: 100
           description: The steps in order; each at most 2000 characters
           items: { type: string }
+    RecipePhoto:
+      type: object
+      required: [id, file_name, width, height, is_cover, origin, added_by, added_at, image_path]
+      properties:
+        id: { type: string }
+        file_name: { type: string, description: The name the file had when it was added }
+        width: { type: integer, description: Pixels of the full photo }
+        height: { type: integer }
+        is_cover: { type: boolean, description: Exactly one photo of a recipe is the cover }
+        origin: { type: string, enum: [upload, web], description: "`web` is a picture taken over from a web page (recipe import)" }
+        added_by: { type: string, nullable: true, description: The person who added it; null for a web picture or when the person left }
+        added_at: { type: string, format: date-time }
+        image_path: { type: string, description: "The path of the file, below the server address" }
+    RecipePhotosAdded:
+      type: object
+      required: [added, refused]
+      properties:
+        added:
+          type: array
+          items: { $ref: "#/components/schemas/RecipePhoto" }
+        refused:
+          type: array
+          items:
+            type: object
+            required: [name, reason]
+            properties:
+              name: { type: string }
+              reason: { type: string }
     Recipe:
       type: object
       required: [id, name, category, portions, minutes, mealtimes, tags, tips, source, source_url, source_name, starter, ingredients, steps, diet, favourite_of, last_cooked, created_by, created_at, updated_by, updated_at]
@@ -7358,7 +7533,7 @@ components:
     Event:
       type: object
       description: An event or series master. Times are RFC 3339 in the household's time zone; all-day events use dates with an exclusive end.
-      required: [id, calendar_id, title, description, location, all_day, start, end, rrule, people, groups]
+      required: [id, calendar_id, title, description, location, all_day, start, end, rrule, people, groups, read_only, varies_by_sighting]
       properties:
         id: { type: string, format: uuid }
         calendar_id: { type: string, format: uuid }
@@ -7372,6 +7547,8 @@ components:
         people: { type: array, items: { type: string, format: uuid } }
         groups: { type: array, items: { type: string, format: uuid } }
         invitation: { $ref: "#/components/schemas/EventInvitation" }
+        read_only: { type: boolean, description: "The event cannot be changed or deleted: its calendar is read-only or generated (meals, birthdays, religious holidays), or other people are invited" }
+        varies_by_sighting: { type: boolean, description: "The day depends on moon sighting (Islamic and some Alevi days of the religious holidays): the date is the one the calculation gives and some communities celebrate one day later" }
     EventInvitation:
       type: object
       description: Other people are invited to this event (Outlook). It is read-only on the box, also in a calendar that is not, because a change would send a message to every attendee; changing or deleting it answers 422. Change it at its source (`web_link`).
@@ -7409,7 +7586,7 @@ components:
         groups: { type: array, items: { type: string, format: uuid } }
     Occurrence:
       type: object
-      required: [event_id, series_id, recurrence_id, calendar_id, title, description, location, all_day, start, end, people, groups]
+      required: [event_id, series_id, recurrence_id, calendar_id, title, description, location, all_day, start, end, people, groups, read_only, varies_by_sighting]
       properties:
         event_id: { type: string, format: uuid }
         series_id: { type: string, description: "Series master id, empty for single events" }
@@ -7424,6 +7601,8 @@ components:
         people: { type: array, items: { type: string, format: uuid } }
         groups: { type: array, items: { type: string, format: uuid } }
         invitation: { $ref: "#/components/schemas/EventInvitation" }
+        read_only: { type: boolean, description: "See Event" }
+        varies_by_sighting: { type: boolean, description: "See Event" }
     Screensaver:
       type: object
       description: |

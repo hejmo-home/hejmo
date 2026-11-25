@@ -174,3 +174,22 @@ func canon(t *testing.T, rule string) string {
 	}
 	return o.RRuleString()
 }
+
+// An all-day series ends on the day its date-only UNTIL names, in whatever zone
+// it lives (#307).
+func TestAllDaySeriesEndDateIsTheUntilDayInEveryZone(t *testing.T) {
+	for _, zone := range []string{"Europe/Berlin", "Pacific/Auckland", "America/New_York"} {
+		loc, err := time.LoadLocation(zone)
+		if err != nil {
+			t.Fatal(err)
+		}
+		start := time.Date(2026, 3, 2, 0, 0, 0, 0, loc)
+		rec, err := graph.RecurrenceOf("FREQ=WEEKLY;UNTIL=20261231", start)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if rec.Range.Type != "endDate" || rec.Range.EndDate != "2026-12-31" {
+			t.Errorf("%s: range = %+v, want endDate 2026-12-31", zone, rec.Range)
+		}
+	}
+}

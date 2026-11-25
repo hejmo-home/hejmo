@@ -190,7 +190,7 @@ func indexed(index string, days []string) string {
 // RecurrenceOf writes an RRULE as a Graph recurrence starting on start's day.
 // A rule Outlook cannot express is an error.
 func RecurrenceOf(rule string, start time.Time) (*Recurrence, error) {
-	o, err := rrule.StrToROption(rule)
+	o, err := calendar.ParseRule(rule, start.Location())
 	if err != nil {
 		return nil, err
 	}

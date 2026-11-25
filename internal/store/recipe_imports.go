@@ -89,7 +89,6 @@ func (p PageNutrition) Active() bool { return p.DroppedAt.IsZero() }
 type Imported struct {
 	URL, Host, Lang string
 	At              time.Time // zero: now
-	Cover           []byte    // the stored JPEG, nil for none
 	Nutrition       *PageNutrition
 	DraftID         string // deleted with the save
 }
@@ -134,11 +133,6 @@ func (db *DB) CreateImportedRecipe(householdID, personID string, r recipe.Recipe
 	if _, err := tx.Exec(`INSERT INTO recipe_imported (recipe_id, url, host, lang, imported_by, imported_at) VALUES (?, ?, ?, ?, NULLIF(?, ''), ?)`,
 		id, imp.URL, imp.Host, imp.Lang, personID, at); err != nil {
 		return Recipe{}, err
-	}
-	if len(imp.Cover) > 0 {
-		if _, err := tx.Exec(`INSERT INTO recipe_cover (recipe_id, jpeg, host) VALUES (?, ?, ?)`, id, imp.Cover, imp.Host); err != nil {
-			return Recipe{}, err
-		}
 	}
 	if n := imp.Nutrition; n != nil {
 		if _, err := tx.Exec(`INSERT INTO recipe_page_nutrition (recipe_id, kcal, kj, fat, saturates, carbs, sugars, protein, salt, url, stated_at, portions, ing_key)
@@ -190,17 +184,6 @@ func (db *DB) RecipeImportedFrom(householdID, url string) (RecipeImportedRef, bo
 	}
 	ref.At, _ = time.Parse(time.RFC3339, at)
 	return ref, err == nil, err
-}
-
-// RecipeCover returns the cover of a recipe and the site it came from; ErrNotFound when it has none.
-func (db *DB) RecipeCover(householdID, id string) ([]byte, string, error) {
-	var b []byte
-	var host string
-	err := db.sql.QueryRow(`SELECT c.jpeg, c.host FROM recipe_cover c JOIN recipes r ON r.id = c.recipe_id WHERE r.household_id = ? AND c.recipe_id = ?`, householdID, id).Scan(&b, &host)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, "", ErrNotFound
-	}
-	return b, host, err
 }
 
 // RecipePageNutrition returns the values the page stated; ok is false when the recipe has none.

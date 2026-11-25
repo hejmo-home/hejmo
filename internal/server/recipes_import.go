@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -20,6 +21,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/picture"
 	"github.com/hejmo-home/hejmo/internal/recipe"
 	"github.com/hejmo-home/hejmo/internal/recipeimport"
+	"github.com/hejmo-home/hejmo/internal/recipephoto"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/unit"
 )
@@ -669,9 +671,6 @@ func (s *server) handleImportSave(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	imp := store.Imported{URL: st.d.URL, Host: st.d.Host, Lang: st.data.Candidates[st.which].Lang, DraftID: st.d.ID}
-	if f.Web.Picture {
-		imp.Cover = st.data.Pictures[st.which]
-	}
 	imp.Nutrition = pageNutrition(st.data.Candidates[st.which].Nutrition)
 	saved, err := s.db.CreateImportedRecipe(p.household.ID, p.person.ID, rec, imp)
 	var taken *store.RecipeNameTakenError
@@ -692,6 +691,9 @@ func (s *server) handleImportSave(w http.ResponseWriter, r *http.Request) {
 		s.undoArticles(p, made)
 		s.fail(w, "save imported recipe", err)
 		return
+	}
+	if f.Web.Picture {
+		s.addWebRecipePhoto(r.Context(), p, saved.ID, st.data.Pictures[st.which])
 	}
 	s.setNewArticles(w, r, saved.ID, made)
 	s.redirectSavedFields(w, r, recipesPath+"/"+saved.ID, "flash.recipe_imported", saved.Name, st.d.Host)
@@ -754,24 +756,6 @@ func (s *server) takeNewArticles(w http.ResponseWriter, r *http.Request, p princ
 		}
 	}
 	return out
-}
-
-// handleRecipeCover serves the cover of a recipe to everyone in the household.
-func (s *server) handleRecipeCover(w http.ResponseWriter, r *http.Request) {
-	p, ok := s.memberPage(w, r)
-	if !ok {
-		return
-	}
-	b, _, err := s.db.RecipeCover(p.household.ID, r.PathValue("id"))
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-	w.Header().Set("Content-Type", "image/jpeg")
-	w.Header().Set("Content-Length", strconv.Itoa(len(b)))
-	w.Header().Set("Cache-Control", "private, max-age=3600")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	_, _ = w.Write(b)
 }
 
 // srcLine is the fixed source of an imported recipe in its edit form: a line, not a field.
@@ -1023,20 +1007,70 @@ func (s *server) handleImportPicture(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(b)
 }
 
-// handleRecipeAction routes the pages below one recipe: cooking, changing, the cover and deleting.
+// handleRecipeAction routes the pages below one recipe: cooking, changing, its photos and deleting.
 func (s *server) handleRecipeAction(w http.ResponseWriter, r *http.Request) {
-	switch r.Method + " " + r.PathValue("action") {
+	action := r.PathValue("action")
+	if rest := r.PathValue("rest"); rest != "" || strings.HasSuffix(r.URL.Path, "/") {
+		// "photos/{pid}" and "photos/{pid}/cover|delete" (ticket 280)
+		parts := strings.Split(rest, "/")
+		if action != "photos" || len(parts) > 2 || parts[0] == "" {
+			http.NotFound(w, r)
+			return
+		}
+		r.SetPathValue("pid", parts[0])
+		sub := ""
+		if len(parts) == 2 {
+			sub = parts[1]
+		}
+		switch r.Method + " " + sub {
+		case "GET ":
+			s.handleRecipePhotoFile(w, r)
+		case "POST cover":
+			s.handleRecipePhotoCover(w, r)
+		case "POST delete":
+			s.handleRecipePhotoDelete(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+		return
+	}
+	switch r.Method + " " + action {
 	case "GET cook":
 		s.handleRecipeCook(w, r)
 	case "GET edit":
 		s.handleRecipeEdit(w, r)
-	case "GET cover":
-		s.handleRecipeCover(w, r)
+	case "GET photos":
+		s.handleRecipePhotos(w, r)
+	case "POST photos":
+		s.handleRecipePhotosUpload(w, r)
 	case "POST delete":
 		s.handleRecipeDelete(w, r)
 	case "POST favourites":
 		s.handleRecipeFavourites(w, r)
 	default:
 		http.NotFound(w, r)
+	}
+}
+
+// addWebRecipePhoto keeps the picture of an imported page as the first photo of the recipe (origin web, so the
+// recipe page says where it came from; ticket 280 holds the photos). A picture that cannot be kept is left out:
+// the recipe is saved either way.
+func (s *server) addWebRecipePhoto(ctx context.Context, p principal, recipeID string, jpeg []byte) {
+	if len(jpeg) == 0 || s.recipePhotos == nil {
+		return
+	}
+	set, err := recipephoto.Prepare(ctx, bytes.NewReader(jpeg))
+	if err != nil {
+		s.logger.Warn("imported recipe picture", "err", err)
+		return
+	}
+	ph, err := s.db.AddRecipePhoto(p.household.ID, recipeID, store.NewRecipePhoto{FileName: "", Origin: store.PhotoFromWeb, Width: set.Width, Height: set.Height})
+	if err != nil {
+		s.logger.Warn("imported recipe picture", "err", err)
+		return
+	}
+	if err := s.recipePhotos.Put(ph.ID, set); err != nil {
+		_, _, _ = s.db.DeleteRecipePhoto(p.household.ID, recipeID, ph.ID)
+		s.logger.Warn("imported recipe picture", "err", err)
 	}
 }

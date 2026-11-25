@@ -306,8 +306,8 @@ func TestSavingTheDraftMakesTheRecipeWithItsCoverSourceNutritionAndOwnArticles(t
 	if own, err := ib.b.db.Article(ib.hid, by["Harissa"]); err != nil || own.Name != "Harissa" || len(own.Allergens) != 0 || own.Dept != "other" {
 		t.Errorf("own article = %+v %v", own, err)
 	}
-	if _, host, err := ib.b.db.RecipeCover(ib.hid, got.ID); err != nil || host != "127.0.0.1" {
-		t.Errorf("cover %q %v", host, err)
+	if photos, err := ib.b.db.RecipePhotos(ib.hid, got.ID); err != nil || len(photos) != 1 || !photos[0].IsCover || photos[0].Origin != store.PhotoFromWeb {
+		t.Errorf("the picture of the page is the cover photo of origin web: %+v %v", photos, err)
 	}
 	n, ok, _ := ib.b.db.RecipePageNutrition(ib.hid, got.ID)
 	if !ok || n.KCal == nil || *n.KCal != 380 || n.Salt != nil || n.Carbs != nil {
@@ -315,10 +315,10 @@ func TestSavingTheDraftMakesTheRecipeWithItsCoverSourceNutritionAndOwnArticles(t
 	}
 	page := ib.b.do(http.MethodGet, r.location, nil, rcpDE)
 	rcpHas(t, "the recipe page", page.body, `class="msg ok"`, "„Rote Linsensuppe mit Harissa“ von 127.0.0.1 importiert und gespeichert.",
-		`class="notice imp-new-art"`, "Neu in eurer Bibliothek, noch ohne Allergene:", `<figure class="rcp-cover">`, "Bild von 127.0.0.1", `class="src-when"`, "Importiert am ",
+		`class="notice imp-new-art"`, "Neu in eurer Bibliothek, noch ohne Allergene:", `class="rcp-cover"`, `class="src-when"`, "Importiert am ",
 		"Von der Webseite importiert von ", "Richtwerte von der Webseite, für eine Portion angegeben.", `class="nut-gap"`, "Unvollständig", "Quelle: ", "Hejmo hat sie nicht nachgerechnet.", `class="nut-na web"`)
-	if strings.Index(page.body, "rcp-act") > strings.Index(page.body, "rcp-cover") || strings.Index(page.body, "rcp-cover") > strings.Index(page.body, "rcp-facts") {
-		t.Error("the cover stands after .rcp-act and before .rcp-facts")
+	if strings.Index(page.body, "rcp-cover") > strings.Index(page.body, "rcp-act") || strings.Index(page.body, "rcp-act") > strings.Index(page.body, "rcp-facts") {
+		t.Error("the cover stands in the head, before .rcp-act and .rcp-facts")
 	}
 	if again := ib.b.do(http.MethodGet, r.location, nil, rcpDE); strings.Contains(again.body, "imp-new-art") || strings.Contains(again.body, "importiert und gespeichert") {
 		t.Error("the notice and the success line show once")
@@ -326,8 +326,10 @@ func TestSavingTheDraftMakesTheRecipeWithItsCoverSourceNutritionAndOwnArticles(t
 	if kid := ib.child.do(http.MethodGet, r.location, nil, rcpDE); !strings.Contains(kid.body, "rcp-cover") || strings.Contains(kid.body, "imp-new-art") {
 		t.Errorf("a child sees the cover and no notice about articles")
 	}
-	if cover := ib.child.do(http.MethodGet, r.location+"/cover", nil, nil); cover.status != http.StatusOK || !strings.HasPrefix(cover.body, "\xff\xd8") {
-		t.Errorf("cover = %d", cover.status)
+	if photos, _ := ib.b.db.RecipePhotos(ib.hid, got.ID); len(photos) == 1 {
+		if cover := ib.child.do(http.MethodGet, r.location+"/photos/"+photos[0].ID, nil, nil); cover.status != http.StatusOK || !strings.HasPrefix(cover.body, "\xff\xd8") {
+			t.Errorf("cover = %d", cover.status)
+		}
 	}
 	if _, err := ib.b.db.RecipeDraft(ib.hid, strings.TrimPrefix(to, importPath+"/")); err == nil {
 		t.Error("the draft stays after saving")
@@ -534,8 +536,8 @@ func TestWithTheSwitchOffTheRecipeHasNoCover(t *testing.T) {
 		t.Fatalf("save = %d", r.status)
 	}
 	rcpLacks(t, "the recipe page", ib.b.do(http.MethodGet, r.location, nil, rcpDE).body, "rcp-cover")
-	if c := ib.b.do(http.MethodGet, r.location+"/cover", nil, nil); c.status != http.StatusNotFound {
-		t.Errorf("cover = %d, want 404", c.status)
+	if photos, _ := ib.b.db.RecipePhotos(ib.hid, strings.TrimPrefix(r.location, "/meals/recipes/")); len(photos) != 0 {
+		t.Errorf("photos = %+v, want none: the picture was switched off", photos)
 	}
 }
 

@@ -12,6 +12,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"path/filepath"
 	"runtime"
 	"slices"
 	"strings"
@@ -27,6 +28,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/places"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/recipeimport"
+	"github.com/hejmo-home/hejmo/internal/recipephoto"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/update"
 	"github.com/hejmo-home/hejmo/internal/weather"
@@ -146,19 +148,20 @@ type server struct {
 	// passkeyTries counts refused passkey sign-ins per client address.
 	passkeyTries *loginLimiter
 	// ceremonies holds the passkey ceremonies that are begun and not finished.
-	ceremonies *passkey.Ceremonies
-	opens      *loginLimiter // pairing screens opened, per client address
-	sync       *calsync.Service
-	weather    *weather.Service
-	gate       *outbound.Gate // every connection to the outside, and its switches
-	places     *places.List   // the list of places on the box, loaded at start-up (ADR 0023)
-	live       time.Duration
-	countWait  time.Duration
-	done       <-chan struct{}
-	updateDir  string
-	kiosk      *KioskRunner // nil when displays are not driven
-	photos     *photoBox    // nil without a data directory for photos
-	flashTexts flashTexts
+	ceremonies   *passkey.Ceremonies
+	opens        *loginLimiter // pairing screens opened, per client address
+	sync         *calsync.Service
+	weather      *weather.Service
+	gate         *outbound.Gate // every connection to the outside, and its switches
+	places       *places.List   // the list of places on the box, loaded at start-up (ADR 0023)
+	live         time.Duration
+	countWait    time.Duration
+	done         <-chan struct{}
+	updateDir    string
+	kiosk        *KioskRunner       // nil when displays are not driven
+	photos       *photoBox          // nil without a data directory for photos
+	recipePhotos *recipephoto.Files // the own photos of recipes (ticket 280); nil without a data directory
+	flashTexts   flashTexts
 	// pictures holds pictures made from an upload or a web image until their article is saved (ticket 164).
 	pictures pendingPictures
 	// fetcher downloads web images, only from public addresses.
@@ -224,6 +227,7 @@ func New(opts Options) http.Handler {
 	}
 	if opts.PhotoDir != "" {
 		s.photos = newPhotoBox(opts.PhotoDir)
+		s.recipePhotos = recipephoto.NewFiles(filepath.Join(opts.PhotoDir, "recipe-photos"))
 		if opts.Done != nil {
 			go s.watchPhotoFolder(opts.Done)
 		}
@@ -239,6 +243,12 @@ func New(opts Options) http.Handler {
 	s.passkeyTries = newLoginLimiter(10, 10*time.Minute, s.now)
 	s.ceremonies = passkey.NewCeremonies(s.now)
 	s.pages = parsePages()
+	// The generated calendar of religious holidays is written in the language of the parent who chose it, and again at every start so the years move on (ticket 339).
+	s.db.SetReligiousTitler(s.religiousTitle)
+	s.db.SetClock(s.now)
+	if err := s.db.SyncAllReligious(); err != nil {
+		s.logger.Error("sync religious holidays at start", "err", err)
+	}
 	s.settleAtStart() // an installation that ended while the box was away, and what an upload left
 	s.syncUpdateSettings()
 	// A box updated to a version with badges gives everyone the badges their history already earned, dated that day (ticket 295).
@@ -467,6 +477,9 @@ func New(opts Options) http.Handler {
 	// specific than "{id}/{action}", while it would conflict with each of "{id}/cook", "{id}/edit" and so on.
 	mux.HandleFunc("GET /meals/recipes/{id}/{action}", s.handleRecipeAction)
 	mux.HandleFunc("POST /meals/recipes/{id}/{action}", s.handleRecipeAction)
+	// The photos of a recipe (ticket 280) have one more segment: "{id}/photos/{rest}" would conflict with "import/{id}/picture".
+	mux.HandleFunc("GET /meals/recipes/{id}/{action}/{rest...}", s.handleRecipeAction)
+	mux.HandleFunc("POST /meals/recipes/{id}/{action}/{rest...}", s.handleRecipeAction)
 	mux.HandleFunc("GET /meals/recipes/{id}", s.handleRecipePage)
 	mux.HandleFunc("POST /meals/recipes/{id}", s.handleRecipeSave)
 	mux.HandleFunc("GET /meals/templates", s.handleTemplatesPage)
@@ -523,6 +536,8 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /settings", s.handleSettingsHub)
 	mux.HandleFunc("GET /places", s.handlePlaces)
 	mux.HandleFunc("GET /settings/licences", s.handleLicences)
+	mux.HandleFunc("GET /settings/religious-holidays", s.handleReligious)
+	mux.HandleFunc("POST /settings/religious-holidays", s.handleReligiousSave)
 	mux.HandleFunc("GET /settings/household", s.handleSettingsPage)
 	mux.HandleFunc("POST /settings/household", s.handleSettingsSave)
 	mux.HandleFunc("GET /settings/connections", s.handleConnectionsPage)

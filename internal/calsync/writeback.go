@@ -43,9 +43,8 @@ func (s *Service) Push(ctx context.Context, householdID, calendarID string) erro
 		return err
 	}
 	at := s.now()
-	interval := time.Duration(cal.Sync.IntervalMinutes) * time.Minute
 	fail := func(msg i18n.Message, cause error) error {
-		if err := s.db.FailSync(householdID, calendarID, msg, at, at.Add(Backoff(interval, cal.Sync.Failures+1))); err != nil {
+		if _, err := s.recordFailure(cal, msg, cause, at); err != nil {
 			return errors.Join(cause, err)
 		}
 		return cause
@@ -56,6 +55,9 @@ func (s *Service) Push(ctx context.Context, householdID, calendarID string) erro
 	}
 	if len(pending) == 0 {
 		return nil
+	}
+	if throttled(cal, at) {
+		return nil // the server asked to wait: the changes stay queued until the next sync after that
 	}
 	if cal.Kind == "outlook" {
 		if err := s.refuse(cal.Kind, cal.URL); err != nil {
@@ -111,7 +113,7 @@ func (s *Service) Wait() { s.pushes.Wait() }
 
 // pushPending writes every queued object of a calendar. It returns the first
 // problem after trying the others; a problem that makes the others pointless
-// (wrong password, foreign host) stops it at once. The caller holds the lock.
+// (wrong password, foreign host, a server that asks to wait) stops it at once. The caller holds the lock.
 func (s *Service) pushPending(ctx context.Context, cal store.SyncedCalendar, h store.Household, remote Remote) error {
 	pending, err := s.db.PendingObjects(cal.ID)
 	if err != nil {
@@ -127,6 +129,9 @@ func (s *Service) pushPending(ctx context.Context, cal store.SyncedCalendar, h s
 	var first error
 	for _, po := range pending {
 		if err := s.pushObject(ctx, cal, h, remote, po, opts); err != nil {
+			if t := throttleOf(err, s.now()); t != nil {
+				return t // the rest stays queued for the next sync
+			}
 			if abortsSync(err) {
 				return err
 			}
@@ -142,7 +147,8 @@ func (s *Service) pushPending(ctx context.Context, cal store.SyncedCalendar, h s
 func abortsSync(err error) bool {
 	var foreign *caldavclient.ForeignHostError
 	var status *caldavclient.StatusError
-	return errors.As(err, &foreign) || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) ||
+	var throttled *throttledError
+	return errors.As(err, &throttled) || errors.As(err, &foreign) || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) ||
 		(errors.As(err, &status) && status.Code == http.StatusUnauthorized)
 }
 

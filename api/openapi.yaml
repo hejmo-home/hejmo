@@ -7068,7 +7068,7 @@ components:
             list: { type: string, description: "catholic, protestant, romanian_orthodox or greek_orthodox" }
         meal_shopping:
           type: object
-          description: "Choose by hand or automatic, the days ahead and the list; omitted parts stay as they are and `list_id: null` takes the chosen list away. An unknown mode, days outside 1 to 14 or a list that is not of this household refuses the whole request with 422."
+          description: "Choose by hand or automatic, the days ahead and the list; omitted parts stay as they are and `list_id: null` takes the chosen list away. An unknown mode, days outside 1 to 14, a list that is not of this household or a newly named list without suggestions refuses the whole request with 422."
           properties:
             mode: { type: string, description: "manual or automatic" }
             days: { type: integer }

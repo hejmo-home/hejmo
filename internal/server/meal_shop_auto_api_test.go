@@ -84,3 +84,58 @@ func TestTheShoppingSettingRefusesDaysAsAWordWith400(t *testing.T) {
 		t.Errorf("days as a word = %d, want 400", res.StatusCode)
 	}
 }
+
+// A list that lost its suggestions after it was chosen must not lock the
+// setting: a request that does not name the list can still switch to by hand
+// (the same as the web form, ADR 0015).
+func TestAListThatLostItsSuggestionsDoesNotBlockSwitchingToByHand(t *testing.T) {
+	t.Parallel()
+	c := signedInAPI(t)
+	status, l, _ := c.call(http.MethodPost, "/lists", map[string]any{"name": "Wocheneinkauf", "color": "blue", "symbol": "circle-filled", "sort": "manual", "suggestions": true})
+	if status != http.StatusCreated {
+		t.Fatalf("create list = %d %v", status, l)
+	}
+	id := l["id"].(string)
+	if status, s, _ := c.call(http.MethodPatch, "/settings", map[string]any{"meal_shopping": map[string]any{"mode": "automatic", "list_id": id}}); status != http.StatusOK {
+		t.Fatalf("automatic = %d %v", status, s)
+	}
+	if status, l, _ := c.call(http.MethodPatch, "/lists/"+id, map[string]any{"suggestions": false}); status != http.StatusOK {
+		t.Fatalf("switch suggestions off = %d %v", status, l)
+	}
+	status, s, _ := c.call(http.MethodPatch, "/settings", map[string]any{"meal_shopping": map[string]any{"mode": "manual"}})
+	m, _ := s["meal_shopping"].(map[string]any)
+	if status != http.StatusOK || m["mode"] != "manual" || m["list_id"] != id {
+		t.Errorf("switch to by hand = %d %v", status, s)
+	}
+	// naming another list without suggestions is still refused
+	_, plain, _ := c.call(http.MethodPost, "/lists", map[string]any{"name": "Pinnwand", "color": "blue", "symbol": "circle-filled", "sort": "manual", "suggestions": false})
+	if status, _, _ := c.call(http.MethodPatch, "/settings", map[string]any{"meal_shopping": map[string]any{"list_id": plain["id"]}}); status != http.StatusUnprocessableEntity {
+		t.Errorf("naming a new list without suggestions = %d, want 422", status)
+	}
+}
+
+// The setting remembers the language of the parent who saved it (the run
+// writes the entries in it), so the handler must store it.
+func TestTheAPIStoresTheLanguageOfTheParentWithTheShoppingSetting(t *testing.T) {
+	t.Parallel()
+	c := signedInAPI(t)
+	req, _ := http.NewRequest(http.MethodPatch, c.b.srv.URL+"/api/v1/settings", bytes.NewReader([]byte(`{"meal_shopping":{"mode":"automatic"}}`)))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", c.b.srv.URL)
+	req.Header.Set("Accept-Language", "en")
+	res, err := c.b.client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("patch = %d", res.StatusCode)
+	}
+	h, err := c.b.db.HomeHousehold()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, err := c.b.db.MealShopAuto(h.ID); err != nil || got.Lang != "en" {
+		t.Errorf("stored = %+v %v, want lang en", got, err)
+	}
+}

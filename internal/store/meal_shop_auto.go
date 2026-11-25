@@ -51,13 +51,23 @@ func (db *DB) SetMealShopAuto(householdID string, a MealShopAuto) error {
 }
 
 // CheckMealShopAuto says whether SetMealShopAuto would accept the setting (ErrInvalid if not).
+// The list already stored is left alone even if it has lost its suggestions
+// since: that must not keep a parent from changing the other parts, such as
+// switching back to by hand. The run only warns about it.
 func (db *DB) CheckMealShopAuto(householdID string, a MealShopAuto) error {
 	if a.Days < 1 || a.Days > MaxShopDays {
 		return fmt.Errorf("%w: days must be from 1 to %d", ErrInvalid, MaxShopDays)
 	}
 	if a.ListID != "" {
+		stored, err := db.MealShopAuto(householdID)
+		if err != nil {
+			return err
+		}
+		if stored.ListID == a.ListID {
+			return nil
+		}
 		var suggestions bool
-		err := db.sql.QueryRow(`SELECT suggestions FROM lists WHERE household_id = ? AND id = ?`, householdID, a.ListID).Scan(&suggestions)
+		err = db.sql.QueryRow(`SELECT suggestions FROM lists WHERE household_id = ? AND id = ?`, householdID, a.ListID).Scan(&suggestions)
 		if errors.Is(err, sql.ErrNoRows) {
 			return fmt.Errorf("%w: list_id is not a list of this household", ErrInvalid)
 		}

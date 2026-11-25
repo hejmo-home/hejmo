@@ -2511,6 +2511,7 @@
   "shopauto.hint.link": "Time and holiday are set at Always on the list.",
   "shopauto.err.days": "Choose a whole number of days from 1 to {max}.",
   "shopauto.err.list": "Choose one of the lists offered.",
+  "shopauto.stale": "The list “{name}” no longer offers suggestions, so the meals cannot go on it. Choose another list below; saving without a choice uses the list of the last run.",
   "shopauto.row.off": "By hand",
   "shopauto.row.on.one": "Automatic: today",
   "shopauto.row.on.other": "Automatic: the next {n} days",

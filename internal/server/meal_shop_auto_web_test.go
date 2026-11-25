@@ -39,6 +39,9 @@ func TestSavingTheAutomaticShoppingListStoresTheHouseholdSetting(t *testing.T) {
 	if err != nil || !got.On || got.Days != 3 || got.ListID != sb.list.ID {
 		t.Fatalf("stored = %+v %v", got, err)
 	}
+	if got.Lang != "en" {
+		t.Errorf("the web form stores the language of the parent: %q, want en", got.Lang)
+	}
 	page := sb.b.do(http.MethodGet, shopAutoPath, nil, enHeader).body
 	rcpHas(t, "the page after saving", page, "Saved", `name="auto"`, "checked", `value="3"`, `value="`+sb.list.ID+`" selected`)
 	// switching it off keeps the days and the list
@@ -77,4 +80,22 @@ func TestOnlyParentsSeeTheAutomaticShoppingListSetting(t *testing.T) {
 	if got, _ := sb.b.db.MealShopAuto(sb.hid); got != (store.MealShopAuto{Days: 7}) {
 		t.Errorf("stored = %+v", got)
 	}
+}
+
+// A list that lost its suggestions is no longer offered; the page says so
+// instead of silently showing another choice.
+func TestThePageSaysWhenTheChosenListLostItsSuggestions(t *testing.T) {
+	t.Parallel()
+	sb := newShopBox(t)
+	if err := sb.b.db.SetMealShopAuto(sb.hid, store.MealShopAuto{On: true, Days: 7, ListID: sb.list.ID, Lang: "en"}); err != nil {
+		t.Fatal(err)
+	}
+	rcpLacks(t, "the page while the list is fine", sb.b.do(http.MethodGet, shopAutoPath, nil, enHeader).body, "no longer offers suggestions")
+	l := sb.list
+	l.Suggestions = false
+	if _, err := sb.b.db.UpdateList(sb.hid, l); err != nil {
+		t.Fatal(err)
+	}
+	body := sb.b.do(http.MethodGet, shopAutoPath, nil, enHeader).body
+	rcpHas(t, "the page", body, "no longer offers suggestions", "“"+sb.list.Name+"”")
 }

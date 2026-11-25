@@ -2,6 +2,7 @@
   <h1>{{t "shopauto.title"}}</h1>
   <p class="lead">{{t "shopauto.lead"}}</p>
   {{with .HolidayNote}}<div class="auto-note holiday" role="status">{{template "pauseIcon" 20}}<p><b>{{.Head}}</b> {{.Text}} <a href="{{$.AlwaysHref}}#urlaub">{{t "always.note.change"}}</a></p></div>{{end}}
+  {{with .Stale}}<div class="auto-note" role="status">{{template "alertIcon"}}<p>{{.}}</p></div>{{end}}
   <form method="post" action="/settings/lists/meal-shopping" class="steps lib-form auto-house">
     <fieldset>
       <legend>{{t "shopauto.legend"}}</legend>

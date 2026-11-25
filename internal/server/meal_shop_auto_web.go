@@ -70,6 +70,26 @@ func (s *server) renderShopAuto(w http.ResponseWriter, r *http.Request, p princi
 		s.fail(w, "lists", err)
 		return
 	}
+	// the chosen list lost its suggestions: it is not offered, so say so rather than show another choice quietly
+	stale := ""
+	if stored.ListID != "" {
+		offered := false
+		for _, l := range lists {
+			offered = offered || l.ID == stored.ListID
+		}
+		if !offered {
+			all, err := s.db.Lists(p.household.ID)
+			if err != nil {
+				s.fail(w, "lists", err)
+				return
+			}
+			for _, l := range all {
+				if l.ID == stored.ListID {
+					stale = s.i18n.Format(lang, i18n.Msg("shopauto.stale", "name", l.Name))
+				}
+			}
+		}
+	}
 	form := shopAutoForm{On: stored.On, Days: strconv.Itoa(stored.Days), ListID: stored.ListID}
 	if posted != nil {
 		form = *posted
@@ -77,7 +97,7 @@ func (s *server) renderShopAuto(w http.ResponseWriter, r *http.Request, p princi
 	s.render(w, r, status, "meal_shop_auto.html", map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID),
 		"BackHref": listsSettingsPath, "BackText": s.i18n.T(lang, "lists.set.back"),
-		"Form": form, "Errs": errs, "Lists": lists, "MaxDays": store.MaxShopDays,
+		"Stale": stale, "Form": form, "Errs": errs, "Lists": lists, "MaxDays": store.MaxShopDays,
 		"At": a.at(), "HolidayNote": a.holidayNote(""), "AlwaysHref": alwaysPath,
 		"Hint": s.i18n.Format(lang, i18n.Msg("shopauto.hint", "at", a.at())),
 	})

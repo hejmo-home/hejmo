@@ -2511,6 +2511,7 @@
   "shopauto.hint.link": "Uhrzeit und Urlaub stellst du bei „Immer auf der Liste“ ein.",
   "shopauto.err.days": "Wähle eine ganze Zahl von 1 bis {max} Tagen.",
   "shopauto.err.list": "Wähle eine der angebotenen Listen.",
+  "shopauto.stale": "Die Liste „{name}“ bietet keine Vorschläge mehr, deshalb können die Essen nicht darauf. Wähle unten eine andere Liste; ohne Auswahl gilt die Liste des letzten Durchlaufs.",
   "shopauto.row.off": "Von Hand",
   "shopauto.row.on.one": "Automatisch: heute",
   "shopauto.row.on.other": "Automatisch: die nächsten {n} Tage",

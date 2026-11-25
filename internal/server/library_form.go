@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
@@ -20,6 +21,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/food"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/library"
+	"github.com/hejmo-home/hejmo/internal/nutrition"
 	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/picture"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -43,6 +45,9 @@ type artForm struct {
 	PicSource, Symbol, SymQ, URL   string
 	Token                          string
 	Replacing, Pantry              bool
+	// FoodQ is the search of the section "Nährwerte", Food the id of the
+	// chosen food and PieceG the weight of a piece as typed (ticket 288).
+	FoodQ, Food, PieceG string
 	// FromList and FromEntry say the form was opened from the success line of a
 	// list ("Add to the library", ticket 165): after saving the entry becomes the
 	// article and the person goes back to the list.
@@ -51,8 +56,9 @@ type artForm struct {
 	Auto autoForm
 }
 
-func (s *server) formOf(o store.OwnArticle) artForm {
-	return artForm{Name: o.Name, Dept: o.Dept, Kind: o.Kind, Unit1: o.Unit1, Unit2: o.Unit2, Allergens: o.Allergens, PicSource: o.PicSource, Symbol: o.Symbol, Pantry: o.Pantry}
+func (s *server) formOf(o store.OwnArticle, lang string) artForm {
+	return artForm{Name: o.Name, Dept: o.Dept, Kind: o.Kind, Unit1: o.Unit1, Unit2: o.Unit2, Allergens: o.Allergens, PicSource: o.PicSource, Symbol: o.Symbol, Pantry: o.Pantry,
+		Food: o.Food, PieceG: pieceText(o.PieceG, lang)}
 }
 
 // Views of the parts of the form.
@@ -253,7 +259,7 @@ func (s *server) renderArticleForm(w http.ResponseWriter, r *http.Request, p pri
 	collatedSort(lang, cards)
 
 	first := ""
-	for _, field := range []string{"name", "photo", "url", "symbol", "unit1", "unit2", "kind", "allergens"} {
+	for _, field := range []string{"name", "food", "piece_g", "photo", "url", "symbol", "unit1", "unit2", "kind", "allergens"} {
 		if errs[field] != "" {
 			first = field
 			break
@@ -271,6 +277,7 @@ func (s *server) renderArticleForm(w http.ResponseWriter, r *http.Request, p pri
 		"Units1": units1, "Units2": units2, "Kinds": kinds, "Cards": cards, "IsNonFood": f.Kind == string(library.NonFood),
 		"ImageNote": s.noteFor(r, outbound.Images, "outside.note.image"), "Errs": errs, "FirstErr": first, "Waiting": s.i18n.T(lang, "artf.url.busy"),
 		"Token": f.Token, "ID": "", "Name": "",
+		"FoodSec": s.foodSectionOf(lang, f, cmp.Or(strings.TrimSpace(f.Name), s.i18n.T(lang, "artf.sym.article"))),
 	}
 	if existing != nil {
 		o := *existing
@@ -291,6 +298,14 @@ func (s *server) renderArticleForm(w http.ResponseWriter, r *http.Request, p pri
 			return
 		}
 		data["OnLists"] = s.listLinks(lang, onLists)
+		inRecipes, err := s.db.RecipesWithArticle(p.household.ID, o.ID)
+		if err != nil {
+			s.fail(w, "recipes of an article", err)
+			return
+		}
+		if len(inRecipes) > 0 {
+			data["InRecipes"] = s.recipesLinks(lang, inRecipes)
+		}
 		data["HasLists"] = len(onLists) > 0
 		stays, err := s.listsWith(p, st, o.ID, true)
 		if err != nil {
@@ -408,6 +423,7 @@ func (s *server) readForm(w http.ResponseWriter, r *http.Request) (f artForm, fi
 	f = artForm{
 		Name: v("name"), Dept: v("dept"), Kind: v("kind"), Unit1: v("unit1"), Unit2: v("unit2"), Allergens: r.PostForm["allergens"],
 		PicSource: v("pic_source"), Symbol: v("symbol"), SymQ: strings.TrimSpace(v("symq")), URL: strings.TrimSpace(v("url")), Token: v("picture_token"), Replacing: v("replacing") != "", Pantry: v("pantry") != "",
+		FoodQ: strings.TrimSpace(v("foodq")), Food: cmp.Or(v("food"), v("food_chosen")), PieceG: strings.TrimSpace(v("piece_g")),
 		FromList: v("list"), FromEntry: v("entry"), Auto: readAuto(r),
 	}
 	return f, file, nil
@@ -456,6 +472,14 @@ func (s *server) submitArticle(w http.ResponseWriter, r *http.Request, p princip
 		if r.PostFormValue("symclear") != "" {
 			f.SymQ = ""
 		}
+	case r.PostFormValue("foodsearch") != "" || r.PostFormValue("foodclearq") != "":
+		action = "foodsearch"
+		if r.PostFormValue("foodclearq") != "" {
+			f.FoodQ = ""
+		}
+	case r.PostFormValue("foodclear") != "":
+		action = "foodclear"
+		f.Food = ""
 	case r.PostFormValue("fetch") != "":
 		action = "fetch"
 	case r.PostFormValue("picture") == "replace":
@@ -506,7 +530,7 @@ func (s *server) submitArticle(w http.ResponseWriter, r *http.Request, p princip
 		pendPtr = &pend
 	}
 
-	if action == "fetch" || action == "symsearch" || action == "replace" {
+	if action == "fetch" || action == "symsearch" || action == "replace" || action == "foodsearch" || action == "foodclear" {
 		status := http.StatusOK
 		if len(errs) > 0 {
 			status = http.StatusUnprocessableEntity
@@ -532,6 +556,18 @@ func (s *server) submitArticle(w http.ResponseWriter, r *http.Request, p princip
 			errs[e.Field] = s.fieldError(lang, e)
 		}
 	}
+	// The section "Nährwerte" (ticket 288): a search that ended without a choice is
+	// an error, and the weight of a piece is a number of grams.
+	pieceG, pieceOK := parsePiece(f.PieceG)
+	if !pieceOK {
+		errs["piece_g"] = s.i18n.T(lang, "artf.err.piece")
+	}
+	if _, known := nutrition.Lookup(f.Food); f.Food != "" && !known {
+		f.Food = ""
+	}
+	if f.Food == "" && f.FoodQ != "" {
+		errs["food"] = s.i18n.T(lang, "artf.err.food")
+	}
 	if existing != nil && f.Auto.Present && f.Auto.On {
 		it := articleItem{Article: ownArticle(*existing), own: existing}
 		a, err := s.alwaysContext(p, lang)
@@ -554,7 +590,7 @@ func (s *server) submitArticle(w http.ResponseWriter, r *http.Request, p princip
 		return
 	}
 	in = in.Normalized()
-	own := store.OwnArticle{Name: in.Name, Dept: in.Dept, Kind: in.Kind, Allergens: in.Allergens, Unit1: in.Unit1, Unit2: in.Unit2, PicSource: in.PicSource, Symbol: in.Symbol, Pantry: f.Pantry}
+	own := store.OwnArticle{Name: in.Name, Dept: in.Dept, Kind: in.Kind, Allergens: in.Allergens, Unit1: in.Unit1, Unit2: in.Unit2, PicSource: in.PicSource, Symbol: in.Symbol, Pantry: f.Pantry, Food: f.Food, PieceG: pieceG}
 	var pic *store.ArticlePicture
 	if (eff == "upload" || eff == "web") && havePend {
 		pc := pend.ArticlePicture

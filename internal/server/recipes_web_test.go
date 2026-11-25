@@ -227,7 +227,7 @@ func TestTheEmptyListInvitesParentsAndTellsChildren(t *testing.T) {
 	t.Parallel()
 	rb := newRecipeBox(t)
 	parent := rb.b.do(http.MethodGet, "/meals/recipes", nil, enHeader).body
-	rcpHas(t, "parent", parent, "No recipes yet. Start with a dish you cook often", `<a class="button" href="/meals/recipes/new">New recipe</a>`)
+	rcpHas(t, "parent", parent, "This is where you collect your dishes with ingredients and steps.", "import it from a recipe web page", `<a class="button" href="/meals/recipes/new"><svg`, "New recipe</a>", `<a class="button secondary" href="/meals/recipes/import">`)
 	rcpLacks(t, "parent", parent, `role="search"`, "lib-filter")
 	kid := rb.child.do(http.MethodGet, "/meals/recipes", nil, enHeader).body
 	rcpHas(t, "child", kid, "No recipes yet. Adults write recipes; as soon as there are some, they appear here.")

@@ -33,6 +33,7 @@ type eventItem struct {
 	Groups                      []string
 	WhoParts                    []wholine.Part // who it is for, in words (wholine, nobody left out), one part per name for the page to keep whole
 	Repeats, ReadOnly           bool
+	Vary                        bool // the day depends on moon sighting: "or 1 day later" (ticket 339)
 }
 
 type weekBar struct {
@@ -128,7 +129,8 @@ func eventHref(o calendar.Occurrence) string {
 
 func (c *calendarContext) item(o calendar.Occurrence) eventItem {
 	it := eventItem{Title: c.s.title(c.r, o.Title), Location: o.Location, ReadOnly: c.readOnly[o.CalendarID], Repeats: o.SeriesID != ""}
-	if !it.ReadOnly {
+	it.Vary = o.VarySighting
+	if !it.ReadOnly || o.Religious != "" { // a religious holiday has a page of its own that says where it comes from (ticket 339)
 		it.Href = eventHref(o)
 	}
 	if !o.AllDay {
@@ -242,7 +244,8 @@ func (s *server) handleCalendarSearch(w http.ResponseWriter, r *http.Request) {
 		}
 		for _, e := range found {
 			o := calendar.Occurrence{EventID: e.ID, SeriesID: e.SeriesID, RecurrenceID: e.RecurrenceID, CalendarID: e.CalendarID, Title: e.Title, Location: e.Location,
-				AllDay: e.AllDay, Start: e.Start, End: e.End, People: e.People, Groups: e.Groups}
+				AllDay: e.AllDay, Start: e.Start, End: e.End, People: e.People, Groups: e.Groups,
+				Religious: e.Religious, ReligiousKey: e.ReligiousKey, ReligiousEve: e.ReligiousEve, VarySighting: e.VarySighting}
 			it := c.item(o)
 			it.Repeats = e.Recurring() || e.SeriesID != ""
 			items = append(items, it)
@@ -587,6 +590,12 @@ func (s *server) renderEventPage(w http.ResponseWriter, r *http.Request, c *cale
 		"CalendarName": c.calendarName(occ.CalendarID), "Zone": master.Start.Location().String(), "CurrentRepeat": f.Repeat}
 	if inv := master.Invitation; inv != nil {
 		extra["Invite"] = s.outlookInvite(r, c, master, occ)
+	}
+	if master.Religious != "" {
+		occ.Religious, occ.ReligiousKey, occ.ReligiousEve = master.Religious, master.ReligiousKey, master.ReligiousEve
+		if pg, ok := s.religiousEventPage(r, c.p, extra["CalendarName"].(string), occ); ok {
+			extra["RGen"] = pg
+		}
 	}
 	s.renderEventForm(w, r, c, status, "edit", f, extra, bad)
 }

@@ -160,8 +160,7 @@ func (db *DB) SaveReligiousHolidays(householdID string, in ReligiousInput, calen
 		return change, err
 	}
 	religions := curReligions
-	if in.On {
-		rs, _ := cleanReligions(in.Religions)
+	if rs, _ := cleanReligions(in.Religions); len(rs) > 0 { // a choice given while off is kept for later; none given keeps the stored one
 		list := make([]string, len(rs))
 		for i, r := range rs {
 			list[i] = string(r)

@@ -10,7 +10,7 @@
   {{if .Items}}<ul class="cards" data-results>
     {{range .Items}}<li{{if .Slot}} data-person="{{.Slot}}"{{end}}>
       <strong>{{if .Href}}<a href="{{.Href}}">{{.Title}}</a>{{else}}{{.Title}}{{end}}</strong>
-      <span class="hint">{{.Date}}{{if .Time}} · {{.Time}}{{end}}{{if .Location}} · {{.Location}}{{end}}{{if .Repeats}} · {{t "calendar.repeats"}}{{end}}{{if .ReadOnly}} · {{t "calendar.readonly"}}{{end}}</span>
+      <span class="hint">{{.Date}}{{if .Time}} · {{.Time}}{{end}}{{if .Location}} · {{.Location}}{{end}}{{if .Repeats}} · {{t "calendar.repeats"}}{{end}}{{if .ReadOnly}} · {{t "calendar.readonly"}}{{end}}{{if .Vary}} <span class="vary">{{t "rh.vary"}}</span>{{end}}</span>
     </li>{{end}}
   </ul>{{else if .Searched}}<p class="lead">{{t "calendar.search.none"}}</p>{{end}}
 {{template "foot"}}

@@ -19,6 +19,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/places"
+	rh "github.com/hejmo-home/hejmo/internal/religiousholiday"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -41,11 +42,28 @@ type settingsJSON struct {
 	FirstStepsSkipped []string `json:"first_steps_skipped"`
 	// BelowZero is whether unticking a task may take a star balance below zero (ticket 292).
 	BelowZero bool `json:"below_zero"`
+	// ReligiousHolidays says whether the religious holidays are in their generated calendar and which religions (ticket 339).
+	ReligiousHolidays religiousJSON `json:"religious_holidays"`
+}
+
+type religiousJSON struct {
+	On               bool     `json:"on"`
+	Religions        []string `json:"religions"`
+	IslamicCalendar  string   `json:"islamic_calendar"`
+	OrthodoxCalendar string   `json:"orthodox_calendar"`
+}
+
+func religiousOf(h store.Household) religiousJSON {
+	out := religiousJSON{On: h.ReligiousHolidaysOn, Religions: []string{}, IslamicCalendar: string(h.IslamicCalendar), OrthodoxCalendar: string(h.OrthodoxCalendar)}
+	for _, r := range h.Religions {
+		out.Religions = append(out.Religions, string(r))
+	}
+	return out
 }
 
 func settingsOf(h store.Household) settingsJSON {
 	out := settingsJSON{DateFormat: h.DateFormat, TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, AutoUpdate: h.AutoUpdate, HomeName: h.HomeName,
-		MealCutoffs: cutoffsToJSON(h.MealCutoffs), FirstStepsHidden: h.FirstStepsHidden, FirstStepsSkipped: skippedOrEmpty(h.FirstStepsSkipped), BelowZero: h.BelowZero}
+		MealCutoffs: cutoffsToJSON(h.MealCutoffs), FirstStepsHidden: h.FirstStepsHidden, FirstStepsSkipped: skippedOrEmpty(h.FirstStepsSkipped), BelowZero: h.BelowZero, ReligiousHolidays: religiousOf(h)}
 	if h.Latitude != 0 || h.Longitude != 0 {
 		out.Latitude, out.Longitude = &h.Latitude, &h.Longitude
 	}
@@ -97,6 +115,13 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		FirstStepsSkipped *[]string `json:"first_steps_skipped"`
 		// BelowZero allows or forbids a star balance below zero after unticking a task.
 		BelowZero *bool `json:"below_zero"`
+		// ReligiousHolidays switches the religious holidays calendar on or off and chooses the religions; omitted parts stay as they are.
+		ReligiousHolidays *struct {
+			On               *bool     `json:"on"`
+			Religions        *[]string `json:"religions"`
+			IslamicCalendar  *string   `json:"islamic_calendar"`
+			OrthodoxCalendar *string   `json:"orthodox_calendar"`
+		} `json:"religious_holidays"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
@@ -141,6 +166,30 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		writeError(w, http.StatusUnprocessableEntity, errMsg)
 		return
 	}
+	var rin store.ReligiousInput
+	if rs := in.ReligiousHolidays; rs != nil {
+		rin = store.ReligiousInput{On: p.household.ReligiousHolidaysOn, Religions: p.household.Religions, Islamic: p.household.IslamicCalendar, Orthodox: p.household.OrthodoxCalendar}
+		if rs.On != nil {
+			rin.On = *rs.On
+		}
+		if rs.Religions != nil {
+			rin.Religions = nil
+			for _, x := range *rs.Religions {
+				rin.Religions = append(rin.Religions, rh.Religion(x))
+			}
+		}
+		if rs.IslamicCalendar != nil {
+			rin.Islamic = rh.IslamicCalendar(*rs.IslamicCalendar)
+		}
+		if rs.OrthodoxCalendar != nil {
+			rin.Orthodox = rh.OrthodoxCalendar(*rs.OrthodoxCalendar)
+		}
+		// Before anything is saved; a home given in the same request counts as the location.
+		if err := store.ValidateReligious(rin, p.household.HasLocation() || home != nil); err != nil {
+			writeError(w, http.StatusUnprocessableEntity, err.Error())
+			return
+		}
+	}
 	if err := s.saveSettings(p.household, store.HouseholdSettings{DateFormat: d, TimeFormat: f, TemperatureUnit: u, AutoUpdate: a, MealCutoffs: c, FirstStepsHidden: in.FirstStepsHidden, FirstStepsSkipped: in.FirstStepsSkipped, Home: home}); err != nil {
 		var unknown *store.UnknownStepError
 		if errors.As(err, &unknown) {
@@ -156,6 +205,17 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 	}
 	if in.BelowZero != nil {
 		if err := s.db.SetBelowZero(p.household.ID, *in.BelowZero); err != nil {
+			s.fail(w, "update settings", err)
+			return
+		}
+	}
+	if in.ReligiousHolidays != nil {
+		lang := s.langOf(r)
+		if _, err := s.db.SaveReligiousHolidays(p.household.ID, rin, s.i18n.T(lang, "rh.calendar_name"), lang); err != nil {
+			if errors.Is(err, store.ErrInvalid) {
+				writeError(w, http.StatusUnprocessableEntity, err.Error())
+				return
+			}
 			s.fail(w, "update settings", err)
 			return
 		}
@@ -346,6 +406,9 @@ func (s *server) handleSettingsHub(w http.ResponseWriter, r *http.Request) {
 			}
 			if it.Href == contactsPath {
 				e.StateText = s.contactHubState(s.langOf(r), p.household)
+			}
+			if it.Href == religiousPath {
+				e.StateText = s.religiousHubState(s.langOf(r), p.household)
 			}
 			if it.Href == "/photos" {
 				e.StateText = s.photoHubState(s.langOf(r), p.household)

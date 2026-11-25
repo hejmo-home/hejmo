@@ -11,11 +11,22 @@ shift
 
 server=./internal/server
 
-# Top-level tests and examples of the server package, whose hash picks the shard.
+# The two halves of the rendered layout check each take one shard (ticket 347):
+# the only shards with Chrome are 1 and 2, so they are pinned there, not left to
+# the hash. Everything else goes by the hash of its name.
+pinned_shard() {
+	case "$1" in
+	TestRenderedLayout) echo 0 ;;
+	TestRenderedLayoutPart2) echo 1 ;;
+	*) echo $(( $(printf '%s' "$1" | cksum | cut -d' ' -f1) % 2 )) ;;
+	esac
+}
+
+# Top-level tests and examples of the server package, whose name picks the shard.
 server_tests() {
 	local want=$1 name
 	go test -list '^(Test|Example)' "$server" | grep -E '^(Test|Example)' | while read -r name; do
-		if [ $(( $(printf '%s' "$name" | cksum | cut -d' ' -f1) % 2 )) -eq "$want" ]; then
+		if [ "$(pinned_shard "$name")" -eq "$want" ]; then
 			echo "$name"
 		fi
 	done

@@ -48,6 +48,9 @@ jobs:
           want=$(go test -list '^(Test|Example)' ./internal/server | grep -E '^(Test|Example)' | sort)
           got=$( (HEJMO_SHARD_LIST=1 ci/test-shard.sh 1; HEJMO_SHARD_LIST=1 ci/test-shard.sh 2) | sort)
           test -n "$want" && test "$want" = "$got" || { diff <(echo "$want") <(echo "$got") | head -20; exit 1; }
+          # The two halves of the rendered layout check run in different shards (ticket 347).
+          HEJMO_SHARD_LIST=1 ci/test-shard.sh 1 | grep -qx TestRenderedLayout || { echo "TestRenderedLayout is not in shard 1"; exit 1; }
+          HEJMO_SHARD_LIST=1 ci/test-shard.sh 2 | grep -qx TestRenderedLayoutPart2 || { echo "TestRenderedLayoutPart2 is not in shard 2"; exit 1; }
       - name: Chrome for the rendered layout check
         run: |
           for c in google-chrome google-chrome-stable chromium chromium-browser chrome; do command -v "$c" && "$c" --version; done || true

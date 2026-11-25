@@ -21,6 +21,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -1199,6 +1200,41 @@ func TestRenderedLayout(t *testing.T) {
 	f := newLayoutFixture(t)
 	pages := append(layoutPages(t, f), wizardPages(t)...)
 
+	// The pages are dealt to layoutParts browsers that render at the same time, each with its own time
+	// budget: one browser needed more than 15 minutes for all pages on the CI machines (#289).
+	var mu sync.Mutex
+	seen := map[int]bool{} // the known problems that occurred
+	for part := 0; part < layoutParts; part++ {
+		var mine []layoutPage
+		for i, page := range pages {
+			if i%layoutParts == part {
+				mine = append(mine, page)
+			}
+		}
+		t.Run(fmt.Sprintf("part%d", part+1), func(t *testing.T) {
+			t.Parallel()
+			renderLayoutPages(t, chrome, mine, &mu, seen)
+		})
+	}
+	// Every part is done when the group of parallel subtests ends: a known problem that no longer occurs
+	// is fixed, its entry goes. Not checked when a subtest was picked with -run, which sees only some pages.
+	t.Cleanup(func() {
+		if run := flag.Lookup("test.run"); run == nil || !strings.Contains(run.Value.String(), "/") {
+			for i, k := range knownLayoutProblems {
+				if !seen[i] && !k.platform {
+					t.Errorf("known layout problem #%d (%s, %s, width %d) did not occur: remove it from knownLayoutProblems", k.issue, k.path, k.kind, k.width)
+				}
+			}
+		}
+	})
+}
+
+// layoutParts is how many browsers render the pages at the same time.
+const layoutParts = 3
+
+// renderLayoutPages renders pages in its own browser; seen collects the known problems that occurred.
+func renderLayoutPages(t *testing.T, chrome string, pages []layoutPage, mu *sync.Mutex, seen map[int]bool) {
+	t.Helper()
 	shots := os.Getenv("HEJMO_LAYOUT_SHOTS")
 	if shots == "" {
 		shots = t.TempDir()
@@ -1212,7 +1248,6 @@ func TestRenderedLayout(t *testing.T) {
 	defer cancelTimeout()
 
 	names, _ := json.Marshal(layoutNames)
-	seen := map[int]bool{} // the known problems that occurred
 	failing := false
 	for _, page := range pages {
 		for _, lang := range []string{"de", "en"} {
@@ -1280,7 +1315,9 @@ func TestRenderedLayout(t *testing.T) {
 						}
 						for _, p := range probs {
 							if i := slices.IndexFunc(knownLayoutProblems, func(k knownLayoutProblem) bool { return k.covers(page.path, vp.w, p) }); i >= 0 {
+								mu.Lock()
 								seen[i] = true
+								mu.Unlock()
 								t.Logf("known problem (#%d): %s %s, width %d, theme %s, language %s: %s: %s (%s)", knownLayoutProblems[i].issue, page.site.name, page.path, vp.w, theme, lang, p.Kind, p.El, p.Detail)
 								continue
 							}
@@ -1298,15 +1335,6 @@ func TestRenderedLayout(t *testing.T) {
 						}
 					}
 				})
-			}
-		}
-	}
-	// A known problem that no longer occurs is fixed: its entry goes. Not checked
-	// when a subtest was picked with -run, which sees only some of the pages.
-	if run := flag.Lookup("test.run"); run == nil || !strings.Contains(run.Value.String(), "/") {
-		for i, k := range knownLayoutProblems {
-			if !seen[i] && !k.platform {
-				t.Errorf("known layout problem #%d (%s, %s, width %d) did not occur: remove it from knownLayoutProblems", k.issue, k.path, k.kind, k.width)
 			}
 		}
 	}

@@ -33,6 +33,8 @@ var spellings = map[string]string{
 	"vollmilch": "milk", "magerquark": "quark", "topfen": "quark", "naturjoghurt": "yoghurt", "sahnejoghurt": "yoghurt",
 	"butterschmalz": "butter", "bratbutter": "butter", "ghee": "butter",
 	"kase, gerieben": "grated-cheese", "gratinkase, gerieben": "grated-cheese",
+	// celery: a name the library knows under another name
+	"stangensellerie": "celery-stalks",
 	// soy
 	"sojasauce": "soy-sauce",
 	// mustard

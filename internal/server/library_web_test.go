@@ -206,12 +206,12 @@ func TestListsPageStatesTheLibraryInWordsAndSaysThereAreNoAllergiesYet(t *testin
 	if r.status != http.StatusOK {
 		t.Fatalf("GET = %d", r.status)
 	}
-	libHas(t, "lists page", r.body, "<h1>Lists</h1>", `class="list-rows"`, `href="/settings/lists/library"`, "<b>Article library</b>", "248 articles from Hejmo", "No own articles yet",
+	libHas(t, "lists page", r.body, "<h1>Lists</h1>", `class="list-rows"`, `href="/settings/lists/library"`, "<b>Article library</b>", "254 articles from Hejmo", "No own articles yet",
 		`<h2 id="al">Allergies</h2>`, `class="empty"`, "No allergies are entered yet", `href="/people"`, "Go to people")
 	libHasNot(t, "lists page without allergies", r.body, `name="hide"`, "How Hejmo warns")
 	l.postEN("/settings/lists/library/apples/hidden", url.Values{"hidden": {"on"}})
 	l.createArticle(articleForm())
-	libHas(t, "lists page", l.en("/settings/lists").body, "248 articles from Hejmo, 1 hidden by hand", "1 own article")
+	libHas(t, "lists page", l.en("/settings/lists").body, "254 articles from Hejmo, 1 hidden by hand", "1 own article")
 }
 
 func TestListsPageWarnsInWordsListsAllergiesAndOffersTheExperimentalHidingOffByDefault(t *testing.T) {
@@ -306,8 +306,8 @@ func TestLibraryShowsOwnArticlesFirstAndShippedOnesInClosedDepartmentCardsWithCo
 	}
 	libHas(t, "library", r.body, `<a href="/settings/lists">Lists</a>`, "<h1>Article library</h1>", `class="button" href="/settings/lists/library/new">Add own article`,
 		`class="lib-search"`, `role="search"`, `class="lib-filter"`, `aria-current="true">All</a>`, "With allergy warning", ">Hidden</a>",
-		`<h2 id="own">Own articles</h2>`, "Katzenfutter Huhn", `<h2 id="hej">Articles from Hejmo</h2>`, "248 articles in German and English.",
-		`<details class="dept"><summary>`, "Fruit and vegetables", "46 articles", "Sweets and snacks", "17 articles · 1 hidden by hand · ", "with allergy warning",
+		`<h2 id="own">Own articles</h2>`, "Katzenfutter Huhn", `<h2 id="hej">Articles from Hejmo</h2>`, "254 articles in German and English.",
+		`<details class="dept"><summary>`, "Fruit and vegetables", "47 articles", "Sweets and snacks", "17 articles · 1 hidden by hand · ", "with allergy warning",
 		`class="unchecked-box"`, "Not checked automatically, cannot be filtered", "Mia:</span> <span>Kiwi")
 	if strings.Contains(r.body, `<details class="dept" open`) {
 		t.Error("a department starts open")
@@ -323,7 +323,7 @@ func TestLibraryShowsOwnArticlesFirstAndShippedOnesInClosedDepartmentCardsWithCo
 		t.Errorf("the library shows a count in place of a name")
 	}
 	de := l.de("/settings/lists/library").body
-	libHas(t, "German library", de, `<a href="/settings/lists">Listen</a>`, "Eigenen Artikel anlegen", "Obst und Gemüse", "46 Artikel", "Artikel von Hejmo")
+	libHas(t, "German library", de, `<a href="/settings/lists">Listen</a>`, "Eigenen Artikel anlegen", "Obst und Gemüse", "47 Artikel", "Artikel von Hejmo")
 }
 
 func TestOwnArticlesStartWithAnEmptyStateSentence(t *testing.T) {

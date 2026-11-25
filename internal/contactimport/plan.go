@@ -830,7 +830,7 @@ func (d Dup) apply(file string, photoCards []vcard.Card) (store.ImportOp, string
 	e := *d.Existing
 	f, m := mergeInto(fieldsOfContact(e), rest, e.IsPerson(), d.region)
 	in := input(e.HejmoName, f, file)
-	in.HideBirthday, in.GroupIDs, in.Relations = e.HideBirthday, slices.Clone(e.GroupIDs), slices.Clone(e.Relations)
+	in.HideBirthday, in.ForChildren, in.GroupIDs, in.Relations = e.HideBirthday, e.ForChildren, slices.Clone(e.GroupIDs), slices.Clone(e.Relations)
 	if m.AddPhoto {
 		in = withPhoto(in, firstPhoto(d.Cards), file)
 	} else if m.PhotoChoice && len(photoCards) > 0 {

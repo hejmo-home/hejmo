@@ -24,7 +24,7 @@ func hejmo() []store.Contact {
 			Numbers:   []contact.Line{num(contact.Cell, "0171 3456 789"), num(contact.Home, "08031 87 65 43")},
 			BdayDay:   14,
 			BdayMonth: 3, HasPhoto: true,
-			Relations: []store.Relation{{Word: "Oma", WholeFamily: true}}, GroupIDs: []string{"g-notfall"}},
+			Relations: []store.Relation{{Word: "Oma", WholeFamily: true}}, GroupIDs: []string{"g-notfall"}, ForChildren: true},
 		{ID: "arzt", HejmoName: "Kinderarzt", FullName: "Kinderarztpraxis Dr. Yılmaz", Numbers: []contact.Line{num(contact.Work, "089 1234 5670")}},
 	}
 }
@@ -324,6 +324,9 @@ func TestADecisionsPlanMakesTheOpsAndNamesTheContactsThatWereMadeAndCompleted(t 
 		}
 		if op.MergeInto == "" && (len(op.Input.GroupIDs) != 1 || op.Input.GroupIDs[0] != "g-sonstige") {
 			t.Errorf("a new contact is in %v, want the chosen group", op.Input.GroupIDs)
+		}
+		if op.MergeInto == "oma" && !op.Input.ForChildren {
+			t.Error("completing a contact from a file switched it off for the children (ticket 301)")
 		}
 		if op.MergeInto != "" && len(op.Input.GroupIDs) > 1 {
 			t.Errorf("a completed contact got new groups: %v", op.Input.GroupIDs)

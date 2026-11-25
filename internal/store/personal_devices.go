@@ -43,6 +43,8 @@ type PersonalDevice struct {
 	ID       string
 	Name     string
 	PersonID string
+	// Kind is the kind of screen it said when it paired: phone, tablet or device (not told). A tablet cannot call.
+	Kind string
 	// PersonName is filled by PersonalDevices.
 	PersonName string
 	PairedAt   time.Time
@@ -215,10 +217,10 @@ func (db *DB) CompletePersonalDevicePairing(codeHash, claimHash, sessionHash str
 		return PersonalDevice{}, err
 	}
 	defer tx.Rollback()
-	var id, householdID, name string
+	var id, householdID, name, kind string
 	var person, personalDeviceID sql.NullString
-	err = tx.QueryRow(`SELECT id, household_id, person_id, name, personal_device_id FROM personal_device_pairings
-		WHERE code_hash = ? AND claim_hash = ? AND expires_at > ?`, codeHash, claimHash, stamp(at)).Scan(&id, &householdID, &person, &name, &personalDeviceID)
+	err = tx.QueryRow(`SELECT id, household_id, person_id, name, personal_device_id, device_kind FROM personal_device_pairings
+		WHERE code_hash = ? AND claim_hash = ? AND expires_at > ?`, codeHash, claimHash, stamp(at)).Scan(&id, &householdID, &person, &name, &personalDeviceID, &kind)
 	if errors.Is(err, sql.ErrNoRows) {
 		return PersonalDevice{}, ErrNotFound
 	}
@@ -228,9 +230,9 @@ func (db *DB) CompletePersonalDevicePairing(codeHash, claimHash, sessionHash str
 	if !person.Valid {
 		return PersonalDevice{}, ErrPersonalDevicePending
 	}
-	ph := PersonalDevice{ID: personalDeviceID.String, Name: name, PersonID: person.String, PairedAt: at, LastSeen: at}
-	if _, err := tx.Exec(`INSERT INTO personal_devices (id, household_id, person_id, name, created_at, last_seen_at) VALUES (?, ?, ?, ?, ?, ?)`,
-		ph.ID, householdID, ph.PersonID, ph.Name, stamp(at), stamp(at)); err != nil {
+	ph := PersonalDevice{ID: personalDeviceID.String, Name: name, PersonID: person.String, Kind: kind, PairedAt: at, LastSeen: at}
+	if _, err := tx.Exec(`INSERT INTO personal_devices (id, household_id, person_id, name, kind, created_at, last_seen_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		ph.ID, householdID, ph.PersonID, ph.Name, ph.Kind, stamp(at), stamp(at)); err != nil {
 		return PersonalDevice{}, err
 	}
 	if _, err := tx.Exec(`INSERT INTO sessions (id, token_hash, person_id, created_at, expires_at, personal_device_id) VALUES (?, ?, ?, ?, ?, ?)`,
@@ -264,6 +266,17 @@ func (db *DB) PersonalDevices(householdID string) ([]PersonalDevice, error) {
 		out = append(out, ph)
 	}
 	return out, rows.Err()
+}
+
+// PersonalDeviceKind is the kind of screen (phone, tablet, device) of the personal device behind a device session;
+// device when the session belongs to no personal device.
+func (db *DB) PersonalDeviceKind(sessionHash string) string {
+	var kind string
+	err := db.sql.QueryRow(`SELECT ph.kind FROM sessions s JOIN personal_devices ph ON ph.id = s.personal_device_id WHERE s.token_hash = ?`, sessionHash).Scan(&kind)
+	if err != nil {
+		return "device"
+	}
+	return kind
 }
 
 // RevokePersonalDevice removes a personal device; its device session ends with it.

@@ -88,8 +88,16 @@ func confirmPersonalDevice(t *testing.T, b *box, person store.Person, name strin
 // pairedPersonalDevice pairs a personal device for person and returns it, signed in.
 func pairedPersonalDevice(t *testing.T, b *box, person store.Person, name string) *screen {
 	t.Helper()
+	return pairedPersonalDeviceAs(t, b, person, name, "")
+}
+
+// pairedPersonalDeviceAs is pairedPersonalDevice for a device that sends the User-Agent ua: the pairing stores
+// its kind of screen (phone, tablet).
+func pairedPersonalDeviceAs(t *testing.T, b *box, person store.Person, name, ua string) *screen {
+	t.Helper()
 	path := showCode(t, b)
 	ph := newScreen(b)
+	ph.ua = ua
 	if r := ph.get(path, "en"); r.status != http.StatusOK {
 		t.Fatalf("personal device opens the code = %d\n%s", r.status, r.body)
 	}

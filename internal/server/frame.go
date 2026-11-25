@@ -131,6 +131,9 @@ func (s *server) frameFor(r *http.Request) frame {
 		cur := (it.Href == "/settings" && f.Back) || r.URL.Path == it.Href || (it.Href != "/" && strings.HasPrefix(r.URL.Path, it.Href+"/")) || (it.Href == "/" && strings.HasPrefix(r.URL.Path, "/notes/")) || (it.Href == "/tasks" && strings.HasPrefix(r.URL.Path, "/routines/"))
 		f.Items = append(f.Items, navLink{it.Href, it.Label, cur, false})
 	}
+	if f.NoSignOut { // a child's personal device: its own numbers come last (ticket 301)
+		f.Items = append(f.Items, navLink{numbersPath, "nav.numbers", r.URL.Path == numbersPath, false})
+	}
 	return f
 }
 

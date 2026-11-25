@@ -7,8 +7,9 @@ info:
     integrations. Authenticate with a bearer token (`Authorization: Bearer hejmo_…`)
     or a browser session. A token acts on behalf of a person and is limited by
     its scopes: `read`, `write`, `<resource>` or `<resource>:<action>`
-    (resources: people, events, calendars, tasks, lists, meals, displays, settings, tokens, health, contacts;
-    actions: read, write, delete, complete). The resource `health` (diet and
+    (resources: people, events, calendars, tasks, lists, meals, displays, settings, tokens, health, contacts, numbers;
+    actions: read, write, delete, complete). The resource `numbers` is the children's page of important numbers; children read it
+    (`read` and `numbers:read` include it). The resource `health` (diet and
     allergies) is reached only by its own scope: `read` and `write` never include it.
     The address book (`contacts`) is for parents only: a child's session gets 403 even to read it.
 
@@ -788,6 +789,58 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /numbers:
+    get:
+      operationId: listNumbers
+      summary: The important numbers for children (scope numbers:read; a child's device session, parents and tokens with read)
+      description: |
+        What the web page "Wichtige Nummern" (`/numbers`) shows: the contacts a parent switched on (`for_children`)
+        that have at least one number, in up to three sections in this order: `emergency` (the group Notfall,
+        in the order the contacts were made), `family` (the people of the household in the order of the people, then
+        the contacts of the group Familie A to Z) and `other` (A to Z by Hejmo name, in the language of the request).
+        A contact is in the first section that fits and only once; empty sections are left out. A child never gets
+        their own contact; parents get every contact on the list, the children included. A contact holds nothing but
+        its name, whether it has a photo (`GET /numbers/{id}/photo`) and its numbers: never address, e-mail
+        addresses, birthday, groups or note. The address book (`/contacts`) stays closed to children.
+      responses:
+        "200":
+          description: The sections
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sections]
+                properties:
+                  sections:
+                    type: array
+                    items:
+                      type: object
+                      required: [key, contacts]
+                      properties:
+                        key: { type: string, enum: [emergency, family, other] }
+                        contacts:
+                          type: array
+                          items: { $ref: "#/components/schemas/ChildContact" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /numbers/{id}/photo:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getNumbersPhoto
+      summary: The photo of a contact on the children's page (scope numbers:read)
+      description: |
+        The same JPEG as `GET /contacts/{id}/photo`, for a child's device session. 404 when the contact has no photo
+        or is not on the children's page (not switched on, or no number); a token that may read the address book (parents, a token with `read`) gets the photo of every contact; a token with only `numbers` gets what the children get.
+      responses:
+        "200":
+          description: A JPEG
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /contact-groups:
     get:
       operationId: listContactGroups
@@ -5207,12 +5260,13 @@ components:
         address: { $ref: "#/components/schemas/ContactAddress" }
         birthday: { allOf: [{ $ref: "#/components/schemas/ContactBirthday" }], nullable: true }
         show_in_birthdays: { type: boolean, default: true, description: "Whether the birthday is in the generated calendar of kind `birthdays`. Omitted means true, so a replace without it switches the birthday on again" }
+        for_children: { type: boolean, default: false, description: "Whether the contact is on the children's page \"Important numbers\" (`GET /numbers`; it shows only with a number, and only its photo, name and numbers). Off for every new contact, the contacts of people included. Omitted means false, so a replace without it switches it off again" }
         note: { type: string, description: "At most 1000 characters" }
         groups: { type: array, items: { type: string }, description: "Ids of contact groups" }
         relations: { type: array, items: { $ref: "#/components/schemas/ContactRelationInput" }, description: "Replaces the relations; an empty line (no word, whole family) is skipped, people without a word are 422, so are a word with no people (and no `whole_family`), more than 40 characters, unknown people, more than 20 relations and any relation on a person's contact" }
     Contact:
       type: object
-      required: [id, person_id, name, full_name, numbers, emails, address, birthday, show_in_birthdays, note, groups, relations, photo, created_by, created_at, updated_by, updated_at]
+      required: [id, person_id, name, full_name, numbers, emails, address, birthday, show_in_birthdays, for_children, note, groups, relations, photo, created_by, created_at, updated_by, updated_at]
       properties:
         id: { type: string, format: uuid, description: "The id of the person for a person's contact" }
         person_id: { type: string, format: uuid, nullable: true }
@@ -5223,6 +5277,7 @@ components:
         address: { $ref: "#/components/schemas/ContactAddress" }
         birthday: { allOf: [{ $ref: "#/components/schemas/ContactBirthday" }], nullable: true }
         show_in_birthdays: { type: boolean, description: "Whether the birthday is in the generated calendar of kind `birthdays`" }
+        for_children: { type: boolean, description: "Whether the contact is on the children's page \"Important numbers\" (`GET /numbers`)" }
         note: { type: string }
         groups: { type: array, items: { type: string } }
         relations: { type: array, items: { $ref: "#/components/schemas/ContactRelation" } }
@@ -5231,6 +5286,16 @@ components:
         created_at: { type: string, format: date-time }
         updated_by: { type: string, format: uuid, nullable: true }
         updated_at: { type: string, format: date-time }
+    ChildContact:
+      type: object
+      description: A contact as the children see it. The photo, the Hejmo name and the numbers are all of it.
+      required: [id, person_id, name, has_photo, numbers]
+      properties:
+        id: { type: string, format: uuid }
+        person_id: { type: string, format: uuid, nullable: true, description: "Set for the contact of a person of the household" }
+        name: { type: string, description: "The Hejmo name" }
+        has_photo: { type: boolean }
+        numbers: { type: array, items: { $ref: "#/components/schemas/ContactLine" } }
     ContactImport:
       type: object
       description: An uploaded contact file and what it brings to the household's contacts (ticket 300)

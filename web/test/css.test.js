@@ -65,3 +65,12 @@ test('the full-width column is hidden outside the phone breakpoint', () => {
   assert.match(b, /\[data-theme="bw"\] \.fv \.fv-back \{ border: 2px solid var\(--text\);/);
   assert.match(b, /\[data-theme="bw"\] \.fv \.fv-back \.icon \{ stroke: var\(--text\); \}/);
 });
+
+// Ticket 301: a child's personal device has no Sign out, so the narrow-bar rule that hid the words of the language
+// and theme chips only next to Sign out never applied and "Hejmo" broke into two lines at 375 px.
+test('under 480 px both chips of the bar drop their word on every bar, not only next to Sign out', () => {
+  const m = bare.match(/@media \(max-width: 479px\) \{\s*\.frame-tools \.lang-name, \.frame-tools \.theme-name \{([^}]*)\}/);
+  assert.ok(m, 'no media rule that hides .lang-name and .theme-name on every .frame-tools');
+  assert.match(m[1], /position: absolute/);
+  assert.match(m[1], /clip: rect\(0 0 0 0\)/);
+});

@@ -2,7 +2,6 @@ package server
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/hejmo-home/hejmo/internal/nameday"
 )
@@ -15,28 +14,35 @@ func (s *server) handleLicences(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.render(w, r, http.StatusOK, "licences.html", map[string]any{
-		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "PlacesDate": s.places.Date(), "NameDaySources": s.nameDaySources(s.langOf(r)),
+		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "PlacesDate": s.places.Date(), "NameDayLicences": s.nameDayLicences(s.langOf(r)),
 	})
 }
 
-// nameDaySources names the source of every name-day list, in the order of the settings page (ticket 318): the line of
-// the licences page that credits the calendars of the churches.
-func (s *server) nameDaySources(lang string) string {
-	var out []string
+// nameDayLicence is a row of the card "Namenstage und Slava": a list, its source and whether an entry of it is not yet
+// checked against that source.
+type nameDayLicence struct {
+	Name, Source string
+	Unchecked    bool
+}
+
+// nameDayLicences names the source of every name-day list, in the order of the settings page (tickets 318 and 338),
+// and of the Slava list: the rows of the licences page that credits the calendars of the churches.
+func (s *server) nameDayLicences(lang string) []nameDayLicence {
+	var out []nameDayLicence
 	for _, l := range nameday.Lists() {
 		cal, ok := nameday.Get(l)
 		if !ok {
 			continue
 		}
-		var names []string
-		seen := map[string]bool{}
+		row := nameDayLicence{Name: s.i18n.T(lang, "nd.list."+string(l)), Source: s.i18n.T(lang, "nd.list."+string(l)+".source")}
 		for _, e := range cal.Entries {
-			if n := cal.Sources[e.Source]; !seen[e.Source] {
-				seen[e.Source] = true
-				names = append(names, n)
-			}
+			row.Unchecked = row.Unchecked || e.Unchecked
 		}
-		out = append(out, s.i18n.T(lang, "nd.list."+string(l))+": "+strings.Join(names, "; ")+".")
+		out = append(out, row)
 	}
-	return strings.Join(out, " ")
+	row := nameDayLicence{Name: s.i18n.T(lang, "slava.fact"), Source: s.i18n.T(lang, "slava.source")}
+	for _, e := range nameday.Slavas().Entries {
+		row.Unchecked = row.Unchecked || e.Unchecked
+	}
+	return append(out, row)
 }

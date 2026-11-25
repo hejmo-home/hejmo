@@ -4921,3 +4921,34 @@ ul.shop-pick { list-style: none; margin: 0; padding: 0; }
 .shop-changed > div { flex: 1; min-width: 0; overflow-wrap: break-word; }
 @media (max-width: 599px) { .shop-week > .icon { display: none; } .shop-week .button { flex: 1 1 100%; justify-content: center; } }
 .msg .msg-body p > b:first-child, .shop-changed b, .shop-week p > b:first-child { white-space: normal; }
+/* ticket 338: more Orthodox name days, calendar style, Serbian Slava */
+.steps fieldset.slava { display: grid; gap: 12px; }
+.slava .when-on { display: grid; gap: 12px; }
+.slava .f select { width: 100%; }
+.slava .own { display: none; gap: 12px; }
+.slava:has(select[name="slava"] option[value="own"]:checked) .own { display: grid; }
+.slava .own .pair { display: grid; grid-template-columns: 7em minmax(0, 1fr); gap: 10px; }
+.slava-now { margin: 0; font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: break-word; }
+.slava-now b { color: var(--text); }
+/* "Mehr Optionen" with the calendar style: only while an Orthodox list is chosen */
+.nd .nd-style { display: none; }
+.nd:has(.choice label.orth input:checked) .nd-style { display: block; }
+.nd-style .choice label b { overflow-wrap: break-word; }
+/* the church follows the other calendar than the one set: a notice under the cards, live through :has */
+.nd .nd-mismatch { display: none; margin: 0; }
+.nd:has(input[value="russian_orthodox"]:checked):has(input[name="orthodox_calendar"][value="revised_julian"]:checked) .nd-mismatch[data-list="russian_orthodox"],
+.nd:has(input[value="bulgarian_orthodox"]:checked):has(input[name="orthodox_calendar"][value="julian"]:checked) .nd-mismatch[data-list="bulgarian_orthodox"],
+.nd:has(input[value="greek_orthodox"]:checked):has(input[name="orthodox_calendar"][value="julian"]:checked) .nd-mismatch[data-list="greek_orthodox"],
+.nd:has(input[value="romanian_orthodox"]:checked):has(input[name="orthodox_calendar"][value="julian"]:checked) .nd-mismatch[data-list="romanian_orthodox"] { display: flex; gap: 8px; align-items: flex-start; }
+.nd-mismatch .icon { flex: none; margin-top: 2px; stroke: currentColor; }
+[data-theme="bw"] .nd .nd-mismatch { outline: 1.5px solid var(--text); }
+/* an entry not yet checked against its source: said in words wherever the source is named */
+.src-unchecked { display: inline-block; font-size: var(--fs-label); color: var(--notice-text); background: var(--notice-bg); border-radius: var(--radius-field); padding: 2px 8px; overflow-wrap: break-word; }
+[data-theme="bw"] .src-unchecked { outline: 1.5px dashed var(--text); }
+ul.nd-lic { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
+ul.nd-lic li { display: grid; gap: 4px; margin: 0; padding: 10px 0 0; background: none; border: 0; border-top: 1px solid var(--border); border-radius: 0; min-width: 0; }
+[data-theme="bw"] ul.nd-lic li { border: 0; border-top: 1.5px solid var(--text); }
+ul.nd-lic li > span { font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: break-word; }
+ul.nd-lic .src-unchecked { justify-self: start; }
+/* fix found by the layout check of ticket 338: a name in the line "Kein Namenstag: ... kennen „Wilhelmine“ nicht" was hyphenated inside the word */
+.list-rows.nd-rows .none { -webkit-hyphens: manual; hyphens: manual; overflow-wrap: break-word; }

@@ -6,8 +6,8 @@
     <p class="lead">{{.Lead}}</p>
     {{with .Moved}}<p class="notice ev-moved" role="status"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg><span>{{.}}</span></p>{{end}}
     <p class="notice" role="status" data-readonly>{{.Explain}}</p>
-    <dl class="facts"><dt>{{t "nd.ev.calendar"}}</dt><dd>{{.Calendar}}</dd><dt>{{t "nd.ev.for"}}</dt><dd>{{t "nd.ev.for.family"}}</dd><dt>{{t "nd.ev.saint"}}</dt><dd>{{.Saint}}</dd><dt>{{t "nd.ev.repeat"}}</dt><dd>{{.Repeat}}</dd><dt>{{t "nd.ev.source"}}</dt><dd>{{.Source}}</dd></dl>
-    <div class="row-actions"><a class="button secondary" href="{{.ContactHref}}">{{.Open}}</a><a href="/contacts/birthdays">{{t "nd.link"}}</a></div>
+    <dl class="facts"><dt>{{t "nd.ev.calendar"}}</dt><dd>{{.Calendar}}</dd><dt>{{t "nd.ev.for"}}</dt><dd>{{t "nd.ev.for.family"}}</dd><dt>{{if .Slava}}{{t "slava.fact"}}{{else}}{{t "nd.ev.saint"}}{{end}}</dt><dd>{{.Saint}}</dd><dt>{{t "nd.ev.repeat"}}</dt><dd>{{.Repeat}}</dd><dt>{{t "nd.ev.source"}}</dt><dd>{{if .Unchecked}}<span>{{.Source}}</span><span class="src-unchecked">{{t "src.unchecked"}}</span>{{else}}{{.Source}}{{end}}</dd></dl>
+    <div class="row-actions">{{if .Slava}}<a class="button secondary" href="/contacts/birthdays">{{.Open}}</a>{{else}}<a class="button secondary" href="{{.ContactHref}}">{{.Open}}</a><a href="/contacts/birthdays">{{t "nd.link"}}</a>{{end}}</div>
   </div>
 {{end}}{{else}}  <p><a href="/calendar">{{t "calendar.back"}}</a></p>
   {{$f := .Form}}

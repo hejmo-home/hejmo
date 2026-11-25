@@ -128,7 +128,7 @@ func eventHref(o calendar.Occurrence) string {
 
 func (c *calendarContext) item(o calendar.Occurrence) eventItem {
 	it := eventItem{Title: c.s.title(c.r, o.Title), Location: o.Location, ReadOnly: c.readOnly[o.CalendarID], Repeats: o.SeriesID != ""}
-	if !it.ReadOnly || o.NameDayContact != "" { // a name day has a page of its own that says where it comes from (ticket 318)
+	if !it.ReadOnly || o.NameDayContact != "" || o.Slava { // a name day and the Slava have a page of its own that says where it comes from (ticket 318)
 		it.Href = eventHref(o)
 	}
 	if !o.AllDay {
@@ -587,6 +587,11 @@ func (s *server) renderEventPage(w http.ResponseWriter, r *http.Request, c *cale
 		"CalendarName": c.calendarName(occ.CalendarID), "Zone": master.Start.Location().String(), "CurrentRepeat": f.Repeat}
 	if inv := master.Invitation; inv != nil {
 		extra["Invite"] = s.outlookInvite(r, c, master, occ)
+	}
+	if master.Slava {
+		if pg, ok := s.slavaEventPage(r, c.p, extra["CalendarName"].(string), occ); ok {
+			extra["Gen"] = pg
+		}
 	}
 	if master.NameDayContact != "" {
 		if pg, ok := s.nameDayEventPage(r, c.p, master.NameDayContact, extra["CalendarName"].(string), occ); ok {

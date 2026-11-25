@@ -723,6 +723,8 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	pages = append(pages, offlinePages(t, f)...)
 	// Uploading an update file (ticket 221): the page, its errors, the confirmation and the installation.
 	pages = append(pages, updateUploadPages(t, f)...)
+	// The Birthdays calendar with an Orthodox church, the calendar style and the Slava (ticket 338).
+	pages = append(pages, birthdaysPages(t, f)...)
 
 	// Google (ticket 18): the guide, the sign-in in its variants, the failures that replace the steps,
 	// Choose calendars with its access lines, and the notices to sign in again.

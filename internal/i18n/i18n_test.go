@@ -86,6 +86,23 @@ func TestFormatFillsParameters(t *testing.T) {
 // where the whole family is meant; every such text is listed here with its key.
 var wholeFamilyTexts = map[string]bool{
 	"nd.lead":                                  true, // the family's name days and contacts
+	"flash.bd.slava":                           true, // the family's Slava and church calendar (ticket 338)
+	"flash.bd.slava.easter":                    true, // the family's Slava and church calendar (ticket 338)
+	"nd.fam.hint.style":                        true, // the family's Slava and church calendar (ticket 338)
+	"nd.mismatch.bulgarian_orthodox":           true, // the family's Slava and church calendar (ticket 338)
+	"nd.mismatch.greek_orthodox":               true, // the family's Slava and church calendar (ticket 338)
+	"nd.mismatch.romanian_orthodox":            true, // the family's Slava and church calendar (ticket 338)
+	"nd.mismatch.russian_orthodox":             true, // the family's Slava and church calendar (ticket 338)
+	"nd.style.legend":                          true, // the family's Slava and church calendar (ticket 338)
+	"slava.err.day.empty":                      true, // the family's Slava and church calendar (ticket 338)
+	"slava.err.name":                           true, // the family's Slava and church calendar (ticket 338)
+	"slava.err.none":                           true, // the family's Slava and church calendar (ticket 338)
+	"slava.ev.explain":                         true, // the family's Slava and church calendar (ticket 338)
+	"slava.ev.source.own":                      true, // the family's Slava and church calendar (ticket 338)
+	"slava.hint":                               true, // the family's Slava and church calendar (ticket 338)
+	"slava.label":                              true, // the family's Slava and church calendar (ticket 338)
+	"slava.on":                                 true, // the family's Slava and church calendar (ticket 338)
+	"slava.own.hint":                           true, // the family's Slava and church calendar (ticket 338)
 	"nd.choice":                                true, // the family's name days and contacts
 	"nd.err.list":                              true, // the family's name days and contacts
 	"nd.fam.title":                             true, // the family's name days and contacts

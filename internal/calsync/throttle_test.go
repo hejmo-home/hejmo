@@ -433,3 +433,41 @@ func TestCalDAVCalendarDueDuringTheWaitIsNotPickedUpOnEveryTick(t *testing.T) {
 		}
 	}
 }
+
+func TestCalDAVThrottledStateAbortsTheImportAndTheNextSyncWaits(t *testing.T) {
+	for _, status := range []int{429, 503} {
+		t.Run(strconv.Itoa(status), func(t *testing.T) {
+			fx := newDAVFixture(t, caldavtest.Password)
+			fx.srv.Put(t, fx.remote, "a.ics", caldavtest.Event("a@test", "Event a", "20261120T150000", "20261120T160000"))
+			fx.tamper.RefuseState(status, "1800")
+			reports := fx.tamper.Count("REPORT")
+
+			if err := fx.svc.Sync(context.Background(), fx.h.ID, fx.cal.ID); err == nil {
+				t.Fatal("sync with a throttled State succeeded")
+			}
+			if n := fx.tamper.Count("REPORT") - reports; n != 0 {
+				t.Fatalf("%d REPORTs went to the server after State was throttled, want 0", n)
+			}
+			log := failures(t, fx.db, fx.h.ID)
+			if len(log) != 1 || log[0].Message.Key != "sync.fail.throttled" {
+				t.Fatalf("log = %+v, want one sync.fail.throttled", log)
+			}
+			cal, _ := fx.db.SyncedCalendar(fx.h.ID, fx.cal.ID)
+			if want := fx.clock.Add(30 * time.Minute); cal.Sync.NextAttempt.Before(want) || cal.ThrottledUntil.Before(want) {
+				t.Fatalf("next attempt %v, wait until %v, want at least %v (Retry-After)", cal.Sync.NextAttempt, cal.ThrottledUntil, want)
+			}
+			if evs, _ := fx.db.CalendarEvents(fx.h.ID, fx.cal.ID); len(evs) != 0 {
+				t.Fatalf("%d events imported, want none", len(evs))
+			}
+
+			// The next sync waits: no request goes out while the connection is throttled.
+			before := fx.tamper.Count("PROPFIND") + fx.tamper.Count("REPORT")
+			if err := fx.svc.Sync(context.Background(), fx.h.ID, fx.cal.ID); err == nil {
+				t.Fatal("second sync during the wait succeeded")
+			}
+			if n := fx.tamper.Count("PROPFIND") + fx.tamper.Count("REPORT") - before; n != 0 {
+				t.Fatalf("%d requests went out during the wait, want 0", n)
+			}
+		})
+	}
+}

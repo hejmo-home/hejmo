@@ -130,8 +130,8 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 	// this run goes on shows up in the next one and is never skipped.
 	state, err := remote.State(ctx, cal.URL)
 	if err != nil {
-		if caldavclient.IsUnauthorized(err) || isForeign(err) {
-			return failRemote(err)
+		if caldavclient.IsUnauthorized(err) || isForeign(err) || throttleOf(err, at) != nil {
+			return failRemote(err) // a throttle holds the connection: no listing either
 		}
 		state = caldavclient.State{} // not asked for or not answered: list the ETags
 	}

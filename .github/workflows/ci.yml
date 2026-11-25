@@ -63,6 +63,8 @@ jobs:
           # The rendered layout check (ticket 161) drives headless Chrome; no Chrome fails it.
           HEJMO_REQUIRE_CHROME: ${{ matrix.require_chrome }}
           HEJMO_LAYOUT_SHOTS: ${{ runner.temp }}/layout-shots
+          # go test hides the log of passing tests; the layout parts write their timing here (ticket 347).
+          HEJMO_LAYOUT_SUMMARY: ${{ runner.temp }}/layout-summary.md
         run: |
           # /usr/bin/time -v reports the largest resident set of any test binary of the
           # shard (ticket 238); it goes to the job summary so a regression shows up.
@@ -70,6 +72,8 @@ jobs:
           set +e
           /usr/bin/time -v -o "$RUNNER_TEMP/time.txt" ci/test-shard.sh ${{ matrix.shard }} -race -count=1 -timeout 25m
           rc=$?
+          # Shards 1 and 2 have a layout part: its slowest cases and headroom, in the log and the summary.
+          test ! -f "$HEJMO_LAYOUT_SUMMARY" || tee -a "$GITHUB_STEP_SUMMARY" < "$HEJMO_LAYOUT_SUMMARY"
           rss=$(awk -F': ' '/Maximum resident set size/ {printf "%.0f", $2/1024}' "$RUNNER_TEMP/time.txt")
           echo "Shard ${{ matrix.shard }} on ${{ matrix.arch }}: peak RSS ${rss} MB, $((SECONDS - start)) s" | tee -a "$GITHUB_STEP_SUMMARY"
           exit $rc

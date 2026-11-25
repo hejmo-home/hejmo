@@ -1298,20 +1298,20 @@ func layoutPartSummary(part int, took []layoutTook, total time.Duration) string 
 
 // reportLayoutPart makes the summary visible on a green run: go test prints
 // t.Logf only for a failing test and drops the output of a passing package, so
-// CI gets it in the job summary ($GITHUB_STEP_SUMMARY). It is logged as well,
-// for -v and for a failing run.
+// CI has the test append it to the file $HEJMO_LAYOUT_SUMMARY, which the step
+// prints and adds to the job summary. It is logged as well, for -v and a failing run.
 func reportLayoutPart(t *testing.T, part int, took []layoutTook, total time.Duration) {
 	t.Helper()
 	text := layoutPartSummary(part, took, total)
 	t.Log("\n" + text)
-	if path := os.Getenv("GITHUB_STEP_SUMMARY"); path != "" {
+	if path := os.Getenv("HEJMO_LAYOUT_SUMMARY"); path != "" {
 		if err := appendLayoutSummary(path, text); err != nil {
 			t.Errorf("writing the layout summary: %v", err)
 		}
 	}
 }
 
-// appendLayoutSummary appends the summary, as a code block, to a job summary file.
+// appendLayoutSummary appends the summary, as a code block, to a file.
 func appendLayoutSummary(path, text string) error {
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {

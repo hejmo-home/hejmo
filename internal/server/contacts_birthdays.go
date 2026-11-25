@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"github.com/hejmo-home/hejmo/internal/nameday"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -559,4 +560,49 @@ func (e ctEnv) ndCardOf(f ctForm, errs map[string]string) *ndCard {
 		ndChoiceCard{Value: nameday.ModeName, Title: e.t("nd.f.name"), Small: nameSmall, Checked: selected == nameday.ModeName},
 		ndChoiceCard{Value: nameday.ModeNone, Title: e.t("nd.f.none"), Small: noneSmall, Checked: selected == nameday.ModeNone})
 	return card
+}
+
+// ndEventPage is the page of a generated name-day event: where it comes from, the saint, the source and the way to the contact.
+type ndEventPage struct {
+	Title, Lead, Moved, Explain, Calendar, Saint, Repeat, Source, ContactHref, Open string
+}
+
+// nameDayEventPage describes a name-day event for the household; false when the contact or the list is gone, so the
+// page falls back to the plain read-only page.
+func (s *server) nameDayEventPage(r *http.Request, p principal, contactID, calendarName string, occ calendar.Occurrence) (ndEventPage, bool) {
+	cal, ok := p.household.NameDayCalendar()
+	if !ok {
+		return ndEventPage{}, false
+	}
+	c, err := s.db.Contact(p.household.ID, contactID)
+	if err != nil {
+		return ndEventPage{}, false
+	}
+	e := ctEnv{s: s, lang: s.langOf(r), p: p}
+	res := cal.For(c.FullName, c.HejmoName, nameday.Choice{Mode: c.NameDayMode, Entry: c.NameDayEntry, Name: c.NameDayName})
+	if !res.Found {
+		return ndEventPage{}, false
+	}
+	en := res.Entry
+	o := en.On(occ.Start.Year())
+	church := e.churchAdj(p.household.NameDayList)
+	pg := ndEventPage{Title: occ.Title, Calendar: calendarName, Saint: en.Saint, Source: cal.Sources[en.Source], ContactHref: contactsPath + "/" + c.ID,
+		Open: e.t("nd.ev.open", "contact", c.HejmoName), Explain: e.t("nd.ev.explain", "contact", c.HejmoName, "church", church)}
+	pg.Lead = e.t("nd.ev.lead", "weekday", e.t("weekday."+strconv.Itoa(int(occ.Start.Weekday()))), "date", datefmt.Date(p.household.DateFormat, occ.Start))
+	switch {
+	case en.Easter != nil:
+		pg.Repeat = e.ndEaster(en)
+	case en.Move != "":
+		m, d, _ := strings.Cut(en.Day, "-")
+		mi, _ := strconv.Atoi(m)
+		di, _ := strconv.Atoi(d)
+		nominal := e.ndDay(time.Date(2000, time.Month(mi), di, 0, 0, 0, 0, time.UTC), false)
+		pg.Repeat = e.t("nd.ev.repeat.moved", "date", nominal)
+		if o.Moved {
+			pg.Moved = e.t("nd.ev.moved", "from", e.ndDay(o.From, false), "year", strconv.Itoa(o.Date.Year()), "easter", e.ndDay(o.Easter, false), "to", e.ndDay(o.Date, false))
+		}
+	default:
+		pg.Repeat = e.t("nd.ev.repeat.yearly", "date", e.ndDay(o.Date, false))
+	}
+	return pg, true
 }

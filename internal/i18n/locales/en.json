@@ -5456,7 +5456,6 @@
   "nd.ev.repeat": "Repeats",
   "nd.ev.repeat.yearly": "Every year on {date}",
   "nd.ev.repeat.moved": "Every year on {date}; if that is before Orthodox Easter, on Easter Monday",
-  "nd.ev.repeat.easter": "Every year: {sentence}",
   "nd.ev.source": "Source",
   "nd.ev.open": "Open contact “{contact}”",
   "nd.ev.lead": "{weekday}, {date} · all day",

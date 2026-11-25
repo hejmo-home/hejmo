@@ -19,7 +19,7 @@ func nameDays(t *testing.T, c ctBox, on bool, list string) resp {
 	if list != "" {
 		f.Set("name_day_list", list)
 	}
-	return c.send("/contacts/birthdays", f)
+	return c.do(http.MethodPost, "/contacts/birthdays", f, map[string]string{"Accept-Language": "de"}) // the titles of the events are in the language of who switched them on
 }
 
 // nameDaysOn switches name days on and returns the page that follows.
@@ -65,7 +65,7 @@ func TestSwitchingNameDaysOnNeedsAChurchAndShowsTheErrorAtTheChoice(t *testing.T
 	if r.status != http.StatusUnprocessableEntity {
 		t.Fatalf("status = %d", r.status)
 	}
-	ctHas(t, "error", r.body, `class="ferr" id="err-name_day_list"`, "Choose a church. Otherwise Hejmo does not know on which days your name days are.", `name="name_days" value="1" checked`, `aria-describedby="err-name_day_list"`)
+	ctHas(t, "error", r.body, `class="ferr" id="err-name_day_list"`, "Wähle eine Kirche. Sonst weiß Hejmo nicht, an welchen Tagen eure Namenstage sind.", `name="name_days" value="1" checked`, `aria-describedby="err-name_day_list"`)
 	if strings.Contains(c.page("/contacts/birthdays", "de").body, `name="name_days" value="1" checked`) {
 		t.Error("the setting was saved without a church")
 	}
@@ -210,4 +210,59 @@ func TestContactsPageLinksTheBirthdaysCalendar(t *testing.T) {
 	page := c.page("/contacts", "de").body
 	ctHas(t, "overview", page, `<p class="hint grp-link"><a href="/contacts/groups">Gruppen verwalten</a>`, `<a href="/contacts/birthdays">Geburtstagskalender</a>`)
 	ctHas(t, "hub", c.page("/settings", "de").body, "Geburtstage und Namenstage eurer Familie")
+}
+
+// nameDayEventHref finds the link of a name-day event in the week of the calendar page that holds the day.
+func nameDayEventHref(t *testing.T, c ctBox, week, title string) string {
+	t.Helper()
+	page := c.page("/calendar?week="+week, "de").body
+	m := regexp.MustCompile(`<a class="title" href="(/calendar/events/[^"]+)">` + regexp.QuoteMeta(title) + `</a>`).FindStringSubmatch(page)
+	if m == nil {
+		t.Fatalf("no link for %q in the week of %s", title, week)
+	}
+	return strings.ReplaceAll(m[1], "&amp;", "&")
+}
+
+func TestNameDayEventPageSaysWhereItComesFrom(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	c.add(t, contactForm("Mama K", "Katharina Maier", nil, nil))
+	nameDaysOn(t, c, "catholic")
+	href := nameDayEventHref(t, c, "2026-11-25", "Namenstag Mama K (Katharina)")
+	page := c.page(href, "de").body
+	ctHas(t, "event page", page, `<div class="ev-gen">`, `<h1>Namenstag Mama K (Katharina)</h1>`, `Mittwoch, 25.11.2026 · ganztägig`,
+		`Diesen Termin macht Hejmo aus dem Kontakt „Mama K“ und den katholischen Namenstagen. Ändern kannst du ihn nur dort.`,
+		`<dt>Kalender</dt><dd>Geburtstage</dd>`, `<dt>Für</dt><dd>Ganze Familie</dd>`, `<dt>Namenstag</dt><dd>Katharina von Alexandrien</dd>`,
+		`<dt>Wiederholung</dt><dd>Jedes Jahr am 25. November</dd>`, `<dt>Quelle</dt><dd>Regionalkalender für das deutsche Sprachgebiet`,
+		`Kontakt „Mama K“ öffnen</a>`, `href="/contacts/birthdays">Geburtstagskalender</a>`, `data-readonly`)
+	ctHasNot(t, "event page", page, `ev-moved`, `data-event-form`)
+	ctHas(t, "English", c.page(href, "en").body, "Hejmo makes this event from the contact “Mama K” and the Catholic name days.", "Every year on November 25")
+}
+
+func TestNameDayMovedByOrthodoxEasterSaysBothDates(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	c.add(t, contactForm("Onkel Giorgos", "Georg Papadopoulos", nil, nil))
+	nameDaysOn(t, c, "greek_orthodox")
+	// 2027: Orthodox Easter is on 2 May, so 23 April moves to Easter Monday, 3 May.
+	href := nameDayEventHref(t, c, "2027-05-03", "Namenstag Onkel Giorgos (Georgios)")
+	page := c.page(href, "de").body
+	ctHas(t, "event page", page, `<p class="notice ev-moved"`, `Sonst am 23. April. 2027 ist das orthodoxe Osterfest erst am 2. Mai, darum feiert man den Namenstag am Ostermontag, dem 3. Mai.`,
+		`Montag, 03.05.2027 · ganztägig`, `Jedes Jahr am 23. April; liegt er vor dem orthodoxen Osterfest, am Ostermontag`, `griechisch-orthodoxen Namenstagen`, `Georg, Großmärtyrer`)
+	// 2026: Easter is on 12 April: nothing moves, and no notice says so.
+	page = c.page(nameDayEventHref(t, c, "2026-04-20", "Namenstag Onkel Giorgos (Georgios)"), "de").body
+	ctHasNot(t, "2026", page, `ev-moved`)
+	ctHas(t, "2026", page, `Donnerstag, 23.04.2026`)
+}
+
+func TestOtherReadOnlyEventsKeepNoLink(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	f := contactForm("Oma Gerda", "", nil, nil)
+	f.Set("bday_day", "25")
+	f.Set("bday_month", "11")
+	c.add(t, f)
+	page := c.page("/calendar?week=2026-11-25", "de").body
+	ctHas(t, "week", page, `Oma Gerda`)
+	ctHasNot(t, "week", page, `<a class="title" href="/calendar/events/`+"")
 }

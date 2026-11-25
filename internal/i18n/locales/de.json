@@ -5456,7 +5456,6 @@
   "nd.ev.repeat": "Wiederholung",
   "nd.ev.repeat.yearly": "Jedes Jahr am {date}",
   "nd.ev.repeat.moved": "Jedes Jahr am {date}; liegt er vor dem orthodoxen Osterfest, am Ostermontag",
-  "nd.ev.repeat.easter": "Jedes Jahr: {sentence}",
   "nd.ev.source": "Quelle",
   "nd.ev.open": "Kontakt „{contact}“ öffnen",
   "nd.ev.lead": "{weekday}, {date} · ganztägig",

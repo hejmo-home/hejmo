@@ -15,8 +15,10 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"reflect"
+	"regexp"
 	"slices"
 	"sort"
 	"strconv"
@@ -66,11 +68,53 @@ func unwrapLabel(s string) string {
 }
 
 // extraField is one kept line of a card.
+//
+// Raw is everything after the key as the phone wrote it (parameters, colon and value), so the line goes back
+// byte for byte; go-vcard cannot write it back (it escapes what it should leave). Params and Value are the
+// older form, read when Raw is empty. First marks the first address of the card: Hejmo models its street, city,
+// postcode and country, the rest of it (TYPE, label, region) is kept here.
 type extraField struct {
 	Group  string              `json:"g,omitempty"`
 	Key    string              `json:"k"`
 	Params map[string][]string `json:"p,omitempty"`
-	Value  string              `json:"v"`
+	Value  string              `json:"v,omitempty"`
+	Raw    string              `json:"r,omitempty"`
+	First  bool                `json:"a,omitempty"`
+}
+
+// rawKey is the key of a placeholder line in a card: its value is a kept line, base64 so the encoder leaves it
+// alone. Text and ExpandRaw turn it back into the line itself.
+const rawKey = "X-HEJMO-RAW"
+
+var (
+	rawInText = regexp.MustCompile(`(?m)^` + rawKey + `:([A-Za-z0-9_-]*)`)
+	rawInXML  = regexp.MustCompile(`&#xA;` + rawKey + `:([A-Za-z0-9_-]*)`)
+)
+
+func rawPlaceholder(line string) *vcard.Field {
+	return &vcard.Field{Value: base64.RawURLEncoding.EncodeToString([]byte(line))}
+}
+
+// ExpandRaw writes the kept lines of a card into its text. inXML is for card text inside an XML answer (REPORT),
+// where line breaks are character references. Only a placeholder that begins a line counts, never one inside a
+// value.
+func ExpandRaw(text string, inXML bool) string {
+	re, lead := rawInText, ""
+	if inXML {
+		re, lead = rawInXML, "&#xA;"
+	}
+	return re.ReplaceAllStringFunc(text, func(m string) string {
+		b, err := base64.RawURLEncoding.DecodeString(m[len(lead)+len(rawKey)+1:])
+		if err != nil {
+			return lead
+		}
+		if !inXML {
+			return string(b)
+		}
+		var esc bytes.Buffer
+		_ = xml.EscapeText(&esc, b)
+		return lead + esc.String()
+	})
 }
 
 // Encode makes the card of a contact. photo is the stored JPEG, nil for none.
@@ -85,7 +129,13 @@ func Encode(c store.Contact, photo []byte, v Version) vcard.Card {
 	card.SetValue(vcard.FieldFormattedName, full)
 	card.SetValue(vcard.FieldName, structuredName(full))
 	card.SetValue(vcard.FieldNickname, c.HejmoName)
-	if c.Street != "" || c.City != "" || c.Postcode != "" || c.Country != "" {
+	hasAddress := c.Street != "" || c.City != "" || c.Postcode != "" || c.Country != ""
+	var extras []extraField
+	if c.Extra != "" {
+		_ = json.Unmarshal([]byte(c.Extra), &extras)
+	}
+	firstAddress := slices.IndexFunc(extras, func(e extraField) bool { return e.First })
+	if hasAddress && firstAddress < 0 {
 		card.Add(vcard.FieldAddress, &vcard.Field{Value: strings.Join([]string{"", "", part(c.Street), part(c.City), "", part(c.Postcode), part(c.Country)}, ";")})
 	}
 	group := 0
@@ -142,16 +192,84 @@ func Encode(c store.Contact, photo []byte, v Version) vcard.Card {
 		}
 		card.Set(vcard.FieldPhoto, f)
 	}
-	var extras []extraField
-	if c.Extra != "" && json.Unmarshal([]byte(c.Extra), &extras) == nil {
-		for _, e := range extras {
+	// Without an address in Hejmo the kept first address and its label are not sent.
+	dropGroup := ""
+	if firstAddress >= 0 && !hasAddress {
+		dropGroup = extras[firstAddress].Group
+	}
+	for _, e := range extras {
+		switch {
+		case e.First && !hasAddress:
+			continue
+		case dropGroup != "" && e.Group == dropGroup:
+			continue
+		case e.Raw == "": // the older form
 			if e.Key == "X-ABLABEL" {
 				e.Key = "X-ABLabel"
 			}
 			card.Add(e.Key, &vcard.Field{Group: e.Group, Params: e.Params, Value: e.Value})
+		case e.First:
+			card.Add(rawKey, rawPlaceholder(keptLine(e, addressParts(e.Raw, c))))
+		default:
+			card.Add(rawKey, rawPlaceholder(keptLine(e, e.Raw)))
 		}
 	}
 	return card
+}
+
+// keptLine is a kept line as it is written: group, key, then the rest as it came.
+func keptLine(e extraField, rest string) string {
+	if e.Group != "" {
+		return e.Group + "." + e.Key + rest
+	}
+	return e.Key + rest
+}
+
+var valueEscaper = strings.NewReplacer(`\`, `\\`, `;`, `\;`, `,`, `\,`, "\n", `\n`, "\r", "")
+
+// addressParts is the rest of a kept address line with the parts Hejmo models replaced: street, city, postcode
+// and country. The parameters and the other parts (post box, extended address, region) stay as they came.
+func addressParts(rest string, c store.Contact) string {
+	params, value := splitRest(rest)
+	parts := splitRaw(value)
+	for len(parts) < 7 {
+		parts = append(parts, "")
+	}
+	parts[2], parts[3], parts[5], parts[6] = valueEscaper.Replace(c.Street), valueEscaper.Replace(c.City), valueEscaper.Replace(c.Postcode), valueEscaper.Replace(c.Country)
+	return params + ":" + strings.Join(parts, ";")
+}
+
+// splitRest splits what follows a key into parameters (with their leading ;) and value, at the first colon
+// outside quotes.
+func splitRest(rest string) (params, value string) {
+	quoted := false
+	for i := 0; i < len(rest); i++ {
+		switch rest[i] {
+		case '"':
+			quoted = !quoted
+		case ':':
+			if !quoted {
+				return rest[:i], rest[i+1:]
+			}
+		}
+	}
+	return rest, ""
+}
+
+// splitRaw splits a value at its semicolons, leaving the escapes in the parts.
+func splitRaw(s string) []string {
+	var out []string
+	start := 0
+	for i := 0; i < len(s); i++ {
+		switch s[i] {
+		case '\\':
+			i++
+		case ';':
+			out = append(out, s[start:i])
+			start = i + 1
+		}
+	}
+	return append(out, s[start:])
 }
 
 // part keeps a value out of the way of the field separator: the encoder cannot write an escaped semicolon.
@@ -169,7 +287,7 @@ func structuredName(full string) string {
 func Text(card vcard.Card) (string, error) {
 	var b bytes.Buffer
 	err := vcard.NewEncoder(&b).Encode(card)
-	return b.String(), err
+	return ExpandRaw(b.String(), false), err
 }
 
 // ETag is the entity tag of a contact: a hash of what a phone is sent, so it changes exactly when that does.
@@ -311,8 +429,25 @@ func lineOf(f *vcard.Field, labels map[string]string, email bool) (contact.Line,
 	return contact.Line{Kind: contact.Other, Value: value}, true
 }
 
+// IsGroup says a card is a group of contacts, not a contact: iOS writes X-ADDRESSBOOKSERVER-KIND:group, vCard
+// 4.0 and DAVx5 KIND:group.
+func IsGroup(card vcard.Card) bool {
+	for _, k := range []string{vcard.FieldKind, "X-ADDRESSBOOKSERVER-KIND"} {
+		for _, f := range card[k] {
+			if strings.EqualFold(strings.TrimSpace(f.Value), "group") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // Decode reads a card a phone saved.
-func Decode(card vcard.Card) Incoming {
+func Decode(card vcard.Card) Incoming { return DecodeRaw(card, nil) }
+
+// DecodeRaw reads a card a phone saved, together with the text it came in (nil: written from the card, which
+// loses how values were escaped). The lines Hejmo does not model are kept from the text.
+func DecodeRaw(card vcard.Card, raw []byte) Incoming {
 	var in Incoming
 	labels := map[string]string{}
 	for _, f := range card["X-ABLABEL"] {
@@ -360,9 +495,6 @@ func Decode(card vcard.Card) Incoming {
 	add(&in.Emails, vcard.FieldEmail, true)
 	if adrs := card[vcard.FieldAddress]; len(adrs) > 0 {
 		f := adrs[0]
-		if f.Group != "" {
-			groups[f.Group] = true
-		}
 		p := splitParts(f.Value)
 		get := func(i int) string {
 			if i < len(p) {
@@ -383,7 +515,7 @@ func Decode(card vcard.Card) Incoming {
 	if f := card.Get(vcard.FieldPhoto); f != nil {
 		in.Photo, in.PhotoLink = photoOf(f)
 	}
-	in.Extra = extraOf(card, groups)
+	in.Extra = extraOf(rawLinesOf(card, raw), groups)
 	return in
 }
 
@@ -424,39 +556,108 @@ func photoOf(f *vcard.Field) (data []byte, link bool) {
 	return b, false
 }
 
-// extraOf keeps every line Hejmo does not model, groups together (a web address with its label) under group
-// names of their own so they cannot meet the ones written for numbers.
-func extraOf(card vcard.Card, modeledGroups map[string]bool) string {
-	keys := make([]string, 0, len(card))
-	for k := range card {
-		keys = append(keys, k)
+// rawLine is a line of a card as it was written: group, key and everything after the key.
+type rawLine struct{ Group, Key, Rest string }
+
+// rawLinesOf reads the lines of the first card in raw, unfolded. Without raw the card is written out first.
+func rawLinesOf(card vcard.Card, raw []byte) []rawLine {
+	if raw == nil {
+		c := card
+		if c.Get(vcard.FieldVersion) == nil {
+			c = vcard.Card{}
+			for k, v := range card {
+				c[k] = v
+			}
+			c.SetValue(vcard.FieldVersion, string(V3))
+		}
+		var b bytes.Buffer
+		if vcard.NewEncoder(&b).Encode(c) != nil {
+			return nil
+		}
+		raw = b.Bytes()
 	}
-	sort.Strings(keys)
+	var unfolded []string
+	for _, l := range strings.Split(string(raw), "\n") {
+		l = strings.TrimRight(l, "\r")
+		if len(l) > 0 && (l[0] == ' ' || l[0] == '\t') && len(unfolded) > 0 {
+			unfolded[len(unfolded)-1] += l[1:]
+			continue
+		}
+		unfolded = append(unfolded, l)
+	}
+	var out []rawLine
+	begun := false
+	for _, l := range unfolded {
+		l = strings.NewReplacer("\r", "").Replace(l)
+		var rl rawLine
+		if i := strings.IndexAny(l, ".;:"); i >= 0 && l[i] == '.' {
+			rl.Group, l = l[:i], l[i+1:]
+		}
+		i := strings.IndexAny(l, ";:")
+		if i < 0 {
+			continue
+		}
+		rl.Key, rl.Rest = l[:i], l[i:]
+		switch uk := strings.ToUpper(rl.Key); {
+		case !begun:
+			begun = uk == "BEGIN"
+			continue
+		case uk == "END":
+			return out
+		}
+		out = append(out, rl)
+	}
+	return out
+}
+
+// extraOf keeps every line Hejmo does not model as it was written, groups together (a web address with its
+// label) under group names of their own so they cannot meet the ones written for numbers.
+func extraOf(lines []rawLine, modeledGroups map[string]bool) string {
+	sorted := slices.Clone(lines)
+	sort.SliceStable(sorted, func(i, j int) bool { return strings.ToUpper(sorted[i].Key) < strings.ToUpper(sorted[j].Key) })
 	renamed := map[string]string{}
 	var out []extraField
-	for _, k := range keys {
-		for i, f := range card[k] {
-			switch {
-			case modeled[k] || (k == vcard.FieldAddress && i == 0):
-				continue
-			case k == "X-ABLABEL" && modeledGroups[f.Group]:
-				continue
+	addresses := 0
+	for _, l := range sorted {
+		uk := strings.ToUpper(l.Key)
+		first := false
+		switch {
+		case modeled[uk]:
+			continue
+		case uk == vcard.FieldAddress:
+			first = addresses == 0
+			addresses++
+			if first && l.Group == "" && plainAddress(l.Rest) {
+				continue // nothing beyond what Hejmo models
 			}
-			g := ""
-			if f.Group != "" {
-				if renamed[f.Group] == "" {
-					renamed[f.Group] = "keep" + strconv.Itoa(len(renamed)+1)
-				}
-				g = renamed[f.Group]
-			}
-			out = append(out, extraField{Group: g, Key: k, Params: f.Params, Value: f.Value})
+		case uk == "X-ABLABEL" && modeledGroups[l.Group]:
+			continue
 		}
+		g := ""
+		if l.Group != "" {
+			if renamed[l.Group] == "" {
+				renamed[l.Group] = "keep" + strconv.Itoa(len(renamed)+1)
+			}
+			g = renamed[l.Group]
+		}
+		key := l.Key
+		if uk == "X-ABLABEL" {
+			key = "X-ABLabel" // as Apple writes it
+		}
+		out = append(out, extraField{Group: g, Key: key, Raw: l.Rest, First: first})
 	}
 	if len(out) == 0 {
 		return ""
 	}
 	b, _ := json.Marshal(out)
 	return string(b)
+}
+
+// plainAddress says an address line has no parameters and nothing in the parts Hejmo does not model.
+func plainAddress(rest string) bool {
+	params, value := splitRest(rest)
+	parts := splitRaw(value)
+	return params == "" && len(parts) <= 7 && (len(parts) < 1 || parts[0] == "") && (len(parts) < 2 || parts[1] == "") && (len(parts) < 5 || parts[4] == "")
 }
 
 // InputOf is the contact as a save would write it unchanged: everything a parent can set, copied.

@@ -525,3 +525,57 @@ func TestASyncRoundListsEtagsFetchesAndSeesOnlyTheChangedCard(t *testing.T) {
 		}
 	}
 }
+
+// Phones save groups as cards of their own (iOS X-ADDRESSBOOKSERVER-KIND, vCard 4.0 and DAVx5 KIND). A group is
+// no contact: it is refused and nothing is stored, so "Familie" never reaches the other phones.
+func TestGroupCardsAreRefusedInBothForms(t *testing.T) {
+	t.Parallel()
+	c := signedInAPI(t)
+	d := c.addressDevice(t, "contacts")
+	book, _ := d.book()
+	ios := vcardText("N:Familie;;;;", "FN:Familie", "X-ADDRESSBOOKSERVER-KIND:group", "X-ADDRESSBOOKSERVER-MEMBER:urn:uuid:1")
+	v4 := strings.Replace(vcardText("KIND:group", "FN:Familie", "MEMBER:urn:uuid:1"), "VERSION:3.0", "VERSION:4.0", 1)
+	for name, body := range map[string]string{"ios": ios, "kind": v4} {
+		if status, _, _ := d.put(book.Path+name+".vcf", body, map[string]string{"If-None-Match": "*"}); status != http.StatusForbidden {
+			t.Errorf("%s: group card = %d, want 403", name, status)
+		}
+	}
+	for _, o := range d.objects(book.Path) {
+		if o.Card.PreferredValue(vcard.FieldFormattedName) == "Familie" {
+			t.Fatal("a group became a contact")
+		}
+	}
+}
+
+// The extra lines of a card go out as they came in, in a GET and in a REPORT (what DAVx5 and iOS fetch with).
+func TestWhatAPhoneSavedComesBackAsItWasSaved(t *testing.T) {
+	t.Parallel()
+	c := signedInAPI(t)
+	d := c.addressDevice(t, "contacts")
+	book, _ := d.book()
+	path := book.Path + "keep.vcf"
+	in := vcardText("FN:Gerda Müller", "NICKNAME:Oma Gerda", `ORG:Firma\; Abteilung;Team`, "CATEGORIES:Family,Friends",
+		"item1.ADR;TYPE=HOME:;;Weg 1;Pasing;Bayern;80689;DE", "item1.X-ABLabel:Zuhause", "NOTE:a & <b>")
+	if status, _, _ := d.put(path, in, map[string]string{"If-None-Match": "*"}); status >= 300 {
+		t.Fatalf("put = %d", status)
+	}
+	check := func(what, out string) {
+		t.Helper()
+		for _, want := range []string{"ORG:Firma\\; Abteilung;Team", "CATEGORIES:Family,Friends"} {
+			if !strings.Contains(out, want) {
+				t.Errorf("%s misses %q:\n%s", what, want, out)
+			}
+		}
+		m := regexp.MustCompile(`(\w+)\.ADR;TYPE=HOME:;;Weg 1;Pasing;Bayern;80689;DE`).FindStringSubmatch(out)
+		if m == nil || !strings.Contains(out, m[1]+".X-ABLabel:Zuhause") {
+			t.Errorf("%s: the address loses TYPE, region or label:\n%s", what, out)
+		}
+	}
+	_, _, got := d.raw("GET", path, "", nil)
+	check("GET", got)
+	_, _, got = d.raw("GET", path, "", map[string]string{"Accept": "text/vcard; version=4.0"})
+	check("GET 4.0", got)
+	_, _, rep := d.raw("REPORT", book.Path, `<?xml version="1.0"?><C:addressbook-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav"><D:prop><D:getetag/><C:address-data/></D:prop></C:addressbook-query>`,
+		map[string]string{"Depth": "1", "Content-Type": "application/xml"})
+	check("REPORT", html.UnescapeString(rep))
+}

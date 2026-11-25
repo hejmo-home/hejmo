@@ -1,6 +1,7 @@
 package contactsync_test
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 
@@ -210,5 +211,62 @@ func TestPhoneCreatesAndChangesFurtherContacts(t *testing.T) {
 	}
 	if _, changed = contactsync.Apply(nil, contactsync.Incoming{}, nil); changed {
 		t.Error("a card with nothing in it makes no contact")
+	}
+}
+
+// Phones save groups as cards of their own: iOS as X-ADDRESSBOOKSERVER-KIND, vCard 4.0 and DAVx5 as KIND.
+func TestGroupCardsAreRecognisedInBothForms(t *testing.T) {
+	t.Parallel()
+	for name, text := range map[string]string{
+		"4.0 KIND":        "BEGIN:VCARD\r\nVERSION:4.0\r\nKIND:group\r\nFN:Familie\r\nMEMBER:urn:uuid:1\r\nEND:VCARD\r\n",
+		"4.0 KIND, upper": "BEGIN:VCARD\r\nVERSION:4.0\r\nKIND:GROUP\r\nFN:Familie\r\nEND:VCARD\r\n",
+		"iOS":             "BEGIN:VCARD\r\nVERSION:3.0\r\nN:Familie;;;;\r\nFN:Familie\r\nX-ADDRESSBOOKSERVER-KIND:group\r\nX-ADDRESSBOOKSERVER-MEMBER:urn:uuid:1\r\nEND:VCARD\r\n",
+	} {
+		if !contactsync.IsGroup(decode(t, text)) {
+			t.Errorf("%s is a group", name)
+		}
+	}
+	for name, text := range map[string]string{
+		"plain":      "BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Gerda\r\nEND:VCARD\r\n",
+		"individual": "BEGIN:VCARD\r\nVERSION:4.0\r\nKIND:individual\r\nFN:Gerda\r\nEND:VCARD\r\n",
+		"org":        "BEGIN:VCARD\r\nVERSION:4.0\r\nKIND:org\r\nFN:Acme\r\nEND:VCARD\r\n",
+	} {
+		if contactsync.IsGroup(decode(t, text)) {
+			t.Errorf("%s is no group", name)
+		}
+	}
+}
+
+// What a phone saved that Hejmo does not model goes back as it came: raw value and parameters, the first
+// address with its TYPE, label and region (CODING_STANDARDS 2).
+func TestWhatAPhoneSavedComesBackAsReceived(t *testing.T) {
+	t.Parallel()
+	text := "BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Gerda Müller\r\nNICKNAME:Oma Gerda\r\n" +
+		"ORG:Firma\\; Abteilung;Team\r\nCATEGORIES:Family,Friends\r\nURL;TYPE=pref:https://example.org/a,b\r\n" +
+		"item1.ADR;TYPE=HOME;TYPE=pref:;;Weg 1;Pasing;Bayern;80689;DE\r\nitem1.X-ABLabel:Zuhause\r\nEND:VCARD\r\n"
+	in := contactsync.DecodeRaw(decode(t, text), []byte(text))
+	cur := store.Contact{ID: "c1", HejmoName: "Oma Gerda", FullName: "Gerda Müller", Street: "Weg 1", City: "Pasing", Postcode: "80689", Country: "DE", Extra: in.Extra}
+	out := lines(t, cur, contactsync.V3)
+	for _, want := range []string{"ORG:Firma\\; Abteilung;Team\r\n", "CATEGORIES:Family,Friends\r\n", "URL;TYPE=pref:https://example.org/a,b\r\n"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("card misses %q:\n%s", want, out)
+		}
+	}
+	m := regexp.MustCompile(`(?m)^(\w+)\.ADR;TYPE=HOME;TYPE=pref:;;Weg 1;Pasing;Bayern;80689;DE\r$`).FindStringSubmatch(out)
+	if m == nil || !strings.Contains(out, m[1]+".X-ABLabel:Zuhause\r\n") {
+		t.Errorf("the first address keeps TYPE, region and label:\n%s", out)
+	}
+	if _, changed := contactsync.Apply(&cur, in, nil); changed {
+		t.Error("what the box sent, sent back, is no change")
+	}
+	// A change of the street in Hejmo changes only the street.
+	cur.Street = "Neu 2"
+	if out := lines(t, cur, contactsync.V3); !strings.Contains(out, "ADR;TYPE=HOME;TYPE=pref:;;Neu 2;Pasing;Bayern;80689;DE\r\n") {
+		t.Errorf("only the street changes:\n%s", out)
+	}
+	// Without an address in Hejmo, no address and no orphaned label go out.
+	cur.Street, cur.City, cur.Postcode, cur.Country = "", "", "", ""
+	if out := lines(t, cur, contactsync.V3); strings.Contains(out, "ADR") || strings.Contains(out, "Zuhause") {
+		t.Errorf("no address, no label:\n%s", out)
 	}
 }

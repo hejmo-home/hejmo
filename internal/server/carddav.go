@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -42,6 +43,7 @@ type cardSession struct {
 	login   davLogin
 	req     *http.Request
 	version contactsync.Version
+	body    []byte // the body of a PUT as it came, for the lines of a card the box keeps as they were written
 }
 
 type cardKey struct{}
@@ -83,8 +85,53 @@ func (s *server) cardAuth(next http.Handler) http.Handler {
 			}
 			r.Body = io.NopCloser(bytes.NewReader(body))
 		}
+		if r.Method == http.MethodPut {
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				http.Error(w, "request too large", http.StatusRequestEntityTooLarge)
+				return
+			}
+			sess.body = body
+			r.Body = io.NopCloser(bytes.NewReader(body))
+		}
+		switch r.Method {
+		case http.MethodGet, http.MethodHead, "REPORT", "PROPFIND":
+			cw := &cardWriter{ResponseWriter: w}
+			defer cw.finish()
+			w = cw
+		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), cardKey{}, sess)))
 	})
+}
+
+// cardWriter holds an answer back to write the lines a phone saved into the cards in it, as they were saved
+// (contactsync.ExpandRaw): go-vcard's encoder cannot write them back unchanged.
+type cardWriter struct {
+	http.ResponseWriter
+	buf    bytes.Buffer
+	status int
+}
+
+func (w *cardWriter) WriteHeader(code int) {
+	if w.status == 0 {
+		w.status = code
+	}
+}
+
+func (w *cardWriter) Write(b []byte) (int, error) { return w.buf.Write(b) }
+
+func (w *cardWriter) finish() {
+	body := w.buf.String()
+	if strings.Contains(body, "X-HEJMO-RAW:") {
+		body = contactsync.ExpandRaw(body, strings.Contains(w.Header().Get("Content-Type"), "xml"))
+	}
+	if w.Header().Get("Content-Length") != "" {
+		w.Header().Set("Content-Length", strconv.Itoa(len(body)))
+	}
+	if w.status != 0 {
+		w.ResponseWriter.WriteHeader(w.status)
+	}
+	_, _ = io.WriteString(w.ResponseWriter, body)
 }
 
 // cardBackend serves the household's contacts to go-webdav's CardDAV handler.
@@ -257,8 +304,11 @@ func (b *cardBackend) PutAddressObject(ctx context.Context, p string, card vcard
 	if !ok || !validCardName.MatchString(id) || strings.Trim(id, ".") == "" {
 		return nil, httpError(http.StatusBadRequest, "card names may use letters, digits and . _ @ = + -")
 	}
+	if contactsync.IsGroup(card) { // groups of contacts are not contacts; never stored, never sent to other phones
+		return nil, httpError(http.StatusForbidden, "groups of contacts are not synced; Hejmo has its own groups")
+	}
 	house, by := sess.login.house, sess.login.person
-	in := contactsync.Decode(card)
+	in := contactsync.DecodeRaw(card, sess.body)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()

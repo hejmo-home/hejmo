@@ -2,6 +2,7 @@ package calendar
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -99,11 +100,40 @@ var presetRules = map[Repeat]string{
 	RepeatYearly:   "FREQ=YEARLY",
 }
 
-const untilLayout = "20060102T150405Z"
+const (
+	untilLayout     = "20060102T150405Z"
+	untilDateLayout = "20060102"
+)
+
+// untilValue writes UNTIL in the value type of DTSTART (RFC 5545, 3.3.10): a
+// date for an all-day series, naming its last day in the zone of until, and a
+// UTC date-time for a timed one.
+func untilValue(until time.Time, allDay bool) string {
+	if allDay {
+		return until.Format(untilDateLayout)
+	}
+	return until.UTC().Format(untilLayout)
+}
+
+// parseRule reads an RRULE value of a series in loc. A date-only UNTIL names
+// the last day of the series, so it counts until that day ends in loc.
+func parseRule(rule string, loc *time.Location) (*rrule.ROption, error) {
+	opt, err := rrule.StrToROptionInLocation(rule, loc)
+	if err != nil {
+		return nil, err
+	}
+	if !opt.Until.IsZero() && dateOnlyUntil.MatchString(rule) {
+		opt.Until = opt.Until.AddDate(0, 0, 1).Add(-time.Second)
+	}
+	return opt, nil
+}
+
+var dateOnlyUntil = regexp.MustCompile(`(?i)UNTIL=\d{8}(;|$)`)
 
 // RepeatRule returns the RRULE value of a preset, ending at until (the last
-// moment of the series) unless it is the zero time. RepeatNone gives "".
-func RepeatRule(r Repeat, until time.Time) (string, error) {
+// moment of the series) unless it is the zero time. RepeatNone gives "". An
+// all-day series ends with a date, a timed one with a UTC date-time.
+func RepeatRule(r Repeat, until time.Time, allDay bool) (string, error) {
 	if r == RepeatNone {
 		return "", nil
 	}
@@ -112,22 +142,23 @@ func RepeatRule(r Repeat, until time.Time) (string, error) {
 		return "", fmt.Errorf("calendar: unknown repeat %q", r)
 	}
 	if !until.IsZero() {
-		rule += ";UNTIL=" + until.UTC().Format(untilLayout)
+		rule += ";UNTIL=" + untilValue(until, allDay)
 	}
 	return rule, nil
 }
 
 // RepeatOf says which preset an RRULE value is, and when it ends (zero if
-// never). Anything no preset describes is RepeatCustom.
-func RepeatOf(rule string) (Repeat, time.Time) {
+// never), as the last moment of the end day when the rule names a date. loc is
+// the zone of the series. Anything no preset describes is RepeatCustom.
+func RepeatOf(rule string, loc *time.Location) (Repeat, time.Time) {
 	if rule == "" {
 		return RepeatNone, time.Time{}
 	}
-	opt, err := rrule.StrToROption(rule)
+	opt, err := parseRule(rule, loc)
 	if err != nil || opt.Count > 0 {
 		return RepeatCustom, time.Time{}
 	}
-	until := opt.Until
+	until := opt.Until.In(loc)
 	opt.Until = time.Time{}
 	canon := opt.RRuleString()
 	for r, preset := range presetRules {

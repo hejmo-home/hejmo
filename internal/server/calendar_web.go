@@ -464,7 +464,7 @@ func (c *calendarContext) newEvent(f *eventForm) (calendar.Event, error) {
 	if f.Repeat == "" {
 		f.Repeat = string(calendar.RepeatNone)
 	}
-	rule, err := calendar.RepeatRule(calendar.Repeat(f.Repeat), until)
+	rule, err := calendar.RepeatRule(calendar.Repeat(f.Repeat), until, f.AllDay)
 	if err != nil || f.Repeat == string(calendar.RepeatCustom) {
 		return e, badField("repeat")
 	}
@@ -552,7 +552,7 @@ func formOf(series []calendar.Event, o calendar.Occurrence, occRaw string) event
 	if o.AllDay {
 		f.EndDate = end.AddDate(0, 0, -1).Format(dateLayout)
 	}
-	rep, until := calendar.RepeatOf(master.RRule)
+	rep, until := calendar.RepeatOf(master.RRule, loc)
 	f.Repeat = string(rep)
 	if !until.IsZero() {
 		f.Until = until.In(loc).Format(dateLayout)
@@ -684,7 +684,7 @@ func (c *calendarContext) patch(series []calendar.Event, occ calendar.Occurrence
 	if scope == calendar.ScopeThis || f.Repeat == "" || f.Repeat == string(calendar.RepeatCustom) {
 		return p, nil
 	}
-	curRepeat, curUntil := calendar.RepeatOf(master.RRule)
+	curRepeat, curUntil := calendar.RepeatOf(master.RRule, loc)
 	// The form shows the end of the series as a date. A series cut by "this and
 	// following" ends a second before the cut, so only a changed date counts as
 	// a new end: otherwise the cut-off occurrences would come back.
@@ -699,7 +699,7 @@ func (c *calendarContext) patch(series []calendar.Event, occ calendar.Occurrence
 	if untouchedEnd {
 		until = curUntil
 	}
-	rule, err := calendar.RepeatRule(calendar.Repeat(f.Repeat), until)
+	rule, err := calendar.RepeatRule(calendar.Repeat(f.Repeat), until, occ.AllDay)
 	if err != nil {
 		return p, badField("repeat")
 	}

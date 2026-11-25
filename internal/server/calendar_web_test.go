@@ -481,3 +481,69 @@ func TestNewEventFormOffersEveryWritableCalendarOnTheFirstVisit(t *testing.T) {
 		}
 	}
 }
+
+// Ticket 307: an all-day series ends with a date (UNTIL=20261231), a timed one
+// with a UTC date-time; the edit page shows the same end date either way, and
+// "this and following" ends the old all-day part with a date the day before.
+func TestAllDaySeriesEndIsWrittenAsADateAndReadBackAsTheSameDay(t *testing.T) {
+	t.Parallel()
+	f := calendarBox(t)
+	allDay := eventForm("School trip week", "2026-11-02", "", "")
+	allDay.Set("all_day", "1")
+	allDay.Set("repeat", "weekly")
+	allDay.Set("until", "2026-12-31")
+	f.postEvent(t, allDay)
+	timed := eventForm("Choir", "2026-11-02", "17:00", "18:00")
+	timed.Set("repeat", "weekly")
+	timed.Set("until", "2026-12-31")
+	f.postEvent(t, timed)
+
+	rules := func() map[string]string {
+		h, _ := f.db.HomeHousehold()
+		events, _ := f.db.CalendarEvents(h.ID, f.family.ID)
+		out := map[string]string{}
+		for _, e := range events {
+			if e.SeriesID == "" {
+				out[e.Title] = e.RRule
+			}
+		}
+		return out
+	}
+	got := rules()
+	if got["School trip week"] != "FREQ=WEEKLY;UNTIL=20261231" || got["Choir"] != "FREQ=WEEKLY;UNTIL=20261231T225959Z" {
+		t.Fatalf("stored rules = %v", got)
+	}
+
+	untilOnPage := func(week string) string {
+		path, occ := occurrenceOf(t, linkTo(t, getEN(f.box, "/calendar?week="+week).body, "School trip week"))
+		page := getEN(f.box, path+"?occurrence="+url.QueryEscape(occ)).body
+		m := regexp.MustCompile(`name="until"[^>]*value="([^"]*)"|value="([^"]*)"[^>]*name="until"`).FindStringSubmatch(page)
+		if m == nil {
+			t.Fatalf("no end date on the edit page:\n%s", page)
+		}
+		return m[1] + m[2]
+	}
+	if u := untilOnPage("2026-11-02"); u != "2026-12-31" {
+		t.Fatalf("end date on the edit page = %q", u)
+	}
+	if !strings.Contains(getEN(f.box, "/calendar?week=2026-12-28").body, "School trip week") {
+		t.Fatal("the last occurrence (Monday 28/12) is missing")
+	}
+
+	path, occ := occurrenceOf(t, linkTo(t, getEN(f.box, "/calendar?week=2026-11-16").body, "School trip week"))
+	split := eventForm("School trip week 2", "2026-11-16", "", "")
+	split.Set("all_day", "1")
+	split.Set("repeat", "weekly")
+	split.Set("until", "2026-12-31")
+	split.Set("occurrence", occ)
+	split.Set("scope", "following")
+	if r := f.post(path, split); r.status != http.StatusSeeOther {
+		t.Fatalf("split = %d\n%s", r.status, r.body)
+	}
+	if got := rules()["School trip week"]; got != "FREQ=WEEKLY;UNTIL=20261115" {
+		t.Fatalf("old part = %q, want FREQ=WEEKLY;UNTIL=20261115", got)
+	}
+	if u := untilOnPage("2026-11-09"); u != "2026-11-15" {
+		t.Fatalf("end date of the old part on the edit page = %q", u)
+	}
+}

@@ -3,8 +3,6 @@ package calendar
 import (
 	"errors"
 	"time"
-
-	"github.com/teambition/rrule-go"
 )
 
 // Scope says which occurrences of a series an edit or delete touches.
@@ -300,16 +298,22 @@ func countBefore(master Event, occStart time.Time) (int, error) {
 // splitRule ends the old rule before occStart and returns the rule for the
 // new series. A COUNT is divided between both.
 func splitRule(master Event, occStart time.Time, before int) (oldRule, newRule string, err error) {
-	oldOpt, err := rrule.StrToROption(master.RRule)
+	oldOpt, err := parseRule(master.RRule, master.Start.Location())
 	if err != nil {
 		return "", "", err
 	}
-	newOpt := *oldOpt
 	if oldOpt.Count > 0 {
+		newOpt := *oldOpt
 		newOpt.Count = oldOpt.Count - before
 		oldOpt.Count = before
-	} else {
-		oldOpt.Until = occStart.Add(-time.Second).UTC()
+		return oldOpt.RRuleString(), newOpt.RRuleString(), nil
 	}
-	return oldOpt.RRuleString(), newOpt.RRuleString(), nil
+	// The old part ends the day before the split (all-day) or a second before
+	// it (timed), written in the value type of DTSTART.
+	end := occStart.Add(-time.Second)
+	if master.AllDay {
+		end = occStart.In(master.Start.Location()).AddDate(0, 0, -1)
+	}
+	oldOpt.Until = time.Time{}
+	return oldOpt.RRuleString() + ";UNTIL=" + untilValue(end, master.AllDay), master.RRule, nil
 }

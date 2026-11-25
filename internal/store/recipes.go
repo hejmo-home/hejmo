@@ -206,22 +206,31 @@ func (db *DB) CreateRecipe(householdID, personID string, r recipe.Recipe) (Recip
 		return Recipe{}, err
 	}
 	defer tx.Rollback()
-	if err := nameTaken(tx, householdID, r.Name, ""); err != nil {
-		return Recipe{}, err
-	}
-	id, ts := newID(), now()
-	if _, err := tx.Exec(`INSERT INTO recipes (id, household_id, name, name_key, category, portions, minutes, mealtimes, tips, source, created_by, created_at, updated_by, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, ''), ?, NULLIF(?, ''), ?)`,
-		id, householdID, r.Name, recipe.NameKey(r.Name), string(r.Category), r.Portions, r.Minutes, strings.Join(r.Mealtimes, ","), r.Tips, r.Source, personID, ts, personID, ts); err != nil {
-		return Recipe{}, err
-	}
-	if err := writeRecipeParts(tx, id, r); err != nil {
+	id, err := insertRecipe(tx, householdID, personID, r)
+	if err != nil {
 		return Recipe{}, err
 	}
 	if err := tx.Commit(); err != nil {
 		return Recipe{}, err
 	}
 	return db.Recipe(householdID, id)
+}
+
+// insertRecipe writes a checked recipe with its parts in tx and returns its id.
+func insertRecipe(tx *sql.Tx, householdID, personID string, r recipe.Recipe) (string, error) {
+	if err := nameTaken(tx, householdID, r.Name, ""); err != nil {
+		return "", err
+	}
+	id, ts := newID(), now()
+	if _, err := tx.Exec(`INSERT INTO recipes (id, household_id, name, name_key, category, portions, minutes, mealtimes, tips, source, created_by, created_at, updated_by, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, ''), ?, NULLIF(?, ''), ?)`,
+		id, householdID, r.Name, recipe.NameKey(r.Name), string(r.Category), r.Portions, r.Minutes, strings.Join(r.Mealtimes, ","), r.Tips, r.Source, personID, ts, personID, ts); err != nil {
+		return "", err
+	}
+	if err := writeRecipeParts(tx, id, r); err != nil {
+		return "", err
+	}
+	return id, nil
 }
 
 // UpdateRecipe replaces the recipe with r.ID (name, details, ingredients,
@@ -244,6 +253,9 @@ func (db *DB) UpdateRecipe(householdID, personID string, r recipe.Recipe, o Meal
 		return Recipe{}, err
 	}
 	if err := nameTaken(tx, householdID, r.Name, id); err != nil {
+		return Recipe{}, err
+	}
+	if err := keepImport(tx, id, personID, &r); err != nil {
 		return Recipe{}, err
 	}
 	if _, err := tx.Exec(`UPDATE recipes SET name = ?, name_key = ?, category = ?, portions = ?, minutes = ?, mealtimes = ?, tips = ?, source = ?, updated_by = NULLIF(?, ''), updated_at = ?

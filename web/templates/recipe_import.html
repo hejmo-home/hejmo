@@ -2,11 +2,11 @@
   {{if .Which}}
   <h1>{{t "recipes.import.which.title"}}</h1>
   <p class="lead">{{.Lead}}</p>
-  <form class="steps" method="get" action="{{.Action}}">
+  <form class="steps imp-which-form" method="get" action="{{.Action}}">
     <fieldset class="choice imp-which"><legend>{{t "recipes.import.which.legend"}}</legend>{{range .Options}}
       <label><input type="radio" name="which" value="{{.N}}"{{if .Checked}} checked{{end}}><b>{{.Name}}</b><small>{{.Meta}}</small></label>{{end}}
     </fieldset>
-    <div class="acts" style="display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center"><button class="button" type="submit">{{t "recipes.import.which.next"}}</button><a href="{{.CancelHref}}">{{t "recipes.cancel"}}</a></div>
+    <div class="acts"><button class="button" type="submit">{{t "recipes.import.which.next"}}</button><a href="{{.CancelHref}}">{{t "recipes.cancel"}}</a></div>
   </form>
   {{else if .Expired}}
   <h1>{{t "recipes.import.review.title"}}</h1>

@@ -73,7 +73,9 @@ func TestFetchErrors(t *testing.T) {
 		}
 	})
 	f := loopback()
-	f.Timeout = 100 * time.Millisecond
+	// /slow has its own short timeout: under -race the 5 MB of /big may take longer than that.
+	slow := loopback()
+	slow.Timeout = 100 * time.Millisecond
 	var st *recipeimport.StatusError
 	var nh *recipeimport.NotHTMLError
 	var priv *recipeimport.PrivateError
@@ -87,7 +89,11 @@ func TestFetchErrors(t *testing.T) {
 		"/loop": func(e error) bool { return errors.Is(e, recipeimport.ErrTooManyRedirects) },
 		"/home": func(e error) bool { return errors.As(e, &priv) && priv.Addr == "192.168.178.20" },
 	} {
-		if _, err := f.Fetch(context.Background(), s.URL+path); err == nil || !check(err) {
+		fetcher := f
+		if path == "/slow" {
+			fetcher = slow
+		}
+		if _, err := fetcher.Fetch(context.Background(), s.URL+path); err == nil || !check(err) {
 			t.Errorf("%s: err = %v", path, err)
 		}
 	}

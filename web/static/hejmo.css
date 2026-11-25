@@ -4800,7 +4800,7 @@ form.rcp-imp { box-sizing: border-box; max-width: 560px; display: grid; gap: 14p
 [data-theme="bw"] form.rcp-imp { border: 2px solid var(--text); }
 form.rcp-imp .f input { box-sizing: border-box; font-size: 16px; }
 form.rcp-imp .f.invalid input { border: 2px solid var(--error-text); }
-form.rcp-imp .acts { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+form.rcp-imp .acts, form.imp-which-form .acts { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
 form.rcp-imp .acts .button .icon { stroke: currentColor; }
 .imp-takes { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: var(--fs-label-large); }
 .imp-takes li { display: flex; gap: 8px; align-items: flex-start; overflow-wrap: break-word; }

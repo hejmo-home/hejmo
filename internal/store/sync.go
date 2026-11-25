@@ -124,6 +124,14 @@ func (db *DB) DeferSync(calendarID string, at time.Time) error {
 	return expectOne(db.sql.Exec(`UPDATE calendar_sync SET next_attempt_at = ? WHERE calendar_id = ?`, stamp(at), calendarID))
 }
 
+// DeferConnection moves the next attempt of every calendar of a connection to
+// at, unless it is later already: the server of the connection asked to wait.
+func (db *DB) DeferConnection(householdID, connectionID string, at time.Time) error {
+	_, err := db.sql.Exec(`UPDATE calendar_sync SET next_attempt_at = ? WHERE next_attempt_at < ?
+		AND calendar_id IN (SELECT id FROM calendars WHERE connection_id = ? AND household_id = ?)`, stamp(at), stamp(at), connectionID, householdID)
+	return err
+}
+
 const syncedSelect = `SELECT c.id, c.household_id, c.name, c.kind, c.color, c.read_only, c.shared, c.waste, c.source_locked, c.source_owner, c.source_name, n.id, COALESCE(c.remote_url, n.url),
 	s.interval_minutes, s.started_at, s.last_attempt_at, s.last_success_at, s.next_attempt_at, s.failures, s.last_error_key, s.last_error_params,
 	s.last_run_events, s.last_run_new, s.last_run_changed, s.last_run_removed,

@@ -43,10 +43,8 @@ func (s *Service) Push(ctx context.Context, householdID, calendarID string) erro
 		return err
 	}
 	at := s.now()
-	interval := time.Duration(cal.Sync.IntervalMinutes) * time.Minute
 	fail := func(msg i18n.Message, cause error) error {
-		msg, next := failed(msg, cause, at, interval, cal.Sync.Failures)
-		if err := s.db.FailSync(householdID, calendarID, msg, at, next); err != nil {
+		if _, err := s.recordFailure(cal, msg, cause, at); err != nil {
 			return errors.Join(cause, err)
 		}
 		return cause
@@ -57,6 +55,9 @@ func (s *Service) Push(ctx context.Context, householdID, calendarID string) erro
 	}
 	if len(pending) == 0 {
 		return nil
+	}
+	if throttled(cal, at) {
+		return nil // the server asked to wait: the changes stay queued until the next sync after that
 	}
 	if cal.Kind == "outlook" {
 		if err := s.refuse(cal.Kind, cal.URL); err != nil {

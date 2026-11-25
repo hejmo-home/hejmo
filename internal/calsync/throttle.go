@@ -10,6 +10,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/graph"
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/store"
 )
 
 // MaxRetryAfter is the longest wait a server can ask for; more is read as this.
@@ -75,4 +76,27 @@ func failed(msg i18n.Message, cause error, at time.Time, interval time.Duration,
 		return i18n.Msg("sync.fail.throttled"), at.Add(max(wait, t.wait))
 	}
 	return msg, at.Add(wait)
+}
+
+// recordFailure stores a failed attempt of cal and returns the message logged.
+// When the server asked to wait, every calendar of the same connection waits,
+// not only this one.
+func (s *Service) recordFailure(cal store.SyncedCalendar, msg i18n.Message, cause error, at time.Time) (i18n.Message, error) {
+	interval := time.Duration(cal.Sync.IntervalMinutes) * time.Minute
+	msg, next := failed(msg, cause, at, interval, cal.Sync.Failures)
+	if err := s.db.FailSync(cal.HouseholdID, cal.ID, msg, at, next); err != nil {
+		return msg, err
+	}
+	if throttleOf(cause, at) != nil {
+		if err := s.db.DeferConnection(cal.HouseholdID, cal.ConnectionID, next); err != nil {
+			return msg, err
+		}
+	}
+	return msg, nil
+}
+
+// throttled says the server of cal asked Hejmo to wait and the wait is not
+// over: nothing goes to it before then.
+func throttled(cal store.SyncedCalendar, now time.Time) bool {
+	return cal.Sync.LastError.Key == "sync.fail.throttled" && now.Before(cal.Sync.NextAttempt)
 }

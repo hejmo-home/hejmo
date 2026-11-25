@@ -197,7 +197,7 @@ func (tp *Tamper) Count(method string) int {
 func (tp *Tamper) RefuseWrites(status int) {
 	tp.mu.Lock()
 	defer tp.mu.Unlock()
-	tp.writes = status
+	tp.writes, tp.after = status, ""
 }
 
 // Refuse makes every REPORT, and the download of the named objects, answer

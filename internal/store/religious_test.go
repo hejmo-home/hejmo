@@ -415,3 +415,27 @@ func TestTwoOccurrencesOfOneHolidayInAYearAreTwoEvents(t *testing.T) {
 		}
 	}
 }
+
+// A festival that falls on the date of a public holiday is its own day: Vesak 2026 is 1 May, Labour Day.
+func TestAFestivalOnAPublicHolidayIsInTheCalendar(t *testing.T) {
+	t.Parallel()
+	for _, region := range []string{"DE-BY", "DE-HH"} {
+		db, h := religiousHousehold(t, region, 0, 0)
+		if _, err := db.SaveReligiousHolidays(h.ID, on(rh.Buddhist, rh.Christian), "Religiöse Feiertage", "de"); err != nil {
+			t.Fatal(err)
+		}
+		var vesak, goodFriday, christmas bool
+		for _, e := range religiousEvents(t, db, h) {
+			day := e.Start.Format("2006-01-02")
+			vesak = vesak || (e.ReligiousKey == "vesak" && day == "2026-05-01")
+			goodFriday = goodFriday || (e.ReligiousKey == "good_friday" && day == "2026-04-03")
+			christmas = christmas || (e.ReligiousKey == "christmas_days" && day == "2026-12-25")
+		}
+		if !vesak {
+			t.Errorf("%s: no Vesak on 2026-05-01", region)
+		}
+		if goodFriday || christmas {
+			t.Errorf("%s: a public holiday is in the calendar twice (good friday %v, christmas %v)", region, goodFriday, christmas)
+		}
+	}
+}

@@ -218,7 +218,9 @@ var religiousNS = [16]byte{0x6b, 0xa7, 0xb8, 0x11, 0x9d, 0xad, 0x11, 0xd1, 0x80,
 // religiousEventID is a UUIDv5 of household, religion, holiday, the year the holiday belongs to (the year of its
 // own calendar when it has one), whether it is the eve and which occurrence of it that year it is (0 for the first,
 // which keeps the id it always had), so the same holiday has the same id on every start and moves its event when
-// the date changes. A holiday without a date of its own calendar can fall twice in a Gregorian year.
+// the date changes. A holiday without a date of its own calendar can fall twice in a Gregorian year. The occurrence
+// counts the holidays the calendar keeps: only holidays that are public holidays are ever left out (see
+// religiousholiday.PublicNames) and those fall once a year, so a region change never swaps two occurrences.
 func religiousEventID(householdID string, h rh.Holiday, eve bool, occurrence int) string {
 	year := religiousIDYear(h)
 	hash := sha1.New() //nolint:gosec // UUIDv5 is defined with SHA-1; no security use
@@ -275,8 +277,9 @@ func (db *DB) syncReligious(tx *sql.Tx, householdID, calendarName string) (Relig
 			sort.SliceStable(kept, func(i, j int) bool { return kept[i].Start.Before(kept[j].Start) })
 			seen := map[string]int{}
 			for _, hol := range kept {
-				occ := seen[fmt.Sprintf("%s/%d", hol.Key, religiousIDYear(hol))]
-				seen[fmt.Sprintf("%s/%d", hol.Key, religiousIDYear(hol))]++
+				k := fmt.Sprintf("%s/%d", hol.Key, religiousIDYear(hol))
+				occ := seen[k]
+				seen[k]++
 				rel := string(plan.Religion)
 				s := time.Date(hol.Start.Year(), hol.Start.Month(), hol.Start.Day(), 0, 0, 0, 0, loc)
 				e := time.Date(hol.End.Year(), hol.End.Month(), hol.End.Day(), 0, 0, 0, 0, loc).AddDate(0, 0, 1)

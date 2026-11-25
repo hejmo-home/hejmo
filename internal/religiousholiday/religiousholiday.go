@@ -224,14 +224,16 @@ type Skipped struct {
 }
 
 // Skip splits holidays into the ones the calendar gets and the ones that every
-// day of which is a public holiday of the region: those are in the calendar
-// already and are never added twice. public says whether a day is one and
-// whether it is a partial holiday.
-func Skip(hs []Holiday, public func(time.Time) (partial, ok bool)) (kept []Holiday, skipped []Skipped) {
+// day of which is the public holiday of the region itself: those are in the
+// calendar already and are never added twice. A festival that merely falls on
+// the date of a public holiday (Vesak on 1 May) is kept. public says, for a
+// holiday key and a day, whether the region has that holiday on that day and
+// whether it is a partial holiday there.
+func Skip(hs []Holiday, public func(key string, day time.Time) (partial, ok bool)) (kept []Holiday, skipped []Skipped) {
 	for _, h := range hs {
 		all, partial := true, false
 		for t := h.Start; !t.After(h.End); t = t.AddDate(0, 0, 1) {
-			p, ok := public(t)
+			p, ok := public(h.Key, t)
 			if !ok {
 				all = false
 				break

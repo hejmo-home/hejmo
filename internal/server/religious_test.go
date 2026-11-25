@@ -465,3 +465,25 @@ func TestMCPListEventsCarriesTheSightingFlag(t *testing.T) {
 		t.Errorf("Pessach varies_by_sighting = %s\n%s", got, out)
 	}
 }
+
+// Vesak 2026 is 1 May, Labour Day: the festival is in the calendar and the page does not call it a public holiday.
+func TestAFestivalOnALabourDayIsInTheCalendarAndNotListedAsAPublicHoliday(t *testing.T) {
+	t.Parallel()
+	b := newRhBox(t)
+	r := b.save(rhForm("buddhist"), "de")
+	if r.status != http.StatusOK {
+		t.Fatalf("status %d\n%s", r.status, r.body)
+	}
+	rhHasNot(t, "page", r.body, "Schon als gesetzliche Feiertage")
+	status, _, events := b.api.call(http.MethodGet, "/events?from=2026-05-01T00:00:00Z&to=2026-05-02T00:00:00Z", nil)
+	if status != http.StatusOK {
+		t.Fatalf("events = %d", status)
+	}
+	var titles []string
+	for _, e := range events {
+		titles = append(titles, e.(map[string]any)["title"].(string))
+	}
+	if !strings.Contains(strings.Join(titles, "|"), "Vesak") {
+		t.Errorf("no Vesak on 1 May 2026: %v", titles)
+	}
+}

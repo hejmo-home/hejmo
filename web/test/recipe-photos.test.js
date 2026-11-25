@@ -46,6 +46,7 @@ function fakePage(texts) {
     constructor(tag) { this.tag = tag; this.kids = []; this.parent = null; this.attrs = {}; this.style = {}; this.listeners = {}; this.className = ''; this.text = ''; }
     get parentNode() { return this.parent; }
     get nextSibling() { const i = this.parent.kids.indexOf(this); return this.parent.kids[i + 1] || null; }
+    removeChild(c) { this.kids = this.kids.filter((k) => k !== c); c.parent = null; return c; }
     appendChild(c) { c.parent = this; this.kids.push(c); return c; }
     insertBefore(n, ref) { n.parent = this; const i = ref ? this.kids.indexOf(ref) : -1; this.kids.splice(i < 0 ? this.kids.length : i, 0, n); return n; }
     set textContent(v) { if (v === '') { this.kids.forEach((k) => { k.parent = null; }); this.kids = []; } else this.text = v; }
@@ -75,7 +76,7 @@ function fakePage(texts) {
 test('choosing photos on the page "Fotos" keeps the file inputs in the form, so the form still sends the files', async () => {
   const page = fakePage({ uploading: 'Fotos werden gespeichert', progress: '{done} von {total}', send: '{name}', convert: '{name}' });
   class DT { constructor() { this.items = { add: (f) => { this.files.push(f); } }; this.files = []; } }
-  const sb = { document: page.doc, DataTransfer: DT, File: class { constructor(parts, name) { this.name = name; } } };
+  const sb = { document: page.doc, addEventListener() {}, DataTransfer: DT, File: class { constructor(parts, name) { this.name = name; } } };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../static/photos.js'), 'utf8'), sb);
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../static/recipe-photos.js'), 'utf8'), sb);
   const file = { name: 'a.jpg', type: 'image/jpeg', slice: () => ({ arrayBuffer: async () => JPEG.buffer.slice(0) }) };
@@ -83,4 +84,26 @@ test('choosing photos on the page "Fotos" keeps the file inputs in the form, so 
   await page.form.listeners.change({ target: page.input });
   assert.ok(page.form.contains(page.input), 'the file input is still in the form');
   assert.deepEqual(page.form.submitted, [1], 'the form is sent with the chosen photo');
+});
+
+test('back to a page from the back-forward cache, the form takes photos again', async () => {
+  const page = fakePage({ uploading: 'Fotos werden gespeichert', progress: '{done} von {total}', send: '{name}', convert: '{name}' });
+  class DT { constructor() { this.items = { add: (f) => { this.files.push(f); } }; this.files = []; } }
+  const shown = {};
+  const sb = { document: page.doc, addEventListener: (ev, fn) => { shown[ev] = fn; }, DataTransfer: DT, File: class { constructor(parts, name) { this.name = name; } } };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../static/photos.js'), 'utf8'), sb);
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../static/recipe-photos.js'), 'utf8'), sb);
+  const file = { name: 'a.jpg', type: 'image/jpeg', slice: () => ({ arrayBuffer: async () => JPEG.buffer.slice(0) }) };
+  page.input.files = [file];
+  await page.form.listeners.change({ target: page.input });
+  assert.equal(page.pick.style.display, 'none', 'while saving, the picker is hidden');
+  assert.equal(page.pick.parent.kids.length, 3, 'with the busy button and the progress line beside it');
+  shown.pageshow({ persisted: false });
+  assert.equal(page.pick.style.display, 'none', 'a normal page show changes nothing');
+  shown.pageshow({ persisted: true });
+  assert.equal(page.pick.style.display, '', 'the picker is back');
+  assert.deepEqual(page.pick.parent.kids, [page.pick], 'the busy button and the line are gone');
+  page.form.submitted = null;
+  await page.form.listeners.change({ target: page.input });
+  assert.deepEqual(page.form.submitted, [1], 'a further photo can be chosen and is sent');
 });

@@ -465,8 +465,9 @@ func (s *server) handleRecipePhotoDelete(w http.ResponseWriter, r *http.Request)
 // removeRecipePhoto removes the row and the files of a photo.
 func (s *server) removeRecipePhoto(p principal, ref, id string) (gone store.RecipePhoto, next *store.RecipePhoto, err error) {
 	gone, next, err = s.db.DeleteRecipePhoto(p.household.ID, ref, id)
-	if err == nil && s.recipePhotos != nil {
-		err = s.recipePhotos.Remove(gone.ID)
+	if err == nil {
+		// The row is gone, so is the photo for the user: a file that stays is logged, not an error.
+		s.removeRecipePhotoFiles([]string{gone.ID})
 	}
 	return gone, next, err
 }
@@ -483,23 +484,25 @@ func (s *server) removeRecipePhotoFiles(ids []string) {
 	}
 }
 
-// serveRecipePhoto serves a photo to any member of the household, children included. Photos never change under
-// their id, so the browser keeps them.
-func (s *server) serveRecipePhoto(w http.ResponseWriter, r *http.Request, householdID, ref, id string) bool {
+// recipePhotoSize reads ?size=: medium, small or none for the full photo; ok is false for any other value.
+func recipePhotoSize(r *http.Request) (size recipephoto.Size, ok bool) {
+	switch r.URL.Query().Get("size") {
+	case "medium":
+		return recipephoto.Medium, true
+	case "small":
+		return recipephoto.Small, true
+	case "":
+		return recipephoto.Full, true
+	}
+	return recipephoto.Full, false
+}
+
+// serveRecipePhoto serves a photo of the given size to any member of the household, children included. Photos
+// never change under their id, so the browser keeps them.
+func (s *server) serveRecipePhoto(w http.ResponseWriter, r *http.Request, householdID, ref, id string, size recipephoto.Size) bool {
 	ph, err := s.db.RecipePhoto(householdID, ref, id)
 	if err != nil || s.recipePhotos == nil {
 		return false
-	}
-	size := recipephoto.Full
-	switch r.URL.Query().Get("size") {
-	case "medium":
-		size = recipephoto.Medium
-	case "small":
-		size = recipephoto.Small
-	case "":
-	default:
-		http.Error(w, "size is medium or small", http.StatusBadRequest)
-		return true
 	}
 	f, err := s.recipePhotos.Open(ph.ID, size)
 	if err != nil {
@@ -518,7 +521,12 @@ func (s *server) handleRecipePhotoFile(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if !s.serveRecipePhoto(w, r, p.household.ID, r.PathValue("id"), r.PathValue("pid")) {
+	size, ok := recipePhotoSize(r)
+	if !ok {
+		http.Error(w, "size is medium or small", http.StatusBadRequest)
+		return
+	}
+	if !s.serveRecipePhoto(w, r, p.household.ID, r.PathValue("id"), r.PathValue("pid"), size) {
 		http.NotFound(w, r)
 	}
 }
@@ -666,7 +674,12 @@ func (s *server) apiDeleteRecipePhoto(w http.ResponseWriter, r *http.Request, p 
 }
 
 func (s *server) apiRecipePhotoImage(w http.ResponseWriter, r *http.Request, p principal) {
-	if !s.serveRecipePhoto(w, r, p.household.ID, r.PathValue("id"), r.PathValue("photo_id")) {
+	size, ok := recipePhotoSize(r)
+	if !ok {
+		writeError(w, http.StatusBadRequest, "size is medium or small")
+		return
+	}
+	if !s.serveRecipePhoto(w, r, p.household.ID, r.PathValue("id"), r.PathValue("photo_id"), size) {
 		writeError(w, http.StatusNotFound, "photo not found")
 	}
 }

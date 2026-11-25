@@ -2923,15 +2923,16 @@ paths:
       summary: The file of a photo (scope meals:read)
       description: |
         A JPEG. `size` picks the file: without it the full photo (at most 1600 pixels), `medium` (at most 640 pixels,
-        for the cover and the grid), `small` (a square crop of at most 168 pixels, for rows of lists). Children read it too.
+        for the cover and the grid), `small` (a square crop of at most 168 pixels, for rows of lists). Any other `size` is answered with 400. Children read it too.
       parameters:
-        - { name: size, in: query, required: false, schema: { type: string, enum: [medium, small] } }
+        - { name: size, in: query, required: false, schema: { type: string } }
       responses:
         "200":
           description: A JPEG
           content:
             image/jpeg:
               schema: { type: string, format: binary }
+        "400": { $ref: "#/components/responses/Invalid" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }

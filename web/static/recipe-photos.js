@@ -44,7 +44,16 @@
     var section = form.closest("[data-rph-upload]");
     var T = {};
     try { T = JSON.parse((section || form).getAttribute("data-texts") || "{}"); } catch (e) {}
-    var busy = false;
+    var busy = false, shown = [];
+    // Back to a page kept in the back-forward cache: the upload is over, the form takes photos again.
+    global.addEventListener("pageshow", function (ev) {
+      if (!ev.persisted) return;
+      shown.forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
+      shown = [];
+      var pick = form.querySelector(".ph-pick");
+      if (pick) pick.style.display = "";
+      busy = false;
+    });
     form.addEventListener("change", async function (ev) {
       var input = ev.target;
       if (busy || !input || input.type !== "file" || !input.files || !input.files.length) return;
@@ -57,10 +66,10 @@
         btn.className = "button"; btn.setAttribute("aria-disabled", "true");
         btn.appendChild(icon()); btn.appendChild(doc.createTextNode(T.uploading));
         // The labels stay in the form (hidden), so their file inputs still send the photos.
-        pick.style.display = "none"; pick.parentNode.insertBefore(btn, pick);
+        pick.style.display = "none"; pick.parentNode.insertBefore(btn, pick); shown.push(btn);
         line = doc.createElement("p");
         line.className = "progress-line"; line.setAttribute("role", "status");
-        pick.parentNode.insertBefore(line, pick.nextSibling);
+        pick.parentNode.insertBefore(line, pick.nextSibling); shown.push(line);
       }
       var sent = await prepare(files, { head: P.head, convert: P.convert, sniff: P.sniff, jpegName: P.jpegName }, function (done, total, f, phase) {
         if (!line) return;

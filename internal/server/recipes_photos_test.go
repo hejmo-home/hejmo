@@ -375,6 +375,9 @@ func TestRecipePhotosOverTheAPI(t *testing.T) {
 	if st != http.StatusOK || ctype != "image/jpeg" || len(img) == 0 {
 		t.Errorf("image = %d %s", st, ctype)
 	}
+	if body, st, ctype := c.callRaw(http.MethodGet, "/recipes/"+id+"/photos/"+second+"/image?size=huge", nil); st != http.StatusBadRequest || ctype != "application/json" || !strings.Contains(body, `"error"`) {
+		t.Errorf("an unknown size = %d %s %q, want 400 with the JSON error of openapi.yaml", st, ctype, body)
+	}
 	if status, _, _ := c.call(http.MethodDelete, "/recipes/"+id+"/photos/"+second, nil); status != http.StatusNoContent {
 		t.Errorf("delete = %d", status)
 	}

@@ -13,10 +13,11 @@ jobs:
     name: Test (${{ matrix.arch }}, shard ${{ matrix.shard }})
     strategy:
       fail-fast: false
-      # Three shards per architecture (ticket 228): ci/test-shard.sh runs half of
-      # the internal/server tests in shards 1 and 2 and every other package in 3.
+      # Four shards per architecture (ticket 228): ci/test-shard.sh runs half of
+      # the internal/server tests in shards 1 and 2, every other package in 3 and
+      # the rendered layout check (some 20 minutes) alone in 4.
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4]
         arch: [x86_64, arm64]
         include:
           # Chrome comes with the x86_64 runner image (the "Chrome for the rendered
@@ -41,12 +42,12 @@ jobs:
       - name: Vet
         if: matrix.shard == 1
         run: go vet ./...
-      - name: Shards 1 and 2 cover every server test
+      - name: Shards 1, 2 and 4 cover every server test
         if: matrix.shard == 1
         run: |
           # A shard that matched nothing would pass green; compare against go test -list.
           want=$(go test -list '^(Test|Example)' ./internal/server | grep -E '^(Test|Example)' | sort)
-          got=$( (HEJMO_SHARD_LIST=1 ci/test-shard.sh 1; HEJMO_SHARD_LIST=1 ci/test-shard.sh 2) | sort)
+          got=$( (HEJMO_SHARD_LIST=1 ci/test-shard.sh 1; HEJMO_SHARD_LIST=1 ci/test-shard.sh 2; HEJMO_SHARD_LIST=1 ci/test-shard.sh 4) | sort)
           test -n "$want" && test "$want" = "$got" || { diff <(echo "$want") <(echo "$got") | head -20; exit 1; }
       - name: Chrome for the rendered layout check
         run: |

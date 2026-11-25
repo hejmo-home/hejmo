@@ -353,26 +353,19 @@ func (s *server) handleBirthdaysSave(w http.ResponseWriter, r *http.Request) {
 	if !on { // the church stays selected while name days are off
 		pg.List = p.household.NameDayList
 	}
-	styleBad := false
+	bad := false // everything is checked before anything is saved; every error appears at its field
 	if v := r.PostFormValue("orthodox_calendar"); v != "" {
-		if st := nameday.Style(v); st.Valid() {
-			pg.Style = st
+		// the same refusal as PATCH /settings, validated once, shown at its field
+		if err := store.ValidateOrthodoxCalendar(nameday.Style(v)); err != nil {
+			pg.StyleErr, bad = e.t("nd.err.style"), true
 		} else {
-			styleBad = true
+			pg.Style = nameday.Style(v)
 		}
 	}
 	pg.SlavaOn = r.PostFormValue("slava_on") != ""
 	if pg.SlavaOn || r.PostFormValue("slava") != "" {
 		pg.Slava = r.PostFormValue("slava")
 		pg.SlavaName, pg.SlavaDay, pg.SlavaMonth = strings.TrimSpace(r.PostFormValue("slava_name")), strings.TrimSpace(r.PostFormValue("slava_day")), strings.TrimSpace(r.PostFormValue("slava_month"))
-	}
-	// Everything is checked before anything is saved, and every error appears at its field.
-	bad := false
-	if styleBad { // the same refusal as PATCH /settings, shown at its field
-		var fe *store.FieldError
-		if err := store.ValidateOrthodoxCalendar(nameday.Style(r.PostFormValue("orthodox_calendar"))); errors.As(err, &fe) && fe.Field == "orthodox_calendar" {
-			pg.StyleErr, bad = e.t("nd.err.style"), true
-		}
 	}
 	if err := store.ValidateNameDays(on, list); err != nil {
 		pg.ListErr, bad = e.t("nd.err.list"), true

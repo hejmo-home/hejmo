@@ -124,3 +124,47 @@ func TestAChangedRecipeIsRefusedWith409(t *testing.T) {
 		t.Error("something was added")
 	}
 }
+
+// Ticket 284 over the REST API: a recipe that shrinks or leaves the plan takes its quantities back.
+func TestAMealThatShrinksOrLeavesTheListTakesItsQuantitiesBack(t *testing.T) {
+	t.Parallel()
+	c, r, listID := shopAPIBox(t)
+	_, p, _ := c.call(http.MethodGet, "/meal-shopping?meal="+apiToday+".dinner&list_id="+listID, nil)
+	if status, run, _ := c.call(http.MethodPost, "/meal-shopping", map[string]any{"meal": apiToday + ".dinner", "list_id": listID, "versions": p["versions"]}); status != http.StatusCreated {
+		t.Fatalf("add = %d %v", status, run)
+	}
+	potatoes := func() (float64, int) {
+		_, l, _ := c.call(http.MethodGet, "/lists/"+listID, nil)
+		entries := l["entries"].([]any)
+		for _, e := range entries {
+			if m := e.(map[string]any); m["unit"] == "kg" || m["unit"] == "g" {
+				if a, ok := m["amount"].(float64); ok && m["text"] == "Süßkartoffeln" {
+					if m["unit"] == "kg" {
+						a *= 1000
+					}
+					return a, len(entries)
+				}
+			}
+		}
+		return 0, len(entries)
+	}
+	if a, _ := potatoes(); a != 1200 {
+		t.Fatalf("sweet potatoes for 8 portions = %v g", a)
+	}
+	if status, m := putRecipeMeal(c, apiToday, "dinner", map[string]any{"recipe_id": r["id"], "portions": 4}); status != http.StatusOK {
+		t.Fatalf("shrink = %d %v", status, m)
+	}
+	if a, _ := potatoes(); a != 600 {
+		t.Errorf("sweet potatoes for 4 portions = %v g", a)
+	}
+	_, p2, _ := c.call(http.MethodGet, "/meal-shopping?meal="+apiToday+".dinner&list_id="+listID, nil)
+	if p2["meal"] == nil {
+		t.Errorf("the meal has 4 portions on the list and 4 planned: preview = %v", p2)
+	}
+	if status, m, _ := c.call(http.MethodDelete, "/meals/"+apiToday+"/dinner", nil); status != http.StatusNoContent && status != http.StatusOK {
+		t.Fatalf("remove = %d %v", status, m)
+	}
+	if a, n := potatoes(); a != 0 || n != 0 {
+		t.Errorf("after the recipe left: %v g, %d entries", a, n)
+	}
+}

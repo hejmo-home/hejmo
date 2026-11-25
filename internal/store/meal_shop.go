@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/hejmo-home/hejmo/internal/list"
@@ -432,4 +433,233 @@ func (db *DB) UndoMealShop(householdID, runID string) (ShopUndo, error) {
 		return ShopUndo{}, fmt.Errorf("undo meal shop: %w", err)
 	}
 	return res, nil
+}
+
+// takeBackCell takes back, from the entries not yet ticked, what a meal's
+// recipes brought to a list, as far as the plan no longer needs it (ticket
+// 284): keepRecipe stays with keepPortions portions, every other recipe that
+// has ingredients on a list for this meal goes. Called in the transaction that
+// changes the plan, so the plan and the lists never disagree.
+func takeBackCell(tx *sql.Tx, householdID, day string, mealtime meal.Mealtime, keepRecipe string, keepPortions int) error {
+	rows, err := tx.Query(`SELECT m.recipe_id, SUM(m.portions) FROM meal_shop_meals m JOIN meal_shop_runs r ON r.id = m.run_id
+		WHERE r.household_id = ? AND r.undone_at IS NULL AND m.day = ? AND m.mealtime = ? GROUP BY m.recipe_id`, householdID, day, mealtime)
+	if err != nil {
+		return err
+	}
+	type on struct {
+		recipe   string
+		portions int
+	}
+	var all []on
+	for rows.Next() {
+		var o on
+		if err := rows.Scan(&o.recipe, &o.portions); err != nil {
+			rows.Close()
+			return err
+		}
+		all = append(all, o)
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	for _, o := range all {
+		keep := 0
+		if o.recipe == keepRecipe {
+			keep = keepPortions
+		}
+		if o.portions > keep {
+			if err := takeBackMeal(tx, householdID, day, mealtime, o.recipe, o.portions-keep); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// takeBackRecipe takes back every meal of a recipe that has ingredients on a list.
+func takeBackRecipe(tx *sql.Tx, householdID, recipeID string) error {
+	rows, err := tx.Query(`SELECT m.day, m.mealtime, SUM(m.portions) FROM meal_shop_meals m JOIN meal_shop_runs r ON r.id = m.run_id
+		WHERE r.household_id = ? AND r.undone_at IS NULL AND m.recipe_id = ? GROUP BY m.day, m.mealtime`, householdID, recipeID)
+	if err != nil {
+		return err
+	}
+	type cellOn struct {
+		day      string
+		mealtime meal.Mealtime
+		portions int
+	}
+	var all []cellOn
+	for rows.Next() {
+		var c cellOn
+		if err := rows.Scan(&c.day, &c.mealtime, &c.portions); err != nil {
+			rows.Close()
+			return err
+		}
+		all = append(all, c)
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	for _, c := range all {
+		if err := takeBackMeal(tx, householdID, c.day, c.mealtime, recipeID, c.portions); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// takeBackMeal takes `portions` portions of one meal off the lists, latest run
+// first. Each run's recorded contributions shrink in proportion; an open entry
+// loses exactly that quantity. What reaches zero disappears when a run made the
+// entry, and an entry nobody shops for any more loses its note. Ticked entries
+// keep their quantity and their note.
+func takeBackMeal(tx *sql.Tx, householdID, day string, mealtime meal.Mealtime, recipeID string, portions int) error {
+	type runMeal struct {
+		id       string
+		portions int
+	}
+	rows, err := tx.Query(`SELECT m.run_id, m.portions FROM meal_shop_meals m JOIN meal_shop_runs r ON r.id = m.run_id
+		WHERE r.household_id = ? AND r.undone_at IS NULL AND m.day = ? AND m.mealtime = ? AND m.recipe_id = ? ORDER BY r.created_at DESC, r.rowid DESC`,
+		householdID, day, mealtime, recipeID)
+	if err != nil {
+		return err
+	}
+	var runs []runMeal
+	for rows.Next() {
+		var r runMeal
+		if err := rows.Scan(&r.id, &r.portions); err != nil {
+			rows.Close()
+			return err
+		}
+		runs = append(runs, r)
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	touched := map[string]bool{}
+	for _, r := range runs {
+		if portions <= 0 {
+			break
+		}
+		take := min(portions, r.portions)
+		portions -= take
+		left := r.portions - take
+		if err := shrinkRun(tx, r.id, day, mealtime, recipeID, r.portions, left, touched); err != nil {
+			return err
+		}
+		if left == 0 {
+			_, err = tx.Exec(`DELETE FROM meal_shop_meals WHERE run_id = ? AND day = ? AND mealtime = ?`, r.id, day, mealtime)
+		} else {
+			_, err = tx.Exec(`UPDATE meal_shop_meals SET portions = ? WHERE run_id = ? AND day = ? AND mealtime = ?`, left, r.id, day, mealtime)
+		}
+		if err != nil {
+			return err
+		}
+	}
+	for entryID := range touched {
+		if err := tidyEntry(tx, entryID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// shrinkRun scales the contributions of one run's meal from `was` to `left`
+// portions and takes the difference off the open entries.
+func shrinkRun(tx *sql.Tx, runID, day string, mealtime meal.Mealtime, recipeID string, was, left int, touched map[string]bool) error {
+	type part struct {
+		entry string
+		qty   list.Quantity
+	}
+	rows, err := tx.Query(`SELECT entry_id, qty_base, qty_unit FROM meal_shop_parts WHERE run_id = ? AND day = ? AND mealtime = ? AND recipe_id = ?`, runID, day, mealtime, recipeID)
+	if err != nil {
+		return err
+	}
+	var parts []part
+	for rows.Next() {
+		var p part
+		if err := rows.Scan(&p.entry, &p.qty.Base, &p.qty.Unit); err != nil {
+			rows.Close()
+			return err
+		}
+		parts = append(parts, p)
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	for _, p := range parts {
+		var done bool
+		var cur list.Quantity
+		err := tx.QueryRow(`SELECT done, qty_base, qty_unit FROM list_entries WHERE id = ?`, p.entry).Scan(&done, &cur.Base, &cur.Unit)
+		if errors.Is(err, sql.ErrNoRows) {
+			continue // deleted by hand meanwhile; the foreign key took the record
+		}
+		if err != nil {
+			return err
+		}
+		if done {
+			continue // ticked: bought already, quantity and note stay
+		}
+		newQty := p.qty.Base * float64(left) / float64(was)
+		if left == 0 {
+			newQty = 0
+		}
+		if cut := p.qty.Base - newQty; cut > 0 && !cur.None() && !p.qty.None() && cur.Kind() == p.qty.Kind() {
+			rest := cur.Base - cut
+			if rest < 1e-9 {
+				rest = 0
+			}
+			if rest > 0 {
+				rest = math.Round(rest*1e6) / 1e6
+			}
+			unit := cur.Unit
+			if rest == 0 {
+				unit = ""
+			}
+			if _, err := tx.Exec(`UPDATE list_entries SET qty_base = ?, qty_unit = ?, `+clearOrigin+` WHERE id = ?`, rest, unit, p.entry); err != nil {
+				return err
+			}
+		}
+		if left == 0 {
+			_, err = tx.Exec(`DELETE FROM meal_shop_parts WHERE run_id = ? AND entry_id = ? AND day = ? AND mealtime = ?`, runID, p.entry, day, mealtime)
+		} else {
+			_, err = tx.Exec(`UPDATE meal_shop_parts SET portions = ?, qty_base = ? WHERE run_id = ? AND entry_id = ? AND day = ? AND mealtime = ?`, left, newQty, runID, p.entry, day, mealtime)
+		}
+		if err != nil {
+			return err
+		}
+		touched[p.entry] = true
+	}
+	return nil
+}
+
+// tidyEntry removes an open entry a run made once no meal shops for it any
+// more and nothing is left of its quantity.
+func tidyEntry(tx *sql.Tx, entryID string) error {
+	var qty float64
+	var done bool
+	if err := tx.QueryRow(`SELECT done, qty_base FROM list_entries WHERE id = ?`, entryID).Scan(&done, &qty); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+	if done || qty > 0 {
+		return nil
+	}
+	var parts, made int
+	if err := tx.QueryRow(`SELECT COUNT(*) FROM meal_shop_parts p JOIN meal_shop_runs r ON r.id = p.run_id WHERE p.entry_id = ? AND r.undone_at IS NULL`, entryID).Scan(&parts); err != nil {
+		return err
+	}
+	if parts > 0 {
+		return nil
+	}
+	if err := tx.QueryRow(`SELECT COUNT(*) FROM meal_shop_steps s JOIN meal_shop_runs r ON r.id = s.run_id WHERE s.entry_id = ? AND s.action = ? AND r.undone_at IS NULL`, entryID, list.AddedNew).Scan(&made); err != nil {
+		return err
+	}
+	if made == 0 {
+		return nil // an entry somebody typed stays, without a quantity
+	}
+	_, err := tx.Exec(`DELETE FROM list_entries WHERE id = ?`, entryID)
+	return err
 }

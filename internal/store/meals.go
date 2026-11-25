@@ -230,6 +230,9 @@ func (w *planWriter) write(m PlanMeal) error {
 		return err
 	}
 	tx, householdID := w.tx, w.householdID
+	if err := takeBackCell(tx, householdID, m.Day, m.Mealtime, m.RecipeID, m.Portions); err != nil {
+		return err
+	}
 	switch {
 	case !old.exists && m.Text == "":
 		return nil

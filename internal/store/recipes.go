@@ -348,6 +348,9 @@ func (db *DB) DeleteRecipe(householdID, id string) error {
 	if err != nil {
 		return err
 	}
+	if err := takeBackRecipe(tx, householdID, id); err != nil {
+		return err
+	}
 	for _, t := range []string{"meal_manual", "meal_adjustments", "meal_plan"} {
 		if _, err := tx.Exec(`UPDATE `+t+` SET text = ?, recipe_id = '', portions = 0 WHERE household_id = ? AND recipe_id = ?`, name, householdID, id); err != nil {
 			return err

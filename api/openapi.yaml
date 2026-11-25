@@ -2526,6 +2526,12 @@ paths:
         Where a meal plan template fills the day, the entry is that week's
         adjustment (`source` adjusted; a recipe always is one); typing the
         template's own dish is no adjustment.
+
+        Ingredients the shopping list took from the recipe (`/meal-shopping`) are
+        taken back when the recipe leaves this entry or its portions shrink:
+        the quantity of the portions that go comes off the entries not yet
+        ticked, an entry a run made disappears when nothing is left, and the
+        source lines of the meal go. Ticked entries are never touched.
       parameters:
         - { name: date, in: path, required: true, schema: { type: string, format: date } }
         - { name: mealtime, in: path, required: true, schema: { $ref: "#/components/schemas/Mealtime" } }
@@ -2556,6 +2562,12 @@ paths:
         Removing a meal that is not planned is not an error (204). Where a meal
         plan template fills the day, it empties the meal for that week (an
         adjustment); `restoreMeal` brings the template's dish back.
+
+        Ingredients the shopping list took from the recipe (`/meal-shopping`) are
+        taken back when the recipe leaves the plan:
+        the quantity of the portions that go comes off the entries not yet
+        ticked, an entry a run made disappears when nothing is left, and the
+        source lines of the meal go. Ticked entries are never touched.
       parameters:
         - { name: date, in: path, required: true, schema: { type: string, format: date } }
         - { name: mealtime, in: path, required: true, schema: { $ref: "#/components/schemas/Mealtime" } }

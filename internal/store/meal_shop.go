@@ -628,6 +628,15 @@ func shrinkRun(tx *sql.Tx, runID, day string, mealtime meal.Mealtime, recipeID s
 		if err != nil {
 			return err
 		}
+		if left == 0 {
+			// The run has nothing left on this entry: its step goes too, so an Undo
+			// leaves the entry as it is now. A step that made the entry stays for tidyEntry.
+			_, err = tx.Exec(`DELETE FROM meal_shop_steps WHERE run_id = ? AND entry_id = ? AND action <> ?
+				AND NOT EXISTS (SELECT 1 FROM meal_shop_parts p WHERE p.run_id = ? AND p.entry_id = ?)`, runID, p.entry, list.AddedNew, runID, p.entry)
+			if err != nil {
+				return err
+			}
+		}
 		touched[p.entry] = true
 	}
 	return nil

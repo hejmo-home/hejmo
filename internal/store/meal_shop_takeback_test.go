@@ -317,3 +317,38 @@ func TestAnEntryChangedToAnotherUnitKindKeepsItsQuantity(t *testing.T) {
 		t.Errorf("after shrinking = %v, want %v", got, want)
 	}
 }
+
+// A take-back that emptied the run's share of an entry ends the run's claim on it:
+// what somebody typed afterwards survives the Undo.
+func TestUndoAfterAFullTakeBackKeepsLaterHandEdits(t *testing.T) {
+	f := newTakeBackFixture(t)
+	f.addByHand(t, "Süßkartoffeln", "sweet-potatoes", list.NewQuantity(500, "g"))
+	f.plan(t, f.curry.ID, "2026-11-19", 4)
+	run := f.shop(t, "2026-11-19", 4, potatoes)
+	f.clear(t, "2026-11-19")
+	f.addByHand(t, "Süßkartoffeln", "sweet-potatoes", list.NewQuantity(200, "g"))
+	if got := f.lines(t); !reflect.DeepEqual(got, []string{"Süßkartoffeln 700 g"}) {
+		t.Fatalf("before undo = %v", got)
+	}
+	if _, err := f.db.UndoMealShop(f.h.ID, run.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got := f.lines(t); !reflect.DeepEqual(got, []string{"Süßkartoffeln 700 g"}) {
+		t.Errorf("after undo = %v, the hand edit must stay", got)
+	}
+}
+
+func TestUndoAfterAFullTakeBackKeepsAQuantityTypedIntoAnEmptyEntry(t *testing.T) {
+	f := newTakeBackFixture(t)
+	f.addByHand(t, "Süßkartoffeln", "sweet-potatoes", list.Quantity{})
+	f.plan(t, f.curry.ID, "2026-11-19", 4)
+	run := f.shop(t, "2026-11-19", 4, potatoes)
+	f.clear(t, "2026-11-19")
+	f.addByHand(t, "Süßkartoffeln", "sweet-potatoes", list.NewQuantity(300, "g"))
+	if _, err := f.db.UndoMealShop(f.h.ID, run.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got := f.lines(t); !reflect.DeepEqual(got, []string{"Süßkartoffeln 300 g"}) {
+		t.Errorf("after undo = %v, the typed quantity must stay", got)
+	}
+}

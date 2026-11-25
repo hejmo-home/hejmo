@@ -2527,11 +2527,12 @@ paths:
         adjustment (`source` adjusted; a recipe always is one); typing the
         template's own dish is no adjustment.
 
-        Ingredients the shopping list took from the recipe (`/meal-shopping`) are
-        taken back when the recipe leaves this entry or its portions shrink:
-        the quantity of the portions that go comes off the entries not yet
-        ticked, an entry a run made disappears when nothing is left, and the
-        source lines of the meal go. Ticked entries are never touched.
+        Ingredients the shopping list took from the recipe
+        (`/meal-shopping`) are taken back when the recipe leaves this entry
+        or its portions shrink: the quantity of the portions that go comes
+        off the entries not yet ticked, an entry a run made disappears when
+        nothing is left, and the source lines of the meal go. Ticked entries
+        are never touched.
       parameters:
         - { name: date, in: path, required: true, schema: { type: string, format: date } }
         - { name: mealtime, in: path, required: true, schema: { $ref: "#/components/schemas/Mealtime" } }
@@ -2563,8 +2564,8 @@ paths:
         plan template fills the day, it empties the meal for that week (an
         adjustment); `restoreMeal` brings the template's dish back.
 
-        Ingredients the shopping list took from the recipe (`/meal-shopping`) are
-        taken back when the recipe leaves the plan:
+        Ingredients the shopping list took from the recipe
+        (`/meal-shopping`) are taken back when the recipe leaves the plan:
         the quantity of the portions that go comes off the entries not yet
         ticked, an entry a run made disappears when nothing is left, and the
         source lines of the meal go. Ticked entries are never touched.
@@ -2584,11 +2585,12 @@ paths:
         Removes the adjustment of a meal, so the template's dish shows again
         (and in the calendar). 404 if the meal is not adjusted.
 
-        Ingredients the shopping list took from the recipe (`/meal-shopping`) are
-        taken back when the recipe of the adjustment leaves the meal: the quantity of the portions that go comes
-        off the entries not yet ticked, an entry a run made disappears when
-        nothing is left, and the source lines of the meal go. Ticked entries
-        are never touched.
+        Ingredients the shopping list took from the recipe
+        (`/meal-shopping`) are taken back when the recipe of the adjustment
+        leaves the meal: the quantity of the portions that go comes off the
+        entries not yet ticked, an entry a run made disappears when nothing
+        is left, and the source lines of the meal go. Ticked entries are
+        never touched.
       parameters:
         - { name: date, in: path, required: true, schema: { type: string, format: date } }
         - { name: mealtime, in: path, required: true, schema: { $ref: "#/components/schemas/Mealtime" } }
@@ -2769,11 +2771,12 @@ paths:
         adjusted for a week keep their change. Overlaps are refused as in
         `createMealTemplate`.
 
-        Ingredients the shopping list took from the recipe (`/meal-shopping`) are
-        taken back when a recipe leaves a meal or its portions shrink: the quantity of the portions that go comes
-        off the entries not yet ticked, an entry a run made disappears when
-        nothing is left, and the source lines of the meal go. Ticked entries
-        are never touched.
+        Ingredients the shopping list took from the recipe
+        (`/meal-shopping`) are taken back when a recipe leaves a meal or its
+        portions shrink: the quantity of the portions that go comes off the
+        entries not yet ticked, an entry a run made disappears when nothing
+        is left, and the source lines of the meal go. Ticked entries are
+        never touched.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -2801,11 +2804,11 @@ paths:
         today keep what they showed; meals adjusted for a week stay as plain
         entries.
 
-        Ingredients the shopping list took from the recipe (`/meal-shopping`) are
-        taken back when a recipe leaves the plan: the quantity of the portions that go comes
-        off the entries not yet ticked, an entry a run made disappears when
-        nothing is left, and the source lines of the meal go. Ticked entries
-        are never touched.
+        Ingredients the shopping list took from the recipe
+        (`/meal-shopping`) are taken back when a recipe leaves the plan: the
+        quantity of the portions that go comes off the entries not yet
+        ticked, an entry a run made disappears when nothing is left, and the
+        source lines of the meal go. Ticked entries are never touched.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       responses:
@@ -2943,11 +2946,11 @@ paths:
       description: |
         A starter recipe (id starts with `starter-`) is never deleted (403).
 
-        Ingredients the shopping list took from the recipe (`/meal-shopping`) are
-        taken back when the recipe is deleted: the quantity of the portions that go comes
-        off the entries not yet ticked, an entry a run made disappears when
-        nothing is left, and the source lines of the meal go. Ticked entries
-        are never touched.
+        Ingredients the shopping list took from the recipe
+        (`/meal-shopping`) are taken back when the recipe is deleted: the
+        quantity of the portions that go comes off the entries not yet
+        ticked, an entry a run made disappears when nothing is left, and the
+        source lines of the meal go. Ticked entries are never touched.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
       responses:

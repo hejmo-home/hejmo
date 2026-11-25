@@ -23,6 +23,10 @@ type Recipe struct {
 	// FavouriteOf are the people who like the recipe (ticket 287), in the
 	// order of the household.
 	FavouriteOf []string
+	// LastCooked is the latest planned day (YYYY-MM-DD) of the recipe that is
+	// over, empty for none. The store does not fill it: the caller sets it from
+	// RecipesLastCooked, which needs today.
+	LastCooked string
 }
 
 // RecipeNameTakenError says the name is in use already, by the recipe

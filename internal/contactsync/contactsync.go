@@ -762,9 +762,54 @@ func Apply(cur *store.Contact, in Incoming, others []store.Contact) (out store.C
 		out.BdayDay, out.BdayMonth, out.BdayYear = card.BdayDay, card.BdayMonth, card.BdayYear
 	}
 	extra := in.Extra
+	if person {
+		extra = personExtra(cur.Extra, in.Extra)
+	}
 	out.Extra = &extra
 	changed = cur.Extra != extra || !sameInput(base, out)
 	return out, changed
+}
+
+// personExtra is the kept lines of a household person after a card from a phone: the e-mail addresses and the
+// N of a person are identity data of Hejmo, so those lines of the card are dropped (with the labels of their
+// groups) and the ones stored stay as they are.
+func personExtra(stored, sent string) string {
+	identity := func(f extraField) bool {
+		k := strings.ToUpper(f.Key)
+		return k == "N" || k == vcard.FieldEmail
+	}
+	var old, in []extraField
+	if stored != "" {
+		_ = json.Unmarshal([]byte(stored), &old)
+	}
+	if sent != "" {
+		_ = json.Unmarshal([]byte(sent), &in)
+	}
+	dropped := map[string]bool{}
+	for _, f := range in {
+		if identity(f) && f.Group != "" {
+			dropped[f.Group] = true
+		}
+	}
+	var out []extraField
+	for _, f := range in {
+		if !identity(f) && !(f.Group != "" && dropped[f.Group] && strings.EqualFold(f.Key, "X-ABLabel")) {
+			out = append(out, f)
+		}
+	}
+	for _, f := range old {
+		if identity(f) {
+			for f.Group != "" && slices.ContainsFunc(out, func(o extraField) bool { return o.Group == f.Group && !identity(o) }) {
+				f.Group = "id" + f.Group // not the group of a kept line of the card
+			}
+			out = append(out, f)
+		}
+	}
+	if len(out) == 0 {
+		return ""
+	}
+	b, _ := json.Marshal(out)
+	return string(b)
 }
 
 // fillCard copies the values of a card into the fields it can give, cut to the limits.

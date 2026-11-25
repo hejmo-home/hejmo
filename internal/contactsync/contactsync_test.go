@@ -341,3 +341,30 @@ func TestStructuredNameComesBackAsReceived(t *testing.T) {
 		}
 	}
 }
+
+// A phone cannot reach the e-mail addresses or the displayed name of a household person through the lines Hejmo
+// keeps as received: E-mail lines over the limit and N stay out of extra for them (ticket 299, ADR 0021).
+func TestPhoneCannotChangeAHouseholdPersonThroughKeptLines(t *testing.T) {
+	t.Parallel()
+	cur := personContact()
+	var b strings.Builder
+	b.WriteString("BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Anna Muster\r\nN:Other;Name;;;\r\nEMAIL;TYPE=HOME:mama@example.org\r\n")
+	for i := 1; i <= 10; i++ {
+		b.WriteString("EMAIL;TYPE=WORK:x" + strconv.Itoa(i) + "@evil.example\r\n")
+	}
+	b.WriteString("ORG:Firma\r\nEND:VCARD\r\n")
+	text := b.String()
+	in := contactsync.DecodeRaw(decode(t, text), []byte(text))
+	got, _ := contactsync.Apply(&cur, in, nil)
+	cur.Extra = *got.Extra
+	out := lines(t, cur, contactsync.V3)
+	if strings.Contains(out, "evil.example") || strings.Count(out, "\nEMAIL") != 1 {
+		t.Errorf("e-mail addresses of a household person stay as they are:\n%s", out)
+	}
+	if strings.Contains(out, "N:Other") || !strings.Contains(out, "N:Muster;Anna;;;\r\n") {
+		t.Errorf("the name of a household person is not the phone's N:\n%s", out)
+	}
+	if !strings.Contains(out, "ORG:Firma\r\n") {
+		t.Errorf("other kept lines still come back:\n%s", out)
+	}
+}

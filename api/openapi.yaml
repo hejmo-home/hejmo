@@ -5373,6 +5373,14 @@ components:
       properties:
         name: { type: string, description: "The Hejmo name: 1 to 40 characters, unique ignoring case among contacts and people" }
         full_name: { type: string, description: "At most 120 characters" }
+        name_day:
+          type: object
+          description: "The name day of the contact (ticket 318); omitted it stays as it is. With mode name the name must be one the household's list knows (while name days are on), with mode entry an entry of it; else 422."
+          required: [mode]
+          properties:
+            mode: { type: string, enum: [auto, entry, name, none] }
+            entry: { type: string }
+            name: { type: string, maxLength: 40 }
         numbers: { type: array, description: "At most 10", items: { $ref: "#/components/schemas/ContactLine" } }
         emails: { type: array, description: "At most 10", items: { $ref: "#/components/schemas/ContactLine" } }
         address: { $ref: "#/components/schemas/ContactAddress" }
@@ -5384,7 +5392,7 @@ components:
         relations: { type: array, items: { $ref: "#/components/schemas/ContactRelationInput" }, description: "Replaces the relations; an empty line (no word, whole family) is skipped, people without a word are 422, so are a word with no people (and no `whole_family`), more than 40 characters, unknown people, more than 20 relations and any relation on a person's contact" }
     Contact:
       type: object
-      required: [id, person_id, name, full_name, numbers, emails, address, birthday, show_in_birthdays, for_children, note, groups, relations, photo, created_by, created_at, updated_by, updated_at]
+      required: [id, person_id, name, full_name, numbers, emails, address, birthday, show_in_birthdays, for_children, note, groups, relations, photo, created_by, created_at, updated_by, updated_at, name_day]
       properties:
         id: { type: string, format: uuid, description: "The id of the person for a person's contact" }
         person_id: { type: string, format: uuid, nullable: true }
@@ -5404,6 +5412,25 @@ components:
         created_at: { type: string, format: date-time }
         updated_by: { type: string, format: uuid, nullable: true }
         updated_at: { type: string, format: date-time }
+        name_day: { $ref: "#/components/schemas/ContactNameDay" }
+    ContactNameDay:
+      type: object
+      description: "What the contact says about its name day (ticket 318) and, while the household has name days on and the contact has one, the day it falls on next."
+      required: [mode, entry, name, resolved]
+      properties:
+        mode: { type: string, enum: [auto, entry, name, none], description: "auto: the usual day of the first given name of `full_name` (else of the Hejmo name; for a hyphenated name the whole name, then each part); entry: another day of the list (`entry`); name: another name (`name`); none: no name day" }
+        entry: { type: string, nullable: true, description: "The id of the list entry, with mode entry" }
+        name: { type: string, nullable: true, maxLength: 40, description: "The other name, with mode name" }
+        resolved:
+          type: object
+          nullable: true
+          description: "Null while name days are off or when the list has no name day for the contact"
+          required: [date, name, saint, entry]
+          properties:
+            date: { type: string, format: date, description: "The next day it falls on" }
+            name: { type: string, description: "The name of the name day as the list writes it" }
+            saint: { type: string }
+            entry: { type: string, description: "The id of the entry in the list" }
     ChildContact:
       type: object
       description: A contact as the children see it. The photo, the Hejmo name and the numbers are all of it.
@@ -6653,7 +6680,7 @@ components:
         region_code: { type: string, description: "ISO 3166-2 code of the state or canton, one of the regions of the setup form", example: DE-BY }
     Settings:
       type: object
-      required: [date_format, time_format, temperature_unit, auto_update, home_name, home_place_id, latitude, longitude, below_zero, first_steps_hidden, first_steps_skipped, meal_cutoffs]
+      required: [date_format, time_format, temperature_unit, auto_update, home_name, home_place_id, latitude, longitude, below_zero, first_steps_hidden, first_steps_skipped, meal_cutoffs, name_days]
       properties:
         date_format: { type: string, enum: [dmy, mdy], description: "Day first DD.MM.YYYY (default) or month first MM/DD/YYYY. Only how the web interface writes dates in numbers; this API, CalDAV and iCalendar stay ISO 8601" }
         home_name: { type: string, description: "The name of the home place; the name of the place picked from the list" }
@@ -6670,6 +6697,14 @@ components:
           items: { type: string, enum: [family, parents, calendars, tasks, meals, display] }
         auto_update: { type: string, enum: [on, off, notify], description: "Auto-update (ADR 0018; has no effect unless GET /update says managed): on (default) installs new published versions at 03:30, off never checks, notify only tells parents that an update is available" }
         meal_cutoffs: { $ref: "#/components/schemas/MealCutoffs" }
+        name_days: { $ref: "#/components/schemas/NameDays" }
+    NameDays:
+      type: object
+      description: "Whether the name days of the contacts are in the generated calendar `birthdays` (ticket 318), and after which church. Off by default: Hejmo chooses no church. Switching off keeps the church and every contact's choice."
+      required: [on, list]
+      properties:
+        on: { type: boolean }
+        list: { type: string, nullable: true, enum: [catholic, protestant, romanian_orthodox, greek_orthodox, null], description: "The name-day list: catholic (Regionalkalender for Germany, Austria and Switzerland), protestant, romanian_orthodox or greek_orthodox; null until a church was chosen. More values may follow." }
     MealCutoffs:
       type: object
       description: "Per mealtime, the time of day (hh:mm, 24-hour) from which it is no longer shown on displays (ADR 0016). Empty means no cut-off: shown for the rest of the day. Defaults: breakfast 10:00, lunch 13:30, snack 16:30, dinner none."
@@ -6697,6 +6732,12 @@ components:
           type: array
           description: "Replaces the list of skipped steps; an unknown step refuses the whole request with 422. Steps: family, parents, calendars, tasks, meals, display."
           items: { type: string }
+        name_days:
+          type: object
+          description: "Switch name days on or off and choose the church; omitted parts stay as they are. `on: true` needs a church (the stored one or `list`), else 422; an unknown list is 422. Changing the church sets contacts whose `entry` or `name` the new list does not have back to `auto`."
+          properties:
+            on: { type: boolean }
+            list: { type: string, description: "catholic, protestant, romanian_orthodox or greek_orthodox" }
         meal_cutoffs:
           type: object
           description: "Only the mealtimes given change; a time outside hh:mm refuses the whole request with 422"

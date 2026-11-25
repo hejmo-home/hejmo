@@ -469,8 +469,16 @@ The one square JPEG (at most 512 by 512 pixels, no metadata) of a contact, set b
 _Avoid_: avatar, profile picture
 
 **Birthdays calendar**:
-The generated, read-only calendar of the birthdays in the address book: one yearly all-day event per contact, titled with the Hejmo name and, when the year of birth is known, the age ("Mia (7)"). 29 February repeats on the last day of February in years without one. Every contact can be switched out of it; it is made when the first birthday is saved. Name days are not part of it yet: they follow as an option with a household switch (decided on ticket 302, ticket 318).
+The generated, read-only calendar of the birthdays in the address book: one yearly all-day event per contact, titled with the Hejmo name and, when the year of birth is known, the age ("Mia (7)"). 29 February repeats on the last day of February in years without one. Every contact can be switched out of it; it is made when the first birthday is saved. With the household's **name days** switched on it also holds one yearly all-day event per contact with a name day (ticket 318).
 _Avoid_: birthday list, anniversary calendar
+
+**Name day**:
+The yearly feast of the saint a contact's first name belongs to, from the **name day list** the household chose. An all-day event in the Birthdays calendar titled "Namenstag <Hejmo name>", with the name of the name day in brackets when it differs ("Namenstag Mama (Katharina)"). The name comes from the first given name of the full name, otherwise the Hejmo name; a contact can choose another day of the list, another name or none. A name the list does not know gets no name day; nothing is guessed. Off by default.
+_Avoid_: saint's day, Namenstagskalender (for the setting)
+
+**Name day list**:
+One church's compiled list of names and days that a household chooses for its name days: Catholic (Regionalkalender DE/AT/CH), Protestant (Namenkalender), Romanian Orthodox, Greek Orthodox (ticket 318; more Orthodox lists in ticket 338). Every entry records its source. German UI: "Nach welcher Kirche feiert ihr Namenstage?" with the church names; the word "Kalender" stays reserved for calendars.
+_Avoid_: name day calendar, tradition
 
 **Relation**:
 The link of a contact to one or more people of the household, with what they are to them, such as "friend of Mia" or "paediatrician": one free-text word (at most 40 characters) plus the people it is for, or the whole family. The whole family stores no people, so a person who joins later is included. Only further contacts have relations, never the contact of a household person. A relation alone does not make a contact visible to children.

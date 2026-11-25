@@ -11,7 +11,8 @@
   <nav class="lib-filter ct-filter" aria-label="{{t "contact.filter.label"}}"><ul>{{range .Filters}}
     <li><a href="{{.Href}}"{{if .Current}} aria-current="true"{{end}}>{{.Text}}</a></li>{{end}}
   </ul></nav>
-  <p class="hint grp-link"><a href="/contacts/groups">{{t "contact.groups.manage"}}</a><a href="/contacts/for-children">{{t "contact.kids.link"}}</a></p>
+  <p class="hint grp-link"><a href="/contacts/groups">{{t "contact.groups.manage"}}</a><a href="/contacts/for-children">{{t "contact.kids.link"}}</a><a href="/contacts/birthdays">{{t "nd.link"}}</a></p>
+  {{else}}<p class="hint grp-link"><a href="/contacts/birthdays">{{t "nd.link"}}</a></p>
   {{end}}
   {{if .NoMatch}}
   <section aria-labelledby="res">

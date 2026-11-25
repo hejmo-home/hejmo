@@ -41,6 +41,9 @@ type Event struct {
 	// birthdays: their occurrences carry the age (see Expand). It is not stored
 	// on the event.
 	Birthday bool
+	// NameDayContact is the id of the contact a generated name-day event is made from (ticket 318); empty for
+	// every other event. It is set by the store, not stored from the event.
+	NameDayContact string
 }
 
 // Invitation says who invited and what the family's account answered, with a
@@ -68,6 +71,8 @@ type Occurrence struct {
 	People       []string
 	Groups       []string
 	Invitation   *Invitation // set when other people are invited: the event changes only at its source
+	// NameDayContact is the id of the contact a generated name-day event is made from; empty for every other event.
+	NameDayContact string
 }
 
 // ValidateRRule checks an RRULE value.
@@ -160,7 +165,7 @@ func occurrence(e Event, start, recurrenceID time.Time, seriesID string) Occurre
 	return Occurrence{
 		EventID: e.ID, SeriesID: seriesID, RecurrenceID: recurrenceID, CalendarID: e.CalendarID,
 		Title: e.Title, Description: e.Description, Location: e.Location, AllDay: e.AllDay,
-		Start: start, End: end, People: e.People, Groups: e.Groups, Invitation: e.Invitation,
+		Start: start, End: end, People: e.People, Groups: e.Groups, Invitation: e.Invitation, NameDayContact: e.NameDayContact,
 	}
 }
 

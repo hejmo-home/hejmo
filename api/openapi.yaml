@@ -2590,7 +2590,8 @@ paths:
       summary: Meal plan templates, by name (scope meals:read)
       description: |
         A template is a week pattern from Monday to Sunday that fills the meal
-        plan by itself, every `interval` weeks from `start_week`.
+        plan by itself, every `interval` weeks from `start_week`. A slot is free
+        text or a recipe (`recipe_id`).
       responses:
         "200":
           description: Templates
@@ -6710,11 +6711,19 @@ components:
         template_dish: { type: string, description: "What the template fills in (source template or adjusted)" }
     MealTemplateEntry:
       type: object
-      required: [weekday, mealtime, text]
+      required: [weekday, mealtime]
+      description: |
+        One slot of a template's week: free text, or a recipe of the household.
+        Give `text` or `recipe_id`, not both (else 422). Applying the template
+        plans a recipe slot with as many portions as there are people in the
+        household. A recipe slot is read with the recipe's current name as
+        `text`; when the recipe is deleted the slot stays as that name in free
+        text, without `recipe_id`.
       properties:
         weekday: { type: integer, minimum: 1, maximum: 7, description: "1 Monday to 7 Sunday" }
         mealtime: { $ref: "#/components/schemas/Mealtime" }
-        text: { type: string, maxLength: 200 }
+        text: { type: string, maxLength: 200, description: "Free text; with `recipe_id` (as read) the recipe's name" }
+        recipe_id: { type: string, description: "A recipe of the household (`/recipes`); an unknown one is 422. Not with a text in a request" }
     NewMealTemplate:
       type: object
       required: [name, mealtimes, interval, start_week, entries]

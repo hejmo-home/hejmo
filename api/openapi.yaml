@@ -2819,6 +2819,122 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /recipes/{id}/photos:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string }, description: "An own recipe or a starter recipe (`starter-...`); each household has its own photos of a starter recipe" }
+    get:
+      operationId: listRecipePhotos
+      summary: The own photos of a recipe, the cover first, then the newest first (scope meals:read)
+      description: Everyone reads them, children included. The files are at `image_path`.
+      responses:
+        "200":
+          description: The photos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/RecipePhoto" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      operationId: addRecipePhotos
+      summary: Add photos to a recipe (scope meals:write, parents only)
+      description: |
+        Send one or more JPEG, PNG, WebP or GIF pictures as `multipart/form-data` in the part `file`
+        (the web interface converts HEIC to JPEG in the browser first; HEIC sent here is refused). The
+        box turns each upright, shrinks it to at most 1600 pixels on the long side, stores it as a JPEG
+        without location or camera data and makes two smaller files for lists and the grid. The first
+        photo of a recipe becomes its cover; later ones never change it. A file over 15 MB, one that is
+        no picture, one with more than 24 million pixels and any file beyond the 12 photos a recipe holds
+        are listed in `refused` with the reason. 201 when at least one photo was added; else 422, or 413
+        when the only file was over 15 MB. Works for starter recipes too.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "201":
+          description: What was added, and what was refused
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecipePhotosAdded" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "413":
+          description: The file is over 15 MB
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422":
+          description: No photo could be added
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - { $ref: "#/components/schemas/RecipePhotosAdded" }
+                  - { $ref: "#/components/schemas/Error" }
+        "503":
+          description: This box keeps no photos (no data directory for them)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /recipes/{id}/photos/{photo_id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: photo_id, in: path, required: true, schema: { type: string } }
+    delete:
+      operationId: deleteRecipePhoto
+      summary: Remove a photo of a recipe (scope meals:delete, parents only)
+      description: The photo and its files go for the whole family. When it was the cover, the newest remaining photo becomes the cover; the last photo removed leaves the recipe without a cover.
+      responses:
+        "204": { description: Removed }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /recipes/{id}/photos/{photo_id}/cover:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: photo_id, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: setRecipePhotoCover
+      summary: Make a photo the cover of its recipe (scope meals:write, parents only)
+      responses:
+        "200":
+          description: The photo, now the cover
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecipePhoto" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /recipes/{id}/photos/{photo_id}/image:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: photo_id, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getRecipePhotoImage
+      summary: The file of a photo (scope meals:read)
+      description: |
+        A JPEG. `size` picks the file: without it the full photo (at most 1600 pixels), `medium` (at most 640 pixels,
+        for the cover and the grid), `small` (a square crop of at most 168 pixels, for rows of lists). Children read it too.
+      parameters:
+        - { name: size, in: query, required: false, schema: { type: string, enum: [medium, small] } }
+      responses:
+        "200":
+          description: A JPEG
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /recipes/{id}/warnings:
     get:
       operationId: getRecipeWarnings
@@ -6795,6 +6911,34 @@ components:
           maxItems: 100
           description: The steps in order; each at most 2000 characters
           items: { type: string }
+    RecipePhoto:
+      type: object
+      required: [id, file_name, width, height, is_cover, origin, added_by, added_at, image_path]
+      properties:
+        id: { type: string }
+        file_name: { type: string, description: The name the file had when it was added }
+        width: { type: integer, description: Pixels of the full photo }
+        height: { type: integer }
+        is_cover: { type: boolean, description: Exactly one photo of a recipe is the cover }
+        origin: { type: string, enum: [upload, web], description: "`web` is a picture taken over from a web page (recipe import)" }
+        added_by: { type: string, nullable: true, description: The person who added it; null for a web picture or when the person left }
+        added_at: { type: string, format: date-time }
+        image_path: { type: string, description: "The path of the file, below the server address" }
+    RecipePhotosAdded:
+      type: object
+      required: [added, refused]
+      properties:
+        added:
+          type: array
+          items: { $ref: "#/components/schemas/RecipePhoto" }
+        refused:
+          type: array
+          items:
+            type: object
+            required: [name, reason]
+            properties:
+              name: { type: string }
+              reason: { type: string }
     Recipe:
       type: object
       required: [id, name, category, portions, minutes, mealtimes, tags, tips, source, source_url, source_name, starter, ingredients, steps, diet, created_by, created_at, updated_by, updated_at]

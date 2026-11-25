@@ -41,6 +41,13 @@ type Event struct {
 	// birthdays: their occurrences carry the age (see Expand). It is not stored
 	// on the event.
 	Birthday bool
+	// Religious is the religion (a code of internal/religiousholiday) of an event of the generated calendar
+	// Religious holidays (ticket 339) and ReligiousKey the holiday; both empty for every other event.
+	// ReligiousEve marks the extra event of the evening before ("<Fest> beginnt am Abend") and
+	// VarySighting a day that depends on moon sighting ("oder 1 Tag später"). Set by the store, not by callers.
+	Religious, ReligiousKey string
+	ReligiousEve            bool
+	VarySighting            bool
 }
 
 // Invitation says who invited and what the family's account answered, with a
@@ -68,6 +75,10 @@ type Occurrence struct {
 	People       []string
 	Groups       []string
 	Invitation   *Invitation // set when other people are invited: the event changes only at its source
+	// Religious, ReligiousKey, ReligiousEve and VarySighting are the fields of the event of the same name (ticket 339).
+	Religious, ReligiousKey string
+	ReligiousEve            bool
+	VarySighting            bool
 }
 
 // ValidateRRule checks an RRULE value.
@@ -161,6 +172,7 @@ func occurrence(e Event, start, recurrenceID time.Time, seriesID string) Occurre
 		EventID: e.ID, SeriesID: seriesID, RecurrenceID: recurrenceID, CalendarID: e.CalendarID,
 		Title: e.Title, Description: e.Description, Location: e.Location, AllDay: e.AllDay,
 		Start: start, End: end, People: e.People, Groups: e.Groups, Invitation: e.Invitation,
+		Religious: e.Religious, ReligiousKey: e.ReligiousKey, ReligiousEve: e.ReligiousEve, VarySighting: e.VarySighting,
 	}
 }
 

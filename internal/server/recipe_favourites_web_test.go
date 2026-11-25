@@ -42,12 +42,12 @@ func TestTheRecipePageSaysWhoLikesItAndWhenItWasLastCooked(t *testing.T) {
 	rcpHas(t, "the German page", de, "<dt>Lieblingsessen von</dt>", "<dt>Zuletzt gekocht</dt>", "<dd>Dienstag, 10.11.</dd>")
 }
 
-func TestAParentMarksWhoLikesARecipeAndAChildOnlyReads(t *testing.T) {
+func TestAParentMarksWhoLikesARecipeAndAChildOnlyReadsFavourites(t *testing.T) {
 	t.Parallel()
 	mb := newMealBox(t)
 	curry := mb.curry(t)
 	page := mb.b.do(http.MethodGet, "/meals/recipes/"+curry.ID, nil, enHeader).body
-	rcpHas(t, "the parent's page", page, `<form method="post" action="/meals/recipes/`+curry.ID+`/favourites"`, `<legend>Who likes it?</legend>`,
+	rcpHas(t, "the parent's page", page, `<form class="rcp-fav" method="post" action="/meals/recipes/`+curry.ID+`/favourites"`, `<legend>Who likes it?</legend>`,
 		`<input type="checkbox" name="person" value="`+mb.mia.ID+`">`, `<input type="checkbox" name="person" value="`+mb.mama.ID+`">`, "Save who likes it")
 	r := mb.b.do(http.MethodPost, "/meals/recipes/"+curry.ID+"/favourites", url.Values{"person": {mb.mia.ID}}, enHeader)
 	if r.status != http.StatusSeeOther || r.location != "/meals/recipes/"+curry.ID {
@@ -105,11 +105,11 @@ func TestTheListShowsWhoLikesARecipeAndWhenItWasLastCooked(t *testing.T) {
 	list := mb.b.do(http.MethodGet, "/meals/recipes", nil, enHeader).body
 	curryRow := rcpBetween(t, list, `<a href="/meals/recipes/`+curry.ID+`">`, `</a>`)
 	soupRow := rcpBetween(t, list, `<a href="/meals/recipes/`+soup.ID+`">`, `</a>`)
-	rcpHas(t, "the curry row", curryRow, "Last cooked Monday, 9.11.", "</span>Mia</span> likes it")
-	rcpHas(t, "the soup row", soupRow, "</span>Mia</span> and <span", "</span>Mama</span> like it")
+	rcpHas(t, "the curry row", curryRow, "Last cooked Monday, 09.11.", "</span>Mia</span> likes it")
+	rcpHas(t, "the soup row", soupRow, "</span>Mama</span> and <span", "</span>Mia</span> like it")
 	rcpLacks(t, "the soup row", soupRow, "Last cooked")
 	de := mb.b.do(http.MethodGet, "/meals/recipes", nil, rcpDE).body
-	rcpHas(t, "the German list", de, "Zuletzt gekocht Montag, 9.11.", "mag das", "mögen das")
+	rcpHas(t, "the German list", de, "Zuletzt gekocht Montag, 09.11.", "mag das", "mögen das")
 	// The starter collection is nobody's favourite and was never cooked.
 	rcpLacks(t, "the starter list", mb.b.do(http.MethodGet, "/meals/recipes/starter", nil, enHeader).body, "Last cooked", "likes it", "like it")
 }

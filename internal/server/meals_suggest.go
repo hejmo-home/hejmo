@@ -22,7 +22,8 @@ import (
 
 type mealSuggRecipe struct {
 	*mealRecipe
-	Box *mealCell // the box that choosing the recipe puts in place of the field
+	Box   *mealCell     // the box that choosing the recipe puts in place of the field
+	Likes template.HTML // "Mia likes it" (ticket 287)
 }
 
 type mealSuggDish struct{ Text, Sub string }
@@ -76,7 +77,9 @@ func (s *server) handleMealSuggest(w http.ResponseWriter, r *http.Request) {
 	plain := make([]recipe.Recipe, 0, len(all))
 	var names []string
 	byID := map[string]int{}
+	liked := map[string]bool{}
 	for i, x := range all {
+		liked[x.ID] = len(x.FavouriteOf) > 0
 		plain = append(plain, x.Recipe)
 		names = append(names, x.Name)
 		byID[x.ID] = i
@@ -88,9 +91,9 @@ func (s *server) handleMealSuggest(w http.ResponseWriter, r *http.Request) {
 	}
 	people := c.householdPortions()
 	view := mealSuggView{Cell: cell, Typed: typed, KeepName: c.t("meals.sugg.keep", "q", typed), KeepSub: c.t("meals.sugg.keep.hint")}
-	for _, x := range recipe.SuggestRecipes(plain, typed, mt, recipe.MaxSuggestedRecipes) {
+	for _, x := range recipe.SuggestRecipesLiked(plain, typed, mt, recipe.MaxSuggestedRecipes, liked) {
 		rec := all[byID[x.ID]]
-		row := mealSuggRecipe{mealRecipe: c.mealRecipe(rec, day, string(mt), people, people)}
+		row := mealSuggRecipe{mealRecipe: c.mealRecipe(rec, day, string(mt), people, people), Likes: c.likes(rec)}
 		if hasCell {
 			row.Box = &mealCell{Name: cell, Mealtime: string(mt), Day: day, Recipe: row.mealRecipe}
 		}

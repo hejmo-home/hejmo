@@ -331,6 +331,14 @@ _Avoid_: override (in prose), exception
 A dish with portions, ingredients and steps that can be put on the meal plan; entered by a parent, imported from a web page or from Hejmo's starter collection, always with its source.
 _Avoid_: dish (alone), cooking instructions
 
+**Favourite**:
+A mark on a recipe for a person: "Mia likes it". A recipe can be the favourite of several people; only a parent sets it. The meal plan suggests favourites before other recipes. Only the household's own recipes have it, never a starter recipe.
+_Avoid_: liked, starred (stars are rewards)
+
+**Last cooked**:
+The latest day a recipe stood on the meal plan that is over (before today). It is never stored: it follows the plan, so it moves on by itself when a planned day passes, and a recipe planned only for today or later has none yet. Shown in the recipe list and on the recipe.
+_Avoid_: cooked on, last made
+
 **Starter recipe**:
 One of the 200 recipes that ship with the box in German and English (the starter collection). It is shown in the language of the person viewing it, names its source ("Ingredients after: Chefkoch") with a link, is read-only for everyone and is not part of a family's own recipes. Its id starts with `starter-`.
 _Avoid_: sample recipe, default recipe, template recipe

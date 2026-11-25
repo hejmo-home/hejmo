@@ -129,3 +129,24 @@ func TestEarlierDishesAreDistinctMostRecentFirstWithoutRecipeNamesAndAtMostThree
 		t.Errorf("one letter: %v", got)
 	}
 }
+
+// Ticket 287: favourites come first in the suggestions, then the mealtime, then A to Z.
+func TestSuggestionsPutFavouritesFirstThenTheMealtimeThenAToZ(t *testing.T) {
+	list := []recipe.Recipe{
+		{ID: "a", Name: "Curry A"},
+		{ID: "b", Name: "Curry B", Mealtimes: []string{"breakfast"}},
+		{ID: "c", Name: "Curry C", Mealtimes: []string{"breakfast"}},
+		{ID: "d", Name: "Curry D"},
+		{ID: "e", Name: "Curry E"},
+	}
+	liked := map[string]bool{"c": true, "d": true}
+	if got := names(recipe.SuggestRecipesLiked(list, "curry", meal.Dinner, 5, liked)); !reflect.DeepEqual(got, []string{"Curry D", "Curry C", "Curry A", "Curry E", "Curry B"}) {
+		t.Errorf("dinner = %v: favourites first (those that fit dinner, then the rest), then the others the same way", got)
+	}
+	if got := names(recipe.SuggestRecipesLiked(list, "curry", meal.Dinner, 2, liked)); !reflect.DeepEqual(got, []string{"Curry D", "Curry C"}) {
+		t.Errorf("limit 2 = %v: the limit cuts after the ordering, so favourites are never cut for others", got)
+	}
+	if got, want := names(recipe.SuggestRecipesLiked(list, "curry", meal.Dinner, 5, nil)), names(recipe.SuggestRecipes(list, "curry", meal.Dinner, 5)); !reflect.DeepEqual(got, want) {
+		t.Errorf("without favourites = %v, want %v", got, want)
+	}
+}

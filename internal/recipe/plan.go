@@ -57,6 +57,13 @@ func typedLetters(q string) (string, bool) {
 // mealtime come first (a recipe without mealtimes fits every one), then the
 // rest, each from A to Z. An empty mealtime prefers none.
 func SuggestRecipes(list []Recipe, q string, mt meal.Mealtime, limit int) []Recipe {
+	return SuggestRecipesLiked(list, q, mt, limit, nil)
+}
+
+// SuggestRecipesLiked is SuggestRecipes with the favourites (by recipe id,
+// ticket 287) before all others: a recipe somebody likes comes first, then the
+// order of SuggestRecipes holds within the favourites and within the rest.
+func SuggestRecipesLiked(list []Recipe, q string, mt meal.Mealtime, limit int, liked map[string]bool) []Recipe {
 	q, ok := typedLetters(q)
 	if !ok {
 		return nil
@@ -73,6 +80,7 @@ func SuggestRecipes(list []Recipe, q string, mt meal.Mealtime, limit int) []Reci
 	}
 	SortByName(out)
 	sort.SliceStable(out, func(i, j int) bool { return fits(out[i]) && !fits(out[j]) })
+	sort.SliceStable(out, func(i, j int) bool { return liked[out[i].ID] && !liked[out[j].ID] })
 	if len(out) > limit {
 		out = out[:limit]
 	}

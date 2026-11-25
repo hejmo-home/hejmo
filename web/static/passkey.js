@@ -152,7 +152,12 @@
     var next = scope.getAttribute("data-next") || "";
     var script = document.querySelector("script[data-gone]");
     var where = function (key, fallback) { return (script && script.getAttribute("data-" + key)) || fallback; };
-    var go = function (key, fallback) { window.location.assign(where(key, fallback)); };
+    // An error leads back to the login page with the page the adult came for.
+    var go = function (key, fallback) {
+      var to = where(key, fallback);
+      if (next) to += (to.indexOf("?") < 0 ? "?" : "&") + "next=" + encodeURIComponent(next);
+      window.location.assign(to);
+    };
     if (conditional) { conditional.abort(); conditional = null; }
     if (button) button.disabled = true;
     post("/login/passkey/begin").then(function (begun) {

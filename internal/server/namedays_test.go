@@ -236,7 +236,7 @@ func TestNameDayEventPageSaysWhereItComesFrom(t *testing.T) {
 	ctHas(t, "event page", page, `<div class="ev-gen">`, `<h1>Namenstag Mama K (Katharina)</h1>`, `Mittwoch, 25.11.2026 · ganztägig`,
 		`Diesen Termin macht Hejmo aus dem Kontakt „Mama K“ und den katholischen Namenstagen. Ändern kannst du ihn nur dort.`,
 		`<dt>Kalender</dt><dd>Geburtstage</dd>`, `<dt>Für</dt><dd>Ganze Familie</dd>`, `<dt>Namenstag</dt><dd>Katharina von Alexandrien</dd>`,
-		`<dt>Wiederholung</dt><dd>Jedes Jahr am 25. November</dd>`, `<dt>Quelle</dt><dd><span>Regionalkalender für das deutsche Sprachgebiet</span>`,
+		`<dt>Wiederholung</dt><dd>Jedes Jahr am 25. November</dd>`, `<dt>Quelle</dt><dd>Regionalkalender für das deutsche Sprachgebiet`,
 		`Kontakt „Mama K“ öffnen</a>`, `href="/contacts/birthdays">Geburtstagskalender</a>`, `data-readonly`)
 	ctHasNot(t, "event page", page, `ev-moved`, `data-event-form`)
 	ctHas(t, "English", c.page(href, "en").body, "Hejmo makes this event from the contact “Mama K” and the Catholic name days.", "Every year on November 25")

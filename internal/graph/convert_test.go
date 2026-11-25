@@ -1,6 +1,7 @@
 package graph_test
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -27,7 +28,7 @@ func TestRecurrenceBecomesAnRRule(t *testing.T) {
 		{"until", graph.Recurrence{Pattern: graph.Pattern{Type: "daily", Interval: 1}, Range: graph.Range{Type: "endDate", EndDate: "2027-03-01"}}, "FREQ=DAILY;INTERVAL=1;UNTIL=20270301T225959Z"},
 	}
 	for _, c := range cases {
-		got, err := graph.RRuleOf(c.rec, berlin)
+		got, err := graph.RRuleOf(c.rec, berlin, false)
 		if err != nil || got != c.want {
 			t.Errorf("%s: RRuleOf = %q, %v; want %q", c.name, got, err, c.want)
 		}
@@ -46,7 +47,7 @@ func TestRRuleBecomesARecurrence(t *testing.T) {
 			t.Errorf("%s: %v", rule, err)
 			continue
 		}
-		back, err := graph.RRuleOf(*rec, berlin)
+		back, err := graph.RRuleOf(*rec, berlin, false)
 		if err != nil {
 			t.Errorf("%s: back: %v", rule, err)
 			continue
@@ -191,5 +192,39 @@ func TestAllDaySeriesEndDateIsTheUntilDayInEveryZone(t *testing.T) {
 		if rec.Range.Type != "endDate" || rec.Range.EndDate != "2026-12-31" {
 			t.Errorf("%s: range = %+v, want endDate 2026-12-31", zone, rec.Range)
 		}
+	}
+}
+
+// An all-day series imported from Outlook gets a date-only UNTIL, a timed one
+// a UTC date-time (#353, #307).
+func TestRecurrenceEndDateIsWrittenInTheValueTypeOfTheSeries(t *testing.T) {
+	rec := graph.Recurrence{Pattern: graph.Pattern{Type: "daily", Interval: 1}, Range: graph.Range{Type: "endDate", EndDate: "2027-03-01"}}
+	for _, zone := range []string{"Europe/Berlin", "Pacific/Auckland", "America/New_York"} {
+		loc, err := time.LoadLocation(zone)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err := graph.RRuleOf(rec, loc, true)
+		if want := "FREQ=DAILY;INTERVAL=1;UNTIL=20270301"; err != nil || got != want {
+			t.Errorf("%s all-day: RRuleOf = %q, %v; want %q", zone, got, err, want)
+		}
+	}
+	got, err := graph.RRuleOf(rec, berlin, false)
+	if want := "FREQ=DAILY;INTERVAL=1;UNTIL=20270301T225959Z"; err != nil || got != want {
+		t.Errorf("timed: RRuleOf = %q, %v; want %q", got, err, want)
+	}
+}
+
+func TestImportedAllDaySeriesHasADateOnlyUntil(t *testing.T) {
+	master := graph.Event{ID: "m2", Type: "seriesMaster", Subject: "Ferien", IsAllDay: true,
+		Start:      &graph.DateTimeZone{DateTime: "2026-11-02T00:00:00", TimeZone: "W. Europe Standard Time"},
+		End:        &graph.DateTimeZone{DateTime: "2026-11-03T00:00:00", TimeZone: "W. Europe Standard Time"},
+		Recurrence: &graph.Recurrence{Pattern: graph.Pattern{Type: "weekly", Interval: 1, DaysOfWeek: []string{"monday"}, FirstDayOfWeek: "monday"}, Range: graph.Range{Type: "endDate", EndDate: "2026-12-28"}}}
+	got, err := graph.ToEvent(master, berlin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasSuffix(got.Event.RRule, ";UNTIL=20261228") {
+		t.Errorf("RRule = %q, want a date-only UNTIL=20261228", got.Event.RRule)
 	}
 }

@@ -15,7 +15,7 @@
   <h1>{{.Title}}</h1>
   <p class="lead">{{.Lead}}</p>
   {{if .Off}}
-  <div class="notice imp-off" role="status"><p class="h"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0z"/><path d="M12 17v4"/></svg><span>{{.OffTitle}}</span></p><p>{{.OffText}}</p></div>
+  <div class="notice imp-off" role="status"><p class="h"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">{{if .OffOffline}}<path d="M3 3l18 18"/><path d="M7 18h9.5M18.7 15.4A4 4 0 0 0 17 9.5a5.5 5.5 0 0 0-8-2.6M5.5 10.5A4 4 0 0 0 7 18"/>{{else}}<path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0z"/><path d="M12 17v4"/>{{end}}</svg><span>{{.OffTitle}}</span></p><p>{{.OffText}}</p></div>
   <p class="imp-after"><a class="button" href="{{.NewHref}}">{{template "plusIcon"}}{{t "recipes.import.write"}}</a></p>
   {{else}}
   <form class="rcp-imp" method="post" action="/meals/recipes/import" novalidate data-wait="{{.WaitFormat}}">

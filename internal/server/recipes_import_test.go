@@ -504,3 +504,21 @@ func TestWithTheSwitchOffTheRecipeHasNoCover(t *testing.T) {
 		t.Errorf("cover = %d, want 404", c.status)
 	}
 }
+
+func TestEveryTextOfTheImportPagesExistsInBothLanguages(t *testing.T) {
+	t.Parallel()
+	ib := newImportBox(t)
+	for _, h := range []map[string]string{rcpDE, enHeader} {
+		to := ib.draftOf(t, "/lentils")
+		pages := map[string]string{"import": ib.b.do(http.MethodGet, importPath, nil, h).body, "review": ib.b.do(http.MethodGet, to, nil, h).body,
+			"errors": ib.b.do(http.MethodPost, to, url.Values{"name": {""}, "which": {"0"}, "ing_name": {"Harissa"}, "ing_from": {"2"}, "ing_amount": {"1"}, "ing_unit": {""}, "ing_article": {""}, "ing_variety": {""}}, h).body,
+			"two":    ib.b.do(http.MethodGet, ib.draftOf(t, "/two"), nil, h).body, "expired": ib.b.do(http.MethodGet, "/meals/recipes/import/unknown", nil, h).body}
+		for name, body := range pages {
+			if m := regexp.MustCompile(`recipes\.import\.[a-z.]+|flash\.recipe_imported`).FindString(body); m != "" {
+				t.Errorf("%s page (%v) shows the key %s", name, h, m)
+			}
+		}
+	}
+	en := ib.b.do(http.MethodGet, ib.draftOf(t, "/lentils"), nil, enHeader).body
+	rcpHas(t, "English review", en, "<h1>Check recipe</h1>", "Please choose", "Create own article “rote Linsen”", "Keep as free text", "Save recipe", "Cancel, save nothing")
+}

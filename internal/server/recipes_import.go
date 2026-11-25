@@ -201,7 +201,7 @@ func (c *itemCtx) importData(why string, e *importErr, typed string) map[string]
 		if why == "offline" {
 			key = "recipes.import.offline"
 		}
-		d["Off"] = true
+		d["Off"], d["OffOffline"] = true, why == "offline"
 		d["OffTitle"] = c.t(key + ".title")
 		d["OffText"] = template.HTML(strings.Replace(html.EscapeString(c.s.i18n.T(c.lang, key+".text")), "{link}", link, 1)) // #nosec G203 -- escaped, the link is ours
 		return d

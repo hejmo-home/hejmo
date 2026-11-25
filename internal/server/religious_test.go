@@ -136,7 +136,7 @@ func TestSavingWritesTheCalendarAndTheSuccessLineAndListsWhatIsInIt(t *testing.T
 	}
 	rhHas(t, "success", r.body, `class="msg ok"`, "Religiöse Feiertage an: Christentum (katholisch und evangelisch) und Islam. ", " Feiertage bis Ende 2027 stehen jetzt im Kalender.")
 	rhHas(t, "state", r.body, "<dd>An: Christentum (katholisch und evangelisch) und Islam.</dd>", `value="muslim" checked`, `value="christian" checked`)
-	rhHas(t, "list", r.body, `<section aria-labelledby="days">`, `<h2 id="days">Was im Kalender steht</h2>`, `<li class="rh-rel">`, "<h3>Islam</h3>", "<h3>Christentum (katholisch und evangelisch)</h3>",
+	rhHas(t, "list", r.body, `<section aria-labelledby="days">`, `<h2 id="days">Was im Kalender steht</h2>`, `<li class="rh-rel">`, "<h3>Islam</h3>", "<h3>Christentum: katholisch und evangelisch</h3>",
 		`<span class="d">29. November 2026</span><span class="n">1. Advent</span>`, "Zuckerfest (Eid al-Fitr)<small>Ramazan Bayramı, 3 Tage</small>", `<span class="d">9. – 11. März 2027</span>`,
 		`<span class="vary">oder 1 Tag später</span>`, `class="rh-note"`, "<b>Diyanet</b>", `class="rh-dup"`, "Schon als gesetzliche Feiertage in Bayern im Kalender", "Mariä Himmelfahrt (in den meisten Orten)", "Karfreitag")
 	// The Islamic list is already in the calendar as events.

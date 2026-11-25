@@ -90,8 +90,10 @@ func islamicHolidays(y islamicYear) []Holiday {
 	mawlid.Evening = true
 	ramadan := mk("ramadan", y.ramadan, y.shawwal.AddDate(0, 0, -1), hijriCal(1, 9, y.hy, nRamadan, 9, y.hy))
 	ramadan.ShowOwn = true
+	newYear := mk("islamic_new_year", y.newYear, y.newYear, hijriCal(1, 1, y.hy, 1, 1, y.hy))
+	newYear.ShowOwn = true
 	return []Holiday{
-		mk("islamic_new_year", y.newYear, y.newYear, hijriCal(1, 1, y.hy, 1, 1, y.hy)),
+		newYear,
 		mk("ashura", y.newYear.AddDate(0, 0, 9), y.newYear.AddDate(0, 0, 9), hijriCal(10, 1, y.hy, 10, 1, y.hy)),
 		mawlid, ramadan, qadr,
 		mk("eid_al_fitr", y.shawwal, y.shawwal.AddDate(0, 0, 2), hijriCal(1, 10, y.hy, 3, 10, y.hy)),

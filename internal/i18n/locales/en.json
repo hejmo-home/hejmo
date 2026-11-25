@@ -5625,5 +5625,6 @@
   "rh.d.long.nodyear": "{weekday}, {day} {month}",
   "rh.calendar_name": "Religious holidays",
   "rh.src.diyanet": "the table of the Diyanet",
-  "rh.src.umm_al_qura": "the Umm al-Qura calendar"
+  "rh.src.umm_al_qura": "the Umm al-Qura calendar",
+  "rh.h.muslim.ashura.detail": "10 Muharram"
 }

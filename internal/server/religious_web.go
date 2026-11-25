@@ -214,7 +214,7 @@ func (s *server) rhRels(lang string, h store.Household, today time.Time) []rhRel
 	}
 	religions := s.sortReligions(lang, h.Religions)
 	for _, plan := range rh.PlanFor(religions, opts, h.Region, today.Year()-1, today.Year()+1) {
-		rel := rhRel{Name: s.religionText(lang, plan.Religion, "short")}
+		rel := rhRel{Name: s.religionText(lang, plan.Religion, "")}
 		for _, d := range s.mergeRhDays(lang, plan.Kept, today, horizon) {
 			rel.Days = append(rel.Days, d)
 		}

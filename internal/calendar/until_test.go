@@ -148,3 +148,28 @@ func TestAllDayExdateInUTCAcrossDaylightSaving(t *testing.T) {
 		}
 	}
 }
+
+// Ticket 307: AllDayRule turns a date-time UNTIL into the date of its last day
+// in the series' zone and leaves everything else as it is.
+func TestAllDayRuleWritesUntilAsADate(t *testing.T) {
+	for rule, want := range map[string]string{
+		"FREQ=WEEKLY;UNTIL=20261231T225959Z":          "FREQ=WEEKLY;UNTIL=20261231",
+		"FREQ=WEEKLY;UNTIL=20261231T225959Z;BYDAY=MO": "FREQ=WEEKLY;BYDAY=MO;UNTIL=20261231",
+		"FREQ=WEEKLY;UNTIL=20261231":                  "FREQ=WEEKLY;UNTIL=20261231",
+		"FREQ=WEEKLY;COUNT=4":                         "FREQ=WEEKLY;COUNT=4",
+		"":                                            "",
+	} {
+		got, err := calendar.AllDayRule(rule, berlin)
+		if err != nil || got != want {
+			t.Errorf("AllDayRule(%q) = %q, %v; want %q", rule, got, err, want)
+		}
+	}
+}
+
+// A floating date-time UNTIL (no Z) is read in the zone of the series.
+func TestFloatingUntilIsReadInTheZoneOfTheSeries(t *testing.T) {
+	_, u := calendar.RepeatOf("FREQ=WEEKLY;UNTIL=20261231T235959", berlin)
+	if !u.Equal(time.Date(2026, 12, 31, 23, 59, 59, 0, berlin)) {
+		t.Errorf("until = %v, want 31.12.2026 23:59:59 Berlin", u)
+	}
+}

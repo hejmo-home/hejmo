@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -545,5 +546,46 @@ func TestAllDaySeriesEndIsWrittenAsADateAndReadBackAsTheSameDay(t *testing.T) {
 	}
 	if u := untilOnPage("2026-11-09"); u != "2026-11-15" {
 		t.Fatalf("end date of the old part on the edit page = %q", u)
+	}
+}
+
+// Ticket 307: an old all-day series with a date-time UNTIL is written again
+// with a date-only UNTIL on its next edit, whatever the edit changes, and on a
+// split also for the new part.
+func TestEditingAnOldAllDaySeriesRewritesItsUntilAsADate(t *testing.T) {
+	t.Parallel()
+	for _, scope := range []string{"all", "following"} {
+		f := calendarBox(t)
+		form := eventForm("School trip week", "2026-11-02", "", "")
+		form.Set("all_day", "1")
+		form.Set("repeat", "weekly")
+		form.Set("until", "2026-12-31")
+		f.postEvent(t, form)
+		h, _ := f.db.HomeHousehold()
+		events, _ := f.db.CalendarEvents(h.ID, f.family.ID)
+		old := events[0]
+		old.RRule = "FREQ=WEEKLY;UNTIL=20261231T225959Z"
+		if err := f.db.ApplyChange(h.ID, calendar.Change{Update: []calendar.Event{old}}); err != nil {
+			t.Fatal(err)
+		}
+		path, occ := occurrenceOf(t, linkTo(t, getEN(f.box, "/calendar?week=2026-11-16").body, "School trip week"))
+		edit := eventForm("School trip week 2", "2026-11-16", "", "")
+		edit.Set("all_day", "1")
+		edit.Set("repeat", "weekly")
+		edit.Set("until", "2026-12-31")
+		edit.Set("occurrence", occ)
+		edit.Set("scope", scope)
+		if r := f.post(path, edit); r.status != http.StatusSeeOther {
+			t.Fatalf("%s: edit = %d\n%s", scope, r.status, r.body)
+		}
+		events, _ = f.db.CalendarEvents(h.ID, f.family.ID)
+		for _, e := range events {
+			if e.SeriesID == "" && strings.HasSuffix(e.RRule, "Z") {
+				t.Errorf("%s: %q still has a date-time UNTIL: %q", scope, e.Title, e.RRule)
+			}
+			if e.SeriesID == "" && e.Title == "School trip week 2" && e.RRule != "FREQ=WEEKLY;UNTIL=20261231" {
+				t.Errorf("%s: rule = %q, want FREQ=WEEKLY;UNTIL=20261231", scope, e.RRule)
+			}
+		}
 	}
 }

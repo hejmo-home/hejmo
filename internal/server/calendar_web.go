@@ -681,7 +681,21 @@ func (c *calendarContext) patch(series []calendar.Event, occ calendar.Occurrence
 		groups = []string{}
 	}
 	p = calendar.Patch{Title: &f.Title, Description: &f.Description, Location: &f.Location, Start: &start, End: &end, People: &people, Groups: &groups}
-	if scope == calendar.ScopeThis || f.Repeat == "" || f.Repeat == string(calendar.RepeatCustom) {
+	if scope == calendar.ScopeThis {
+		return p, nil
+	}
+	// An old all-day series with a date-time UNTIL is written again with a
+	// date on its next edit, whatever that edit changes.
+	if occ.AllDay {
+		legacy, err := calendar.AllDayRule(master.RRule, loc)
+		if err != nil {
+			return p, err
+		}
+		if legacy != master.RRule {
+			p.RRule = &legacy
+		}
+	}
+	if f.Repeat == "" || f.Repeat == string(calendar.RepeatCustom) {
 		return p, nil
 	}
 	curRepeat, curUntil := calendar.RepeatOf(master.RRule, loc)

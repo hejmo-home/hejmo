@@ -315,5 +315,11 @@ func splitRule(master Event, occStart time.Time, before int) (oldRule, newRule s
 		end = occStart.In(master.Start.Location()).AddDate(0, 0, -1)
 	}
 	oldOpt.Until = time.Time{}
-	return withUntil(oldOpt.RRuleString(), end, master.AllDay), master.RRule, nil
+	newRule = master.RRule
+	if master.AllDay {
+		if newRule, err = AllDayRule(newRule, master.Start.Location()); err != nil {
+			return "", "", err
+		}
+	}
+	return withUntil(oldOpt.RRuleString(), end, master.AllDay), newRule, nil
 }

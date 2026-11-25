@@ -106,14 +106,33 @@ const (
 )
 
 // untilValue writes UNTIL in the value type of DTSTART (RFC 5545, 3.3.10): a
-// date for an all-day series, naming its last day in the zone of until, and a
-// UTC date-time for a timed one.
+// date for an all-day series, naming its last day in the zone of until (so
+// until must be in the zone of the series), and a UTC date-time for a timed
+// one.
 func untilValue(until time.Time, allDay bool) string {
 	if allDay {
 		return until.Format(untilDateLayout)
 	}
 	return until.UTC().Format(untilLayout)
 }
+
+// AllDayRule writes the UNTIL of an RRULE value of an all-day series in loc,
+// the zone of the series, as a date naming its last day. A rule without a
+// date-time UNTIL is returned as it is.
+func AllDayRule(rule string, loc *time.Location) (string, error) {
+	if !dateTimeUntil.MatchString(rule) {
+		return rule, nil
+	}
+	opt, err := ParseRule(rule, loc)
+	if err != nil {
+		return "", err
+	}
+	until := opt.Until.In(loc)
+	opt.Until = time.Time{}
+	return withUntil(opt.RRuleString(), until, true), nil
+}
+
+var dateTimeUntil = regexp.MustCompile(`(?i)UNTIL=\d{8}T`)
 
 // withUntil appends UNTIL to a rule that has none.
 func withUntil(rule string, until time.Time, allDay bool) string {

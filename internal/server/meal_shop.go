@@ -201,6 +201,8 @@ type shopPage struct {
 	Gone                                    []string
 	Changed                                 []string // names of the recipes that changed since the page was made
 	ChangedAt                               string
+	ChangedLine, MissingLine, LeftText      string
+	GoneLine, SameLine                      template.HTML
 	Missing                                 []string // meals that are not planned any more
 	Versions                                []string // "recipe|version" for the hidden fields
 	WasRows                                 []string
@@ -328,7 +330,7 @@ func (c *itemCtx) buildShop(in shopIn) (*shopPage, error) {
 		if v, ok := in.Versions[m.Rec.ID]; ok && v != m.Version && m.Status() != "empty" {
 			if !slices.Contains(pg.Changed, m.Rec.Name) {
 				pg.Changed = append(pg.Changed, m.Rec.Name)
-				pg.ChangedAt = c.t("shop.changed.at", "time", p.clockSeconds(m.Rec.UpdatedAt)[:5])
+				pg.ChangedAt = p.clockSeconds(m.Rec.UpdatedAt)[:5]
 			}
 			changedRec[m.Rec.ID] = true
 		}
@@ -447,6 +449,7 @@ func (c *itemCtx) buildShop(in shopIn) (*shopPage, error) {
 		}
 	}
 	slices.Sort(pg.Gone)
+	c.shopLines(pg)
 	c.shopWords(pg)
 	return pg, nil
 }
@@ -646,7 +649,8 @@ func (c *itemCtx) shopWords(pg *shopPage) {
 		}
 		text := strings.NewReplacer("{new}", strconv.Itoa(pg.TickedNew), "{on}", strconv.Itoa(on)).Replace(pat["count"])
 		if len(pg.MealsLeft) > 0 {
-			text += " " + c.t("shop.sum.meals.left", "names", strings.Join(pg.MealsLeft, ", "))
+			pg.LeftText = c.t("shop.sum.meals.left", "names", strings.Join(pg.MealsLeft, ", "))
+			text += " " + pg.LeftText
 		}
 		switch {
 		case pg.PantryLeft == 1:
@@ -879,4 +883,30 @@ func (c *itemCtx) attachShop(days []mealDay, monday time.Time, values map[string
 		}
 	}
 	return nil
+}
+
+// shopLines words the sentences that list names: what changed, what is gone, what stays as it is.
+func (c *itemCtx) shopLines(pg *shopPage) {
+	q := func(n string) string { return c.t("shop.q", "x", n) }
+	if len(pg.Changed) > 0 {
+		names := make([]string, len(pg.Changed))
+		for i, n := range pg.Changed {
+			names[i] = q(n)
+		}
+		pg.ChangedLine = c.t("shop.changed.at", "names", strings.Join(names, ", "), "time", pg.ChangedAt)
+	}
+	if len(pg.Gone) > 0 {
+		names := make([]string, len(pg.Gone))
+		for i, n := range pg.Gone {
+			names[i] = "<b>" + html.EscapeString(n) + "</b>"
+		}
+		pg.GoneLine = template.HTML(html.EscapeString(c.t("shop.gone")) + " " + strings.Join(names, ", ") + ".")
+	}
+	if len(pg.Same) > 0 {
+		items := make([]string, len(pg.Same))
+		for i, x := range pg.Same {
+			items[i] = string(x)
+		}
+		pg.SameLine = template.HTML(html.EscapeString(c.t("shop.same")) + " " + strings.Join(items, ", ") + ".")
+	}
 }

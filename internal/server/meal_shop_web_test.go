@@ -320,5 +320,7 @@ func TestTheListSaysWhichMealContributedHowMuch(t *testing.T) {
 }
 
 func showFor() list.Show {
-	return func(base float64, kind unit.Kind) string { return unit.ShowUnit(base, kind, []string{"g", "kg"}, unit.DefaultActive) }
+	return func(base float64, kind unit.Kind) string {
+		return unit.ShowUnit(base, kind, []string{"g", "kg"}, unit.DefaultActive)
+	}
 }

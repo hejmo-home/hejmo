@@ -1,8 +1,8 @@
 {{template "head" (dict "Lang" .Lang "Title" (t .Title) "Frame" .Frame)}}
 {{$sh := .Shop}}
   <p><a class="back" href="{{.Back}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>{{t "shop.back"}}</a></p>
-  {{if $sh.Changed}}<div class="notice shop-changed" role="alert"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.3"/></svg><div><p><b>{{range $i, $n := $sh.Changed}}{{if $i}}, {{end}}„{{$n}}“{{end}} {{$sh.ChangedAt}}</b> {{t "shop.changed.nothing"}}</p><p>{{t "shop.changed.below"}}</p></div></div>{{end}}
-  {{if $sh.Missing}}<div class="notice shop-changed" role="alert"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.3"/></svg><div><p><b>{{t "shop.missing"}}</b> {{range $i, $n := $sh.Missing}}{{if $i}}; {{end}}{{$n}}{{end}}</p><p>{{t "shop.missing.hint"}}</p></div></div>{{end}}
+  {{if $sh.Changed}}<div class="notice shop-changed" role="alert"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.3"/></svg><div><p><b>{{$sh.ChangedLine}}</b> {{t "shop.changed.nothing"}}</p><p>{{t "shop.changed.below"}}</p></div></div>{{end}}
+  {{if $sh.Missing}}<div class="notice shop-changed" role="alert"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.3"/></svg><div><p><b>{{$sh.MissingLine}}</b></p><p>{{t "shop.missing.hint"}}</p></div></div>{{end}}
   {{template "syncNotice" .}}
   <h1>{{t .Title}}</h1>
   {{if .Meal}}{{with .Meal}}<div class="shop-meal-head"><span class="art-sym" aria-hidden="true">{{.Symbol}}</span><div><b>{{.Name}}</b><span>{{.When}}</span><span>{{.Portions}}{{with .Scaled}}<span class="pn"> · {{.}}</span>{{end}}</span></div></div>{{end}}{{end}}
@@ -24,14 +24,14 @@
     {{if .Week}}<section class="shop-group shop-meals-g"><h2>{{t "shop.meals"}}</h2><p class="hint">{{t "shop.meals.hint"}}</p>
       <ul class="shop-pick shop-meals">{{range $sh.Meals}}{{if .Static}}<li class="static"><div class="lab"><span class="box none" aria-hidden="true"></span><span class="t"><span class="nm">{{.Name}}</span><span class="how">{{.When}}</span>{{if .Empty}}<span class="how st"><span>{{t "shop.meal.empty"}} <a href="{{.Link}}">{{t "shop.noingredients.enter"}}</a></span></span>{{else}}<span class="how st">{{template "cartIcon" 16}}<span>{{.Detail}}</span></span>{{end}}</span></div></li>{{else}}<li><label><input type="checkbox" name="meal" value="{{.Key}}"{{if .Checked}} checked{{end}}><span class="box" aria-hidden="true">{{template "tickIcon" 22}}</span><span class="t"><span class="nm">{{.Name}}</span><span class="how">{{.Detail}}</span></span><span class="off">{{t "shop.off"}}</span></label></li>{{end}}{{end}}</ul>
       <noscript><button class="button secondary" type="submit" name="recount" value="1">{{t "shop.recount"}}</button></noscript></section>{{end}}
-    <section class="shop-group shop-sum{{if .NoTick}} invalid{{end}}" data-patterns="{{.PatternsJSON}}" data-same="{{$sh.SameN}}"><p class="shop-count" role="status">{{$sh.Sentence}}</p>{{if .NoTick}}<p class="ferr" id="err-pick" role="alert">{{template "errIcon"}}<span>{{t "shop.error.notick"}}</span></p>{{end}}</section>
+    <section class="shop-group shop-sum{{if .NoTick}} invalid{{end}}" data-patterns="{{.PatternsJSON}}" data-same="{{$sh.SameN}}" data-left="{{$sh.LeftText}}"><p class="shop-count" role="status">{{$sh.Sentence}}</p>{{if .NoTick}}<p class="ferr" id="err-pick" role="alert">{{template "errIcon"}}<span>{{t "shop.error.notick"}}</span></p>{{end}}</section>
     {{if or $sh.Rows $sh.SameN}}
     <section class="shop-group" data-group="new"><h2>{{t "shop.group.new"}} <span class="n">{{len $sh.New}}</span></h2>
       {{if $sh.New}}<ul class="shop-pick">{{range $sh.New}}{{template "shopRow" .}}{{end}}</ul>{{else}}<p class="shop-none">{{if .Week}}{{t "shop.none.week"}}{{else}}{{tf "shop.none" "name" (index $sh.MealCands 0).Rec.Name}}{{end}} {{if $sh.ListName}}{{tf "shop.none.where" "list" $sh.ListName}}{{else}}{{t "shop.none.where.any"}}{{end}}</p>{{end}}
-      {{if $sh.Gone}}<p class="shop-gone">{{t "shop.gone"}} {{range $i, $n := $sh.Gone}}{{if $i}}, {{end}}<b>{{$n}}</b>{{end}}.</p>{{end}}</section>
+      {{with $sh.GoneLine}}<p class="shop-gone">{{.}}</p>{{end}}</section>
     {{if or $sh.On $sh.SameN}}<section class="shop-group" data-group="on"><h2>{{t "shop.group.on"}} <span class="n">{{$sh.OnN}}</span></h2><p class="hint">{{if $sh.ListName}}{{tf "shop.group.on.hint" "list" $sh.ListName}}{{else}}{{t "shop.group.on.hint.any"}}{{end}}</p>
       {{if $sh.On}}<ul class="shop-pick">{{range $sh.On}}{{template "shopRow" .}}{{end}}</ul>{{end}}
-      {{if $sh.Same}}<p class="shop-same">{{t "shop.same"}} {{range $i, $x := $sh.Same}}{{if $i}}, {{end}}{{$x}}{{end}}.</p>{{end}}</section>{{end}}
+      {{with $sh.SameLine}}<p class="shop-same">{{.}}</p>{{end}}</section>{{end}}
     {{if $sh.Pantry}}<section class="shop-group pantry" data-group="pantry"><h2>{{t "shop.group.pantry"}} <span class="n">{{len $sh.Pantry}}</span></h2><p class="hint">{{t "shop.pantry.hint.before"}} <a href="/settings/lists/library">{{t "shop.pantry.hint.link"}}</a>{{t "shop.pantry.hint.after"}}</p>
       <ul class="shop-pick">{{range $sh.Pantry}}{{template "shopRow" .}}{{end}}</ul></section>{{end}}
     {{end}}

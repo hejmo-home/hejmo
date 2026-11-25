@@ -5417,7 +5417,7 @@
   "shop.tag.new": "New in the recipe",
   "shop.tag.was": "Changed: was {qty}",
   "shop.tag.was.none": "without a quantity",
-  "shop.changed.at": "was changed at {time} while this page was open.",
+  "shop.changed.at": "{names} was changed at {time} while this page was open.",
   "shop.changed.nothing": "Nothing is on the list yet.",
   "shop.changed.below": "Below are the new ingredients; your ticks on the others are kept. Have a look, then put them on the list.",
   "shop.missing": "This meal is no longer a recipe in the meal plan:",
@@ -5476,5 +5476,6 @@
   "shop.undo.reverted.none": "{name} back to no quantity",
   "shop.undo.ticked.one": "Someone has ticked off {names} already; it stays ticked off on the list.",
   "shop.undo.ticked.other": "Someone has ticked off {names} already; they stay ticked off on the list.",
-  "shop.done.hint": "Nothing goes on twice. If you raise the portions, you can add the missing ones."
+  "shop.done.hint": "Nothing goes on twice. If you raise the portions, you can add the missing ones.",
+  "shop.q": "“{x}”"
 }

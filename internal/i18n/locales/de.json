@@ -5417,7 +5417,7 @@
   "shop.tag.new": "Neu im Rezept",
   "shop.tag.was": "Geändert: vorher {qty}",
   "shop.tag.was.none": "ohne Menge",
-  "shop.changed.at": "wurde um {time} geändert, während diese Seite offen war.",
+  "shop.changed.at": "{names} wurde um {time} geändert, während diese Seite offen war.",
   "shop.changed.nothing": "Es ist noch nichts auf der Liste.",
   "shop.changed.below": "Unten stehen jetzt die neuen Zutaten, deine Haken bei den übrigen sind geblieben. Schau sie dir an und setz sie dann auf die Liste.",
   "shop.missing": "Diese Mahlzeit steht nicht mehr als Rezept im Essensplan:",
@@ -5476,5 +5476,6 @@
   "shop.undo.reverted.none": "{name} wieder ohne Menge",
   "shop.undo.ticked.one": "{names} hat schon jemand abgehakt; es bleibt abgehakt auf der Liste.",
   "shop.undo.ticked.other": "{names} hat schon jemand abgehakt; sie bleiben abgehakt auf der Liste.",
-  "shop.done.hint": "Nichts kommt doppelt drauf. Erhöhst du die Portionen, kannst du die fehlenden nachtragen."
+  "shop.done.hint": "Nichts kommt doppelt drauf. Erhöhst du die Portionen, kannst du die fehlenden nachtragen.",
+  "shop.q": "„{x}“"
 }

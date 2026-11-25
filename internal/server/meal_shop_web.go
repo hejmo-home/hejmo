@@ -257,6 +257,9 @@ func (s *server) handleShopSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	case len(pg.Changed) > 0 || len(c.shopMissing(pg, in)) > 0:
 		pg.Missing = c.shopMissing(pg, in)
+		if len(pg.Missing) > 0 {
+			pg.MissingLine = c.t("shop.missing") + " " + strings.Join(pg.Missing, "; ")
+		}
 		s.renderShop(w, r, c, http.StatusConflict, pg, shopOut{})
 		return
 	case pg.ListGone != "" || pg.ListID == "":

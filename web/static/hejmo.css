@@ -4801,7 +4801,7 @@ a.bdg-more { display: inline-flex; align-items: center; min-height: var(--touch-
 .rcp-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px 20px; align-items: start; margin: 0 0 var(--gap); max-width: 880px; }
 .rcp-head.has-cover { grid-template-columns: minmax(180px, var(--photo-cover)) minmax(0, 1fr); }
 @media (max-width: 599px) { .rcp-head.has-cover { grid-template-columns: minmax(0, 1fr); } }
-.rcp-head-t { display: grid; gap: 10px; min-width: 0; align-content: start; }
+.rcp-head-t { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; align-content: start; }
 .rcp-head-t h1.rcp-title { margin: 0; }
 .rcp-head-t .rcp-act { margin: 0; }
 .rcp-cover { display: block; aspect-ratio: 4 / 3; border-radius: var(--radius-tile); overflow: hidden; background: var(--background); }

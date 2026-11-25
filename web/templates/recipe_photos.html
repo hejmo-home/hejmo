@@ -32,7 +32,7 @@
 {{define "rphStarIcon"}}<svg class="icon" width="{{.}}" height="{{.}}" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>{{end}}
 
 {{/* The buttons that choose photos: touch devices take a photo or choose from the gallery, a computer chooses files. Arguments: Full (no more room: the buttons are disabled and hold no file input) and Primary (the page "Fotos": choosing is the primary button). */}}
-{{define "rphPick"}}{{$accept := "image/jpeg,image/png,image/heic,image/heif"}}<div class="ph-pick">
+{{define "rphPick"}}{{$accept := "image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif"}}<div class="ph-pick">
   <label class="button secondary touch"{{if .Full}} aria-disabled="true"{{end}}>{{template "rphCameraIcon" 20}}{{t "rph.take"}}{{if not .Full}}<input type="file" name="file" accept="{{$accept}}" capture="environment">{{end}}</label>
   <label class="button{{if not .Primary}} secondary{{end}} touch"{{if .Full}} aria-disabled="true"{{end}}>{{template "rphGalleryIcon" 20}}{{t "rph.gallery"}}{{if not .Full}}<input type="file" name="file" accept="{{$accept}}" multiple>{{end}}</label>
   <label class="button{{if not .Primary}} secondary{{end}} mouse"{{if .Full}} aria-disabled="true"{{end}}>{{template "rphUploadIcon" 20}}{{t "rph.choose"}}{{if not .Full}}<input type="file" name="file" accept="{{$accept}}" multiple>{{end}}</label>

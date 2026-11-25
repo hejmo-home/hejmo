@@ -56,7 +56,8 @@
         var btn = doc.createElement("span");
         btn.className = "button"; btn.setAttribute("aria-disabled", "true");
         btn.appendChild(icon()); btn.appendChild(doc.createTextNode(T.uploading));
-        pick.textContent = ""; pick.appendChild(btn);
+        // The labels stay in the form (hidden), so their file inputs still send the photos.
+        pick.style.display = "none"; pick.parentNode.insertBefore(btn, pick);
         line = doc.createElement("p");
         line.className = "progress-line"; line.setAttribute("role", "status");
         pick.parentNode.insertBefore(line, pick.nextSibling);

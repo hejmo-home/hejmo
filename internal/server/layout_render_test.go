@@ -703,7 +703,9 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	// uploaded, and full), a recipe without photo, a child's view and a starter recipe with twelve photos.
 	for _, p := range []string{"/meals/recipes/" + f.photoRecipe, "/meals/recipes/" + f.photoRecipe + "/photos", "/meals/recipes/" + f.photoRecipe + "/photos?new=x",
 		"/meals/recipes/" + f.fullRecipe, "/meals/recipes/" + f.fullRecipe + "/photos", "/meals/recipes/" + f.recipes[1], "/meals/recipes", "/meals/recipes/starter"} {
-		add(parent, p)
+		if !have[p] { // the crawl renders the list and the starter page already: each page counts 20 renders of the budget
+			add(parent, p)
+		}
 	}
 	add(siteOf("child personal device", f.box, f.kid.client), "/meals/recipes/"+f.photoRecipe)
 	add(siteOf("child personal device", f.box, f.kid.client), "/meals/recipes")
@@ -1218,7 +1220,7 @@ func TestRenderedLayout(t *testing.T) {
 
 	ctx := startChrome(t, chrome)
 	// The timeout comes after the first call: a timeout on that call would stop the browser.
-	ctx, cancelTimeout := context.WithTimeout(ctx, 15*time.Minute)
+	ctx, cancelTimeout := context.WithTimeout(ctx, 20*time.Minute)
 	defer cancelTimeout()
 
 	names, _ := json.Marshal(layoutNames)

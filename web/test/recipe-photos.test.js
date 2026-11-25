@@ -39,3 +39,48 @@ test('a HEIC photo the browser cannot convert is sent as it is, so the box can s
 test('texts are filled by name', () => {
   assert.equal(fill('{done} von {total} Fotos fertig', { done: 1, total: 3 }), '1 von 3 Fotos fertig');
 });
+
+// A small document: enough tree for wire() of the script, with the form, its buttons and the file inputs in it.
+function fakePage(texts) {
+  class El {
+    constructor(tag) { this.tag = tag; this.kids = []; this.parent = null; this.attrs = {}; this.style = {}; this.listeners = {}; this.className = ''; this.text = ''; }
+    get parentNode() { return this.parent; }
+    get nextSibling() { const i = this.parent.kids.indexOf(this); return this.parent.kids[i + 1] || null; }
+    appendChild(c) { c.parent = this; this.kids.push(c); return c; }
+    insertBefore(n, ref) { n.parent = this; const i = ref ? this.kids.indexOf(ref) : -1; this.kids.splice(i < 0 ? this.kids.length : i, 0, n); return n; }
+    set textContent(v) { if (v === '') { this.kids.forEach((k) => { k.parent = null; }); this.kids = []; } else this.text = v; }
+    get textContent() { return this.text + this.kids.map((k) => k.textContent).join(''); }
+    setAttribute(k, v) { this.attrs[k] = v; }
+    getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; }
+    addEventListener(ev, fn) { this.listeners[ev] = fn; }
+    contains(x) { for (let n = x; n; n = n.parent) if (n === this) return true; return false; }
+    closest(sel) { return sel === '[data-rph-upload]' ? section : null; }
+    querySelector(sel) { return sel === '.ph-pick' ? pick : null; }
+    submit() { this.submitted = Array.from(inputs).filter((i) => form.contains(i) && i.files.length).map((i) => i.files.length); }
+  }
+  const section = new El('section'); section.attrs['data-texts'] = JSON.stringify(texts);
+  const form = new El('form'); section.appendChild(form);
+  const pick = new El('div'); form.appendChild(pick);
+  const label = new El('label'); pick.appendChild(label);
+  const input = new El('input'); input.type = 'file'; label.appendChild(input);
+  const inputs = [input];
+  const doc = {
+    querySelectorAll: (sel) => (sel === 'form[data-rph]' ? [form] : []),
+    createElement: (t) => new El(t), createElementNS: (ns, t) => new El(t), createTextNode: (s) => { const e = new El('#text'); e.text = s; return e; },
+    head: new El('head'),
+  };
+  return { doc, form, pick, input };
+}
+
+test('choosing photos on the page "Fotos" keeps the file inputs in the form, so the form still sends the files', async () => {
+  const page = fakePage({ uploading: 'Fotos werden gespeichert', progress: '{done} von {total}', send: '{name}', convert: '{name}' });
+  class DT { constructor() { this.items = { add: (f) => { this.files.push(f); } }; this.files = []; } }
+  const sb = { document: page.doc, DataTransfer: DT, File: class { constructor(parts, name) { this.name = name; } } };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../static/photos.js'), 'utf8'), sb);
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../static/recipe-photos.js'), 'utf8'), sb);
+  const file = { name: 'a.jpg', type: 'image/jpeg', slice: () => ({ arrayBuffer: async () => JPEG.buffer.slice(0) }) };
+  page.input.files = [file];
+  await page.form.listeners.change({ target: page.input });
+  assert.ok(page.form.contains(page.input), 'the file input is still in the form');
+  assert.deepEqual(page.form.submitted, [1], 'the form is sent with the chosen photo');
+});

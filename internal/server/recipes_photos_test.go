@@ -158,6 +158,9 @@ func TestPhotoFilesAreJPEGsOfThreeSizesWithoutLocation(t *testing.T) {
 			t.Errorf("size %q = %d, width %d", size, res.status, w)
 		}
 	}
+	if res := rb.b.get(url + "?size=huge"); res.status != http.StatusBadRequest {
+		t.Errorf("an unknown size = %d, want 400: openapi.yaml allows medium and small only", res.status)
+	}
 	files, _ := filepath.Glob(filepath.Join(rb.b.photoDir, "recipe-photos", ph.ID+"*.jpg"))
 	if len(files) != 3 {
 		t.Errorf("files on the box = %v: the photos are files, not blobs in SQLite", files)

@@ -496,6 +496,10 @@ func (s *server) serveRecipePhoto(w http.ResponseWriter, r *http.Request, househ
 		size = recipephoto.Medium
 	case "small":
 		size = recipephoto.Small
+	case "":
+	default:
+		http.Error(w, "size is medium or small", http.StatusBadRequest)
+		return true
 	}
 	f, err := s.recipePhotos.Open(ph.ID, size)
 	if err != nil {

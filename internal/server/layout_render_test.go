@@ -1178,11 +1178,33 @@ func (k knownLayoutProblem) covers(path string, width int, p layoutProblem) bool
 // widths (the navigation stays beside the content from 1024 px up), in light
 // and black-and-white, in German and English, and fails with the page, width,
 // theme and element where text overflows or a name breaks.
-func TestRenderedLayout(t *testing.T) {
+//
+// The pages are split in two tests, because one test over all of them outran
+// its time on the x86_64 runner (the only one with Chrome). ci/test-shard.sh
+// puts a test in shard 1 or 2 by the hash of its name, so the two names are
+// chosen to land in different shards (TestLayoutPartsRunInDifferentShards).
+func TestRenderedLayout(t *testing.T) { renderedLayout(t, 0) }
+
+// TestRenderedLayoutPart2 is the second half of the pages of TestRenderedLayout.
+func TestRenderedLayoutPart2(t *testing.T) { renderedLayout(t, 1) }
+
+// layoutPart is the pages of part 0 or 1: every second page, so that both
+// parts have the same mix of slow and fast ones.
+func layoutPart[T any](pages []T, part int) []T {
+	var out []T
+	for i, p := range pages {
+		if i%2 == part {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+func renderedLayout(t *testing.T, part int) {
 	t.Parallel()
 	chrome := requireChrome(t)
 	f := newLayoutFixture(t)
-	pages := append(layoutPages(t, f), wizardPages(t)...)
+	pages := layoutPart(append(layoutPages(t, f), wizardPages(t)...), part)
 
 	shots := os.Getenv("HEJMO_LAYOUT_SHOTS")
 	if shots == "" {
@@ -1193,7 +1215,7 @@ func TestRenderedLayout(t *testing.T) {
 
 	ctx := startChrome(t, chrome)
 	// The timeout comes after the first call: a timeout on that call would stop the browser.
-	ctx, cancelTimeout := context.WithTimeout(ctx, 15*time.Minute)
+	ctx, cancelTimeout := context.WithTimeout(ctx, 20*time.Minute)
 	defer cancelTimeout()
 
 	names, _ := json.Marshal(layoutNames)
@@ -1290,7 +1312,9 @@ func TestRenderedLayout(t *testing.T) {
 	// when a subtest was picked with -run, which sees only some of the pages.
 	if run := flag.Lookup("test.run"); run == nil || !strings.Contains(run.Value.String(), "/") {
 		for i, k := range knownLayoutProblems {
-			if !seen[i] && !k.platform {
+			// An entry of a page of the other part occurs there.
+			here := slices.ContainsFunc(pages, func(p layoutPage) bool { return k.path == pageShape(p.path) })
+			if here && !seen[i] && !k.platform {
 				t.Errorf("known layout problem #%d (%s, %s, width %d) did not occur: remove it from knownLayoutProblems", k.issue, k.path, k.kind, k.width)
 			}
 		}

@@ -99,7 +99,7 @@ type mealLayers struct {
 	templates      []meal.Template
 	manual, adjust map[cell]layerEntry
 	recipeNames    map[string]string // the household's recipes by id, for the recipe slots of templates
-	people         int               // portions of a recipe a template plans: the people in the household, 1 to 99
+	people         int               // portions of a recipe a template plans: the people in the household, 1 to 99; loaded only when a template has a recipe slot (0 otherwise), so a comparison with it is meaningful only for recipe slots
 }
 
 func loadMealLayers(q queryer, householdID, fromDay string) (*mealLayers, error) {

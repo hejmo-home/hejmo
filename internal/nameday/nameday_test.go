@@ -188,7 +188,7 @@ func TestEmbeddedListsAreSound(t *testing.T) {
 			if e.Source == "" || c.Sources[e.Source] == "" {
 				t.Errorf("%s/%s: no source", l, e.ID)
 			}
-			if !e.Yearly() && l != GreekOrthodox && l != RomanianOrthodox {
+			if !e.Yearly() && !l.Orthodox() {
 				t.Errorf("%s/%s: only the Orthodox lists move with Easter", l, e.ID)
 			}
 			for y := 2024; y <= 2032; y++ {
@@ -278,7 +278,7 @@ func TestCatholicMatthiasIsOn24February(t *testing.T) {
 }
 
 func TestEveryEntryIsCheckedOrSaysItIsNot(t *testing.T) {
-	for _, l := range []List{Catholic, Protestant, GreekOrthodox, RomanianOrthodox} {
+	for _, l := range Lists() {
 		c, ok := Get(l)
 		if !ok {
 			t.Fatal(l)

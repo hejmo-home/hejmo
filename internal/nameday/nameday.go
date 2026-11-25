@@ -34,10 +34,55 @@ const (
 	Protestant       List = "protestant"        // Evangelischer Namenkalender
 	RomanianOrthodox List = "romanian_orthodox" // Calendar of the Romanian Orthodox Church
 	GreekOrthodox    List = "greek_orthodox"    // Calendar of the Church of Greece
+
+	BulgarianOrthodox List = "bulgarian_orthodox" // Calendar of the Bulgarian Orthodox Church (ticket 338)
+	RussianOrthodox   List = "russian_orthodox"   // Calendar of the Russian Orthodox Church, Moscow Patriarchate
+	UkrainianOrthodox List = "ukrainian_orthodox" // Calendar of the Orthodox Church of Ukraine
 )
 
-// Lists are the lists in the order the settings page shows them.
-func Lists() []List { return []List{Catholic, Protestant, RomanianOrthodox, GreekOrthodox} }
+// Lists are the lists in the order the settings page shows them: the Western churches, then the Orthodox ones
+// alphabetically by their German name.
+func Lists() []List {
+	return []List{Catholic, Protestant, BulgarianOrthodox, GreekOrthodox, RomanianOrthodox, RussianOrthodox, UkrainianOrthodox}
+}
+
+// Orthodox reports whether the list is the calendar of an Orthodox church: the lists that follow the calendar style.
+func (l List) Orthodox() bool {
+	return l != Catholic && l != Protestant && l.Valid()
+}
+
+// Calendar is the style the church of the list celebrates by, when it has one fixed style. The Orthodox Church of
+// Ukraine switched to the revised Julian calendar on 01/09/2023 while parishes of the Moscow Patriarchate keep the
+// Julian one, so the Ukrainian list has none (ok is false), like the Western lists.
+func (l List) Calendar() (style Style, ok bool) {
+	switch l {
+	case RussianOrthodox:
+		return Julian, true
+	case BulgarianOrthodox, GreekOrthodox, RomanianOrthodox:
+		return RevisedJulian, true
+	}
+	return "", false
+}
+
+// Style is the calendar a household celebrates the fixed feasts by (ticket 338): the revised Julian calendar (our
+// dates) or the Julian one (13 days later until 2100). Easter is the Orthodox Easter in both.
+type Style string
+
+const (
+	RevisedJulian Style = "revised_julian"
+	Julian        Style = "julian"
+)
+
+// Valid reports whether s is one of the two styles.
+func (s Style) Valid() bool { return s == RevisedJulian || s == Julian }
+
+// ParseStyle reads a stored style; anything else is the default, the revised Julian calendar.
+func ParseStyle(s string) Style {
+	if Style(s) == Julian {
+		return Julian
+	}
+	return RevisedJulian
+}
 
 // Valid reports whether l is a list of this version.
 func (l List) Valid() bool { return slices.Contains(Lists(), l) }
@@ -50,11 +95,12 @@ type Entry struct {
 	Gloss    string   `json:"gloss,omitempty"` // the form a household knows it by, shown in brackets
 	Variants []string `json:"variants,omitempty"`
 	Saint    string   `json:"saint"`
-	Day      string   `json:"day,omitempty"`    // "MM-DD": a fixed day
-	Easter   *int     `json:"easter,omitempty"` // days after the Orthodox Easter
-	Move     string   `json:"move,omitempty"`   // MoveEasterMonday: a fixed day that moves
-	Usual    bool     `json:"usual,omitempty"`  // the day a name gets when it has several
-	Source   string   `json:"source"`           // key in the list's sources
+	SaintDE  string   `json:"saint_de,omitempty"` // the saint in German, for the Slava list (Saint is Serbian there)
+	Day      string   `json:"day,omitempty"`      // "MM-DD": a fixed day
+	Easter   *int     `json:"easter,omitempty"`   // days after the Orthodox Easter
+	Move     string   `json:"move,omitempty"`     // MoveEasterMonday: a fixed day that moves
+	Usual    bool     `json:"usual,omitempty"`    // the day a name gets when it has several
+	Source   string   `json:"source"`             // key in the list's sources
 	// Unchecked says the day was written down but not yet checked against the source it names.
 	Unchecked bool `json:"unchecked,omitempty"`
 }
@@ -295,26 +341,46 @@ func (e Entry) Yearly() bool { return e.Easter == nil && e.Move == "" }
 
 // Occurrence is the day of an entry in one year.
 type Occurrence struct {
-	Date            time.Time // the day, midnight UTC
+	Date            time.Time // the day the household celebrates, midnight UTC
 	From            time.Time // the day it would be on without the move; zero when it was not moved
 	Moved           bool
 	EasterDependent bool      // follows the Orthodox Easter
 	Easter          time.Time // the Orthodox Easter of the year; zero when it does not matter
+	Church          time.Time // the day as the church calendar numbers it (same month and day as the list); zero for an Easter day
+	Offset          int       // days the Julian style adds to the church day; 0 in the revised Julian style
 }
 
-// On is the day of the entry in a year. A day that is not in the year
-// (29 February in a common year) is the last day of February.
-func (e Entry) On(year int) Occurrence {
+// On is the day of the entry in a year in the revised Julian calendar: the day of the list. A day that is not in
+// the year (29 February in a common year) is the last day of February.
+func (e Entry) On(year int) Occurrence { return e.OnStyle(year, RevisedJulian) }
+
+// OnStyle is the day of the entry in a year for a calendar style. The list holds the days as the church numbers
+// them; the Julian style adds the offset of the year (JulianOffset), so the day moves 13 days later until 28/02/2100.
+// An Easter day is the same in both styles, and so is the move to Easter Monday (it is decided on the day the
+// household celebrates).
+func (e Entry) OnStyle(year int, st Style) Occurrence {
 	if e.Easter != nil {
 		easter := OrthodoxEaster(year)
 		return Occurrence{Date: easter.AddDate(0, 0, *e.Easter), EasterDependent: true, Easter: easter}
 	}
 	m, d, _ := parseDay(e.Day)
-	date := time.Date(year, time.Month(m), d, 0, 0, 0, 0, time.UTC)
-	if int(date.Month()) != m {
-		date = time.Date(year, time.Month(m)+1, 0, 0, 0, 0, 0, time.UTC)
+	var church, date time.Time
+	var offset int
+	if st == Julian {
+		if m == 2 && d == 29 && year%4 != 0 { // the Julian leap rule: every fourth year
+			d = 28
+		}
+		church = time.Date(year, time.Month(m), d, 0, 0, 0, 0, time.UTC)
+		date = julianToGregorian(year, m, d)
+		offset = JulianOffset(year, m, d)
+	} else {
+		date = time.Date(year, time.Month(m), d, 0, 0, 0, 0, time.UTC)
+		if int(date.Month()) != m {
+			date = time.Date(year, time.Month(m)+1, 0, 0, 0, 0, 0, time.UTC)
+		}
+		church = date
 	}
-	o := Occurrence{Date: date}
+	o := Occurrence{Date: date, Church: church, Offset: offset}
 	if e.Move == MoveEasterMonday {
 		o.Easter = OrthodoxEaster(year)
 		if !date.After(o.Easter) {
@@ -322,6 +388,25 @@ func (e Entry) On(year int) Occurrence {
 		}
 	}
 	return o
+}
+
+// JulianOffset is the number of days the Julian calendar is behind the Gregorian one on a Julian date: 13 from
+// 29/02/1900 to 28/02/2100 (Julian), 14 from 29/02/2100 on. A church day of 1 January to 28 February still has the
+// offset of the century before.
+func JulianOffset(year, month, day int) int {
+	y := year
+	if month < 3 && !(month == 2 && day == 29) {
+		y--
+	}
+	return y/100 - y/400 - 2
+}
+
+// julianToGregorian converts a date of the Julian calendar to the Gregorian one through the Julian day number.
+func julianToGregorian(y, m, d int) time.Time {
+	a := (14 - m) / 12
+	yy, mm := y+4800-a, m+12*a-3
+	jdn := d + (153*mm+2)/5 + 365*yy + yy/4 - 32083
+	return time.Date(1970, 1, 1+jdn-2440588, 0, 0, 0, 0, time.UTC)
 }
 
 // OrthodoxEaster is the date (Gregorian, midnight UTC) of Easter in the

@@ -485,8 +485,16 @@ The yearly feast of the saint a contact's first name belongs to, from the **name
 _Avoid_: saint's day, Namenstagskalender (for the setting)
 
 **Name day list**:
-One church's compiled list of names and days that a household chooses for its name days: Catholic (Regionalkalender DE/AT/CH), Protestant (Namenkalender), Romanian Orthodox, Greek Orthodox (ticket 318; more Orthodox lists in ticket 338). Every entry records its source. German UI: "Nach welcher Kirche feiert ihr Namenstage?" with the church names; the word "Kalender" stays reserved for calendars.
+One church's compiled list of names and days that a household chooses for its name days: Catholic (Regionalkalender DE/AT/CH), Protestant (Namenkalender), Romanian Orthodox, Greek Orthodox (ticket 318), Bulgarian, Russian and Ukrainian Orthodox (ticket 338). Every entry records its source. German UI: "Nach welcher Kirche feiert ihr Namenstage?" with the church names; the word "Kalender" stays reserved for calendars.
 _Avoid_: name day calendar, tradition
+
+**Calendar style**:
+Whether a household's Orthodox church keeps fixed feasts on the **revised Julian** dates (our dates; German UI "neuer Kalender") or the **Julian** dates (13 days later until 2100; "alter Kalender"). One value per household (`orthodox_calendar`), shared by the Orthodox name days (ticket 338) and the Orthodox holidays (ticket 339); default revised Julian. Easter is the Orthodox Easter in both.
+_Avoid_: old style, new style, Kalenderstil
+
+**Slava**:
+The Krsna Slava: the yearly feast of a Serbian family's patron saint, one per household, an all-day event "Slava: <name>" for the whole family in the Birthdays calendar (ticket 338). Chosen from the Serbian Orthodox Church's list or entered with name and a fixed day; its date always follows the Serbian Orthodox Church (Julian), not the calendar style. Off by default, independent of name days.
+_Avoid_: patron day, family name day
 
 **Relation**:
 The link of a contact to one or more people of the household, with what they are to them, such as "friend of Mia" or "paediatrician": one free-text word (at most 40 characters) plus the people it is for, or the whole family. The whole family stores no people, so a person who joins later is included. Only further contacts have relations, never the contact of a household person. A relation alone does not make a contact visible to children.

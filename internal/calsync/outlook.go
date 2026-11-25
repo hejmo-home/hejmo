@@ -214,7 +214,7 @@ func (s *Service) importOutlook(ctx context.Context, sess *graph.Session, cal st
 	}
 	from, to := at.AddDate(-1, 0, 0), at.AddDate(outlookFutureYears, 0, 0)
 
-	baseline, _ := time.Parse(time.RFC3339, prev.CTag)
+	baseline, _ := time.Parse(time.RFC3339, prev.DeltaBaseline)
 	link := prev.Token
 	if baseline.IsZero() || at.Sub(baseline) > outlookRebaseline || len(discard) > 0 {
 		link = ""
@@ -341,8 +341,8 @@ func (s *Service) importOutlook(ctx context.Context, sess *graph.Session, cal st
 	run.listed, run.fetched = len(known)+len(changes)-len(deleted), len(changes)
 	run.skipped = skipped(notes)
 	interval := time.Duration(cal.Sync.IntervalMinutes) * time.Minute
-	// The baseline time travels in the CTag column: when the delta link began.
-	done, err := s.db.CompleteObjectSyncWithState(h.ID, cal.ID, store.RemoteState{CTag: baseline.UTC().Format(time.RFC3339), Token: res.Link}, changes, deleted, notes, at, at.Add(interval))
+	// The baseline is when the delta link began.
+	done, err := s.db.CompleteObjectSyncWithState(h.ID, cal.ID, store.RemoteState{DeltaBaseline: baseline.UTC().Format(time.RFC3339), Token: res.Link}, changes, deleted, notes, at, at.Add(interval))
 	if err != nil {
 		return st(fmt.Errorf("could not store the events: %w", err))
 	}

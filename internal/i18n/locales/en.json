@@ -4911,5 +4911,16 @@
   "artf.food.piece": "One piece weighs about (grams)",
   "artf.food.piece.hint": "Only for recipes that give this article in pieces, jars or tubs. Leave it empty if you do not know: Hejmo then does not count such lines.",
   "artf.err.food": "Choose one of the foods or clear the search. Otherwise your article stays without nutrition values.",
-  "artf.err.piece": "Give the weight in grams as a number, for example 120 or 12.5 (at most 5,000)."
+  "artf.err.piece": "Give the weight in grams as a number, for example 120 or 12.5 (at most 5,000).",
+  "licences.bls.title": "Nutrition values: German Nutrient Database (BLS) 4.0",
+  "licences.bls.notice": "Bundeslebensmittelschlüssel (BLS), version 4.0, Max Rubner-Institut (MRI), Karlsruhe. Licence CC BY 4.0. Extract, reduced to the seven values of the nutrition declaration.",
+  "licences.bls.cite": "Max Rubner-Institut (2025): Bundeslebensmittelschlüssel (BLS), Version 4.0 - Deutsche Nährstoffdatenbank. Karlsruhe. DOI: 10.25826/Data20251217-134202-0",
+  "licences.bls.what": "The box calculates the nutrition values of recipes from it. The data is part of the box; nothing is looked up on the internet.",
+  "licences.bls.site": "blsdb.de",
+  "licences.bls.doi": "DOI",
+  "licences.usda.title": "Nutrition values: USDA FoodData Central",
+  "licences.usda.notice": "U.S. Department of Agriculture, Agricultural Research Service. FoodData Central. Public domain (CC0 1.0).",
+  "licences.usda.what": "For foods the BLS does not know. This data is part of the box too.",
+  "licences.usda.site": "fdc.nal.usda.gov",
+  "licences.usda.licence": "CC0 1.0"
 }

@@ -1,6 +1,8 @@
 package server_test
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -237,5 +239,46 @@ func TestMCPHasTheNutritionOfARecipe(t *testing.T) {
 	out, isErr := callTool(s, "get_recipe_nutrition", map[string]any{"id": id})
 	if isErr || !strings.Contains(out, `"energy_kcal"`) || !strings.Contains(out, "348") {
 		t.Errorf("get_recipe_nutrition = %v %s", isErr, out)
+	}
+}
+
+// Acceptance: never on displays. A display holds a display token: it reaches
+// its own pages and state, not the API of the household, and none of what it
+// shows carries nutrition values, whatever a parent switched on.
+func TestNutritionNeverReachesADisplay(t *testing.T) {
+	t.Parallel()
+	tb := newTaskBox(t)
+	c := tb.parent
+	id := postRecipe(t, c, "Haferbrei", 1, ing("rolled-oats", 100, "g"))
+	c.call(http.MethodPatch, "/people/"+tb.miaID, map[string]any{"nutrition_shown": true})
+	anon := newAPIClient(t, c.b)
+	_, opened := openAPIPairing(anon)
+	if status, _, _ := c.call(http.MethodPost, "/displays", map[string]any{"code": opened["code"], "name": "Kitchen", "type": "screen"}); status != http.StatusCreated {
+		t.Fatalf("pair = %d", status)
+	}
+	token := opened["token"].(string)
+	d := anon.withToken(token)
+	for _, path := range []string{"/recipes/" + id + "/nutrition", "/recipes/" + id, "/foods?q=hafer"} {
+		if status, _, _ := d.call(http.MethodGet, path, nil); status != http.StatusUnauthorized {
+			t.Errorf("a display reached %s: %d", path, status)
+		}
+	}
+	for _, path := range []string{"/display/view", "/display"} {
+		req, _ := http.NewRequest(http.MethodGet, c.b.srv.URL+path, nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		res, err := c.b.bareClient().Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		body, _ := io.ReadAll(res.Body)
+		res.Body.Close()
+		if low := strings.ToLower(string(body)); strings.Contains(low, "kcal") || strings.Contains(low, "nutri") || strings.Contains(low, "nährwert") {
+			t.Errorf("%s shows nutrition values", path)
+		}
+	}
+	_, st, _ := d.call(http.MethodGet, "/display/state", nil)
+	raw, _ := json.Marshal(st)
+	if strings.Contains(strings.ToLower(string(raw)), "nutri") || strings.Contains(string(raw), "kcal") {
+		t.Errorf("the display state carries nutrition values: %s", raw)
 	}
 }

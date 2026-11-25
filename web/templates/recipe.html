@@ -34,6 +34,15 @@
     </section>
   </div></div>
   {{with .Tips}}<section class="rcp-tips" aria-labelledby="tip"><h2 id="tip"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>{{t "recipes.tips.title"}}</h2><p>{{.}}</p></section>{{end}}
+  {{with .Nut}}<section class="rcp-nutri" id="nut" aria-labelledby="nut-h"><h2 id="nut-h"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M7 20h10M5 7h14"/><path d="M5 7l-3 6a3 3 0 0 0 6 0zM19 7l-3 6a3 3 0 0 0 6 0z"/></svg>{{t "nutrition.title"}}</h2><p class="nut-lead">{{.Lead}}</p>
+    {{with .Done}}<p class="none"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>{{.}}</span></p>{{end}}
+    {{if .Flag}}<div class="nut-gap" role="note"><span class="flag warn"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><span>{{.Flag}}</span></span>
+      {{if .Skip}}<p>{{.Skip}}</p><ul>{{range .Items}}<li><b>{{.Name}}</b>{{.Reason}}{{if .LinkHref}} <a href="{{.LinkHref}}">{{.LinkText}}</a>{{end}}</li>{{end}}</ul>{{end}}
+      {{if .Miss}}<p>{{.Miss}}</p><ul>{{range .Gaps}}<li>{{.}}</li>{{end}}</ul>{{end}}</div>{{end}}
+    {{if .Rows}}<table class="nut-table"><caption class="sr">{{t "nutrition.title"}}</caption><tbody>{{range .Rows}}<tr{{if .Sub}} class="nut-sub"{{end}}><th scope="row">{{.Label}}</th><td>{{if .NA}}<span class="nut-na">{{t "nutrition.na"}}</span>{{else if .Big}}<span class="kcal">{{.Value}}</span>{{with .KJ}}<span class="kj">{{.}}</span>{{end}}{{else}}{{.Value}}{{end}}</td></tr>{{end}}</tbody></table>{{end}}
+    {{with .Source}}<p class="hint nut-src">{{.}}</p>{{end}}
+    {{with .Who}}<p class="nut-who">{{.}}</p>{{end}}
+  </section>{{end}}
   {{if .Parent}}<p class="hint rcp-who">{{.Who}}</p>
   {{template "danger" (dict "Label" (t "recipes.delete.label") "Confirm" .DeleteConfirm "Explain" .DeleteExplain "Action" (printf "/meals/recipes/%s/delete" .R.ID) "CancelHref" (printf "/meals/recipes/%s" .R.ID))}}{{end}}
 {{template "foot"}}

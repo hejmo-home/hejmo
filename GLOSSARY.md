@@ -299,6 +299,14 @@ _Avoid_: grid, gallery
 What a person eats: omnivore, vegetarian, pescatarian or vegan.
 _Avoid_: nutrition type
 
+**Nutrition values**:
+The seven values of the EU nutrition declaration of a recipe per portion: energy (kcal and kJ), fat, of which saturates, carbohydrate, of which sugars, protein and salt. They are guide values, calculated from the ingredients; a value that is not known is never shown as 0. Shown only on the recipe page: always to parents, to a child only when a parent switched them on for that child, never on a display.
+_Avoid_: nutrients, macros, calories (alone)
+
+**Food** (of an article):
+The entry of BLS 4.0 (Max Rubner-Institut) or USDA FoodData Central behind the nutrition values of an article. Every shipped article that is food has one; an own article may have one or none, and a recipe says which ingredients it could not count. Not the same as a diet or an allergy.
+_Avoid_: ingredient, product
+
 **Allergy**:
 An allergen or intolerance of a person: one of the 14 main EU allergens or free text, which cannot be checked automatically.
 _Avoid_: intolerance (alone)

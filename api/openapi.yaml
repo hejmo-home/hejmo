@@ -361,6 +361,8 @@ paths:
         (`Person.color`), the marker one of the eight shapes. No two people may have
         the same colour and the same marker: such a request gets 422.
         `streaks_shown` switches the week count and badges of the person on or off.
+        `nutrition_shown` switches the nutrition values at recipes on or off for a
+        child (off at first; parents always see them, so a request for a parent gets 422).
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -2819,6 +2821,78 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /recipes/{id}/nutrition:
+    get:
+      operationId: getRecipeNutrition
+      summary: The nutrition values of a recipe per portion (scope meals:read)
+      description: |
+        The seven values of the EU nutrition declaration (energy in kJ and kcal, fat,
+        of which saturates, carbohydrate, of which sugars, protein, salt) per portion,
+        calculated from the ingredients with BLS 4.0 (Max Rubner-Institut, CC BY 4.0)
+        and USDA FoodData Central (CC0), shipped in the box. They are guide values.
+        A value that is not known is `null`, never 0: `not_counted` lists the
+        ingredients that could not be counted (free text, no quantity, a unit with no
+        known weight, an own article without a food) and `missing_values` the values
+        the food data lacks. Units count in grams only when the weight is known:
+        g, kg, oz, lb always; ml, l, tablespoon, teaspoon and pinch with the article's
+        density; piece, dozen, jar and tub with the article's piece weight (for
+        nutrition only; shopping lists never convert kitchen measures). Works for
+        starter recipes too. Parents always get the values; a child gets them only when
+        a parent switched on `nutrition_shown` for them, otherwise 404. Never on displays.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The values
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecipeNutrition" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /foods:
+    get:
+      operationId: searchFoods
+      summary: Search the food data of the box (scope lists:read)
+      description: |
+        The foods of BLS 4.0 and USDA FoodData Central that ship in the box, with the
+        seven values per 100 g. Every word of `q` must appear in the German or English
+        name (case, umlauts and ue for ü ignored); names that are the query come
+        first, then names that start with it. From two letters on; fewer find nothing.
+        Offline: nothing is looked up on the internet. An article's `food` is one of them.
+        Nutrition values are hidden from a child unless a parent switched them on for that
+        child: otherwise 404, and an article carries no `food` or `piece_g`.
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 50, default: 10 } }
+      responses:
+        "200":
+          description: The foods
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/NutritionFood" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /foods/{id}:
+    get:
+      operationId: getNutritionFood
+      summary: One food of the food data (scope lists:read)
+      description: A child whose nutrition switch is off gets 404.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string }, description: "For example bls:C133000 or usda:170848" }
+      responses:
+        "200":
+          description: The food
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NutritionFood" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /recipe-units:
     get:
       operationId: listRecipeUnits
@@ -5128,7 +5202,7 @@ components:
       enum: [parent, child]
     Person:
       type: object
-      required: [id, name, role, color, shape, symbol, streaks_shown]
+      required: [id, name, role, color, shape, symbol, streaks_shown, nutrition_shown]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
@@ -5137,6 +5211,7 @@ components:
         shape: { type: string, description: "Marker for black-and-white mode", example: circle-filled }
         symbol: { type: string }
         streaks_shown: { type: boolean, description: "The switch \"week count and badges\": when off, no week, best streak or badge is shown for the person anywhere (stars stay). On for children and off for adults when the person is created." }
+        nutrition_shown: { type: boolean, description: "The switch \"nutrition values at recipes\" of a child: off at first, a parent switches it on. Parents always see the nutrition values whatever this says (false for them), wall displays never." }
     ContactLine:
       type: object
       required: [kind, value]
@@ -5376,6 +5451,7 @@ components:
         color: { $ref: "#/components/schemas/PersonColor" }
         shape: { $ref: "#/components/schemas/PersonShape" }
         streaks_shown: { type: boolean }
+        nutrition_shown: { type: boolean, description: "Children only; a request for a parent gets 422." }
     NewPerson:
       type: object
       required: [name, role]
@@ -5649,7 +5725,7 @@ components:
         done_count: { type: integer, description: "Entries ticked off" }
     Article:
       type: object
-      required: [id, source, name_de, name_en, dept, kind, allergens, units, offered_units, symbol, picture, picture_source, hidden_by_hand, pantry, created_by, created_at]
+      required: [id, source, name_de, name_en, dept, kind, allergens, units, offered_units, symbol, picture, picture_source, hidden_by_hand, pantry, food, piece_g, created_by, created_at]
       properties:
         id: { type: string, description: "The key of an article from Hejmo, the id of an own one" }
         source: { type: string, enum: [hejmo, own] }
@@ -5678,8 +5754,71 @@ components:
         picture_source: { type: string, enum: ["", symbol, upload, web] }
         hidden_by_hand: { type: boolean }
         pantry: { type: boolean, description: "A pantry article, usually at home (salt, oil): recipes leave it out of the shopping list by default. Shipped articles come with a default mark that a parent can change per article." }
+        food:
+          nullable: true
+          description: The food behind the nutrition values of recipes. Shipped articles have one (except what is not food); an own article may have one or none, then recipes do not count it. Always null for a child whose nutrition switch is off.
+          allOf:
+            - { $ref: "#/components/schemas/NutritionFood" }
+        piece_g: { type: number, nullable: true, description: "The weight of one piece in grams, null when not known; recipes in piece, jar or tub need it. Always null for a child whose nutrition switch is off." }
         created_by: { type: string, format: uuid, nullable: true }
         created_at: { type: string, format: date-time, nullable: true }
+    NutritionValues:
+      type: object
+      description: The seven values of the EU nutrition declaration as eight numbers (energy has two). A number is null when it is not known; it is never 0 for unknown.
+      required: [energy_kj, energy_kcal, fat_g, saturates_g, carbohydrate_g, sugars_g, protein_g, salt_g]
+      properties:
+        energy_kj: { type: number, nullable: true }
+        energy_kcal: { type: number, nullable: true }
+        fat_g: { type: number, nullable: true }
+        saturates_g: { type: number, nullable: true, description: Of which saturated fatty acids }
+        carbohydrate_g: { type: number, nullable: true }
+        sugars_g: { type: number, nullable: true, description: Of which sugars }
+        protein_g: { type: number, nullable: true }
+        salt_g: { type: number, nullable: true }
+    NutritionFood:
+      type: object
+      required: [id, source, name_de, name_en, per_100g]
+      properties:
+        id: { type: string, description: "bls:<BLS code> or usda:<FoodData Central id>", example: "bls:C133000" }
+        source: { type: string, enum: [bls, usda], description: "bls: Bundeslebensmittelschlüssel 4.0, Max Rubner-Institut, CC BY 4.0; usda: USDA FoodData Central, CC0" }
+        name_de: { type: string, nullable: true, description: Null for a USDA food }
+        name_en: { type: string, nullable: true }
+        per_100g: { $ref: "#/components/schemas/NutritionValues" }
+    RecipeNutrition:
+      type: object
+      required: [recipe_id, portions, counted, complete, per_portion, not_counted, missing_values, sources, note]
+      properties:
+        recipe_id: { type: string }
+        portions: { type: integer }
+        counted: { type: integer, description: The number of ingredient lines in the sum }
+        complete: { type: boolean, description: True when every line counted and no value is missing }
+        per_portion: { $ref: "#/components/schemas/NutritionValues" }
+        not_counted:
+          type: array
+          items:
+            type: object
+            required: [name, article_id, unit, reason]
+            properties:
+              name: { type: string }
+              article_id: { type: string, nullable: true }
+              unit: { type: string, nullable: true }
+              reason: { type: string, enum: [free_text, no_quantity, no_weight, no_food] }
+        missing_values:
+          type: array
+          description: Values that are null because the food of a counted line lacks them
+          items:
+            type: object
+            required: [value, foods]
+            properties:
+              value: { type: string, enum: [energy_kj, energy_kcal, fat_g, saturates_g, carbohydrate_g, sugars_g, protein_g, salt_g] }
+              foods:
+                type: array
+                items: { $ref: "#/components/schemas/NutritionFood" }
+        sources:
+          type: array
+          description: The databases the counted foods come from; name them where you show the values (CC BY 4.0 needs the attribution)
+          items: { type: string, enum: [bls, usda] }
+        note: { type: string }
     Unit:
       type: string
       enum: [piece, dozen, pack, bunch, g, kg, ml, l, oz, lb, floz_us, floz_uk, cup_us, pint_us, pint_uk, quart_us, gallon_us, gallon_uk]
@@ -5784,6 +5923,8 @@ components:
         picture_url: { type: string, description: "An http or https address of an image the box downloads once" }
         remove_picture: { type: boolean }
         pantry: { type: boolean, description: "Mark as a pantry article (default false when creating)" }
+        food: { type: string, description: "The id of a food of GET /foods (bls:... or usda:...); empty removes it. Without a food recipes do not count the article in their nutrition values." }
+        piece_g: { type: number, description: "The weight of one piece in grams, 0 up to 5000 (anything else gets 422); 0 removes it" }
     ArticleWarnings:
       type: object
       required: [article_id, warnings, suits, does_not_suit, suggested, not_suggested_because, hidden_for, note]

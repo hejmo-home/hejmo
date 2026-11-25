@@ -268,6 +268,10 @@ type Person struct {
 	// Stars are not affected. It is set by role when the person is created
 	// (child on, adult off) and can be changed per person.
 	StreaksShown bool
+	// NutritionShown is the switch "nutrition values at recipes" (ticket 288):
+	// off until a parent switches it on. It decides for children; parents
+	// always see the values.
+	NutritionShown bool
 }
 
 func newID() string {
@@ -369,7 +373,7 @@ func (db *DB) AddPerson(householdID string, p Person) (Person, error) {
 	return p, tx.Commit()
 }
 
-const personColumns = `p.id, p.name, m.role, p.color, p.shape, p.symbol, p.streaks_shown`
+const personColumns = `p.id, p.name, m.role, p.color, p.shape, p.symbol, p.streaks_shown, p.nutrition_shown`
 
 // People lists a household's members in display order.
 func (db *DB) People(householdID string) ([]Person, error) {
@@ -383,7 +387,7 @@ func (db *DB) People(householdID string) ([]Person, error) {
 	var out []Person
 	for rows.Next() {
 		var p Person
-		if err := rows.Scan(&p.ID, &p.Name, &p.Role, &p.Color, &p.Shape, &p.Symbol, &p.StreaksShown); err != nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.Role, &p.Color, &p.Shape, &p.Symbol, &p.StreaksShown, &p.NutritionShown); err != nil {
 			return nil, err
 		}
 		out = append(out, p)
@@ -397,7 +401,7 @@ func (db *DB) Person(householdID, personID string) (Person, error) {
 	err := db.sql.QueryRow(`SELECT `+personColumns+` FROM people p
 		JOIN household_members m ON m.person_id = p.id
 		WHERE m.household_id = ? AND p.id = ?`, householdID, personID).
-		Scan(&p.ID, &p.Name, &p.Role, &p.Color, &p.Shape, &p.Symbol, &p.StreaksShown)
+		Scan(&p.ID, &p.Name, &p.Role, &p.Color, &p.Shape, &p.Symbol, &p.StreaksShown, &p.NutritionShown)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Person{}, ErrNotFound
 	}

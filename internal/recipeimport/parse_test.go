@@ -121,6 +121,40 @@ func TestNutrition(t *testing.T) {
 	}
 }
 
+// Each unit belongs to the number it follows; a thousands point is no decimal point.
+func TestNutritionTiesEachUnitToItsNumber(t *testing.T) {
+	energy := func(calories string) *recipeimport.Nutrition {
+		t.Helper()
+		f := one(t, `{"@type":"Recipe","name":"x","nutrition":{"calories":"`+calories+`"}}`)
+		if f.Nutrition == nil || f.Nutrition.KCal == nil || f.Nutrition.KJ == nil {
+			t.Fatalf("%q: nutrition = %+v", calories, f.Nutrition)
+		}
+		return f.Nutrition
+	}
+	for _, c := range []struct {
+		in       string
+		kcal, kj float64
+	}{
+		{"250 kcal / 1046 kJ", 250, 1046},
+		{"1046 kJ / 250 kcal", 250, 1046},
+		{"1.250 kJ", 299, 1250},
+		{"1,250 kJ", 299, 1250},
+		{"1.250 kcal", 1250, 5230},
+		{"380 kcal", 380, 1590},
+		{"380", 380, 1590},
+	} {
+		n := energy(c.in)
+		if *n.KCal != c.kcal || *n.KJ != c.kj {
+			t.Errorf("%q: %v kcal / %v kJ, want %v / %v", c.in, *n.KCal, *n.KJ, c.kcal, c.kj)
+		}
+	}
+	f := one(t, `{"@type":"Recipe","name":"x","nutrition":{"fatContent":"1.250 mg","sodiumContent":"2,5 g","proteinContent":"12 g (800 mg)","sugarContent":"0.125 g"}}`)
+	n := f.Nutrition
+	if n == nil || *n.Fat != 1.25 || *n.Salt != 6.25 || *n.Protein != 12 || *n.Sugars != 0.13 {
+		t.Errorf("grams and milligrams: %+v", n)
+	}
+}
+
 func TestParseLine(t *testing.T) {
 	cases := []struct {
 		in           string

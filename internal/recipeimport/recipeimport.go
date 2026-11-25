@@ -342,26 +342,45 @@ func steps(v any, prefix string) []string {
 	return nil
 }
 
+// amountRe is a number with the unit that follows it. A thousands point or comma (one to three digits,
+// then groups of exactly three, the first not 0) is no decimal sign: "1.250 kJ" is 1250 kJ.
+var amountRe = regexp.MustCompile(`([1-9]\d{0,2}(?:[.,]\d{3})+|\d+(?:[.,]\d+)?)\s*([\p{L}]*)`)
+
+var thousandsRe = regexp.MustCompile(`^[1-9]\d{0,2}(?:[.,]\d{3})+$`)
+
+type amount struct {
+	val  float64
+	unit string // lower case, "" when none follows the number
+}
+
+// amounts reads every number of s with its own unit.
+func amounts(s string) []amount {
+	var out []amount
+	for _, m := range amountRe.FindAllStringSubmatch(strings.ToLower(s), -1) {
+		num := m[1]
+		if thousandsRe.MatchString(num) {
+			num = strings.NewReplacer(".", "", ",", "").Replace(num)
+		}
+		v, err := strconv.ParseFloat(strings.Replace(num, ",", ".", 1), 64)
+		if err == nil {
+			out = append(out, amount{v, m[2]})
+		}
+	}
+	return out
+}
+
 func nutritionOf(v any) *Nutrition {
 	m, ok := v.(map[string]any)
 	if !ok {
 		return nil
 	}
-	num := func(key string) (val float64, mg, kj, ok bool) {
-		s := strings.ToLower(text(m[key]))
-		d := regexp.MustCompile(`\d+(?:[.,]\d+)?`).FindString(s)
-		if d == "" {
-			return 0, false, false, false
-		}
-		val, err := strconv.ParseFloat(strings.Replace(d, ",", ".", 1), 64)
-		return val, strings.Contains(s, "mg"), strings.Contains(s, "kj"), err == nil
-	}
 	grams := func(key string) *float64 {
-		v, mg, _, ok := num(key)
-		if !ok {
+		as := amounts(text(m[key]))
+		if len(as) == 0 {
 			return nil
 		}
-		if mg {
+		v := as[0].val
+		if as[0].unit == "mg" {
 			v /= 1000
 		}
 		v = round(v, 2)
@@ -372,15 +391,25 @@ func nutritionOf(v any) *Nutrition {
 		s := round(*na*2.5, 2)
 		n.Salt = &s
 	}
-	if v, _, kj, ok := num("calories"); ok {
-		if kj {
-			c := round(v/4.184, 0)
-			n.KJ, n.KCal = &v, &c
-		} else {
-			j := round(v*4.184, 0)
-			n.KCal, n.KJ = &v, &j
+	var kcal, kj *float64
+	for _, a := range amounts(text(m["calories"])) {
+		v := a.val
+		switch {
+		case a.unit == "kj" && kj == nil:
+			kj = &v
+		case a.unit != "kj" && kcal == nil:
+			kcal = &v
 		}
 	}
+	switch {
+	case kcal != nil && kj == nil:
+		j := round(*kcal*4.184, 0)
+		kj = &j
+	case kj != nil && kcal == nil:
+		c := round(*kj/4.184, 0)
+		kcal = &c
+	}
+	n.KCal, n.KJ = kcal, kj
 	if n.KCal == nil && n.Fat == nil && n.Saturates == nil && n.Carbs == nil && n.Sugars == nil && n.Protein == nil && n.Salt == nil {
 		return nil
 	}

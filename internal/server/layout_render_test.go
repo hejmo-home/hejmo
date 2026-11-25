@@ -1215,10 +1215,11 @@ func layoutPartPages(pages []layoutPage, part int) []layoutPage {
 	return out
 }
 
-// layoutBudget is the time one part has for its pages. Measured in CI before the
-// split: 1000 s for all pages in one browser. A part has half the pages in two
-// browsers side by side, so its measured time plus 30 % headroom stays well below.
-const layoutBudget = 15 * time.Minute
+// layoutBudget is the time one part has for its pages. Measured in CI (run
+// 45665488222, x86_64): part 1 took 341 s, part 2 284 s; one browser for all
+// pages took 1000 s before the split. 10 min leaves 43 % headroom over the
+// slower part (more than the 30 % asked for) and fails a hang at 10, not 15 min.
+const layoutBudget = 10 * time.Minute
 
 func renderedLayout(t *testing.T, part int) {
 	t.Parallel()

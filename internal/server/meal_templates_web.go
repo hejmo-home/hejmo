@@ -405,13 +405,15 @@ func (s *server) handleTemplatePage(w http.ResponseWriter, r *http.Request) {
 
 // readTemplateForm reads the form of a template; the entries of every
 // mealtime are kept in the form, the template ignores the ones it does not fill.
-func (s *server) readTemplateForm(r *http.Request, p principal) (meal.Template, tplForm, formErrors) {
+func (s *server) readTemplateForm(r *http.Request, p principal) (meal.Template, tplForm, formErrors, error) {
 	_ = r.ParseForm()
 	byName := map[string]string{} // recipe name key -> recipe id: a field with a recipe's name is that recipe
-	if recipes, err := s.recipesByID(p); err == nil {
-		for id, rec := range recipes {
-			byName[recipe.NameKey(rec.Name)] = id
-		}
+	recipes, err := s.recipesByID(p)
+	if err != nil {
+		return meal.Template{}, tplForm{}, formErrors{}, err
+	}
+	for id, rec := range recipes {
+		byName[recipe.NameKey(rec.Name)] = id
 	}
 	f := tplForm{ID: r.PathValue("id"), Name: strings.TrimSpace(r.PostFormValue("name")), Fills: r.PostFormValue("fills"), Mealtime: r.PostFormValue("mealtime"),
 		Every: strings.TrimSpace(r.PostFormValue("every")), Start: r.PostFormValue("start"), Values: map[string]string{}}
@@ -447,12 +449,16 @@ func (s *server) readTemplateForm(r *http.Request, p principal) (meal.Template, 
 		f.Mealtime = string(meal.Dinner)
 		t.Mealtime = meal.Dinner
 	}
-	return t, f, errs
+	return t, f, errs, nil
 }
 
 // saveTemplatePage saves the form of a new template or, with an id in the path, of an existing one.
 func (s *server) saveTemplatePage(w http.ResponseWriter, r *http.Request, p principal) {
-	t, f, errs := s.readTemplateForm(r, p)
+	t, f, errs, err := s.readTemplateForm(r, p)
+	if err != nil {
+		s.fail(w, "recipes", err)
+		return
+	}
 	original := f.Name
 	if f.ID != "" {
 		if cur, err := s.db.MealTemplate(p.household.ID, f.ID); err == nil {
@@ -487,7 +493,6 @@ func (s *server) saveTemplatePage(w http.ResponseWriter, r *http.Request, p prin
 		return
 	}
 	var saved meal.Template
-	var err error
 	if f.ID == "" {
 		saved, err = s.db.CreateMealTemplate(p.household.ID, t, s.mealOptions(s.langOf(r), p))
 	} else {

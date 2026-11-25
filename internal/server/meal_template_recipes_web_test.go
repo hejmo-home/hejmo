@@ -3,6 +3,7 @@ package server_test
 import (
 	"html"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 )
@@ -49,5 +50,37 @@ func TestATemplateFieldThatEqualsARecipeNameHoldsThatRecipe(t *testing.T) {
 	_, again, _ := c.call(http.MethodGet, "/meal-templates/"+id, nil)
 	if again["entries"].([]any)[1].(map[string]any)["recipe_id"] != r["id"] {
 		t.Errorf("the slot is no longer the recipe after saving the form again: %v", again)
+	}
+}
+
+// Saving the week posts the hidden recipe id and the portions of every recipe
+// slot the page shows; a slot that was not changed stays the template's own.
+func TestSavingTheWeekLeavesAnUnchangedTemplateRecipeSlotFollowingTheTemplate(t *testing.T) {
+	t.Parallel()
+	c := signedInAPI(t)
+	withFamily(t, c)
+	_, r := createRecipe(t, c, curryBody())
+	form := weekBForm("Weeks", "2026-11-16", "1")
+	form.Set(tplField(2, "dinner"), r["name"].(string))
+	if got := saveTemplate(t, c, form, en); got.status != http.StatusSeeOther {
+		t.Fatalf("save = %d %q", got.status, got.body)
+	}
+	week := url.Values{"week": {"2026-11-16"}}
+	cell := mealField(tuesday, "dinner")
+	week.Set(cell+".recipe", r["id"].(string))
+	week.Set(cell+".portions", "4") // what the page shows: the four people
+	if got := c.b.do(http.MethodPost, "/meals", week, en); got.status != http.StatusSeeOther {
+		t.Fatalf("save the week = %d %q", got.status, got.body)
+	}
+	list := mealsBetween(t, c, tuesday, tuesday)
+	if len(list) != 1 || list[0]["source"] != "template" || list[0]["recipe_id"] != r["id"] {
+		t.Fatalf("after saving the week unchanged = %v: the slot is still the template's", list)
+	}
+	week.Set(cell+".portions", "6") // another number of portions is an adjustment
+	if got := c.b.do(http.MethodPost, "/meals", week, en); got.status != http.StatusSeeOther {
+		t.Fatalf("save 6 portions = %d %q", got.status, got.body)
+	}
+	if list := mealsBetween(t, c, tuesday, tuesday); len(list) != 1 || list[0]["source"] != "adjusted" || list[0]["portions"] != float64(6) {
+		t.Fatalf("with 6 portions = %v", list)
 	}
 }

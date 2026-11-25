@@ -143,3 +143,56 @@ func TestAWeeksChangeToATemplateRecipeStaysAnAdjustment(t *testing.T) {
 		t.Fatalf("back to template = %+v", m)
 	}
 }
+
+func TestSettingTheTemplatesRecipeForTheHouseholdSizeIsNoAdjustmentButOtherPortionsAre(t *testing.T) {
+	f := newRecipeMealFixture(t) // two people
+	o := optionsOn("2026-11-18")
+	if _, err := f.db.CreateMealTemplate(f.h.ID, curryOnTuesdays(f), o); err != nil {
+		t.Fatal(err)
+	}
+	set := func(portions int) store.PlanMeal {
+		t.Helper()
+		if err := f.db.SetMeals(f.h.ID, []store.Meal{{Day: "2026-11-24", Mealtime: meal.Dinner, RecipeID: f.curry.ID, Portions: portions}}, o); err != nil {
+			t.Fatal(err)
+		}
+		return planOf(t, f.db, f.h, "2026-11-24", "2026-11-24", "2026-11-18")["2026-11-24|dinner"]
+	}
+	if m := set(2); m.Source != store.SourceTemplate || m.Portions != 2 {
+		t.Fatalf("the same recipe for the household = %+v, want the template's own", m)
+	}
+	if _, err := f.db.AddPerson(f.h.ID, store.Person{Name: "Papa", Role: store.RoleParent}); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.db.RefreshMealPlan(f.h.ID, o); err != nil {
+		t.Fatal(err)
+	}
+	if m := planOf(t, f.db, f.h, "2026-11-24", "2026-11-24", "2026-11-18")["2026-11-24|dinner"]; m.Source != store.SourceTemplate || m.Portions != 3 {
+		t.Fatalf("after a third person = %+v: a slot that was saved unchanged follows the household", m)
+	}
+	if m := set(5); m.Source != store.SourceAdjusted || m.Portions != 5 {
+		t.Fatalf("5 portions = %+v", m)
+	}
+	if m := set(3); m.Source != store.SourceTemplate || m.Portions != 3 {
+		t.Fatalf("back to the household size = %+v, want the template's own", m)
+	}
+}
+
+func TestARecipeRenamedBehindAnAdjustedTemplateSlotShowsTheNewNameAsTheTemplatesDish(t *testing.T) {
+	f := newRecipeMealFixture(t)
+	o := optionsOn("2026-11-18")
+	if _, err := f.db.CreateMealTemplate(f.h.ID, curryOnTuesdays(f), o); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.db.SetMeals(f.h.ID, []store.Meal{{Day: "2026-11-24", Mealtime: meal.Dinner, Text: "Pizza"}}, o); err != nil {
+		t.Fatal(err)
+	}
+	r := f.curry.Recipe
+	r.ID, r.Name = f.curry.ID, "Cashew-Curry"
+	if _, err := f.db.UpdateRecipe(f.h.ID, "", r, o); err != nil {
+		t.Fatal(err)
+	}
+	m := planOf(t, f.db, f.h, "2026-11-24", "2026-11-24", "2026-11-18")["2026-11-24|dinner"]
+	if m.Source != store.SourceAdjusted || m.Text != "Pizza" || m.TemplateDish != "Cashew-Curry" {
+		t.Fatalf("adjusted slot after the rename = %+v", m)
+	}
+}

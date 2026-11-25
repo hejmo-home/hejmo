@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/meal"
+	"github.com/hejmo-home/hejmo/internal/recipe"
 )
 
 // Where the meal in a cell of the plan comes from.
@@ -81,6 +82,7 @@ func (o MealOptions) today() string {
 
 type queryer interface {
 	Query(query string, args ...any) (*sql.Rows, error)
+	QueryRow(query string, args ...any) *sql.Row
 }
 
 // layerEntry is what a hand-typed entry or an adjustment holds: free text, or a
@@ -160,19 +162,17 @@ func (l *mealLayers) loadTemplateRecipes(q queryer, householdID string) error {
 		return err
 	}
 	rows.Close()
-	prows, err := q.Query(`SELECT COUNT(*) FROM household_members WHERE household_id = ?`, householdID)
-	if err != nil {
+	var n int
+	if err := q.QueryRow(`SELECT COUNT(*) FROM household_members WHERE household_id = ?`, householdID).Scan(&n); err != nil {
 		return err
 	}
-	defer prows.Close()
-	for prows.Next() {
-		if err := prows.Scan(&l.people); err != nil {
-			return err
-		}
-	}
-	l.people = min(max(l.people, 1), 99)
-	return prows.Err()
+	l.people = HouseholdPortions(n)
+	return nil
 }
+
+// HouseholdPortions is how many portions a recipe entry starts with for a
+// household of that many people: at least 1, at most recipe.MaxPortions.
+func HouseholdPortions(people int) int { return min(max(people, 1), recipe.MaxPortions) }
 
 // loadTemplates reads the household's templates by name, or only one.
 func loadTemplates(q queryer, householdID, id string) ([]meal.Template, error) {
@@ -277,8 +277,8 @@ func (l *mealLayers) resolve(c cell) PlanMeal {
 }
 
 // set stores an entry for a cell from today on: an adjustment where a template
-// fills it (none when the text is the template's own dish; a recipe is always
-// an adjustment), else the hand-typed entry.
+// fills it (none when the text is the template's own dish, or the recipe is the
+// template's own for the household's size), else the hand-typed entry.
 func (l *mealLayers) set(tx *sql.Tx, householdID string, c cell, e layerEntry) error {
 	put := func(table string, into map[cell]layerEntry, keep bool) error {
 		if !keep {
@@ -293,7 +293,13 @@ func (l *mealLayers) set(tx *sql.Tx, householdID string, c cell, e layerEntry) e
 		return err
 	}
 	if tpl, dish, recipeID := l.templateFor(c); tpl != nil {
-		return put("meal_adjustments", l.adjust, e.recipeID != "" || recipeID != "" || e.text != dish)
+		own := false
+		if recipeID != "" {
+			own = e.recipeID == recipeID && e.portions == l.people
+		} else {
+			own = e.recipeID == "" && e.text == dish
+		}
+		return put("meal_adjustments", l.adjust, !own)
 	}
 	if _, stale := l.adjust[c]; stale {
 		if err := put("meal_adjustments", l.adjust, false); err != nil {

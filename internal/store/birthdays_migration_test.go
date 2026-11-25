@@ -26,14 +26,17 @@ func TestBirthdaysMigrationWritesTheCalendarForExistingContacts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var before []migration
+	var before, after []migration
 	var mine migration
 	for _, m := range all {
-		if m.name == "202611232200_birthdays.sql" {
+		switch {
+		case mine.name != "":
+			after = append(after, m)
+		case m.name == "202611232200_birthdays.sql":
 			mine = m
-			break
+		default:
+			before = append(before, m)
 		}
-		before = append(before, m)
 	}
 	if mine.name == "" {
 		t.Fatal("the migration is not shipped")
@@ -63,6 +66,9 @@ func TestBirthdaysMigrationWritesTheCalendarForExistingContacts(t *testing.T) {
 	}
 	// The migration makes the calendar; the events are written by the box at
 	// its next start (an SQL migration cannot make the UUIDv5 ids).
+	if err := db.apply(after); err != nil { // the sync reads the columns of later migrations (name days, ticket 318)
+		t.Fatal(err)
+	}
 	if err := db.SyncAllBirthdays(); err != nil {
 		t.Fatal(err)
 	}

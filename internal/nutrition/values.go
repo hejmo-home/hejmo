@@ -10,6 +10,13 @@
 // recipe with nothing countable all say so instead of showing a number.
 package nutrition
 
+// The food data, data/foods.tsv.gz, is made by tools/foodlist from the files of
+// the two sources, which are never part of the repository (BLS: the two xlsx
+// files of BLS 4.0 from blsdb.de; USDA: the zip files of Foundation Foods and SR
+// Legacy from fdc.nal.usda.gov). To make it again:
+//
+//	HEJMO_BLS_DIR=/path/to/bls HEJMO_USDA_DIR=/path/to/usda go generate ./internal/nutrition
+//
 //go:generate go run ../../tools/foodlist -bls ${HEJMO_BLS_DIR} -usda ${HEJMO_USDA_DIR} -out data/foods.tsv.gz
 
 // Key names one of the eight numbers of the seven values (energy has two).

@@ -2,6 +2,7 @@ package nutrition
 
 import (
 	"math"
+	"os"
 	"strings"
 	"testing"
 )
@@ -313,5 +314,34 @@ func TestSearch(t *testing.T) {
 	got = Search("apfel", "de", 20)
 	if len(got) < 2 || !strings.HasPrefix(strings.ToLower(got[0].De), "apfel") {
 		t.Fatalf("starts-with first: %q", got[0].De)
+	}
+}
+
+// The data ships in the binary: it stays small (about 0.5 MB gzipped), and it
+// names its sources and licences in the file header and next to it.
+func TestTheFoodDataStaysSmallAndNamesItsSources(t *testing.T) {
+	if n := len(embedded); n > 1<<20 {
+		t.Fatalf("foods.tsv.gz is %d bytes, budget 1 MB", n)
+	}
+	var bls, usda int
+	for _, f := range All() {
+		switch f.Source {
+		case BLS:
+			bls++
+		case USDA:
+			usda++
+		}
+	}
+	if bls != 7140 || usda < 5000 {
+		t.Errorf("%d BLS foods (BLS 4.0 has 7,140), %d USDA foods", bls, usda)
+	}
+	licence, err := os.ReadFile("data/LICENSE-Nutrition.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"Max Rubner-Institut", "CC BY 4.0", "10.25826/Data20251217-134202-0", "CC0", "FoodData Central"} {
+		if !strings.Contains(string(licence), want) {
+			t.Errorf("LICENSE-Nutrition.txt lacks %q", want)
+		}
 	}
 }

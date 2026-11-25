@@ -139,8 +139,12 @@ var foldReplacer = strings.NewReplacer("ä", "a", "ö", "o", "ü", "u", "ß", "s
 // "Müsli" and "muesli" are one word.
 func Fold(s string) string { return foldReplacer.Replace(strings.ToLower(strings.TrimSpace(s))) }
 
-// MinQuery is the number of letters from which a search starts.
-const MinQuery = 2
+// MinQuery is the number of letters from which a search starts, MaxQuery the
+// most it reads.
+const (
+	MinQuery = 2
+	MaxQuery = 100
+)
 
 // Search finds up to max foods whose name (German or English) holds every word
 // of q, in any order: a name that is the query comes first, then names that
@@ -151,6 +155,9 @@ func Search(q, lang string, max int) []Food {
 	fq := Fold(q)
 	if utf8.RuneCountInString(fq) < MinQuery {
 		return nil
+	}
+	if r := []rune(fq); len(r) > MaxQuery {
+		fq = string(r[:MaxQuery])
 	}
 	words := strings.Fields(fq)
 	type hit struct {

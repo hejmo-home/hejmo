@@ -22,7 +22,7 @@
     <h2 id="fam">{{t "nd.fam.title"}}</h2>
     <p class="hint">{{.FamHint}}</p>
     <ul class="list-rows nd-rows">{{range .Family}}
-      <li><a href="{{.Href}}"><span class="t"><b class="who"><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span><span>{{.Name}}</span></b>{{if .None}}<span class="none">{{.None}}</span>{{else}}<span class="meta"><span><b>{{.Date}}</b> · {{.What}}{{with .From}}, {{.}}{{end}}</span></span>{{with .Depends}}<span class="meta"><span>{{.}}</span></span>{{end}}{{end}}</span>{{if .Today}}<span class="tag">{{t "nd.today"}}</span>{{end}}<svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>{{end}}
+      <li><a href="{{.Href}}"><span class="t"><b class="who"><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span><span>{{.Name}}</span></b>{{if .None}}<span class="none">{{.None}}</span>{{else}}<span class="meta"><span><b>{{.Date}}</b> · {{.What}}</span></span>{{with .Depends}}<span class="meta"><span>{{.}}</span></span>{{end}}{{end}}</span>{{if .Today}}<span class="tag">{{t "nd.today"}}</span>{{end}}<svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>{{end}}
     </ul>
   </section>
   {{end}}

@@ -124,12 +124,12 @@ func (e ctEnv) ndEaster(en nameday.Entry) string {
 
 // ndRow is a person of the family on the page, with their name day or the reason there is none.
 type ndRow struct {
-	Href, Name, Shape         string
-	Slot                      int
-	Person                    bool
-	Date, What, From, Depends string // the day in words, the name, where it comes from, what a moving day depends on
-	Today                     bool
-	None                      string // why there is no name day
+	Href, Name, Shape   string
+	Slot                int
+	Person              bool
+	Date, What, Depends string // the day in words, the name with where it comes from, what a moving day depends on
+	Today               bool
+	None                string // why there is no name day
 }
 
 // shortFormOf names the long form of a short name, for the hint "etwa „Maria“"; the list must know the long form.
@@ -155,7 +155,10 @@ func (e ctEnv) ndRowOf(c store.Contact, cal *nameday.Calendar, today time.Time) 
 		return row
 	}
 	en := info.Res.Entry
-	row.Date, row.What, row.From, row.Today = e.ndDay(info.Occ.Date, !info.Yearly), ndEntryName(en), e.ndFrom(c, info), info.Today
+	row.Date, row.What, row.Today = e.ndDay(info.Occ.Date, !info.Yearly), ndEntryName(en), info.Today
+	if from := e.ndFrom(c, info); from != "" {
+		row.What += ", " + from // "Katharina, nach „Katharina Maier“"
+	}
 	switch {
 	case en.Easter != nil:
 		row.Depends = e.ndEaster(en)

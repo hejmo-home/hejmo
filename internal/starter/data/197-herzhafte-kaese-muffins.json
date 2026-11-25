@@ -1,0 +1,186 @@
+{
+  "n": 197,
+  "slug": "herzhafte-kaese-muffins",
+  "category": "Snacks und Brotdose",
+  "servings": 12,
+  "time_minutes": 60,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/herzhafte-kaese-muffins-11868.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 175,
+      "unit": "g",
+      "article_de": "Comté-Käse",
+      "article_en": "Comté cheese",
+      "note_de": "125 g gewürfelt, 50 g fein gerieben",
+      "note_en": "125 g diced, 50 g finely grated"
+    },
+    {
+      "amount": 80,
+      "unit": "g",
+      "article_de": "Kochschinken",
+      "article_en": "Cooked ham",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 350,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "article_de": "Backpulver",
+      "article_en": "Baking powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    },
+    {
+      "amount": 0.25,
+      "unit": "Liter",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 6,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Geröstete Paprika",
+      "article_en": "Roasted peppers",
+      "note_de": "ca. 1/2 Glas, abgetropft; für den Dip",
+      "note_en": "about 1/2 jar, drained; for the dip"
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Crème fraîche",
+      "article_en": "Crème fraîche",
+      "note_de": "für den Dip",
+      "note_en": "for the dip"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Rosenpaprika",
+      "article_en": "Sweet paprika",
+      "note_de": "für den Dip",
+      "note_en": "for the dip"
+    }
+  ],
+  "de": {
+    "title": "Herzhafte Käse-Muffins",
+    "steps": [
+      "Den Ofen auf 175 °C Ober-/Unterhitze (150 °C Umluft, Gas Stufe 2) vorheizen. Die Mulden eines 12er-Muffinblechs einfetten und mit Paniermehl bestäuben.",
+      "125 g Comté würfeln, 50 g fein reiben. Den Kochschinken würfeln.",
+      "350 g Mehl und 1 Päckchen Backpulver mischen. Eier, Zucker, Salz, Milch und Öl zugeben und mit den Knethaken am Handmixer glatt verarbeiten. Schinken und Käsewürfel unterheben.",
+      "Den Teig auf die 12 Mulden verteilen und 25 bis 30 Minuten backen. In den letzten 10 Backminuten den geriebenen Käse darüberstreuen.",
+      "Für den Dip die gerösteten Paprika fein pürieren und unter die Crème fraîche rühren. Rosenpaprika und Salz zum Würzen.",
+      "Die Muffins etwa 5 Minuten im Blech stehen lassen und lauwarm oder kalt mit dem Dip servieren."
+    ]
+  },
+  "en": {
+    "title": "Savoury cheese muffins",
+    "steps": [
+      "Preheat the oven to 175 °C top/bottom heat (150 °C fan, gas mark 2). Grease a 12-hole muffin tin and dust with breadcrumbs.",
+      "Dice 125 g Comté and finely grate 50 g. Dice the cooked ham.",
+      "Mix 350 g flour with 1 packet of baking powder. Add the eggs, milk, oil, salt and sugar and mix to a smooth batter with the dough hooks of a hand mixer. Fold in the ham and cheese cubes.",
+      "Divide the batter between the 12 holes and bake for 25 to 30 minutes. Sprinkle the grated cheese on top 10 minutes before the end of baking.",
+      "For the dip, purée the roasted peppers finely and stir them into the crème fraîche. Season with salt and hot paprika.",
+      "Let the muffins rest in the tin for about 5 minutes and serve lukewarm or cold with the dip."
+    ],
+    "amounts_converted": [
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "packet"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 250,
+        "unit": "ml"
+      },
+      {
+        "index": 6,
+        "amount": 6,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "Source shows only 6 ratings (page); list says Redaktionsküche. Breadcrumbs and grease for the tin are mentioned in the method but not in the source ingredient list; not added. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.0
+  }
+}

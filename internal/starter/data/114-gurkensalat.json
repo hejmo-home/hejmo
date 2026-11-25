@@ -1,0 +1,104 @@
+{
+  "n": 114,
+  "slug": "gurkensalat",
+  "category": "Beilagen",
+  "servings": 4,
+  "time_minutes": 15,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/1477621253017688/Gurkensalat.html",
+    "site": "Chefkoch",
+    "ratings": 245
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Salatgurken",
+      "article_en": "Cucumbers",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Becher",
+      "article_de": "Naturjoghurt",
+      "article_en": "Plain yoghurt",
+      "note_de": "je 150 g",
+      "note_en": "150 g each"
+    },
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": "Pfeffer aus der Mühle",
+      "note_en": "pepper freshly ground"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Dill",
+      "article_en": "Dill",
+      "note_de": "frisch",
+      "note_en": "fresh"
+    }
+  ],
+  "de": {
+    "title": "Gurkensalat",
+    "steps": [
+      "2 Salatgurken in dünne Scheiben hobeln, direkt in ein Sieb.",
+      "Mit 2 Prisen Salz mischen und etwa 15 Minuten stehen lassen. Das Salz zieht das Wasser heraus, deshalb bleibt der Salat knackig und hält sich sogar bis zum nächsten Tag.",
+      "In dieser Zeit 2 Becher Joghurt in eine Schüssel geben, 2 Knoblauchzehen dazupressen, Dill hacken und untermischen.",
+      "Die Gurken mit den Händen kräftig ausdrücken, so trocken wie möglich.",
+      "Mit der Joghurtsauce vermengen und mit Salz und frisch gemahlenem Pfeffer abschmecken."
+    ]
+  },
+  "en": {
+    "title": "Cucumber salad",
+    "steps": [
+      "Slice 2 cucumbers thinly and put them straight into a colander.",
+      "Toss with 2 pinches of salt and let stand about 15 minutes. The salt draws out the water, which keeps the salad crunchy and even holds until the next day.",
+      "Meanwhile put 2 tubs of yoghurt in a bowl, press in 2 garlic cloves, chop the dill and stir it in.",
+      "Squeeze the cucumbers firmly by hand, as dry as you can.",
+      "Mix with the yoghurt sauce and season with salt and freshly ground pepper."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "tub"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "clove"
+      }
+    ]
+  },
+  "review_note": "Page ratingCount 245. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

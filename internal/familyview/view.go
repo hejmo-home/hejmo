@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
@@ -80,6 +81,101 @@ type Input struct {
 	Routines map[string][]RoutineLine
 	// List is the list of the block "one list"; nil when the block has none.
 	List *ListInput
+	// Stars is each person's star balance and savings goal, by person ID
+	// (ticket 293). A person without an entry, or with Shown false, gets no
+	// stars block.
+	Stars map[string]StarsInput
+	// Emergency are the contacts of the group "Notfall" for the emergency
+	// numbers block (ticket 303), in the order of the contacts overview. A
+	// contact without a number is left out by Build.
+	Emergency []EmergencyInput
+}
+
+// EmergencyInput is one contact of the emergency numbers block: the Hejmo name
+// (a person keeps their marker), the photo address or else the initials, and the
+// numbers with their kind in words.
+type EmergencyInput struct {
+	ID, Name string
+	Person   bool
+	Slot     int
+	Shape    string
+	PhotoURL string
+	Initials string
+	Numbers  []EmergencyNumberInput
+}
+
+// EmergencyNumberInput is a phone number as typed, with its kind in words.
+type EmergencyNumberInput struct{ Kind, Value string }
+
+// EmergencyTile is the emergency numbers tile: a footer row of its own.
+type EmergencyTile struct{ Contacts []EmergencyContact }
+
+// EmergencyContact is a contact of the tile. Every number is shown; the kind is
+// left out (empty) when the contact has only one.
+type EmergencyContact struct {
+	ID, Name string
+	Person   bool
+	Slot     int
+	Shape    string
+	PhotoURL string
+	Initials string
+	Numbers  []EmergencyNumber
+}
+
+// EmergencyNumber is a number split into its digit groups (at the spaces), so a
+// narrow line breaks between groups and never inside one.
+type EmergencyNumber struct {
+	Kind   string
+	Groups []string
+}
+
+func emergencyTile(in []EmergencyInput) *EmergencyTile {
+	var t EmergencyTile
+	for _, c := range in {
+		ec := EmergencyContact{ID: c.ID, Name: c.Name, Person: c.Person, Slot: c.Slot, Shape: c.Shape, PhotoURL: c.PhotoURL, Initials: c.Initials}
+		for _, n := range c.Numbers {
+			if g := strings.Fields(n.Value); len(g) > 0 {
+				ec.Numbers = append(ec.Numbers, EmergencyNumber{Kind: n.Kind, Groups: g})
+			}
+		}
+		if len(ec.Numbers) == 0 {
+			continue
+		}
+		if len(ec.Numbers) == 1 {
+			ec.Numbers[0].Kind = ""
+		}
+		t.Contacts = append(t.Contacts, ec)
+	}
+	if len(t.Contacts) == 0 {
+		return nil
+	}
+	return &t
+}
+
+// StarsInput is one person's stars: the plain balance (the number of the star
+// chip), whether stars show for them (a task worth stars or a booking, ADR
+// 0018) and their savings goal, if any.
+type StarsInput struct {
+	Balance int
+	Shown   bool
+	Goal    *GoalInput
+}
+
+// GoalInput is the reward a person saves for, as it is now: Picture is the URL
+// of an uploaded picture, empty to show Symbol.
+type GoalInput struct {
+	Name, Symbol, Picture string
+	Price                 int
+}
+
+// Goal is the savings goal of a column. Reached is Balance >= Price, Pct the
+// filled share of the bar, 0 to 100 (nothing below zero).
+type Goal struct {
+	Name, Symbol, Picture string
+	Price, Balance        int
+	Reached               bool
+	Pct                   int
+	Left                  int // stars still missing, 0 once reached
 }
 
 // RoutineLine is one routine of a person today with its progress (Q86).
@@ -147,6 +243,7 @@ type Column struct {
 	Tomorrow []Event   // from 18:00: the first timed events of the next day
 	Progress *Progress // nil: no bar
 	Routines []RoutineLine
+	Stars    *Stars // nil: no stars block (block off, or stars hidden for the person)
 }
 
 // Strip item kinds.
@@ -234,6 +331,7 @@ type View struct {
 	Meal          *MealTile // nil: nothing planned that is still to come
 	TomorrowTile  *Tile
 	List          *ListTile
+	Emergency     *EmergencyTile // nil: off, or no contact with a number
 	// HeaderOrder, ColumnBlocks and FooterOrder name the blocks that are on, in
 	// order (ticket 180). Weather without a reading is left out of the header; a
 	// footer block without content (nothing planned, an empty list) has no tile.
@@ -284,6 +382,9 @@ func Build(in Input) View {
 		if lay.Enabled(layout.Routines) {
 			col.Routines = in.Routines[p.ID]
 		}
+		if st, ok := in.Stars[p.ID]; ok && st.Shown && lay.Enabled(layout.Stars) {
+			col.Stars = &Stars{Shown: true, Balance: st.Balance, Goal: goalOf(st.Goal, st.Balance)}
+		}
 		v.Columns = append(v.Columns, col)
 	}
 	if lay.Enabled(layout.Meals) {
@@ -297,8 +398,11 @@ func Build(in Input) View {
 		}
 		v.List = t
 	}
+	if lay.Enabled(layout.Emergency) {
+		v.Emergency = emergencyTile(in.Emergency)
+	}
 	for _, b := range lay.In(layout.Footer) {
-		if b.On {
+		if b.On && (b.ID != layout.Emergency || v.Emergency != nil) {
 			v.FooterOrder = append(v.FooterOrder, b.ID)
 		}
 	}
@@ -377,6 +481,15 @@ func Build(in Input) View {
 	}
 	v.Strip = append(append(v.Strip, bars...), lines...)
 	return v
+}
+
+// goalOf builds the view of a goal for a balance; nil without a goal.
+func goalOf(g *GoalInput, balance int) *Goal {
+	if g == nil || g.Price <= 0 {
+		return nil
+	}
+	return &Goal{Name: g.Name, Symbol: g.Symbol, Picture: g.Picture, Price: g.Price, Balance: balance,
+		Reached: balance >= g.Price, Pct: max(0, min(100, balance*100/g.Price)), Left: max(0, g.Price-balance)}
 }
 
 // clock formats the times in the household's zone, whatever zone the event is

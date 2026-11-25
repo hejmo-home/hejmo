@@ -1,0 +1,267 @@
+{
+  "n": 51,
+  "slug": "cottage-pie",
+  "category": "Hauptgerichte",
+  "servings": 10,
+  "time_minutes": 145,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Sellerie",
+      "en": "Celery"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/cottage-pie",
+    "site": "BBC Good Food",
+    "ratings": 1181
+  },
+  "ingredients": [
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1.25,
+      "unit": "kg",
+      "article_de": "Rinderhackfleisch",
+      "article_en": "Beef mince",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": "fein gehackt",
+      "note_en": "finely chopped"
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Möhre",
+      "article_en": "Carrot",
+      "note_de": "gehackt",
+      "note_en": "chopped"
+    },
+    {
+      "amount": 3,
+      "unit": "Stange",
+      "article_de": "Staudensellerie",
+      "article_en": "Celery stick",
+      "note_de": "gehackt",
+      "note_en": "chopped"
+    },
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": "fein gehackt",
+      "note_en": "finely chopped"
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Weizenmehl",
+      "article_en": "Plain flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Tomatenmark",
+      "article_en": "Tomato purée",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Glas",
+      "article_de": "Rotwein",
+      "article_en": "Red wine",
+      "note_de": "großes Glas, optional",
+      "note_en": "large glass, optional"
+    },
+    {
+      "amount": 850,
+      "unit": "ml",
+      "article_de": "Rinderbrühe",
+      "article_en": "Beef stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Worcestershiresauce",
+      "article_en": "Worcestershire sauce",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Thymian",
+      "article_en": "Thyme sprigs",
+      "note_de": "ein paar Zweige",
+      "note_en": "a few sprigs"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Lorbeerblatt",
+      "article_en": "Bay leaf",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1.8,
+      "unit": "kg",
+      "article_de": "Kartoffeln",
+      "article_en": "Potatoes",
+      "note_de": "geschält, gewürfelt",
+      "note_en": "peeled, chopped"
+    },
+    {
+      "amount": 225,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 25,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Cheddar, kräftig",
+      "article_en": "Strong Cheddar",
+      "note_de": "gerieben",
+      "note_en": "grated"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Muskatnuss",
+      "article_en": "Nutmeg",
+      "note_de": "frisch gerieben",
+      "note_en": "freshly grated"
+    }
+  ],
+  "de": {
+    "title": "Cottage Pie",
+    "steps": [
+      "Gemüse vorbereiten: Zwiebeln, Möhren und Sellerie fein hacken, Knoblauch fein hacken. Das spart später Zeit.",
+      "1 EL Olivenöl in einem großen Topf stark erhitzen. Das Hack in mehreren Portionen anbraten, nicht alles auf einmal, sonst kocht es nur. Jede Portion salzen, pfeffern, bräunen und dann beiseitestellen.",
+      "Die restlichen 2 EL Öl in denselben Topf geben. Zwiebeln, Möhren und Sellerie bei sanfter Hitze etwa 20 Minuten weich garen, ab und zu umrühren.",
+      "Knoblauch, Mehl und Tomatenmark einrühren und kurz mitgaren. Dann den Rotwein dazugießen und einkochen lassen.",
+      "Das Hack wieder in den Topf geben. Brühe, Worcestershiresauce, Thymianzweige und Lorbeerblätter dazugeben und alles aufkochen.",
+      "Etwa 45 Minuten ohne Deckel köcheln lassen. Nach 30 Minuten schon mal prüfen: Die Soße soll dick sein und am Fleisch haften. Ist sie zu flüssig, die Hitze erhöhen. Thymianstiele und Lorbeerblätter herausnehmen. Slow-Cooker-Variante: auf hoher Stufe 4 bis 5 Stunden garen. Das Überbacken im Ofen ist trotzdem nötig.",
+      "Kartoffeln in Salzwasser kochen, bis sie weich sind. Abgießen und im heißen Topf kurz ausdampfen lassen.",
+      "Milch und Butter zu den Kartoffeln geben und alles zu Püree stampfen. Mit Muskat, Salz und Pfeffer würzen. Etwa drei Viertel des Cheddars unterrühren.",
+      "Ofen auf 220 °C Ober-/Unterhitze (200 °C Umluft) vorheizen. Die Fleischsoße auf zwei ofenfeste Formen verteilen.",
+      "Das Püree darauf verteilen, glatt streichen oder mit einem Spritzbeutel aufspritzen. Mit dem restlichen Cheddar bestreuen.",
+      "25 bis 30 Minuten backen, bis die Oberfläche goldbraun ist."
+    ]
+  },
+  "en": {
+    "title": "Cottage pie",
+    "steps": [
+      "Prepare the vegetables: finely chop the onions, carrots and celery, and finely chop the garlic. This saves time later.",
+      "Heat 1 tbsp olive oil in a large pan over high heat. Brown the mince in several batches, not all at once, otherwise it just stews. Season each batch with salt and pepper, brown it, then set it aside.",
+      "Add the remaining 2 tbsp oil to the same pan. Cook the onions, carrots and celery over gentle heat for about 20 minutes until soft, stirring now and then.",
+      "Stir in the garlic, flour and tomato purée and cook briefly. Then pour in the red wine and let it reduce.",
+      "Return the mince to the pan. Add the stock, Worcestershire sauce, thyme sprigs and bay leaves and bring everything to the boil.",
+      "Simmer uncovered for about 45 minutes. Check after 30 minutes: the gravy should be thick and coat the meat. If it is too liquid, turn up the heat. Take out the thyme stalks and bay leaves. Slow cooker option: cook on high for 4 to 5 hours. You still need to bake it with the topping in the oven.",
+      "Boil the potatoes in salted water until tender. Drain and let them steam dry for a moment in the hot pan.",
+      "Add the milk and butter to the potatoes and mash until smooth. Season with nutmeg, salt and pepper. Stir in about three quarters of the Cheddar.",
+      "Preheat the oven to 220 C (200 C fan). Divide the meat sauce between two ovenproof dishes.",
+      "Spread the mash on top, smooth it or pipe it with a piping bag. Sprinkle with the remaining Cheddar.",
+      "Bake for 25 to 30 minutes until the top is golden."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 3,
+        "unit": "stalk"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "clove"
+      },
+      {
+        "index": 6,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "glass"
+      },
+      {
+        "index": 10,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 12,
+        "amount": 2,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Source states 10 servings (JSON-LD yield). Source lists 3 tbsp olive oil in total (1 tbsp for the mince, 2 tbsp for the vegetables). Source is English; German names translated. Salt and pepper are used in the method but not listed as ingredients. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

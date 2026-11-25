@@ -174,6 +174,7 @@ func checkAudience(q rewardDB, householdID string, ids []string) error {
 	return nil
 }
 
+// setAudience replaces who a reward is meant for; goals of people no longer in it end.
 func setAudience(q rewardDB, rewardID string, ids []string) error {
 	if _, err := q.Exec(`DELETE FROM reward_people WHERE reward_id = ?`, rewardID); err != nil {
 		return err
@@ -183,7 +184,7 @@ func setAudience(q rewardDB, rewardID string, ids []string) error {
 			return err
 		}
 	}
-	return nil
+	return endGoalsOutsideAudience(q, rewardID)
 }
 
 func dedupe(ids []string) []string {
@@ -343,9 +344,20 @@ func (db *DB) UpdateReward(householdID string, r Reward, change PictureChange, p
 // ArchiveReward hides a reward from children; redemptions stay in the star logs.
 // Archiving an archived reward changes nothing.
 func (db *DB) ArchiveReward(householdID, id string, at time.Time) (Reward, error) {
-	res, err := db.sql.Exec(`UPDATE rewards SET archived_at = COALESCE(archived_at, ?), updated_at = ? WHERE household_id = ? AND id = ?`,
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return Reward{}, err
+	}
+	defer tx.Rollback()
+	res, err := tx.Exec(`UPDATE rewards SET archived_at = COALESCE(archived_at, ?), updated_at = ? WHERE household_id = ? AND id = ?`,
 		at.UTC().Format(time.RFC3339), now(), householdID, id)
 	if err := expectOne(res, err); err != nil {
+		return Reward{}, err
+	}
+	if err := declineOpenOfReward(tx, id, at); err != nil { // the child sees "this reward is gone"; the stars stay (ticket 292)
+		return Reward{}, err
+	}
+	if err := tx.Commit(); err != nil {
 		return Reward{}, err
 	}
 	return db.Reward(householdID, id)
@@ -393,7 +405,7 @@ func (db *DB) RestoreReward(householdID, id string, aud *Audience) (Reward, erro
 
 // DeleteReward removes a reward that was never redeemed. One with a confirmed
 // redemption is ErrRedeemed: archive it, so the star logs stay right (Y).
-func (db *DB) DeleteReward(householdID, id string) error {
+func (db *DB) DeleteReward(householdID, id string, at time.Time) error {
 	tx, err := db.sql.Begin()
 	if err != nil {
 		return err
@@ -411,6 +423,9 @@ func (db *DB) DeleteReward(householdID, id string) error {
 	}
 	if n > 0 {
 		return ErrRedeemed
+	}
+	if err := declineOpenOfReward(tx, id, at); err != nil {
+		return err
 	}
 	res, err := tx.Exec(`DELETE FROM rewards WHERE household_id = ? AND id = ?`, householdID, id)
 	if err := expectOne(res, err); err != nil {

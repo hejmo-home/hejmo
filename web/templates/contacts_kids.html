@@ -1,0 +1,10 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "kidspage.title") "Frame" .Frame)}}
+  <h1>{{t "kidspage.title"}}</h1>
+  {{if .Sections}}<p class="lead">{{.Lead}}</p>{{end}}
+  {{if .Wait}}<div class="kn-off wait"><h2>{{t "kidspage.wait.title"}}</h2>{{range .Wait}}<p>{{template "knName" .}}{{t "kidspage.wait.text"}}</p>{{end}}</div>{{end}}
+  {{if .Sections}}{{if .Hidden}}<div class="kn-off"><h2>{{t "kidspage.hidden.title"}}</h2><p>{{range .Hidden}}{{template "knName" .}}{{.Sep}}{{end}}</p></div>{{end}}
+  <div class="kn-parent">{{template "knSections" .}}</div>
+  {{else}}<div class="empty"><p><b>{{t "kidspage.empty.title"}}</b></p><p>{{t "kidspage.empty.text"}}</p></div>
+  {{if .Hidden}}<div class="kn-off"><h2>{{t "kidspage.hidden.title"}}</h2><p>{{range .Hidden}}{{template "knName" .}}{{.Sep}}{{end}}</p></div>{{end}}{{end}}
+{{template "foot"}}
+{{define "knName"}}<a{{if .Short}} class="nm"{{end}} href="{{.Href}}">{{.Name}}</a>{{end}}

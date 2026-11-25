@@ -1,0 +1,184 @@
+{
+  "n": 195,
+  "slug": "gemuesesticks-mit-dip",
+  "category": "Snacks und Brotdose",
+  "servings": 7,
+  "time_minutes": 30,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Sellerie",
+      "en": "Celery"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/gemuesesticks-mit-dip-67856.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Gemüsezwiebel",
+      "article_en": "Large onion",
+      "note_de": "für den Dip",
+      "note_en": "for the dip"
+    },
+    {
+      "amount": 0.5,
+      "unit": "Bund",
+      "article_de": "Lauchzwiebeln",
+      "article_en": "Spring onions",
+      "note_de": "für den Dip",
+      "note_en": "for the dip"
+    },
+    {
+      "amount": 1,
+      "unit": "Topf",
+      "article_de": "Basilikum",
+      "article_en": "Basil",
+      "note_de": "für den Dip",
+      "note_en": "for the dip"
+    },
+    {
+      "amount": 0.5,
+      "unit": null,
+      "article_de": "Thymian",
+      "article_en": "Thyme",
+      "note_de": "für den Dip; Einheit laut Quelle nicht angegeben",
+      "note_en": "for the dip; unit not stated in the source"
+    },
+    {
+      "amount": 700,
+      "unit": "g",
+      "article_de": "Joghurt",
+      "article_en": "Yoghurt",
+      "note_de": "für den Dip",
+      "note_en": "for the dip"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": "einige Spritzer",
+      "note_en": "a few dashes"
+    },
+    {
+      "amount": 750,
+      "unit": "g",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": "jung",
+      "note_en": "young"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Stangensellerie",
+      "article_en": "Celery stalk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Rote Paprikaschote",
+      "article_en": "Red pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Gelbe Paprikaschote",
+      "article_en": "Yellow pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Crissinistangen",
+      "article_en": "Grissini (breadsticks)",
+      "note_de": "ohne Käse",
+      "note_en": "plain, without cheese"
+    }
+  ],
+  "de": {
+    "title": "Gemüsesticks mit Dip",
+    "steps": [
+      "Dip: Würfle 1 Gemüsezwiebel fein, schneide 1/2 Bund Lauchzwiebeln in Ringe und hacke 1 Topf Basilikum und 1/2 Thymian.",
+      "Rühre 700 g Joghurt mit allen vorbereiteten Zutaten glatt. Würze mit Salz, Pfeffer und einigen Spritzern Zitronensaft.",
+      "Decke den Dip ab und lass ihn durchziehen, während du das Gemüse schneidest. Probiere ihn danach noch einmal und würze nach.",
+      "Gemüse: Schäle 750 g junge Möhren. Putze 1 Stange Sellerie und je 1 rote und gelbe Paprika.",
+      "Schneide alles in Sticks.",
+      "Packe die Crissinistangen getrennt vom Gemüse ein, damit sie knusprig bleiben. Nimm Dip und Gemüse in Transportdosen mit."
+    ]
+  },
+  "en": {
+    "title": "Veggie sticks with dip",
+    "steps": [
+      "Dip: finely dice 1 large onion, slice 1/2 bunch of spring onions into rings and chop 1 pot of basil and 1/2 thyme.",
+      "Stir 700 g yoghurt smooth with all the prepared ingredients. Season with salt, pepper and a few squirts of lemon juice.",
+      "Cover the dip and let it infuse while you cut the vegetables. Then taste it again and adjust the seasoning.",
+      "Vegetables: peel 750 g young carrots. Trim 1 stick of celery and 1 each of red and yellow pepper.",
+      "Cut everything into sticks.",
+      "Pack the grissini separately from the vegetables so they stay crisp. Take dip and vegetables in transport containers."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 0.5,
+        "unit": "bunch"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 10,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 11,
+        "amount": 1,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Source yield \"7 Personen\". Thyme amount \"1/2\" without unit in source; unit left null. Page has no rating data; list says Redaktionsküche. Grissini contain gluten (not in the list allergens). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

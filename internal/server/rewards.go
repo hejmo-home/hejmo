@@ -26,6 +26,11 @@ func (s *server) rewardStates(p principal, personID string, list []store.Reward)
 		return 0, nil, err
 	}
 	balance = sums[personID].Balance
+	reserved, err := s.db.ReservedStars(personID) // stars set aside for open requests cannot be spent again (ticket 292)
+	if err != nil {
+		return 0, nil, err
+	}
+	free := reward.Free(balance, reserved)
 	times, err := s.db.ConfirmedRedemptions(p.household.ID)
 	if err != nil {
 		return 0, nil, err
@@ -33,9 +38,9 @@ func (s *server) rewardStates(p principal, personID string, list []store.Reward)
 	states = map[string]rewardState{}
 	for _, r := range list {
 		st := reward.Evaluate(r.Limit, times[r.ID][personID], s.now(), p.location())
-		rs := rewardState{Affordable: balance >= r.Price, LimitReached: st.Reached, AvailableAgain: st.AvailableAgain}
+		rs := rewardState{Affordable: free >= r.Price, LimitReached: st.Reached, AvailableAgain: st.AvailableAgain}
 		if !rs.Affordable {
-			rs.Missing = r.Price - balance
+			rs.Missing = r.Price - free
 		}
 		states[r.ID] = rs
 	}

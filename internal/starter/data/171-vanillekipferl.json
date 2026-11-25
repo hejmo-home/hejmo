@@ -1,0 +1,151 @@
+{
+  "n": 171,
+  "slug": "vanillekipferl",
+  "category": "Backen",
+  "servings": 60,
+  "time_minutes": 90,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Nüsse",
+      "en": "Tree nuts"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/vanillekipferl-nach-omas-rezept-70050.html",
+    "site": "Lecker",
+    "ratings": 8
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Vanilleschote",
+      "article_en": "Vanilla pod",
+      "note_de": "das Mark",
+      "note_en": "the seeds"
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Mandeln, gemahlen",
+      "article_en": "Ground almonds",
+      "note_de": "ohne Haut",
+      "note_en": "skinless"
+    },
+    {
+      "amount": 275,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Plain flour",
+      "note_de": "plus etwas für die Arbeitsfläche",
+      "note_en": "plus some for the work surface"
+    },
+    {
+      "amount": 75,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eigelb",
+      "article_en": "Egg yolks",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "kalt",
+      "note_en": "cold"
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Puderzucker",
+      "article_en": "Icing sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Pck.",
+      "article_de": "Bourbon-Vanillezucker",
+      "article_en": "Bourbon vanilla sugar",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Vanillekipferl",
+    "steps": [
+      "Kratze das Mark aus der längs halbierten Vanilleschote. Gib es mit Mandeln, Mehl, Zucker, Eigelben, Salz und der gewürfelten kalten Butter in eine Schüssel und verarbeite alles zügig, zuerst mit den Knethaken des Handmixers, dann von Hand, zu einem glatten Teig. Forme eine Kugel, wickle sie in Frischhaltefolie und lass sie 1 Stunde im Kühlschrank ruhen.",
+      "Heize den Ofen auf 175 °C Ober-/Unterhitze (Umluft 160 °C) vor. Rolle den Teig auf bemehlter Fläche zu 3 bis 4 Rollen von etwa 1,5 cm Durchmesser, schneide sie in 4 bis 5 cm lange Stücke und biege diese zu Halbmonden.",
+      "Backe die Kipferl auf einem Backblech 10 bis 12 Minuten, bis die Spitzen leicht Farbe annehmen.",
+      "Mische Puderzucker und Vanillezucker und siebe die Mischung sofort über die heißen Kipferl. Lass sie auf einem Gitter vollständig auskühlen."
+    ]
+  },
+  "en": {
+    "title": "Vanilla crescents (Vanillekipferl)",
+    "steps": [
+      "Scrape the seeds out of the vanilla pod, split lengthways. Put them in a bowl with the almonds, flour, sugar, egg yolks, salt and the diced cold butter and work everything quickly into a smooth dough, first with the dough hooks of a hand mixer, then by hand. Shape a ball, wrap it in cling film and rest it in the fridge for 1 hour.",
+      "Preheat the oven to 175 °C top and bottom heat (160 °C fan). On a floured surface, roll the dough into 3 to 4 logs about 1.5 cm thick, cut them into pieces 4 to 5 cm long and bend them into crescents.",
+      "Bake the crescents on a baking tray for 10 to 12 minutes, until the tips take on a little colour.",
+      "Mix the icing sugar and vanilla sugar and sift the mixture over the hot crescents straight away. Leave them to cool completely on a wire rack."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 8,
+        "amount": 2,
+        "unit": "packet"
+      }
+    ]
+  },
+  "review_note": "Replacement for missing time and servings in the previous source, approved by the product owner 23/11/2026. Replaces the earlier replacement (Essen & Trinken, 120 pieces): this one makes 60 pieces, still a large biscuit batch (the other E&T and Lecker variants make 35 to 60). Time from source: 30 min preparation + 60 min waiting (chilling) = 90 min. 8 ratings (5.0 of 5). The source does not mention lining the tray.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

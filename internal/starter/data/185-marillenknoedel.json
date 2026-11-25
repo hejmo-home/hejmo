@@ -1,0 +1,210 @@
+{
+  "n": 185,
+  "slug": "marillenknoedel",
+  "category": "Desserts",
+  "servings": 4,
+  "time_minutes": 60,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://extra.orf.at/rezepte/schmeckt-perfekt/10062019-rezept-marillenknoedel100.html",
+    "site": "ORF (extra.ORF.at)",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 12,
+      "unit": "Stk",
+      "article_de": "Marillen",
+      "article_en": "Apricots",
+      "note_de": "reif",
+      "note_en": "ripe"
+    },
+    {
+      "amount": 12,
+      "unit": "Stk",
+      "article_de": "Würfelzucker",
+      "article_en": "Sugar cubes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": "für das Kochwasser",
+      "note_en": "for the cooking water"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Rum",
+      "article_en": "Rum",
+      "note_de": "ein Schuss, fürs Kochwasser",
+      "note_en": "a dash, for the cooking water"
+    },
+    {
+      "amount": 0.5,
+      "unit": "Stk",
+      "article_de": "Vanilleschote",
+      "article_en": "Vanilla pod",
+      "note_de": "fürs Kochwasser",
+      "note_en": "for the cooking water"
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Topfen",
+      "article_en": "Quark (Topfen)",
+      "note_de": "für den Teig",
+      "note_en": "for the dough"
+    },
+    {
+      "amount": 70,
+      "unit": "g",
+      "article_de": "Mehl, glatt",
+      "article_en": "Plain flour (Austrian \"glatt\" flour)",
+      "note_de": "für den Teig",
+      "note_en": "for the dough"
+    },
+    {
+      "amount": 70,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "für den Teig",
+      "note_en": "for the dough"
+    },
+    {
+      "amount": 70,
+      "unit": "g",
+      "article_de": "Grieß",
+      "article_en": "Semolina",
+      "note_de": "für den Teig",
+      "note_en": "for the dough"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Ei",
+      "article_en": "Egg",
+      "note_de": "für den Teig",
+      "note_en": "for the dough"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": "für den Teig, eine Prise",
+      "note_en": "for the dough, a pinch"
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Brösel",
+      "article_en": "Breadcrumbs",
+      "note_de": "für die Butterbrösel",
+      "note_en": "for the buttered crumbs"
+    },
+    {
+      "amount": 125,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "für die Butterbrösel",
+      "note_en": "for the buttered crumbs"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "nach Geschmack, für die Butterbrösel",
+      "note_en": "to taste, for the buttered crumbs"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Staubzucker",
+      "article_en": "Icing sugar",
+      "note_de": "zum Bestreuen",
+      "note_en": "for dusting"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Butter, zerlassen",
+      "article_en": "Melted butter",
+      "note_de": "eventuell, zum Servieren",
+      "note_en": "optional, to serve"
+    }
+  ],
+  "de": {
+    "title": "Marillenknödel",
+    "steps": [
+      "Teig: 70 g weiche Butter schaumig rühren, 1 Ei und 250 g Topfen leicht unterrühren. Dann 70 g Grieß, 70 g glattes Mehl und 1 Prise Salz mit der Hand einarbeiten.",
+      "Daraus eine Rolle mit rund 7 cm Dicke formen, fest in Folie packen und im Kühlschrank mindestens 3 Stunden durchkühlen lassen.",
+      "Die 12 reifen Marillen entkernen, zum Beispiel mit einem Kochlöffelstiel, und in jedes Loch ein Stück Würfelzucker stecken.",
+      "Butterbrösel: 125 g Butter in einer Pfanne zerlassen, 250 g Brösel zugeben und anrösten. Etwas später Zucker nach Geschmack zugeben und bei kleiner Hitze goldbraun rösten. Alternativ gelingen die Brösel auch bei 170 °C im Rohr, wenn man sie öfter wendet.",
+      "Die Rolle in Scheiben von 5 mm Stärke schneiden. Jede Marille in eine Scheibe einpacken und mit feuchten Händen zu Knödeln formen.",
+      "Wasser mit etwas Salz, einem Schuss Rum und der halben Vanilleschote zum Kochen bringen. Die Knödel einlegen, die Hitze reduzieren und 12 bis 15 Minuten ziehen lassen.",
+      "Die gegarten Knödel durch die Butterbrösel rollen und anrichten. Wer mag, streut Staubzucker darüber und gibt etwas flüssige Butter dazu."
+    ]
+  },
+  "en": {
+    "title": "Apricot dumplings",
+    "steps": [
+      "Dough: Beat 70 g soft butter until frothy, lightly stir in 1 egg and 250 g curd cheese. Then work in 70 g semolina, 70 g plain flour and 1 pinch of salt by hand.",
+      "Shape the dough into a roll about 7 cm across, wrap in cling film and rest in the fridge for at least 3 hours.",
+      "Stone the 12 ripe apricots, for example with a wooden spoon handle, and push a sugar cube into each hole.",
+      "Butter crumbs: Melt 125 g butter in a pan, add 250 g breadcrumbs and toast them. A little later add sugar to taste and toast over low heat until golden brown. Alternatively toast the crumbs in the oven at 170 °C, stirring several times.",
+      "Cut the dough into slices 5 mm thick. Wrap each apricot in a slice and shape into dumplings with wet hands.",
+      "Bring water with a little salt, a splash of rum and half a vanilla pod to the boil. Add the dumplings, reduce the heat and let them steep for 12 to 15 minutes.",
+      "Roll the dumplings in the butter crumbs and plate up. Dust with icing sugar if you like and serve with a little melted butter."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 12,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 12,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 0.5,
+        "unit": "piece"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Source page has no JSON-LD; ingredients taken from the page text. Yield \"4-6 Personen\"; 4 used. Time \"1 Stunde (ohne Stehzeit)\". Rum amount is \"Schuss\" (no amount). Rum is in the cooking water only. Salt amounts not given. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.011
+  }
+}

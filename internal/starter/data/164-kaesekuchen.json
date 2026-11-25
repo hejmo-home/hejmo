@@ -1,0 +1,214 @@
+{
+  "n": 164,
+  "slug": "kaesekuchen",
+  "category": "Backen",
+  "servings": 12,
+  "time_minutes": 90,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/1218391227356456/Der-beste-Kaesekuchen-der-Welt.html",
+    "site": "Chefkoch",
+    "ratings": 5910
+  },
+  "ingredients": [
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "für den Teig",
+      "note_en": "for the base"
+    },
+    {
+      "amount": 75,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "für den Teig",
+      "note_en": "for the base"
+    },
+    {
+      "amount": 75,
+      "unit": "g",
+      "article_de": "Margarine",
+      "article_en": "Margarine",
+      "note_de": "weich, für den Teig",
+      "note_en": "softened, for the base"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Ei, Größe M",
+      "article_en": "Egg, size M",
+      "note_de": "für den Teig",
+      "note_en": "for the base"
+    },
+    {
+      "amount": 0.5,
+      "unit": "Pck.",
+      "article_de": "Backpulver",
+      "article_en": "Baking powder",
+      "note_de": "für den Teig",
+      "note_en": "for the base"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Fett",
+      "article_en": "Fat",
+      "note_de": "für die Form",
+      "note_en": "for the tin"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "für die Arbeitsfläche",
+      "note_en": "for the work surface"
+    },
+    {
+      "amount": 225,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "für die Füllung",
+      "note_en": "for the filling"
+    },
+    {
+      "amount": 125,
+      "unit": "g",
+      "article_de": "Margarine",
+      "article_en": "Margarine",
+      "note_de": "weich, für die Füllung",
+      "note_en": "softened, for the filling"
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "article_de": "Vanillezucker",
+      "article_en": "Vanilla sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "article_de": "Vanillepuddingpulver",
+      "article_en": "Vanilla pudding powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Eier, Größe M",
+      "article_en": "Eggs, size M",
+      "note_de": "für die Füllung",
+      "note_en": "for the filling"
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Quark",
+      "article_en": "Quark",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Saure Sahne",
+      "article_en": "Soured cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Süße Sahne",
+      "article_en": "Cream",
+      "note_de": "steif geschlagen",
+      "note_en": "whipped"
+    }
+  ],
+  "de": {
+    "title": "Käsekuchen",
+    "steps": [
+      "Für den Boden Mehl, Zucker, weiche Margarine, Ei und Backpulver mit den Knethaken des Mixers kurz zu einem Teig verkneten. Nur kurz, dann wird der Boden schön knusprig.",
+      "Für die Füllung 225 g Zucker, 125 g weiche Margarine, Vanillezucker, Puddingpulver und die 3 Eier cremig rühren.",
+      "Quark und saure Sahne unterheben.",
+      "Die süße Sahne steif schlagen und vorsichtig unterheben. Die Füllung sieht jetzt gleichmäßig hell und dickcremig aus.",
+      "Den Ofen auf 180 °C Ober-/Unterhitze vorheizen, Rost auf die zweite Schiene von unten. Eine 26-cm-Springform fetten.",
+      "Den Teig auf der bemehlten Arbeitsfläche zu einem Kreis von etwa 29 cm ausrollen.",
+      "In die Form legen und am Rand 2 bis 3 cm hochziehen.",
+      "Die Füllung einfüllen und glatt streichen.",
+      "Etwa 1 Stunde backen.",
+      "Den Ofen ausschalten, die Tür öffnen und den Kuchen noch 30 Minuten darin ruhen lassen. So fällt er nicht zusammen.",
+      "Dann herausnehmen, abkühlen lassen und aus der Form lösen."
+    ]
+  },
+  "en": {
+    "title": "Cheesecake (German quark)",
+    "steps": [
+      "For the base, briefly knead the flour, sugar, soft margarine, egg and baking powder into a dough with the dough hooks of the mixer. Keep it short, then the base stays nice and crisp.",
+      "For the filling, beat 225 g sugar, 125 g soft margarine, vanilla sugar, custard powder and the 3 eggs until creamy.",
+      "Fold in the quark and sour cream.",
+      "Whip the sweet cream until stiff and fold it in gently. The filling should now look evenly pale and thick.",
+      "Preheat the oven to 180 °C top and bottom heat, shelf second from the bottom. Grease a 26 cm springform tin.",
+      "Roll the dough out on the floured work surface into a circle of about 29 cm.",
+      "Lay it in the tin and press it up the sides 2 to 3 cm to form an edge.",
+      "Pour in the filling and level it.",
+      "Bake about 1 hour.",
+      "Switch off the oven, open the door and let the cake rest inside for 30 minutes. This keeps it from collapsing.",
+      "Then take it out, let it cool and release it from the tin."
+    ],
+    "amounts_converted": [
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 0.5,
+        "unit": "packet"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "packet"
+      },
+      {
+        "index": 10,
+        "amount": 1,
+        "unit": "packet"
+      },
+      {
+        "index": 11,
+        "amount": 3,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Rating count from the list. Servings: 12 pieces from a 26 cm springform, as stated in the source note. Source steps not copied. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

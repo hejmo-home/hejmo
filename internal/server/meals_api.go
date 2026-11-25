@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/meal"
+	"github.com/hejmo-home/hejmo/internal/recipe"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/task"
 )
@@ -18,13 +19,27 @@ type mealJSON struct {
 	Date         string `json:"date"`
 	Mealtime     string `json:"mealtime"`
 	Text         string `json:"text"`
+	Dish         string `json:"dish"`
+	RecipeID     string `json:"recipe_id,omitempty"`
+	Portions     int    `json:"portions,omitempty"`
 	Source       string `json:"source"`
 	TemplateID   string `json:"template_id,omitempty"`
 	TemplateDish string `json:"template_dish,omitempty"`
 }
 
+// mealToJSON is an entry of the plan: its text is the dish, the recipe's current name for a recipe.
 func mealToJSON(m store.PlanMeal) mealJSON {
-	return mealJSON{m.Day, string(m.Mealtime), m.Text, m.Source, m.TemplateID, m.TemplateDish}
+	return mealJSON{m.Day, string(m.Mealtime), m.Text, m.Text, m.RecipeID, m.Portions, m.Source, m.TemplateID, m.TemplateDish}
+}
+
+// householdPortions is how many portions a recipe entry starts with: the
+// number of people in the household, from 1 to 99.
+func (s *server) householdPortions(p principal) (int, error) {
+	people, err := s.db.People(p.household.ID)
+	if err != nil {
+		return 0, err
+	}
+	return min(max(len(people), 1), recipe.MaxPortions), nil
 }
 
 // planMeal is the meal a cell shows now, with where it comes from.
@@ -110,7 +125,9 @@ func mealTarget(w http.ResponseWriter, r *http.Request) (store.Meal, bool) {
 
 func (s *server) apiSetMeal(w http.ResponseWriter, r *http.Request, p principal) {
 	var in struct {
-		Text *string `json:"text"`
+		Text     *string `json:"text"`
+		RecipeID *string `json:"recipe_id"`
+		Portions *int    `json:"portions"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
@@ -120,19 +137,43 @@ func (s *server) apiSetMeal(w http.ResponseWriter, r *http.Request, p principal)
 	if !ok {
 		return
 	}
-	if in.Text == nil {
-		writeError(w, http.StatusUnprocessableEntity, "text is required")
+	switch {
+	case in.Text != nil && in.RecipeID != nil:
+		writeError(w, http.StatusUnprocessableEntity, "give text or recipe_id, not both")
 		return
-	}
-	text, err := meal.CleanText(*in.Text)
-	if err == nil && text == "" {
-		err = &meal.InvalidError{Field: "text", Msg: "text is empty: remove a meal with DELETE"}
-	}
-	if err != nil {
-		writeError(w, http.StatusUnprocessableEntity, err.Error())
+	case in.Text == nil && in.RecipeID == nil:
+		writeError(w, http.StatusUnprocessableEntity, "text or recipe_id is required")
 		return
+	case in.RecipeID == nil && in.Portions != nil:
+		writeError(w, http.StatusUnprocessableEntity, "portions need a recipe_id")
+		return
+	case in.RecipeID != nil:
+		m.RecipeID = *in.RecipeID
+		if in.Portions != nil {
+			m.Portions = *in.Portions
+		} else {
+			n, err := s.householdPortions(p)
+			if err != nil {
+				s.fail(w, "household size", err)
+				return
+			}
+			m.Portions = n
+		}
+		if m.RecipeID == "" || m.Portions < 1 || m.Portions > recipe.MaxPortions {
+			writeError(w, http.StatusUnprocessableEntity, "recipe_id is a recipe of the household, portions a whole number from 1 to 99")
+			return
+		}
+	default:
+		text, err := meal.CleanText(*in.Text)
+		if err == nil && text == "" {
+			err = &meal.InvalidError{Field: "text", Msg: "text is empty: remove a meal with DELETE"}
+		}
+		if err != nil {
+			writeError(w, http.StatusUnprocessableEntity, err.Error())
+			return
+		}
+		m.Text = text
 	}
-	m.Text = text
 	switch err := s.saveMeals(r, p, []store.Meal{m}); {
 	case errors.Is(err, store.ErrInvalid):
 		writeError(w, http.StatusUnprocessableEntity, err.Error())

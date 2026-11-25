@@ -11,8 +11,9 @@
 // has its styles, its offline notice and its locked controls without a network.
 const CACHE = 'hejmo-pages-v1';
 const ASSET_CACHE = 'hejmo-assets-v1';
-// Must list every asset web/templates/layout.html loads (checked by web/test/sw.test.js).
-const ASSETS = ['/static/hejmo.css', '/static/form.js', '/static/offline.js', '/static/theme.js', '/static/fonts/Figtree-wght.ttf', '/static/flags/de.svg', '/static/flags/gb.svg'];
+// Must list every asset web/templates/layout.html loads (checked by web/test/sw.test.js), and the script of the
+// cooking view, whose steps and ticks go on without a connection.
+const ASSETS = ['/static/hejmo.css', '/static/form.js', '/static/offline.js', '/static/theme.js', '/static/cook.js', '/static/fonts/Figtree-wght.ttf', '/static/flags/de.svg', '/static/flags/gb.svg'];
 const MAX_PAGES = 30;
 const STAMP = 'x-hejmo-cached-at';
 // A box that does not answer (the personal device is away from home) is given up on

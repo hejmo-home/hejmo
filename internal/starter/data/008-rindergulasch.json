@@ -1,0 +1,207 @@
+{
+  "n": 8,
+  "slug": "rindergulasch",
+  "category": "Hauptgerichte",
+  "servings": 6,
+  "time_minutes": 160,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Sellerie",
+      "en": "Celery"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/431091134310048/Gulasch-nach-Oma-Magda.html",
+    "site": "Chefkoch",
+    "ratings": 2422
+  },
+  "ingredients": [
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Zwiebeln, groß",
+      "article_en": "Large onions",
+      "note_de": "gewürfelt",
+      "note_en": "diced"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Karotte",
+      "article_en": "Carrot",
+      "note_de": "gewürfelt",
+      "note_en": "diced"
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Knollensellerie",
+      "article_en": "Celeriac",
+      "note_de": "gewürfelt",
+      "note_en": "diced"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Butterschmalz",
+      "article_en": "Clarified butter (ghee)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Tomatenmark",
+      "article_en": "Tomato paste",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Paprikapulver edelsüß",
+      "article_en": "Sweet paprika powder",
+      "note_de": "gehäuft",
+      "note_en": "heaped"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Paprikapulver rosenscharf",
+      "article_en": "Hot paprika powder",
+      "note_de": "gehäuft",
+      "note_en": "heaped"
+    },
+    {
+      "amount": 0.7,
+      "unit": "Liter",
+      "article_de": "Rotwein",
+      "article_en": "Red wine",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "ml",
+      "article_de": "Rinderbrühe",
+      "article_en": "Beef broth",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "kg",
+      "article_de": "Rindfleisch",
+      "article_en": "Beef",
+      "note_de": "gewürfelt, z. B. Wade, Bug oder Schulter",
+      "note_en": "diced, e.g. shank, chuck or shoulder"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Lorbeerblätter",
+      "article_en": "Bay leaves",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Saucenbinder",
+      "article_en": "Sauce thickener",
+      "note_de": "evtl.",
+      "note_en": "if needed"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Rindergulasch",
+    "steps": [
+      "Zwiebeln, Karotte und Knollensellerie in etwa 0,5 cm große Würfel schneiden. Das Rindfleisch ebenfalls würfeln, falls es noch nicht so ist.",
+      "Butterschmalz in einem großen Topf oder Bräter erhitzen und das Gemüse darin kräftig anbraten, bis es Farbe hat.",
+      "Das Tomatenmark dazugeben und einige Minuten rösten, bis es eine homogene Paste ist und am Boden leicht karamellisiert.",
+      "Beide Paprikapulver nur ganz kurz unter Rühren mitrösten, sonst werden sie bitter.",
+      "Mit dem Rotwein ablöschen, die Brühe dazugießen und alles aufkochen lassen.",
+      "Das Fleisch hineingeben und noch einmal aufkochen. Lorbeerblätter dazulegen.",
+      "Deckel auf den Topf und bei niedriger Hitze etwa 2 Stunden schmoren.",
+      "Ist die Sauce zu dünn, 1 EL Saucenbinder (Stärke) in kaltem Wasser anrühren und einrühren. Mit Salz und Pfeffer abschmecken. Vor dem Servieren die Lorbeerblätter herausfischen."
+    ]
+  },
+  "en": {
+    "title": "Beef goulash",
+    "steps": [
+      "Cut onions, carrot and celeriac into cubes of about 0.5 cm. Dice the beef too if it isn't already.",
+      "Heat the clarified butter in a large pot or Dutch oven and fry the vegetables hard until they have colour.",
+      "Add the tomato paste and cook it for a few minutes until it is a smooth paste and lightly caramelised on the bottom.",
+      "Toast both paprikas only very briefly, stirring, or they turn bitter.",
+      "Deglaze with the red wine, pour in the stock and bring it all to the boil.",
+      "Add the meat and bring to the boil once more. Add the bay leaves.",
+      "Put the lid on and braise on low heat for about 2 hours.",
+      "If the sauce is too thin, mix 1 tbsp starch thickener with cold water and stir it in. Season with salt and pepper. Fish out the bay leaves before serving."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 7,
+        "amount": 700,
+        "unit": "ml"
+      },
+      {
+        "index": 10,
+        "amount": 2,
+        "unit": "piece"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

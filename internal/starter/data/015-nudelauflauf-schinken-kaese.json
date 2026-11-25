@@ -1,0 +1,198 @@
+{
+  "n": 15,
+  "slug": "nudelauflauf-schinken-kaese",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 45,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/nudelauflauf-einfaches-rezept-130033.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "zum Fetten der Form",
+      "note_en": "for greasing the dish"
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Nudeln",
+      "article_en": "Pasta",
+      "note_de": "z. B. Fusilli",
+      "note_en": "e.g. fusilli"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Erbsen, tiefgekühlt",
+      "article_en": "Frozen peas",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Paprika, rot",
+      "article_en": "Red bell peppers",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Kochschinken",
+      "article_en": "Cooked ham",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 600,
+      "unit": "ml",
+      "article_de": "Gemüsebrühe, heiß",
+      "article_en": "Hot vegetable stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Kräuter der Provence",
+      "article_en": "Herbes de Provence",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null,
+      "amount_max": 2
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Muskat",
+      "article_en": "Nutmeg",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Gouda, gerieben",
+      "article_en": "Grated Gouda",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Nudelauflauf mit Schinken und Käse",
+    "steps": [
+      "Den Backofen auf 220 °C Ober-/Unterhitze (Umluft 200 °C) vorheizen. Eine Form von ca. 28 x 20 cm mit Butter einfetten.",
+      "Die Nudeln (roh, wie sie aus der Packung kommen) und die gefrorenen Erbsen in die Form geben.",
+      "Zwiebel und Paprika würfeln, den Kochschinken in Streifen schneiden und alles zu den Nudeln mischen.",
+      "Heiße Brühe und Sahne mit Kräutern der Provence, Salz, Pfeffer und Muskat verrühren. Kräftig würzen, denn die Nudeln saugen viel Geschmack auf.",
+      "Den Knoblauch dazupressen und die Flüssigkeit gleichmäßig über die Nudeln gießen.",
+      "Den geriebenen Gouda obenauf streuen.",
+      "Etwa 35 Minuten backen. Wird der Käse zu dunkel, decke die Form mit Backpapier oder einem Deckel ab. Sind die Nudeln noch fest, gib 5 Minuten dazu.",
+      "Nach dem Backen 10 Minuten in der Form ruhen lassen, damit die Nudeln die restliche Flüssigkeit aufsaugen."
+    ]
+  },
+  "en": {
+    "title": "Ham and cheese pasta bake",
+    "steps": [
+      "Preheat the oven to 220 °C top/bottom heat (200 °C fan). Grease a dish of about 28 x 20 cm with butter.",
+      "Put the pasta (uncooked, straight from the packet) and the frozen peas into the dish.",
+      "Dice the onion and peppers, cut the ham into strips and mix everything in with the pasta.",
+      "Stir the hot stock and cream together with herbes de Provence, salt, pepper and nutmeg. Season boldly, as the pasta soaks up a lot of flavour.",
+      "Press the garlic in and pour the liquid evenly over the pasta.",
+      "Scatter the grated Gouda on top.",
+      "Bake for about 35 minutes. If the cheese gets too dark, cover the dish with parchment paper or a lid. If the pasta is still firm, add 5 minutes.",
+      "After baking, rest it in the dish for 10 minutes so the pasta absorbs the remaining liquid."
+    ],
+    "amounts_converted": [
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 8,
+        "amount": 2,
+        "unit": "tsp"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "tsp",
+        "amount_max": 2
+      },
+      {
+        "index": 12,
+        "amount": 1,
+        "unit": "clove"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

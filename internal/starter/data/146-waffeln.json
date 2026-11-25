@@ -1,0 +1,161 @@
+{
+  "n": 146,
+  "slug": "waffeln",
+  "category": "Frühstück",
+  "servings": 1,
+  "time_minutes": 55,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/662351168076093/Geheimes-Waffelrezept.html",
+    "site": "Chefkoch",
+    "ratings": "3.695"
+  },
+  "ingredients": [
+    {
+      "amount": 10,
+      "unit": "Stk",
+      "article_de": "Eier, verquirlt",
+      "article_en": "Eggs, beaten",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Margarine, zimmerwarm",
+      "article_en": "Margarine, at room temperature",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Pck.",
+      "article_de": "Vanillinzucker",
+      "article_en": "Vanillin sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Schuss",
+      "article_de": "Rum",
+      "article_en": "Rum",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "kg",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "article_de": "Backpulver",
+      "article_en": "Baking powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Liter",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Fett",
+      "article_en": "Fat",
+      "note_de": "für das Waffeleisen, eventuell",
+      "note_en": "for the waffle iron, if needed"
+    }
+  ],
+  "de": {
+    "title": "Waffeln (Grundrezept)",
+    "steps": [
+      "Eier, Zucker und Margarine in einer großen Schüssel schaumig rühren.",
+      "Vanillinzucker und den Schuss Rum unterrühren. Wer für Kinder backt, lässt den Rum weg.",
+      "Mehl und Backpulver mischen und zur Eiermasse geben.",
+      "Die Milch nach und nach unterrühren, bis der Teig glatt und weich ist. Im Winter passt etwas Zimt dazu.",
+      "Das Waffeleisen aufheizen, bei Bedarf einfetten und den Teig portionsweise goldgelb backen. Heiß servieren.",
+      "Tipp: Das Rezept ergibt ca. 30 Waffeln. Für etwa 6 Personen halbierst du alle Zutaten, nur das Backpulver nicht. Übrigen Teig kannst du einfrieren."
+    ]
+  },
+  "en": {
+    "title": "Waffles (basic recipe)",
+    "steps": [
+      "Whisk the eggs, sugar and margarine until foamy in a large bowl.",
+      "Stir in the vanilla sugar and the splash of rum. If you are baking for children, leave the rum out.",
+      "Mix the flour and baking powder and add to the egg mixture.",
+      "Stir in the milk gradually until the batter is smooth and soft. In winter a little cinnamon goes well with it.",
+      "Heat the waffle iron, grease it if needed and bake the batter in portions until golden. Serve hot.",
+      "Tip: the recipe makes about 30 waffles. For about 6 people halve everything except the baking powder. You can freeze leftover batter."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 10,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "packet"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "dash"
+      },
+      {
+        "index": 5,
+        "amount": 1000,
+        "unit": "g"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "packet"
+      },
+      {
+        "index": 7,
+        "amount": 1000,
+        "unit": "ml"
+      }
+    ]
+  },
+  "review_note": "Source states 1 serving, but the quantities (1 kg flour, 10 eggs) make a large batch; servings copied from source, please check. Rum is part of the source recipe (small splash; consider omitting for young children). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

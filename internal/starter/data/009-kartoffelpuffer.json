@@ -1,0 +1,121 @@
+{
+  "n": 9,
+  "slug": "kartoffelpuffer",
+  "category": "Hauptgerichte",
+  "servings": 2,
+  "time_minutes": 30,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/702881172919332/Kartoffelpuffer-einfach.html",
+    "site": "Chefkoch",
+    "ratings": 121
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "kg",
+      "article_de": "Kartoffeln",
+      "article_en": "Potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    },
+    {
+      "amount": 2,
+      "unit": "Prise",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Mehl Type 405",
+      "article_en": "Plain flour (Type 405)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Öl zum Ausbacken",
+      "article_en": "Oil for frying",
+      "note_de": "z. B. Rapsöl",
+      "note_en": "e.g. rapeseed oil"
+    }
+  ],
+  "de": {
+    "title": "Kartoffelpuffer (Reibekuchen)",
+    "steps": [
+      "Kartoffeln schälen und auf der groben Seite der Reibe in eine große Schüssel reiben.",
+      "Die geriebenen Kartoffeln mit kaltem Wasser bedecken und etwa 20 Minuten stehen lassen. So setzt sich die Stärke ab.",
+      "Das Wasser vorsichtig abgießen. Die Kartoffeln dabei gut abtropfen lassen.",
+      "Die Zwiebel dazureiben. Eier, Salz und Mehl zugeben und alles gut vermengen.",
+      "Reichlich neutrales Öl (z. B. Raps) in einer Pfanne bei mittlerer bis hoher Hitze erhitzen. Mit einer kleinen Kelle portionsweise Teig hineingeben und zu etwa 7-9 cm großen Puffern flachdrücken. Von beiden Seiten goldbraun backen. Das ergibt etwa 8 Stück. Dazu passt Apfelmus."
+    ]
+  },
+  "en": {
+    "title": "Potato pancakes",
+    "steps": [
+      "Peel the potatoes and grate them on the coarse side of the grater into a large bowl.",
+      "Cover the grated potatoes with cold water and leave them for about 20 minutes. This lets the starch settle.",
+      "Carefully pour off the water. Let the potatoes drain well.",
+      "Grate the onion in. Add eggs, salt and flour and mix well.",
+      "Heat plenty of neutral oil (e.g. rapeseed) in a pan over medium to high heat. Using a small ladle, add portions of batter and flatten them into puffers of about 7-9 cm. Fry until golden brown on both sides. This makes about 8. Apple sauce goes well with them."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "pinch"
+      },
+      {
+        "index": 4,
+        "amount": 3,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Source states 2 servings but makes about 8 pancakes; servings copied from source. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

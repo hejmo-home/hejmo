@@ -5,6 +5,7 @@
   <dl class="facts">
     <dt>{{t "art.f.from"}}</dt><dd>{{.From}}</dd>
     {{if .HasLists}}<dt>{{t "art.f.on"}}</dt><dd>{{.OnLists}}</dd>{{end}}
+    {{with .InRecipes}}<dt>{{t "art.f.recipes"}}</dt><dd>{{.}}</dd>{{end}}
     {{if .Warns}}<dt>{{t "art.f.warning"}}</dt><dd>{{range .Warns}}{{.}}{{end}}</dd>{{end}}
   </dl>{{end}}
   <form method="post" action="/settings/lists/library{{if not .New}}/{{.ID}}{{end}}" enctype="multipart/form-data" class="steps food-form article-form lib-form">
@@ -17,6 +18,17 @@
         <p class="hint" id="hint-name">{{t "artf.name.hint"}}</p>
         <div data-suggest-box hidden data-one="{{t "artf.sug.one"}}" data-many="{{t "artf.sug.many"}}" data-more="{{t "artf.sug.more"}}"></div>
       </div>
+    </fieldset>
+    <fieldset id="food" class="food-pick"><legend>{{t "artf.food.legend"}} <span class="tag hidden-tag">{{t "artf.optional"}}</span></legend>
+      <p class="hint">{{tf "artf.food.hint" "name" .FoodSec.Name}}</p>
+      {{with .FoodSec.Chosen}}<p class="food-chosen" role="status"><span><b><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>{{tf "artf.food.chosen" "name" .Name}}</span></b><small>{{.Detail}}</small></span><button class="button secondary" type="submit" name="foodclear" value="1" formnovalidate>{{t "artf.food.clear"}}</button></p><input type="hidden" name="food_chosen" value="{{$.F.Food}}">
+      {{else}}<p class="food-none">{{t "artf.food.none"}}</p>{{end}}
+      <div class="web-row"><div class="f"><label>{{if .FoodSec.Chosen}}{{t "artf.food.search.other"}}{{else}}{{t "artf.food.search"}}{{end}}<input type="search" name="foodq" value="{{.FoodSec.Q}}" placeholder="{{t "artf.food.placeholder"}}"></label></div><button class="button secondary" type="submit" name="foodsearch" value="1" formnovalidate>{{t "lib.search.button"}}</button></div>
+      {{if .FoodSec.None}}<div class="empty" data-empty><p>{{.FoodSec.None}}</p><button class="linklike" type="submit" name="foodclearq" value="1" formnovalidate>{{t "lib.result.clear"}}</button></div>
+      {{template "aferr" (dict "Name" "food" "Text" .Errs.food)}}
+      {{else if .FoodSec.Cards}}<p class="results-head">{{.FoodSec.Head}} <button class="linklike" type="submit" name="foodclearq" value="1" formnovalidate>{{t "lib.result.clear"}}</button></p>
+      <fieldset class="choice"{{if .Errs.food}} aria-invalid="true" aria-describedby="err-food"{{end}}><legend class="sr">{{t "artf.food.results"}}</legend>{{range .FoodSec.Cards}}<label><input type="radio" name="food" value="{{.ID}}"{{if .Checked}} checked{{end}}><b>{{.Name}}</b><small>{{.Values}}</small></label>{{end}}{{template "aferr" (dict "Name" "food" "Text" $.Errs.food)}}</fieldset>{{end}}
+      {{$pb := .Errs.piece_g}}<div class="f short{{if $pb}} invalid{{end}}"><label>{{t "artf.food.piece"}}<input type="text" inputmode="decimal" name="piece_g" value="{{.F.PieceG}}" aria-describedby="{{if $pb}}err-piece_g {{end}}hint-piece"{{if eq .FirstErr "piece_g"}} autofocus aria-invalid="true"{{end}}></label>{{template "aferr" (dict "Name" "piece_g" "Text" $pb)}}<p class="hint" id="hint-piece">{{t "artf.food.piece.hint"}}</p></div>
     </fieldset>
     <fieldset class="chips dept-pick">
       <legend>{{t "artf.dept.legend"}}</legend>

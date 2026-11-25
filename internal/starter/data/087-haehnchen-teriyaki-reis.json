@@ -1,0 +1,198 @@
+{
+  "n": 87,
+  "slug": "haehnchen-teriyaki-reis",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 30,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Soja",
+      "en": "Soy"
+    },
+    {
+      "de": "Sesam",
+      "en": "Sesame"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/teriyaki-huehnchen-mit-sesam-83369.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "cm",
+      "article_de": "Ingwer",
+      "article_en": "Ginger",
+      "note_de": "ein Stück",
+      "note_en": "one piece"
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Sojasoße",
+      "article_en": "Soy sauce",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Weißweinessig",
+      "article_en": "White wine vinegar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Sesamöl",
+      "article_en": "Sesame oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Honig, flüssig",
+      "article_en": "Liquid honey",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Speisestärke",
+      "article_en": "Cornflour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Lauchzwiebeln",
+      "article_en": "Spring onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Brokkolini",
+      "article_en": "Tenderstem broccoli (broccolini)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Hähnchenfilets",
+      "article_en": "Chicken breast fillets",
+      "note_de": "zusammen ca. 700 g",
+      "note_en": "about 700 g in total"
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Sesam",
+      "article_en": "Sesame seeds",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Hähnchen-Teriyaki mit Reis",
+    "steps": [
+      "Den Ofen auf 220 °C Ober-/Unterhitze (200 °C Umluft) stellen.",
+      "Möhren schälen, längs halbieren und in Scheiben schneiden. Die Lauchzwiebeln in Ringe schneiden, den Brokkolini waschen und in kleinere Stücke zupfen.",
+      "Knoblauch und Ingwer hacken und in einem Topf mit Sojasoße, Weißweinessig, Sesamöl, Honig, Speisestärke und 5 EL Wasser verrühren. Aufkochen, bis die Glasur bindet.",
+      "Das Gemüse mit etwas Glasur vermengen und auf einem Blech verteilen. Die Hähnchenfilets trocken tupfen, daraufsetzen und mit Glasur bestreichen. 10 Minuten im heißen Ofen garen.",
+      "Das Blech kurz herausholen, den Rest der Glasur über Fleisch und Gemüse träufeln und alles weitere 8 Minuten garen. Vor dem Servieren mit Sesam bestreuen."
+    ]
+  },
+  "en": {
+    "title": "Chicken teriyaki with rice",
+    "steps": [
+      "Set the oven to 220 °C top/bottom heat (200 °C fan).",
+      "Peel the carrots, halve them lengthways and slice. Cut the spring onions into rings, wash the broccolini and tear it into smaller pieces.",
+      "Chop the garlic and ginger and stir them together with the soy sauce, white wine vinegar, sesame oil, honey, cornflour and 5 tbsp water in a pot. Bring to the boil until the glaze thickens.",
+      "Toss the vegetables with a little of the glaze and spread them on a baking tray. Pat the chicken fillets dry, set them on top and brush with glaze. Cook in the hot oven for 10 minutes.",
+      "Take the tray out briefly, drizzle the rest of the glaze over chicken and vegetables and cook for another 8 minutes. Sprinkle with sesame before serving."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "clove"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "tsp"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 8,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 10,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 11,
+        "amount": 3,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "List title says 'mit Reis' but the source lists no rice, so no rice ingredient was added (served alongside; add quantity manually if wanted). Ginger given as 'ca. 2 cm' piece. Ratings shown on page: 73; list says Redaktionsküche. Steps rewritten in own words on 23/11/2026 from the source steps (times, temperatures and order per source). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.01
+  }
+}

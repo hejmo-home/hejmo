@@ -1,0 +1,163 @@
+{
+  "n": 91,
+  "slug": "ofen-suesskartoffel-haehnchen",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 45,
+  "diet_suggested": null,
+  "allergens_suggested": [],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/ofen-suesskartoffel-67012.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Süßkartoffeln, groß",
+      "article_en": "Sweet potatoes, large",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Paprikaschote, rot",
+      "article_en": "Red bell pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Paprikaschote, gelb",
+      "article_en": "Yellow bell pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zucchini",
+      "article_en": "Courgette",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Hähnchenfilet",
+      "article_en": "Chicken breast fillet",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Lauchzwiebeln",
+      "article_en": "Spring onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 5,
+      "unit": "EL",
+      "article_de": "Barbecue-Soße",
+      "article_en": "Barbecue sauce",
+      "note_de": "z. B. selbstgemacht",
+      "note_en": "e.g. homemade"
+    }
+  ],
+  "de": {
+    "title": "Ofen-Süßkartoffel mit Hähnchen-Füllung",
+    "steps": [
+      "Ofen auf 175 °C Ober-/Unterhitze (150 °C Umluft) vorheizen. Süßkartoffeln waschen, längs halbieren und mit der Schnittfläche nach oben auf ein Blech mit Backpapier legen. 45 Minuten backen.",
+      "Während die Kartoffeln backen: Paprika und Zucchini klein würfeln. Hähnchenfilet in etwa 2 cm große Würfel schneiden. Lauchzwiebeln in Ringe schneiden.",
+      "1 EL Öl in einer Pfanne erhitzen und die Hähnchenwürfel 5 Minuten braten. Mit Salz und Pfeffer würzen und warm stellen.",
+      "Im restlichen Öl Paprika und Zucchini anbraten, bis sie leicht weich sind, und würzen.",
+      "Süßkartoffeln aus dem Ofen holen und etwas abkühlen lassen, damit du dich nicht verbrennst. Ungefähr ein Drittel des Fruchtfleisches mit einem Löffel herausschaben.",
+      "Das Fruchtfleisch mit Hähnchen, Gemüse und Barbecue-Soße mischen. Die Kartoffelhälften damit füllen und mit Lauchzwiebeln bestreuen.",
+      "Tipp für selbstgemachte Barbecue-Soße: Tomatenmark 3 Minuten anschwitzen, dann etwa 1 Stunde köcheln lassen und abkühlen lassen. Am besten bereitest du sie vorher zu."
+    ]
+  },
+  "en": {
+    "title": "Baked sweet potato with chicken filling",
+    "steps": [
+      "Preheat the oven to 175 °C top/bottom heat (150 °C fan). Wash the sweet potatoes, halve them lengthways and place them cut side up on a tray lined with baking paper. Bake for 45 minutes.",
+      "While the potatoes bake: dice the peppers and zucchini small. Cut the chicken fillet into cubes of about 2 cm. Cut the spring onions into rings.",
+      "Heat 1 tbsp oil in a pan and fry the chicken cubes for 5 minutes. Season with salt and pepper and keep warm.",
+      "Fry the peppers and zucchini in the remaining oil until slightly soft, and season.",
+      "Take the sweet potatoes out of the oven and let them cool a little so you do not burn yourself. Scoop out about one third of the flesh with a spoon.",
+      "Mix the scooped-out flesh with the chicken, vegetables and barbecue sauce. Fill the potato halves with it and top with spring onions.",
+      "Tip for homemade barbecue sauce: sweat tomato paste for 3 minutes, then simmer for about 1 hour and let it cool. It is best to make it ahead."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 8,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 9,
+        "amount": 5,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Ratings shown on page: 106; list says Redaktionsküche. Steps rewritten in own words on 23/11/2026 from the source steps (times, temperatures and order per source). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

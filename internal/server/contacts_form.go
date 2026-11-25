@@ -31,6 +31,7 @@ type ctForm struct {
 	Token        string
 	Gone         bool
 	HideBirthday bool // "keep out of the Birthdays calendar"
+	ForChildren  bool // "Bei den Kindern zeigen" (ticket 301)
 }
 
 // ctRelForm is a relation line as the form holds it. Whole is "no person chosen": the whole family stores no
@@ -98,7 +99,7 @@ func parseContactForm(r *http.Request) ctForm {
 		Groups: r.PostForm["group"], NewGroup: r.PostFormValue("new_group"), Note: strings.ReplaceAll(r.PostFormValue("note"), "\r\n", "\n"),
 		Rels: parseRels(r), For: r.PostFormValue("for"),
 		Token: r.PostFormValue("picture_token"), Gone: r.PostFormValue("photo_gone") != "",
-		HideBirthday: r.PostFormValue("hide_birthday") != "",
+		HideBirthday: r.PostFormValue("hide_birthday") != "", ForChildren: r.PostFormValue("for_children") != "",
 	}
 	return f
 }
@@ -133,7 +134,7 @@ func atoiOrZero(s string) (int, bool) {
 // draft turns the form into a draft the rules can check.
 func (f ctForm) draft(isPerson bool) ctDraft {
 	d := ctDraft{Name: f.Name, Full: f.Full, Street: f.Street, Postcode: f.Postcode, City: f.City, Country: f.Country, Note: f.Note,
-		NewGroup: f.NewGroup, GroupIDs: f.Groups, IsPerson: isPerson, HideBirthday: f.HideBirthday}
+		NewGroup: f.NewGroup, GroupIDs: f.Groups, IsPerson: isPerson, HideBirthday: f.HideBirthday, ForChildren: f.ForChildren}
 	for _, r := range f.Rels {
 		d.Rels = append(d.Rels, ctRelDraft{Word: r.Word, Whole: r.Whole, PersonIDs: r.People})
 	}
@@ -153,7 +154,7 @@ func (f ctForm) draft(isPerson bool) ctDraft {
 
 // ctFormOf is the form of a stored contact.
 func ctFormOf(c store.Contact) ctForm {
-	f := ctForm{Name: c.HejmoName, Full: c.FullName, Street: c.Street, Postcode: c.Postcode, City: c.City, Country: c.Country, Note: c.Note, Groups: c.GroupIDs, HideBirthday: c.HideBirthday}
+	f := ctForm{Name: c.HejmoName, Full: c.FullName, Street: c.Street, Postcode: c.Postcode, City: c.City, Country: c.Country, Note: c.Note, Groups: c.GroupIDs, HideBirthday: c.HideBirthday, ForChildren: c.ForChildren}
 	for _, l := range c.Numbers {
 		f.Numbers = append(f.Numbers, lineFormOf(l))
 	}
@@ -450,6 +451,7 @@ func (s *server) renderContactForm(w http.ResponseWriter, r *http.Request, e ctE
 	}
 	card := e.photoCard(f, st.Contact, st.Pend, st.PhotoErr, saveLabel)
 	data["Photo"], data["Dirty"] = card, card.Mode == "new" || card.Mode == "gone"
+	data["Kids"] = e.kidsCard(f, card.View.URL != "")
 	chips, fam := e.groupChoices(f, st.Contact)
 	data["GroupChips"], data["FamChip"] = chips, fam
 	if c := st.Contact; c != nil {
@@ -701,6 +703,10 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 			s.redirectSavedFields(w, r, "/people/"+f.For+"#contacts", "flash.contact_added_for", saved.HejmoName, strings.Join(says, ", "))
 			return
 		}
+	}
+	if key := kidsFlash(cur, saved, pend != nil); key != "" {
+		s.redirectSavedNamed(w, r, contactsPath+"/"+saved.ID, key, saved.HejmoName)
+		return
 	}
 	flash := "flash.contact_saved"
 	if pend != nil {

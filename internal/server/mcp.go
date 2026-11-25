@@ -23,7 +23,7 @@ import (
 // every scope check of the REST API applies unchanged. Nothing that manages
 // tokens, settings, people, displays or personal devices is a tool.
 
-const mcpInstructions = "These tools read and change the family's shared Hejmo box: calendar events, lists, tasks with routines and stars, and the meal plan. " +
+const mcpInstructions = "These tools read and change the family's shared Hejmo box: calendar events, lists, tasks with routines and stars, the meal plan and the recipes. " +
 	"You act as the parent who created your token. Tools you cannot see are not allowed for your token."
 
 // mcpParam is one argument of a tool. Arguments named in the path of the
@@ -70,9 +70,21 @@ var (
 		opt("limit_period", "string", "none, day, week or month"), opt("limit_count", "integer", "How often one person may redeem it per period, 1 to 99"),
 		opt("whole_family", "boolean", "Meant for the whole family"), opt("person_ids", "strings", "Person ids it is meant for"),
 	}
-	taskTitle   = "The task title"
-	mealtime    = req("mealtime", "string", "breakfast, lunch, snack or dinner")
-	mealDate    = req("date", "string", "The day, YYYY-MM-DD")
+	taskTitle  = "The task title"
+	mealtime   = req("mealtime", "string", "breakfast, lunch, snack or dinner")
+	mealDate   = req("date", "string", "The day, YYYY-MM-DD")
+	recipeBody = []mcpParam{
+		req("name", "string", "Recipe name (at most 120 characters), unique ignoring case"),
+		opt("category", "string", "main (default), side, dessert, baking, breakfast or snack"),
+		opt("portions", "integer", "1 to 99; the number of people in the household when missing"),
+		opt("minutes", "integer", "From start to table, 0 to 9999"),
+		opt("mealtimes", "strings", "breakfast, lunch, snack or dinner; none means every mealtime"),
+		opt("tags", "strings", "Free tags, at most 30 characters each"),
+		opt("tips", "string", "Tips, at most 2000 characters"),
+		opt("source", "string", "A book, a person or a web address"),
+		opt("ingredients", "array", "A list of {quantity (number, none for as needed), unit (see list_recipe_units), name (an article of the library by name, or free text that is not checked for allergens), article_id, variety}"),
+		opt("steps", "strings", "The steps in order, one text each (at most 2000 characters)"),
+	}
 	mealTplBody = []mcpParam{
 		req("name", "string", "Template name (at most 60 characters)"),
 		req("mealtimes", "string", "all (fills every mealtime of the day) or one"),
@@ -159,8 +171,13 @@ var mcpTools = []mcpTool{
 	{name: "set_routine_template_order", desc: "Put the steps of an own template in a new order.", method: "PUT", path: "/routine-templates/{id}/order", params: []mcpParam{idOf("template"), req("step_ids", "strings", "All step ids, in the new order")}},
 	{name: "get_stars", desc: "Get a person's star balance and star log.", method: "GET", path: "/people/{id}/stars", params: []mcpParam{
 		req("id", "string", "The person id"), opt("limit", "integer", "How many log entries, 1 to 200 (default 50)")}},
+	{name: "get_badges", desc: "Get a person's badges (ten fixed milestones, earned once and never taken away), newest first, with whether each is new and whether the person's switch \"week count and badges\" is on. The list is empty while the switch is off. Read only.", method: "GET", path: "/people/{id}/badges", params: []mcpParam{idOf("person")}},
 	{name: "book_stars", desc: "Book stars by hand with a note: positive adds, negative takes away.", method: "POST", path: "/people/{id}/stars", params: []mcpParam{
 		req("id", "string", "The person id"), req("delta", "integer", "Stars to add (positive) or take away (negative)"), req("note", "string", "Why")}},
+	{name: "get_savings_goal", desc: "Get the reward a person saves for, with their balance and whether it is reached.", method: "GET", path: "/people/{id}/savings-goal", params: []mcpParam{idOf("person")}},
+	{name: "set_savings_goal", desc: "Choose the reward a person saves for: an offered reward meant for them. A child token may only set its own.", method: "PUT", path: "/people/{id}/savings-goal", params: []mcpParam{
+		idOf("person"), req("reward_id", "string", "The reward id")}},
+	{name: "clear_savings_goal", desc: "Clear a person's savings goal; their stars stay.", method: "DELETE", path: "/people/{id}/savings-goal", params: []mcpParam{idOf("person")}},
 
 	// Reward catalogue
 	{name: "list_rewards", desc: "List the reward catalogue by price (for a child: only what is meant for them, with what they can afford).", method: "GET", path: "/rewards"},
@@ -174,14 +191,42 @@ var mcpTools = []mcpTool{
 		idOf("reward"), opt("whole_family", "boolean", "Meant for the whole family"), opt("person_ids", "strings", "Person ids it is meant for")}},
 	{name: "delete_reward", desc: "Delete a reward that was never redeemed; a redeemed one must be archived.", method: "DELETE", path: "/rewards/{id}", params: []mcpParam{idOf("reward")}},
 
+	// Redeeming rewards (ticket 292)
+	{name: "list_reward_requests", desc: "List the open requests to redeem rewards, oldest first. (Children ask and withdraw in the app; MCP is for parents.)", method: "GET", path: "/rewards/requests"},
+	{name: "confirm_reward_request", desc: "As a parent: say yes. Balance and limit are checked again and the price is booked; a second decision books nothing.", method: "POST", path: "/rewards/requests/{id}/confirm", params: []mcpParam{idOf("request")}},
+	{name: "decline_reward_request", desc: "As a parent: say no. The child keeps the stars and sees the optional note.", method: "POST", path: "/rewards/requests/{id}/decline", params: []mcpParam{
+		idOf("request"), opt("note", "string", "Why not (at most 120 characters); the child sees it")}},
+	{name: "redeem_reward", desc: "As a parent: redeem a reward for a person now, without a request. An open request of that person for the reward is confirmed instead of a second booking.", method: "POST", path: "/rewards/{id}/redeem", params: []mcpParam{
+		idOf("reward"), req("person_id", "string", "The person who redeems")}},
+
 	// Meal plan
 	{name: "list_meals", desc: "List the meal plan from one day to another (default: the coming seven days).", method: "GET", path: "/meals", params: []mcpParam{
 		opt("from", "string", "First day, YYYY-MM-DD (give both from and to, or neither)"), opt("to", "string", "Last day, YYYY-MM-DD, at most 62 days after from")}},
-	{name: "set_meal", desc: "Plan a meal, or change the planned one.", method: "PUT", path: "/meals/{date}/{mealtime}", params: []mcpParam{mealDate, mealtime, req("text", "string", "What there is to eat (at most 200 characters)")}},
+	{name: "set_meal", desc: "Plan a meal, or change the planned one: free text, or a recipe with portions.", method: "PUT", path: "/meals/{date}/{mealtime}", params: []mcpParam{mealDate, mealtime,
+		opt("text", "string", "What there is to eat as free text (at most 200 characters); not with recipe_id"),
+		opt("recipe_id", "string", "A recipe of the family (see list_recipes) instead of text"),
+		opt("portions", "integer", "With recipe_id: 1 to 99; the number of people in the household when missing")}},
 	{name: "delete_meal", desc: "Remove a planned meal.", method: "DELETE", path: "/meals/{date}/{mealtime}", params: []mcpParam{mealDate, mealtime}},
 	{name: "restore_meal", desc: "Back to the template: drop this week's change of a meal.", method: "POST", path: "/meals/{date}/{mealtime}/restore", params: []mcpParam{mealDate, mealtime}},
+	{name: "preview_meal_shopping", desc: "Look first: what putting the ingredients of one planned recipe meal (meal) or of a week from today on (week) on a shopping list would do. Scaled to the planned portions; kitchen measures go on without a quantity; pantry articles are not ticked. Returns the rows with their outcome, the counts and the recipe versions to send back when adding.", method: "GET", path: "/meal-shopping", params: []mcpParam{
+		qry("meal", "string", "One meal as <day>.<mealtime>, for example 2026-11-17.dinner; not with week"), qry("week", "string", "A day of the week or an ISO week such as 2026-W47; not with meal"), qry("list_id", "string", "A list with suggestions; the list last used for meals when missing")}},
+	{name: "add_meal_shopping", desc: "Put the ingredients of a meal or a week on a shopping list through the same rule as the app: nothing lands twice, a meal already on a list adds only its missing portions. Send the versions from preview_meal_shopping: if a recipe changed, nothing is added. Returns a run_id for undo_meal_shopping.", method: "POST", path: "/meal-shopping", params: []mcpParam{
+		opt("meal", "string", "One meal as <day>.<mealtime>; not with week"), opt("week", "string", "A day of the week or an ISO week; not with meal"), req("list_id", "string", "The list to put them on"),
+		opt("meals", "strings", "With week: the meal keys to take; all by default"), opt("picks", "strings", "The row keys to add; the rows the preview ticks by default"), opt("versions", "object", "Recipe id to version, from the preview")}},
+	{name: "undo_meal_shopping", desc: "Take back exactly one run of add_meal_shopping: new entries go, added quantities come off. Entries ticked off meanwhile stay.", method: "POST", path: "/meal-shopping/runs/{id}/undo", params: []mcpParam{idOf("run")}},
 	{name: "list_diets_and_allergies", desc: "List every person's diet (omnivore, vegetarian, pescatarian, vegan) and allergies: the 14 main EU allergens by key, plus free text that is not checked automatically and cannot be filtered by. Health data, read only.", method: "GET", path: "/food"},
 	{name: "get_diet_and_allergies", desc: "Get one person's diet and allergies. Free-text allergies (other) are not checked automatically and cannot be filtered by. Health data, read only.", method: "GET", path: "/people/{id}/food", params: []mcpParam{idOf("person")}},
+	{name: "list_recipes", desc: "List the household's own recipes from A to Z; q searches name, ingredients and tags.", method: "GET", path: "/recipes", params: []mcpParam{
+		opt("q", "string", "Search text"), opt("category", "string", "main, side, dessert, baking, breakfast or snack")}},
+	{name: "list_starter_recipes", desc: "List the 200 starter recipes that ship with Hejmo (read only, in the language of the request, each with its source); get one with get_recipe by its id, which starts with starter-.", method: "GET", path: "/starter-recipes", params: []mcpParam{
+		opt("q", "string", "Search text"), opt("category", "string", "main, side, dessert, baking, breakfast or snack")}},
+	{name: "get_recipe", desc: "Get one recipe with its ingredients and its steps in order.", method: "GET", path: "/recipes/{id}", params: []mcpParam{idOf("recipe")}},
+	{name: "create_recipe", desc: "Write a recipe. Only the name is required. Warnings about allergies never block it.", method: "POST", path: "/recipes", params: recipeBody},
+	{name: "update_recipe", desc: "Replace a recipe (give all fields): its ingredients, steps and tags are replaced.", method: "PUT", path: "/recipes/{id}", params: append([]mcpParam{idOf("recipe")}, recipeBody...)},
+	{name: "delete_recipe", desc: "Delete a recipe with its ingredients, steps and tips.", method: "DELETE", path: "/recipes/{id}", params: []mcpParam{idOf("recipe")}},
+	{name: "list_recipe_units", desc: "List the units an ingredient can have: the household's, kitchen measures and containers.", method: "GET", path: "/recipe-units"},
+	{name: "get_recipe_nutrition", desc: "The seven nutrition values of the EU declaration (energy, fat, saturated fat, carbohydrate, sugars, protein, salt) per portion of a recipe, calculated from its ingredients (BLS 4.0, USDA). Guide values. A value that is null is unknown, never 0; not_counted lists the ingredients that could not be counted.", method: "GET", path: "/recipes/{id}/nutrition", params: []mcpParam{idOf("recipe")}},
+	{name: "get_recipe_warnings", desc: "Who in the family has to look out for what in a recipe. Health data, read only. Free-text ingredients and free-text allergies are not checked automatically.", method: "GET", path: "/recipes/{id}/warnings", params: []mcpParam{idOf("recipe")}},
 	{name: "list_meal_templates", desc: "List the meal plan templates, by name.", method: "GET", path: "/meal-templates"},
 	{name: "get_meal_template", desc: "Get one meal plan template.", method: "GET", path: "/meal-templates/{id}", params: []mcpParam{idOf("template")}},
 	{name: "create_meal_template", desc: "Create a meal plan template.", method: "POST", path: "/meal-templates", params: mealTplBody},

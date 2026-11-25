@@ -1,0 +1,95 @@
+{
+  "n": 115,
+  "slug": "knusprige-ofenkartoffeln",
+  "category": "Beilagen",
+  "servings": 2,
+  "time_minutes": 60,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/ofenkartoffeln-13046",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Kartoffeln, vorwiegend festkochend",
+      "article_en": "Mostly waxy potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Rosmarin, getrocknet",
+      "article_en": "Dried rosemary",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Knusprige Ofenkartoffeln",
+    "steps": [
+      "Den Ofen auf 200 °C Ober-/Unterhitze (180 °C Umluft) vorheizen, Rost in die Mitte. 1 EL Olivenöl auf dem Backblech verteilen und ½ TL Salz darüberstreuen.",
+      "400 g Kartoffeln ungeschält mit einer Bürste unter Wasser kräftig abschrubben und vierteln.",
+      "Die Viertel mit den Schnittflächen nach unten im Öl hin- und herschieben und gleichmäßig auf dem Blech verteilen. 1 TL getrockneten Rosmarin darüberstreuen.",
+      "Je nach Größe 30 bis 45 Minuten backen, bis die Kartoffeln knusprig sind."
+    ]
+  },
+  "en": {
+    "title": "Crispy oven potatoes",
+    "steps": [
+      "Preheat the oven to 200 °C top/bottom heat (180 °C fan) with the rack in the middle. Spread 1 tbsp olive oil on the baking tray and sprinkle ½ tsp salt over it.",
+      "Scrub 400 g unpeeled potatoes thoroughly with a brush under water and cut them into quarters.",
+      "Slide the quarters cut side down through the oil and spread them evenly on the tray. Sprinkle with 1 tsp dried rosemary.",
+      "Bake for 30 to 45 minutes, depending on size, until crisp."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 1,
+        "amount": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "Time from source: 15 min prep + 45 min baking = 60 min (Aufwand shown on the page). Source states 'Für 1 Kind und 1 Erwachsenen', so servings set to 2. Page ratingCount 298. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.0
+  }
+}

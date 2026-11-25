@@ -1,0 +1,139 @@
+{
+  "n": 60,
+  "slug": "tortellini-sahnesosse",
+  "category": "Hauptgerichte",
+  "servings": 2,
+  "time_minutes": 20,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/tomaten-sahne-tortellini-76551",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Tomatenmark",
+      "article_en": "Tomato purée",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Handvoll",
+      "article_de": "Kirschtomaten",
+      "article_en": "Cherry tomatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Cayennepfeffer",
+      "article_en": "Cayenne pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Tortellini, frisch",
+      "article_en": "Fresh tortellini",
+      "note_de": "aus der Kühltheke, Füllung nach Belieben",
+      "note_en": "from the chiller, filling of your choice"
+    },
+    {
+      "amount": 0.5,
+      "unit": "Bund",
+      "article_de": "Rucola",
+      "article_en": "Rocket (arugula)",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Tortellini in Sahnesoße",
+    "steps": [
+      "Einen großen Topf mit etwa 3 Liter Wasser aufsetzen und zum Kochen bringen. Pro Liter etwa 1 TL Salz dazugeben, also 3 TL.",
+      "Knoblauch halbieren, Kirschtomaten vierteln, Rucola waschen und trocken schütteln.",
+      "Die Sahne mit dem Tomatenmark in einer Pfanne bei mittlerer Hitze verrühren und erwärmen. Die Knoblauchhälften hineinlegen, damit sie ihr Aroma abgeben.",
+      "Die Tomatenviertel dazugeben. Mit Salz und Cayennepfeffer abschmecken.",
+      "Sobald das Wasser sprudelt, die Tortellini hineingeben. Garzeit nach Packung, meist 2 bis 4 Minuten. Sie sind fertig, wenn sie oben schwimmen und bissfest sind.",
+      "Mit einer Schaumkelle herausheben und etwa 30 Sekunden im Sieb abtropfen lassen.",
+      "Den Knoblauch aus der Soße nehmen und wegwerfen.",
+      "Tortellini in die Soße geben und kurz schwenken. Mit Rucola auf Tellern anrichten und sofort essen."
+    ]
+  },
+  "en": {
+    "title": "Tortellini in cream sauce",
+    "steps": [
+      "Put a large pot with about 3 litres of water on to boil. Add about 1 tsp salt per litre, so 3 tsp.",
+      "Halve the garlic, quarter the cherry tomatoes, wash the rocket and shake it dry.",
+      "Stir the cream with the tomato purée in a pan over medium heat and warm it up. Put the garlic halves in so they give off their flavour.",
+      "Add the tomato quarters. Season with salt and cayenne pepper.",
+      "As soon as the water is bubbling, add the tortellini. Cook according to the packet, usually 2 to 4 minutes. They are ready when they float to the top and are al dente.",
+      "Lift them out with a slotted spoon and drain them in a sieve for about 30 seconds.",
+      "Take the garlic out of the sauce and throw it away.",
+      "Add the tortellini to the sauce and toss briefly. Serve on plates with the rocket and eat straight away."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "handful"
+      },
+      {
+        "index": 7,
+        "amount": 0.5,
+        "unit": "bunch"
+      }
+    ]
+  },
+  "review_note": "Time from source: 20 min, stated as Aufwand (the only time figure on the page). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

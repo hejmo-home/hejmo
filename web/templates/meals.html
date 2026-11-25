@@ -1,8 +1,10 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "meals.title") "Frame" .Frame)}}
   <h1>{{t "meals.title"}}</h1>
+  {{with .ShopFlash}}<div class="msg ok" role="status">{{template "tickIcon" 20}}<div class="msg-body">{{range .Lines}}<p>{{.}}</p>
+    {{end}}{{if .RunID}}<div class="msg-act"><a class="button secondary" href="/lists/{{.ListID}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01"/></svg>{{tf "shop.flash.open" "list" .ListName}}</a><form method="post" action="/meals/shop/undo"><input type="hidden" name="run" value="{{.RunID}}"><button class="button secondary" type="submit"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>{{t "shop.flash.undo"}}</button></form></div>{{end}}</div></div>{{end}}
   {{template "syncNotice" .}}
   <p class="lead">{{if .Editable}}{{t "meals.intro"}}{{else}}{{t "meals.intro.child"}}{{end}}</p>
-  {{if .Editable}}<p class="hint recipe"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/></svg>{{t "meals.recipe_note"}}</p>{{end}}
+  <div class="meal-tools"><a class="button secondary" href="/meals/recipes"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/><path d="M9 8h6"/></svg>{{t "meals.recipes.button"}}</a><p class="hint">{{if .Editable}}{{t "meals.recipes.hint"}}{{else}}{{t "meals.recipes.hint.child"}}{{end}}</p></div>
 
 <div class="weeknav-row"><nav class="weeknav" aria-label="{{t "meals.week.nav"}}">
   <a class="wbtn" href="/meals?week={{.Prev}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>{{t "meals.week.prev"}}</a>
@@ -10,29 +12,32 @@
   <a class="wbtn" href="/meals?week={{.Next}}">{{t "meals.week.next"}}<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
   {{if not .ThisWeek}}<a class="wbtn this" href="/meals">{{t "meals.week.this"}}</a>{{end}}
 </nav></div>
-  {{if and .Error .ErrorField}}<p class="error form-error" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{t "meals.error.form.before"}} <a href="#{{.ErrorField}}">{{printf (t "meals.error.field") (t (printf "meals.weekday.%d" .ErrorWeekday)) (t (printf "meals.mealtime.%s" .ErrorMealtime))}}</a>{{t "meals.error.form.after"}}</span></p>{{end}}
+  {{if and .Error .ErrorField}}<p class="error form-error" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{if .ErrorPortions}}{{t "meals.error.form.portions.before"}}{{else}}{{t "meals.error.form.before"}}{{end}} <a href="#{{.ErrorField}}">{{printf (t "meals.error.field") (t (printf "meals.weekday.%d" .ErrorWeekday)) (t (printf "meals.mealtime.%s" .ErrorMealtime))}}</a>{{t "meals.error.form.after"}}</span></p>{{end}}
   {{if not .Planned}}<p class="hint" data-empty>{{printf (t "meals.none") .WeekNo}}</p>{{end}}
   {{template "error" .}}
 
-  {{if .Editable}}{{template "tplSummary" .}}<form method="post" action="/meals" class="steps wide">
+  {{if .Editable}}{{template "tplSummary" .}}{{with .ShopWeek}}<div class="shop-week">{{template "cartIcon" 22}}<p>{{.Text}}</p>{{if .Button}}<button class="button secondary" type="submit" form="week" name="shop" value="week">{{template "cartIcon" 18}}{{t "shop.week.button"}}</button>{{end}}</div>{{end}}<form method="post" action="/meals" id="week" class="steps wide meal-form" data-suggest="{{.Suggest}}">
+    {{template "defaultSubmit"}}
     <input type="hidden" name="week" value="{{.Week}}">
     <div class="meal-week">
       {{range .Days}}
       <fieldset class="meal-day" data-day="{{.Date}}"{{if .Today}} data-today{{end}}>
         <legend>{{t (printf "meals.weekday.%d" .Weekday)}} <span class="date">{{.Short}}</span>{{if .Today}} <span class="today">{{t "meals.today"}}</span>{{end}}</legend>
-        {{range .Cells}}{{$bad := and $.ErrorField (eq $.ErrorField .Name)}}<div class="mrow{{if eq .Kind "adjusted"}} adjusted{{end}}{{if $bad}} invalid{{end}}" data-mt="{{.Mealtime}}"><label class="mt" for="{{.Name}}">{{template "mealIcon" .Mealtime}}{{t (printf "meals.mealtime.%s" .Mealtime)}}</label><textarea id="{{.Name}}" name="{{.Name}}" rows="1"{{if not $bad}} maxlength="200"{{end}}{{if and (eq .Kind "adjusted") (not .Value)}} placeholder="{{t "meals.tpl.nothing"}}"{{end}}{{if $bad}} autofocus aria-invalid="true" aria-describedby="err-{{.Name}}"{{end}}>{{.Value}}</textarea>{{template "fieldError" (dict "Root" $ "Name" .Name)}}{{if eq .Kind "template"}}<p class="src">{{template "tplIcon"}}<span>{{t "meals.tpl.src"}} <a href="/meals/templates/{{.TemplateID}}">{{.TemplateName}}</a></span></p>{{else if eq .Kind "adjusted"}}<p class="src"><span class="adj">{{t "meals.tpl.adjusted"}}</span><span class="was">{{t "meals.tpl.was"}} <b>{{.TemplateDish}}</b></span>{{if .CanRestore}}<button class="button secondary" type="submit" name="restore" value="{{.Name}}" formnovalidate><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v6h6"/><path d="M4.5 10A8 8 0 1 1 6 16.5"/></svg>{{t "meals.tpl.restore"}}</button>{{end}}</p>{{end}}</div>
+        {{range .Cells}}{{template "mealRow" (dict "Root" $ "C" .)}}
         {{end}}
       </fieldset>
       {{end}}
     </div>
-    <div class="savebar"><button class="button" type="submit">{{printf (t "meals.save") .WeekNo}}</button><span class="dirty" hidden>{{t "meals.dirty"}}</span></div>
+    {{if .FreeText}}{{template "freeBox" (dict "Title" (t "meals.unch.title") "Hint" (t "meals.unch.hint") "People" .FreeText "Class" "meal-unch")}}{{end}}
+    <div class="savebar"><button class="button" type="submit">{{printf (t "meals.save") .WeekNo}}</button><span class="dirty"{{if not .Dirty}} hidden{{end}}>{{t "meals.dirty"}}</span></div>
   </form>
+  <script src="/static/meal-suggest.js" defer></script>
   {{else}}
   <div class="meal-week">
     {{range .Days}}
     <section class="meal-day" data-day="{{.Date}}"{{if .Today}} data-today{{end}} aria-label="{{t (printf "meals.weekday.%d" .Weekday)}} {{.Short}}">
       <h2>{{t (printf "meals.weekday.%d" .Weekday)}} <span class="date">{{.Short}}</span>{{if .Today}} <span class="today">{{t "meals.today"}}</span>{{end}}</h2>
-      {{if .Planned}}<dl>{{range .Planned}}<div><dt class="mt">{{template "mealIcon" .Mealtime}}{{t (printf "meals.mealtime.%s" .Mealtime)}}</dt><dd>{{.Value}}</dd></div>{{end}}</dl>{{else}}<p class="none">{{t "meals.day_none"}}</p>{{end}}
+      {{if .Planned}}<dl>{{range .Planned}}<div><dt class="mt">{{template "mealIcon" .Mealtime}}{{t (printf "meals.mealtime.%s" .Mealtime)}}</dt><dd>{{with .Recipe}}<a class="rcp-link" href="{{.Href}}"><span class="art-sym" aria-hidden="true">{{.Symbol}}</span><span><span class="nm">{{.Name}}</span><small>{{template "bookIcon" 16}}{{t "meals.rcp.open"}}</small></span></a>{{range .Warns}}{{.}}{{end}}{{else}}{{.Value}}{{end}}</dd></div>{{end}}</dl>{{else}}<p class="none">{{t "meals.day_none"}}</p>{{end}}
     </section>
     {{end}}
   </div>
@@ -42,3 +47,24 @@
 {{define "tplIcon"}}<svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="12" height="13" rx="2"/><path d="M8 4h10a2 2 0 0 1 2 2v11"/></svg>{{end}}
 
 {{define "tplSummary"}}<div class="tpl-sum">{{if .HasTemplates}}<p>{{.TemplateSummary}}</p><a class="button secondary" href="/meals/templates">{{template "tplIcon"}}{{t "meals.tpl.button"}}</a>{{else}}<p>{{t "meals.tpl.sum.invite"}}</p><a class="button secondary" href="/meals/templates/new">{{template "tplIcon"}}{{t "meals.tpl.create"}}</a>{{end}}</div>{{end}}
+
+{{define "bookIcon"}}<svg class="icon" width="{{.}}" height="{{.}}" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/><path d="M9 8h6"/></svg>{{end}}
+
+{{/* The "Aus Vorlage" and "Diese Woche angepasst" line under a meal. Argument: the cell. */}}
+{{define "mealSrc"}}{{if eq .Kind "template"}}<p class="src">{{template "tplIcon"}}<span>{{t "meals.tpl.src"}} <a href="/meals/templates/{{.TemplateID}}">{{.TemplateName}}</a></span></p>{{else if eq .Kind "adjusted"}}<p class="src"><span class="adj">{{t "meals.tpl.adjusted"}}</span><span class="was">{{t "meals.tpl.was"}} <b>{{.TemplateDish}}</b></span>{{if .CanRestore}}<button class="button secondary" type="submit" name="restore" value="{{.Name}}" formnovalidate><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v6h6"/><path d="M4.5 10A8 8 0 1 1 6 16.5"/></svg>{{t "meals.tpl.restore"}}</button>{{end}}</p>{{end}}{{end}}
+
+{{/* One meal of the week form: a text field, or the framed box of a recipe. Arguments: Root (the page), C (the cell). */}}
+{{define "mealRow"}}{{$c := .C}}{{$bad := and .Root.ErrorField (eq .Root.ErrorField $c.Name)}}{{if $c.Recipe}}<div class="mrow{{if eq $c.Kind "adjusted"}} adjusted{{end}} has-rcp{{if $c.PortionsBad}} invalid{{end}}" data-mt="{{$c.Mealtime}}">{{template "mealRcpBox" $c}}{{template "mealSrc" $c}}</div>{{else}}<div class="mrow{{if eq $c.Kind "adjusted"}} adjusted{{end}}{{if $bad}} invalid{{end}}" data-mt="{{$c.Mealtime}}"><label class="mt" for="{{$c.Name}}">{{template "mealIcon" $c.Mealtime}}{{t (printf "meals.mealtime.%s" $c.Mealtime)}}</label><input type="hidden" name="{{$c.Name}}.recipe" value=""><textarea id="{{$c.Name}}" name="{{$c.Name}}" rows="1"{{if not $bad}} maxlength="200"{{end}}{{if and (eq $c.Kind "adjusted") (not $c.Value)}} placeholder="{{t "meals.tpl.nothing"}}"{{end}}{{if $bad}} autofocus aria-invalid="true" aria-describedby="err-{{$c.Name}}"{{end}}>{{$c.Value}}</textarea>{{template "fieldError" (dict "Root" .Root "Name" $c.Name)}}{{template "mealSrc" $c}}</div>{{end}}{{end}}
+
+{{/* The framed box of a recipe in the week form and in the box a suggestion brings. Argument: the cell, with its Recipe. */}}
+{{define "mealRcpBox"}}{{$c := .}}{{$r := .Recipe}}<span class="mt" id="{{$c.Name}}-mt">{{template "mealIcon" $c.Mealtime}}{{t (printf "meals.mealtime.%s" $c.Mealtime)}}</span><div class="rcp-entry{{if $c.PortionsBad}} invalid{{end}}" role="group" aria-labelledby="{{$c.Name}}-mt {{$c.Name}}-name"><input type="hidden" name="{{$c.Name}}.recipe" value="{{$r.ID}}"><div class="rcp-head"><span class="art-sym" aria-hidden="true">{{$r.Symbol}}</span><div><a class="rcp-name" id="{{$c.Name}}-name" href="{{$r.Href}}">{{$r.Name}}</a><small>{{template "bookIcon" 18}}<span>{{$r.Meta}}</span></small></div></div><div class="portions amount{{if $c.PortionsBad}} invalid{{end}}" data-people="{{$r.People}}" data-for-all="{{t "meals.rcp.for_all"}}" data-you-are="{{t "meals.rcp.you_are"}}"><label for="{{$c.Name}}.portions">{{t "meals.rcp.portions"}}</label><div class="stepper"><button class="button secondary step" type="button" data-step="down" aria-label="{{t "meals.rcp.portions.less"}}"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button><input id="{{$c.Name}}.portions" name="{{$c.Name}}.portions" type="text" inputmode="numeric" value="{{$r.Portions}}" autocomplete="off"{{if $c.PortionsBad}} autofocus aria-invalid="true" aria-describedby="err-{{$c.Name}}"{{else}} aria-describedby="{{$c.Name}}-for"{{end}}><button class="button secondary step" type="button" data-step="up" aria-label="{{t "meals.rcp.portions.more"}}"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button></div><span class="for" id="{{$c.Name}}-for">{{$r.For}}</span>{{if $c.PortionsBad}}<p class="ferr" id="err-{{$c.Name}}" role="alert">{{template "errIcon"}}<span>{{$c.PortionsError}}</span></p>{{end}}</div>{{range $r.Warns}}{{.}}{{end}}{{with $r.Unchecked}}<span class="unchecked">{{template "helpIcon"}}<span>{{.}}</span></span>{{end}}{{with $r.ShopState}}<p class="shop-state">{{template "cartIcon" 16}}<span>{{.}}</span></p>{{end}}<div class="acts">{{with $r.ShopBtn}}<button class="button secondary shop" type="submit" name="shop" value="{{$c.Name}}" formnovalidate>{{template "cartIcon" 16}}{{.}}</button>{{end}}<button class="button secondary" type="submit" name="other" value="{{$c.Name}}" formnovalidate><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>{{t "meals.rcp.other"}}</button></div></div>{{end}}
+
+{{/* The suggestions under a meal field (ticket 281), a fragment the script of the meal plan asks for. Argument: mealSuggView. */}}
+{{define "mealSuggest"}}<div class="sugg" id="{{.Cell}}-sl"><p class="sugg-q" id="{{.Cell}}-sq">{{.Intro}}</p>{{if or .Recipes .Dishes}}
+  <ul class="place-list art-sugg" role="listbox" aria-labelledby="{{.Cell}}-sq">{{range .Recipes}}
+    <li role="option" data-recipe="{{.ID}}"><span class="art-sym" aria-hidden="true">{{.Symbol}}</span><b>{{.Name}}</b><small>{{template "bookIcon" 14}}<span>{{.Meta}}</span></small>{{if .Diet}}<span class="tags"><span class="tag diet">{{template "leafIcon"}}{{.Diet}}</span></span>{{end}}{{range .Warns}}{{.}}{{end}}{{with .Unchecked}}<span class="unchecked">{{template "helpIcon"}}<span>{{.}}</span></span>{{end}}{{with .Box}}<template class="rcp-box">{{template "mealRcpBox" .}}</template>{{end}}</li>{{end}}{{range .Dishes}}
+    <li role="option" class="old" data-text="{{.Text}}"><span class="art-sym" aria-hidden="true"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><b>{{.Text}}</b><small><span>{{.Sub}}</span></small></li>{{end}}
+    <li role="option" class="free" data-free data-text="{{.Typed}}"><span class="art-sym" aria-hidden="true"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h8"/></svg></span><b>{{.KeepName}}</b><small><span>{{.KeepSub}}</span></small></li>
+  </ul>{{with .NoRecipes}}
+  <p class="sugg-none"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.5v.6M12 16.8v.4"/></svg><span>{{.}}</span></p>{{end}}{{with .Unchecked}}
+  <div class="sugg-unchecked"><span class="unchecked">{{template "helpIcon"}}<span>{{.}}</span></span></div>{{end}}{{end}}</div>{{end}}

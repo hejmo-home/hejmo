@@ -66,7 +66,13 @@ type Routine struct {
 type Stars struct {
 	Shown   bool
 	Balance int
+	// Goal is the savings goal (ticket 293); nil without one, or while stars are hidden.
+	Goal *Goal
 }
+
+// Badge is an earned badge as the personal view shows it (ticket 295): its key
+// picks the seal, Name is the text in the display's language.
+type Badge struct{ Key, Name string }
 
 // PersonalEvent is a line of the personal view.
 type PersonalEvent struct {
@@ -98,6 +104,15 @@ type PersonalInput struct {
 	Tasks       []Task
 	Routines    []Routine // the person's routines; their tasks are Tasks with a RoutineID
 	Stars       Stars
+	// Goal is the person's savings goal; it shows only while stars do.
+	Goal *GoalInput
+	// NewBadges and Badges are the person's earned badges, the new ones (today
+	// or yesterday) apart, newest first. Both empty while the person's switch
+	// "week count and badges" is off: the view then has no badges block.
+	NewBadges, Badges []Badge
+	// Parents are the parents' names in words ("Mama or Papa"): whom to ask
+	// once the goal is reached.
+	Parents string
 	// TimeFormat is the household's "24h" (default) or "12h" (ADR 0016).
 	TimeFormat store.TimeFormat
 	// Layout is the display's layout; its header blocks (time, weather) apply
@@ -121,7 +136,11 @@ type PersonalView struct {
 	Tasks       []Task
 	Stars       Stars
 	Routines    []Routine
-	Weather     *WeatherChip
+	Parents     string // whom to ask once the goal is reached
+	// NewBadges and Badges: see PersonalInput. The view shows a badges block at
+	// the foot of the days when either holds something.
+	NewBadges, Badges []Badge
+	Weather           *WeatherChip
 	// HeaderOrder names the header blocks that are on, in order.
 	HeaderOrder []layout.BlockID
 	// Home: this is the display's home screen, with no way back to a family view.
@@ -134,7 +153,10 @@ func BuildPersonal(in PersonalInput) PersonalView {
 	now := in.Now
 	loc := now.Location()
 	d0 := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
-	v := PersonalView{Person: in.Person, Date: d0, Clock: ClockText(now, in.TimeFormat), ClockZone: loc.String(), ClockFormat: clockFormat(in.TimeFormat), Stars: in.Stars, Home: in.Home}
+	v := PersonalView{Person: in.Person, Date: d0, Clock: ClockText(now, in.TimeFormat), ClockZone: loc.String(), ClockFormat: clockFormat(in.TimeFormat), Stars: in.Stars, Parents: in.Parents, Home: in.Home, NewBadges: in.NewBadges, Badges: in.Badges}
+	if in.Stars.Shown {
+		v.Stars.Goal = goalOf(in.Goal, in.Stars.Balance)
+	}
 	if in.Layout == nil {
 		v.HeaderOrder = []layout.BlockID{layout.Clock}
 	} else {

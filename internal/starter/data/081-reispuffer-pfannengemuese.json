@@ -1,0 +1,190 @@
+{
+  "n": 81,
+  "slug": "reispuffer-pfannengemuese",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 30,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/reispuffer-mit-pfannengemuese-2718",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Eier (Größe M)",
+      "article_en": "Eggs (size M)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 125,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Frühlingszwiebeln",
+      "article_en": "Spring onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Gouda",
+      "article_en": "Gouda",
+      "note_de": "geraspelt",
+      "note_en": "grated"
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Risottoreis, gekocht",
+      "article_en": "Cooked risotto rice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Kräuter der Provence",
+      "article_en": "Herbes de Provence",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 800,
+      "unit": "g",
+      "article_de": "Pfannengemüse, tiefgekühlt",
+      "article_en": "Frozen stir-fry vegetables",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Tomatenmark",
+      "article_en": "Tomato paste",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "ml",
+      "article_de": "Gemüsebrühe",
+      "article_en": "Vegetable stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": "zum Braten",
+      "note_en": "for frying"
+    }
+  ],
+  "de": {
+    "title": "Reispuffer mit Pfannengemüse",
+    "steps": [
+      "Teig: Verquirle 3 Eier mit 125 ml Milch und 3 EL Mehl zu einem glatten Teig.",
+      "Schneide 1 Bund Frühlingszwiebeln in Ringe. Hebe sie mit 100 g Gouda, 300 g gekochtem Risottoreis und 1 TL Kräutern der Provence unter den Teig. Würze mit Salz und Pfeffer.",
+      "Erhitze Öl in einer Pfanne. Setze esslöffelweise Teig hinein und drücke ihn flach. Brate die Puffer 5 bis 6 Minuten und wende sie dazwischen, damit beide Seiten gar und goldbraun werden. Halte fertige Puffer warm.",
+      "Gemüse: Erhitze Öl in einem weiten Topf bei starker Hitze. Brate 800 g tiefgekühltes Pfannengemüse 4 Minuten kräftig an.",
+      "Rühre 1 EL Tomatenmark ein und lösche mit 200 ml Gemüsebrühe ab.",
+      "Lege den Deckel auf und lass das Gemüse bei mittlerer Hitze 6 Minuten köcheln, bis die Soße cremig dick ist.",
+      "Serviere die Reispuffer zusammen mit dem Pfannengemüse."
+    ]
+  },
+  "en": {
+    "title": "Rice fritters with pan-fried vegetables",
+    "steps": [
+      "Batter: Whisk 3 eggs with 125 ml milk and 3 tbsp flour into a smooth batter.",
+      "Cut 1 bunch of spring onions into rings. Fold them into the batter with 100 g Gouda, 300 g cooked risotto rice and 1 tsp herbes de Provence. Season with salt and pepper.",
+      "Heat oil in a pan. Drop in tablespoons of batter and flatten them. Fry the fritters for 5 to 6 minutes and turn them in between so both sides are cooked and golden brown. Keep finished fritters warm.",
+      "Vegetables: Heat oil in a wide pot over high heat. Sear 800 g frozen stir-fry vegetables for 4 minutes.",
+      "Stir in 1 tbsp tomato paste and deglaze with 200 ml vegetable stock.",
+      "Put the lid on and simmer the vegetables over medium heat for 6 minutes until the sauce is creamy and thick.",
+      "Serve the rice fritters together with the stir-fried vegetables."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "bunch"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 10,
+        "amount": 1,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Time from source: 30 min, stated as Aufwand (the only time figure on the page). Source gives 1/8 l milk, written as 125 ml. Source shows 12 ratings; list says Redaktionsküche. Steps rewritten in own words on 23/11/2026 from the source steps (times, temperatures and order per source). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

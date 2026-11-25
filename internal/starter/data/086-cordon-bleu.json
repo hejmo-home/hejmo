@@ -1,0 +1,161 @@
+{
+  "n": 86,
+  "slug": "cordon-bleu",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 45,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/cordon-bleu-das-klassische-rezept-75199.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Kalbsschnitzel oder Schweineschnitzel",
+      "article_en": "Veal or pork escalopes",
+      "note_de": "dick, je ca. 350 g, ca. 1,5 cm",
+      "note_en": "thick, about 350 g each, about 1.5 cm"
+    },
+    {
+      "amount": 2,
+      "unit": "Scheibe",
+      "article_de": "Käse (Greyerzer, Emmentaler oder Raclettekäse)",
+      "article_en": "Cheese (Gruyère, Emmental or raclette cheese)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Scheibe",
+      "article_de": "Schinken, gekocht",
+      "article_en": "Cooked ham",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "3 bis 4 EL",
+      "note_en": "3 to 4 tbsp"
+    },
+    {
+      "amount": 6,
+      "unit": "EL",
+      "article_de": "Semmelbrösel",
+      "article_en": "Breadcrumbs",
+      "note_de": "6 bis 8 EL",
+      "note_en": "6 to 8 tbsp"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Butterschmalz",
+      "article_en": "Clarified butter",
+      "note_de": "zum Braten",
+      "note_en": "for frying"
+    }
+  ],
+  "de": {
+    "title": "Cordon bleu",
+    "steps": [
+      "Schneide in jedes Schnitzel (2 Stück, je etwa 350 g und 1,5 cm dick) seitlich eine Tasche. Schneide dabei nicht ganz durch und klappe das Fleisch wie ein Buch auf.",
+      "Lege das Fleisch zwischen Frischhaltefolie und klopfe es mit Fleischklopfer oder Pfanne auf etwa 0,5 cm dünn.",
+      "Belege je eine Hälfte mit 1 Scheibe Käse und 1 Scheibe gekochtem Schinken. Nichts darf über den Rand ragen. Klappe die andere Hälfte darüber und verschließe die Ränder mit Zahnstochern oder Rouladennadeln. Würze außen mit Salz und Pfeffer.",
+      "Stelle drei Teller bereit: Mehl (3 bis 4 EL), 2 verquirlte Eier und Semmelbrösel (6 bis 8 EL). Wende jedes Schnitzel erst im Mehl und schüttle das überschüssige Mehl gut ab. Ziehe es dann durch das Ei und wende es zuletzt in den Bröseln.",
+      "Erhitze reichlich Butterschmalz in einer großen Pfanne bei mittlerer Hitze. Die Schnitzel müssen im Fett schwimmen. Brate sie pro Seite 5 bis 6 Minuten, bis sie goldbraun und knusprig sind.",
+      "Begieße das Fleisch zwischendurch immer wieder mit dem heißen Fett. Entferne vor dem Servieren die Zahnstocher."
+    ]
+  },
+  "en": {
+    "title": "Cordon bleu",
+    "steps": [
+      "Cut a pocket into the side of each schnitzel (2 pieces, about 350 g and 1.5 cm thick each). Do not cut all the way through and open the meat like a book.",
+      "Put the meat between sheets of cling film and pound it to about 0.5 cm thin with a meat mallet or a pan.",
+      "Lay 1 slice of cheese and 1 slice of cooked ham on one half of each. Nothing may stick out over the edge. Fold the other half over and seal the edges with toothpicks or roulade pins. Season the outside with salt and pepper.",
+      "Set out three plates: flour (3 to 4 tbsp), 2 beaten eggs and breadcrumbs (6 to 8 tbsp). Turn each schnitzel first in the flour and shake off the excess flour well. Then pull it through the egg and finally turn it in the crumbs.",
+      "Heat plenty of clarified butter in a large pan over medium heat. The schnitzel must float in the fat. Fry them for 5 to 6 minutes per side until golden brown and crisp.",
+      "Baste the meat with the hot fat every now and then. Remove the toothpicks before serving."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "slice"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "slice"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 6,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Source gives ranges for flour (3-4 EL) and breadcrumbs (6-8 EL); lower values used. Source states 4 servings with two large cutlets, cutlets are likely portioned when served. Source shows 2 ratings; list says Redaktionsküche. Steps rewritten in own words on 23/11/2026 from the source steps (times, temperatures and order per source). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

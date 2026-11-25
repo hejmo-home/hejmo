@@ -1,0 +1,167 @@
+{
+  "n": 117,
+  "slug": "kartoffelgratin",
+  "category": "Beilagen",
+  "servings": 4,
+  "time_minutes": 60,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/kartoffelgratin-mit-gemuese-128725.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Kartoffeln",
+      "article_en": "Potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Brokkoli",
+      "article_en": "Broccoli",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Crème fraîche",
+      "article_en": "Crème fraîche",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Thymian, getrocknet",
+      "article_en": "Dried thyme",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Muskat",
+      "article_en": "Nutmeg",
+      "note_de": "frisch gerieben",
+      "note_en": "freshly grated"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "für die Form",
+      "note_en": "for the dish"
+    },
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Käse, gerieben",
+      "article_en": "Grated cheese",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Kartoffelgratin",
+    "steps": [
+      "Den Ofen auf 200 °C Ober-/Unterhitze (Umluft 180 °C) vorheizen und eine rechteckige Auflaufform (etwa 20 x 30 cm) buttern.",
+      "Kartoffeln und Möhren schälen und in dünne Scheiben hobeln. Den Brokkoli in kleine Röschen zerteilen und den Knoblauch klein schneiden.",
+      "Crème fraîche und Sahne mit dem Knoblauch glatt verrühren und reichlich mit Thymian, frisch gemahlenem Muskat, Salz und Pfeffer würzen. Das Gemüse in dieser Mischung wenden, in die Form füllen, glatt verteilen und mit dem Käse bedecken.",
+      "45 bis 50 Minuten backen, bis die Kartoffeln weich sind. Vor dem Anrichten etwa 10 Minuten ruhen lassen."
+    ]
+  },
+  "en": {
+    "title": "Potato gratin",
+    "steps": [
+      "Preheat the oven to 200 °C top and bottom heat (180 °C fan) and butter a baking dish of about 20 x 30 cm.",
+      "Peel the potatoes and carrots and slice them thinly. Break the broccoli into small florets and chop the garlic finely.",
+      "Stir the cream, crème fraîche and garlic until smooth and season generously with salt, pepper, thyme and freshly grated nutmeg. Coat the vegetables in this mixture, put them in the dish, level them out and cover with the cheese.",
+      "Bake for 45 to 50 minutes until the potatoes are soft. Let stand for about 10 minutes before serving."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 8,
+        "amount": 0.5,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "Page ratingCount 1 (list: Redaktionsküche). Steps restructured (own step division and order of work) after paraphrase spot-check 23/11/2026.",
+  "originality": {
+    "overlap_5gram": 0.0,
+    "checked": "23/11/2026"
+  }
+}

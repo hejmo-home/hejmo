@@ -150,6 +150,7 @@ func (s *server) apiUpdatePerson(w http.ResponseWriter, r *http.Request, p princ
 	var in struct {
 		Name, Color, Shape *string
 		StreaksShown       *bool `json:"streaks_shown"`
+		NutritionShown     *bool `json:"nutrition_shown"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
@@ -188,6 +189,10 @@ func (s *server) apiUpdatePerson(w http.ResponseWriter, r *http.Request, p princ
 		writeError(w, http.StatusUnprocessableEntity, "invalid "+field)
 		return
 	}
+	if in.NutritionShown != nil && cur.Role != store.RoleChild {
+		writeError(w, http.StatusUnprocessableEntity, "nutrition_shown: only children have this switch, parents always see the values")
+		return
+	}
 	if err := s.db.UpdatePerson(p.household.ID, cur.ID, look.Name, look.Color, look.Shape); err != nil {
 		s.fail(w, "update person", err)
 		return
@@ -199,6 +204,13 @@ func (s *server) apiUpdatePerson(w http.ResponseWriter, r *http.Request, p princ
 			return
 		}
 		cur.StreaksShown = *in.StreaksShown
+	}
+	if in.NutritionShown != nil {
+		if err := s.db.SetNutritionShown(p.household.ID, cur.ID, *in.NutritionShown); err != nil {
+			s.fail(w, "nutrition switch", err)
+			return
+		}
+		cur.NutritionShown = *in.NutritionShown
 	}
 	writeJSON(w, http.StatusOK, toJSON(cur))
 }

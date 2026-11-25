@@ -1,0 +1,110 @@
+{
+  "n": 174,
+  "slug": "broetchen",
+  "category": "Backen",
+  "servings": 12,
+  "time_minutes": 55,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/broetchen-rezept-fuer-den-brotbackautomat-769",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 550,
+      "unit": "g",
+      "article_de": "Weizenmehl Type 550",
+      "article_en": "Wheat flour (German type 550)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1.5,
+      "unit": "TL",
+      "article_de": "Trockenhefe",
+      "article_en": "Dried yeast",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 370,
+      "unit": "ml",
+      "article_de": "Wasser",
+      "article_en": "Water",
+      "note_de": "nur in der Zubereitung der Quelle genannt",
+      "note_en": "listed only in the source method"
+    }
+  ],
+  "de": {
+    "title": "Brötchen",
+    "steps": [
+      "Salz, Zucker, Mehl, Trockenhefe und Wasser in den Behälter der Brotbackmaschine geben.",
+      "Das Teigprogramm starten. Es knetet kurz und lässt den Teig gehen.",
+      "Ein Backblech mit Backpapier auslegen.",
+      "Den Teig in 12 gleich große Stücke teilen und zu Brötchen formen.",
+      "Die Brötchen mit einem feuchten Tuch abdecken und 5 Minuten ruhen lassen. Dann noch weitere 30 Minuten abgedeckt gehen lassen.",
+      "Währenddessen den Ofen auf 200 °C Ober-/Unterhitze (180 °C Umluft) vorheizen, Rost in die Mitte.",
+      "Die Brötchen leicht befeuchten und mit der Schere einschneiden.",
+      "20 bis 25 Minuten backen."
+    ]
+  },
+  "en": {
+    "title": "Bread rolls",
+    "steps": [
+      "Put the salt, sugar, flour, dried yeast and water into the pan of the bread machine.",
+      "Start the dough cycle. It kneads briefly and lets the dough rise.",
+      "Line a baking tray with parchment.",
+      "Divide the dough into 12 equal pieces and shape into rolls.",
+      "Cover the rolls with a damp cloth and rest for 5 minutes. Then let them rise a further 30 minutes, covered.",
+      "Meanwhile, preheat the oven to 200 °C top and bottom heat (180 °C fan), shelf in the middle.",
+      "Lightly moisten the rolls and snip them with scissors.",
+      "Bake 20 to 25 minutes."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 3,
+        "amount": 1.5,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "Rating count from the list. Water (370 ml) appears only in the source method. Source steps not copied. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

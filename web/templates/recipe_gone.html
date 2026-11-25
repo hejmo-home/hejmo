@@ -1,0 +1,4 @@
+{{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
+  <h1>{{t "cook.gone.title"}}</h1>
+  <div class="empty"><p>{{t "cook.gone.text"}}</p><a class="button" href="{{.RecipesHref}}">{{t "cook.gone.action"}}</a></div>
+{{template "foot"}}

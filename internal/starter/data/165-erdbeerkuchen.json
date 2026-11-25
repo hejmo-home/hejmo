@@ -1,0 +1,216 @@
+{
+  "n": 165,
+  "slug": "erdbeerkuchen",
+  "category": "Backen",
+  "servings": 20,
+  "time_minutes": 45,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.essen-und-trinken.de/rezepte/erdbeerkuchen-vom-blech-rezept-13939916.html",
+    "site": "Essen & Trinken",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Margarine",
+      "article_en": "Margarine",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "für den Teig",
+      "note_en": "for the base"
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "article_de": "Vanillezucker",
+      "article_en": "Vanilla sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 5,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "article_de": "Backpulver",
+      "article_en": "Baking powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "article_de": "Sahnepuddingpulver",
+      "article_en": "Cream pudding powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 8,
+      "unit": "EL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "davon 6 EL für die Pudding-Creme",
+      "note_en": "of which 6 tbsp for the pudding cream"
+    },
+    {
+      "amount": 1,
+      "unit": "Liter",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 800,
+      "unit": "g",
+      "article_de": "Schmand",
+      "article_en": "Sour cream (Schmand)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "kg",
+      "article_de": "Erdbeeren",
+      "article_en": "Strawberries",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Pck.",
+      "article_de": "Klarer Tortenguss",
+      "article_en": "Clear glaze for fruit cakes (Tortenguss)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "etwas, für den Tortenguss",
+      "note_en": "a little, for the glaze"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Wasser",
+      "article_en": "Water",
+      "note_de": "etwas, für den Tortenguss",
+      "note_en": "a little, for the glaze"
+    }
+  ],
+  "de": {
+    "title": "Erdbeerkuchen",
+    "steps": [
+      "Ofen auf 180 °C Ober-/Unterhitze (160 °C Umluft) vorheizen, Rost auf die zweite Schiene von unten. Ein Backblech mit Backpapier auslegen.",
+      "Margarine mit 300 g Zucker und Vanillezucker mit dem Handmixer schaumig rühren.",
+      "Die Eier nacheinander unterrühren.",
+      "Mehl und Backpulver mischen und unterheben.",
+      "Den Teig auf dem Blech glatt streichen und 15 bis 20 Minuten vorbacken.",
+      "In der Zeit die Creme kochen: Das Puddingpulver mit 6 EL Zucker und einem Schluck der kalten Milch glatt rühren, damit keine Klümpchen entstehen. Die übrige Milch aufkochen, das angerührte Pulver einrühren und kurz aufkochen, bis die Creme dick und glatt ist.",
+      "Den Schmand unter den heißen Pudding rühren.",
+      "Die Creme auf den Boden streichen und noch 10 Minuten backen.",
+      "Den Kuchen vollständig auskühlen lassen. Die Erdbeeren waschen, putzen, halbieren und auf dem kalten Kuchen verteilen.",
+      "Den Tortenguss nach Packungsanweisung mit dem restlichen Zucker und Wasser zubereiten und über die Erdbeeren geben.",
+      "Den Kuchen vor dem Servieren kalt stellen."
+    ]
+  },
+  "en": {
+    "title": "Strawberry cake",
+    "steps": [
+      "Preheat the oven to 180 °C top and bottom heat (160 °C fan), shelf second from the bottom. Line a baking tray with parchment.",
+      "Beat the margarine with 300 g sugar and the vanilla sugar with a hand mixer until fluffy.",
+      "Stir in the eggs one after another.",
+      "Mix the flour and baking powder and fold them in.",
+      "Spread the batter smoothly on the tray and pre-bake 15 to 20 minutes.",
+      "Meanwhile cook the cream: stir the pudding powder with 6 tbsp sugar and a splash of the cold milk until smooth so there are no lumps. Bring the rest of the milk to the boil, stir in the paste and boil briefly until the cream is thick and smooth.",
+      "Stir the sour cream into the hot pudding.",
+      "Spread the cream on the base and bake 10 minutes more.",
+      "Let the cake cool completely. Wash, hull and halve the strawberries and spread them over the cold cake.",
+      "Make the cake glaze following the packet instructions, using the remaining sugar and water, and pour it over the strawberries.",
+      "Chill the cake before serving."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "packet"
+      },
+      {
+        "index": 3,
+        "amount": 5,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "packet"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "packet"
+      },
+      {
+        "index": 7,
+        "amount": 8,
+        "unit": "tbsp"
+      },
+      {
+        "index": 8,
+        "amount": 1000,
+        "unit": "ml"
+      },
+      {
+        "index": 11,
+        "amount": 2,
+        "unit": "packet"
+      }
+    ]
+  },
+  "review_note": "Rating count from the list. Source page shows 1 rating; list says Redaktionsküche. Servings 20 from the source. Source steps not copied. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

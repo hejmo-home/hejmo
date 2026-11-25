@@ -36,16 +36,25 @@ var apiRoutes = []APIRoute{
 	{"GET", "/contacts/{id}/photo", auth.Perm("contacts", auth.Read), (*server).apiGetContactPhoto},
 	{"PUT", "/contacts/{id}/photo", auth.Perm("contacts", auth.Write), (*server).apiSetContactPhoto},
 	{"DELETE", "/contacts/{id}/photo", auth.Perm("contacts", auth.Delete), (*server).apiDeleteContactPhoto},
+	{"POST", "/contact-imports", auth.Perm("contacts", auth.Write), (*server).apiCreateContactImport},
+	{"GET", "/contact-imports/{id}", auth.Perm("contacts", auth.Read), (*server).apiGetContactImport},
+	{"POST", "/contact-imports/{id}/confirm", auth.Perm("contacts", auth.Write), (*server).apiConfirmContactImport},
+	{"DELETE", "/contact-imports/{id}", auth.Perm("contacts", auth.Delete), (*server).apiDeleteContactImport},
 	{"GET", "/contact-groups", auth.Perm("contacts", auth.Read), (*server).apiListContactGroups},
 	{"POST", "/contact-groups", auth.Perm("contacts", auth.Write), (*server).apiCreateContactGroup},
 	{"PATCH", "/contact-groups/{id}", auth.Perm("contacts", auth.Write), (*server).apiRenameContactGroup},
 	{"DELETE", "/contact-groups/{id}", auth.Perm("contacts", auth.Delete), (*server).apiDeleteContactGroup},
+
+	// The children's page "Wichtige Nummern" (ticket 301): a child's device reads it, which the address book refuses.
+	{"GET", "/numbers", auth.Perm("numbers", auth.Read), (*server).apiNumbers},
+	{"GET", "/numbers/{id}/photo", auth.Perm("numbers", auth.Read), (*server).apiNumbersPhoto},
 
 	{"GET", "/food", auth.Perm("health", auth.Read), (*server).apiListFood},
 	{"GET", "/people/{id}/food", auth.Perm("health", auth.Read), (*server).apiGetFood},
 	{"PUT", "/people/{id}/food", auth.Perm("health", auth.Write), (*server).apiPutFood},
 	{"GET", "/people/{id}/stars", auth.Perm("tasks", auth.Read), (*server).apiGetStars},
 	{"POST", "/people/{id}/stars", auth.Perm("tasks", auth.Write), (*server).apiBookStars},
+	{"GET", "/people/{id}/badges", auth.Perm("tasks", auth.Read), (*server).apiGetBadges},
 	{"GET", "/me/passkeys", auth.Perm("people", auth.Read), (*server).apiListPasskeys},
 	{"POST", "/me/passkeys/registration", auth.Perm("people", auth.Write), (*server).apiPasskeyBegin},
 	{"POST", "/me/passkeys", auth.Perm("people", auth.Write), (*server).apiPasskeyCreate},
@@ -144,8 +153,17 @@ var apiRoutes = []APIRoute{
 	{"PUT", "/routine-templates/{id}/order", auth.Perm("tasks", auth.Write), (*server).apiTemplateOrder},
 	{"GET", "/people/{id}/list-view", auth.Perm("lists", auth.Read), (*server).apiGetListView},
 	{"PUT", "/people/{id}/list-view", auth.Perm("lists", auth.Complete), (*server).apiPutListView},
+	{"GET", "/people/{id}/savings-goal", auth.Perm("tasks", auth.Read), (*server).apiGetGoal},
+	{"PUT", "/people/{id}/savings-goal", auth.Perm("tasks", auth.Complete), (*server).apiPutGoal},
+	{"DELETE", "/people/{id}/savings-goal", auth.Perm("tasks", auth.Complete), (*server).apiDeleteGoal},
 	{"GET", "/rewards", auth.Perm("tasks", auth.Read), (*server).apiListRewards},
 	{"POST", "/rewards", auth.Perm("tasks", auth.Write), (*server).apiCreateReward},
+	{"GET", "/rewards/requests", auth.Perm("tasks", auth.Read), (*server).apiListRedemptions},
+	{"POST", "/rewards/requests/{id}/withdraw", auth.Perm("tasks", auth.Complete), (*server).apiWithdrawRedemption},
+	{"POST", "/rewards/requests/{id}/confirm", auth.Perm("tasks", auth.Write), (*server).apiConfirmRedemption},
+	{"POST", "/rewards/requests/{id}/decline", auth.Perm("tasks", auth.Write), (*server).apiDeclineRedemption},
+	{"POST", "/rewards/{id}/ask", auth.Perm("tasks", auth.Complete), (*server).apiAskReward},
+	{"POST", "/rewards/{id}/redeem", auth.Perm("tasks", auth.Write), (*server).apiRedeemReward},
 	{"GET", "/rewards/{id}", auth.Perm("tasks", auth.Read), (*server).apiGetReward},
 	{"PATCH", "/rewards/{id}", auth.Perm("tasks", auth.Write), (*server).apiUpdateReward},
 	{"DELETE", "/rewards/{id}", auth.Perm("tasks", auth.Delete), (*server).apiDeleteReward},
@@ -189,6 +207,20 @@ var apiRoutes = []APIRoute{
 	{"PUT", "/meals/{date}/{mealtime}", auth.Perm("meals", auth.Write), (*server).apiSetMeal},
 	{"DELETE", "/meals/{date}/{mealtime}", auth.Perm("meals", auth.Delete), (*server).apiDeleteMeal},
 	{"POST", "/meals/{date}/{mealtime}/restore", auth.Perm("meals", auth.Write), (*server).apiRestoreMeal},
+	{"GET", "/meal-shopping", auth.Perm("lists", auth.Write), (*server).apiShopPreview},
+	{"POST", "/meal-shopping", auth.Perm("lists", auth.Write), (*server).apiShopAdd},
+	{"POST", "/meal-shopping/runs/{id}/undo", auth.Perm("lists", auth.Write), (*server).apiShopUndo},
+	{"GET", "/recipes", auth.Perm("meals", auth.Read), (*server).apiListRecipes},
+	{"POST", "/recipes", auth.Perm("meals", auth.Write), (*server).apiSaveRecipe},
+	{"GET", "/recipes/{id}", auth.Perm("meals", auth.Read), (*server).apiGetRecipe},
+	{"PUT", "/recipes/{id}", auth.Perm("meals", auth.Write), (*server).apiSaveRecipe},
+	{"DELETE", "/recipes/{id}", auth.Perm("meals", auth.Delete), (*server).apiDeleteRecipe},
+	{"GET", "/recipes/{id}/warnings", auth.Perm("health", auth.Read), (*server).apiRecipeWarnings},
+	{"GET", "/recipes/{id}/nutrition", auth.Perm("meals", auth.Read), (*server).apiRecipeNutrition},
+	{"GET", "/foods", auth.Perm("lists", auth.Read), (*server).apiSearchFoods},
+	{"GET", "/foods/{id}", auth.Perm("lists", auth.Read), (*server).apiGetNutritionFood},
+	{"GET", "/starter-recipes", auth.Perm("meals", auth.Read), (*server).apiListStarterRecipes},
+	{"GET", "/recipe-units", auth.Perm("meals", auth.Read), (*server).apiRecipeUnits},
 	{"GET", "/meal-templates", auth.Perm("meals", auth.Read), (*server).apiListMealTemplates},
 	{"POST", "/meal-templates", auth.Perm("meals", auth.Write), (*server).apiCreateMealTemplate},
 	{"GET", "/meal-templates/{id}", auth.Perm("meals", auth.Read), (*server).apiGetMealTemplate},
@@ -329,10 +361,12 @@ type personJSON struct {
 	Symbol string     `json:"symbol"`
 	// StreaksShown is the switch "week count and badges" (ticket 294).
 	StreaksShown bool `json:"streaks_shown"`
+	// NutritionShown is the switch "nutrition values at recipes" (ticket 288).
+	NutritionShown bool `json:"nutrition_shown"`
 }
 
 func toJSON(p store.Person) personJSON {
-	return personJSON{p.ID, p.Name, p.Role, p.Color, p.Shape, p.Symbol, p.StreaksShown}
+	return personJSON{p.ID, p.Name, p.Role, p.Color, p.Shape, p.Symbol, p.StreaksShown, p.NutritionShown}
 }
 
 func (s *server) apiMe(w http.ResponseWriter, _ *http.Request, p principal) {

@@ -27,7 +27,7 @@ func (f *familyBox) layoutForm(whole bool, people []string, on ...string) url.Va
 	for _, p := range people {
 		form.Add("person", f.people[p].ID)
 	}
-	for _, id := range []string{"clock", "weather", "events", "routines", "tasks", "meals", "tomorrow", "list"} {
+	for _, id := range []string{"clock", "weather", "events", "routines", "tasks", "stars", "meals", "tomorrow", "list", "emergency"} {
 		form.Add("order", id)
 	}
 	for _, id := range on {
@@ -36,7 +36,7 @@ func (f *familyBox) layoutForm(whole bool, people []string, on ...string) url.Va
 	return form
 }
 
-var defaultOn = []string{"clock", "weather", "events", "tasks", "meals", "tomorrow"}
+var defaultOn = []string{"clock", "weather", "events", "tasks", "stars", "meals", "tomorrow"}
 
 func (f *familyBox) saveLayout(t *testing.T, form url.Values) resp {
 	t.Helper()
@@ -213,7 +213,7 @@ func TestSwitchingRotationOnShowsTodaysColumnsAndTomorrowsOrder(t *testing.T) {
 	eq(t, got, posted)
 	// What is saved is what the page announced.
 	form.Del("order")
-	for _, id := range []string{"clock", "weather", "events", "routines", "tasks", "meals", "tomorrow", "list"} {
+	for _, id := range []string{"clock", "weather", "events", "routines", "tasks", "stars", "meals", "tomorrow", "list", "emergency"} {
 		form.Add("order", id)
 	}
 	f.saveLayout(t, form)

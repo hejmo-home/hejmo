@@ -1,0 +1,95 @@
+{{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
+  <h1>{{.Title}}</h1>
+  <p class="lead">{{.Lead}}</p>
+  {{if .ErrSummary}}<p class="error form-error" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{.ErrSummary}}</span></p>{{end}}
+  <form method="post" action="{{.Action}}" class="steps rcp-form" novalidate data-suggest="/meals/recipes/suggest">
+    {{template "defaultSubmit"}}
+    <fieldset id="rcp">
+      <legend>{{t "recipes.f.recipe"}}</legend>
+      <div class="f{{if and .Issues .Issues.Name}} invalid{{end}}"><label>{{t "recipes.f.name"}}<input name="name" type="text" maxlength="120" required value="{{.F.Name}}"{{if and .Issues .Issues.Name}} autofocus aria-invalid="true" aria-describedby="err-name hint-name"{{else}} aria-describedby="hint-name"{{end}}></label>
+        {{if and .Issues .Issues.Name}}<p class="ferr" id="err-name" role="alert">{{template "errIcon"}}<span>{{.Issues.Name}}</span></p>{{end}}
+        <p class="hint" id="hint-name">{{t "recipes.f.name.hint"}}</p></div>
+      <p class="hint">{{t "recipes.f.category"}}</p>
+      <fieldset class="units cat-pick"><legend class="vh">{{t "recipes.f.category"}}</legend>{{range .Cats}}<label><input type="radio" name="category" value="{{.Key}}"{{if .Checked}} checked{{end}}><span class="e" aria-hidden="true">{{.Symbol}}</span><span>{{.Name}}</span></label>{{end}}</fieldset>
+      <div class="pair">
+        <div class="f amount{{if and .Issues .Issues.Portions}} invalid{{end}}"><label for="portions">{{t "recipes.f.portions"}}</label>
+          <div class="stepper"><button class="button secondary step" type="button" data-step="down" aria-label="{{t "recipes.f.portions.less"}}"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button><input id="portions" name="portions" type="text" inputmode="numeric" value="{{.F.Portions}}" autocomplete="off"{{if and .Issues .Issues.Portions}} aria-invalid="true" aria-describedby="err-portions"{{end}}><button class="button secondary step" type="button" data-step="up" aria-label="{{t "recipes.f.portions.more"}}"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button></div>
+          {{if and .Issues .Issues.Portions}}<p class="ferr" id="err-portions" role="alert">{{template "errIcon"}}<span>{{.Issues.Portions}}</span></p>{{end}}</div>
+        <div class="f mins{{if and .Issues .Issues.Minutes}} invalid{{end}}"><label for="mins">{{t "recipes.f.minutes"}}</label>
+          <div class="with-unit"><input id="mins" name="minutes" type="text" inputmode="numeric" value="{{.F.Minutes}}" autocomplete="off" aria-describedby="{{if and .Issues .Issues.Minutes}}err-minutes {{end}}hint-mins"{{if and .Issues .Issues.Minutes}} aria-invalid="true"{{end}}><span>{{t "recipes.f.minutes.unit"}}</span></div>
+          {{if and .Issues .Issues.Minutes}}<p class="ferr" id="err-minutes" role="alert">{{template "errIcon"}}<span>{{.Issues.Minutes}}</span></p>{{end}}</div>
+      </div>
+      <p class="hint" id="hint-mins">{{t "recipes.f.minutes.hint"}}</p>
+    </fieldset>
+    <fieldset id="ings">
+      <legend>{{t "recipes.f.ings"}}</legend>
+      <p class="hint">{{t "recipes.f.ings.hint"}}</p>
+      <div class="ing-head" aria-hidden="true"><span>{{t "recipes.f.col.qty"}}</span><span>{{t "recipes.f.col.unit"}}</span><span>{{t "recipes.f.col.ing"}}</span></div>
+      <ol class="ing-lines" data-lines="ing">{{range .F.Ings}}{{template "rcpIngLine" (dict "L" . "Groups" $.UnitGroups)}}{{end}}</ol>
+      {{if and .Issues .Issues.ManyIngs}}<p class="ferr" role="alert">{{template "errIcon"}}<span>{{.Issues.ManyIngs}}</span></p>{{end}}
+      <button class="button secondary sq add" type="submit" name="act" value="more-ing" formnovalidate>{{template "plusIcon"}}{{t "recipes.f.ing.more"}}</button>
+      <template data-line="ing">{{template "rcpIngLine" (dict "L" .IngTpl "Groups" .UnitGroups)}}</template>
+    </fieldset>
+    <fieldset id="steps">
+      <legend>{{t "recipes.f.steps"}}</legend>
+      <p class="hint">{{t "recipes.f.steps.hint"}}</p>
+      <ol class="step-lines" data-lines="step">{{range .F.Steps}}{{template "rcpStepLine" (dict "L" .)}}{{end}}</ol>
+      {{if and .Issues .Issues.ManySteps}}<p class="ferr" role="alert">{{template "errIcon"}}<span>{{.Issues.ManySteps}}</span></p>{{end}}
+      <button class="button secondary sq add" type="submit" name="act" value="more-step" formnovalidate>{{template "plusIcon"}}{{t "recipes.f.step.more"}}</button>
+      <template data-line="step">{{template "rcpStepLine" (dict "L" .StepTpl)}}</template>
+    </fieldset>
+    <fieldset id="more" class="more-card">
+      <legend class="vh">{{t "recipes.f.more"}}</legend>
+      {{template "moreOpen" (dict "Label" (t "recipes.f.more") "Summary" .MoreSum "Class" "more-rcp" "Open" .MoreOpen)}}
+        <fieldset class="tag-pick"{{if and .Issues .Issues.More.mealtimes}} aria-invalid="true" aria-describedby="err-mealtimes"{{end}}><legend>{{t "recipes.f.mealtimes"}}</legend>{{range .Mealtimes}}<label class="pchip plain"><input type="checkbox" name="mealtime" value="{{.Key}}"{{if .Checked}} checked{{end}}>{{template "mealIcon" .Key}}{{.Name}}{{template "tickChip"}}</label>{{end}}</fieldset>
+        {{if and .Issues .Issues.More.mealtimes}}<p class="ferr" id="err-mealtimes" role="alert">{{template "errIcon"}}<span>{{.Issues.More.mealtimes}}</span></p>{{end}}
+        <p class="hint">{{t "recipes.f.mealtimes.hint"}}</p>
+        <fieldset class="tag-pick"><legend>{{t "recipes.f.tags"}}</legend>{{range .TagChips}}<label class="pchip plain"><input type="checkbox" name="tag" value="{{.Tag}}"{{if .Checked}} checked{{end}}>{{.Tag}}{{template "tickChip"}}</label>{{end}}</fieldset>
+        <div class="f{{if and .Issues .Issues.More.tags}} invalid{{end}}"><label>{{t "recipes.f.newtag"}}<input name="new_tag" type="text" maxlength="120" value="{{.F.NewTag}}" placeholder="{{t "recipes.f.newtag.placeholder"}}"{{if and .Issues .Issues.More.tags}} aria-invalid="true" aria-describedby="err-tags"{{end}}></label>
+          {{if and .Issues .Issues.More.tags}}<p class="ferr" id="err-tags" role="alert">{{template "errIcon"}}<span>{{.Issues.More.tags}}</span></p>{{end}}
+          <p class="hint">{{t "recipes.f.newtag.hint"}}</p></div>
+        <div class="f{{if and .Issues .Issues.More.tips}} invalid{{end}}"><label>{{t "recipes.f.tips"}}<textarea name="tips" rows="3"{{if and .Issues .Issues.More.tips}} aria-invalid="true" aria-describedby="err-tips"{{else}} maxlength="{{.MaxTips}}"{{end}}>{{.F.Tips}}</textarea></label>
+          {{if and .Issues .Issues.More.tips}}<p class="ferr" id="err-tips" role="alert">{{template "errIcon"}}<span>{{.Issues.More.tips}}</span></p>{{end}}
+          <p class="counter" data-max="{{.MaxTips}}" data-format="{{t "recipes.f.tips.counter"}}">{{.Counter}}</p></div>
+        <div class="f{{if and .Issues .Issues.More.source}} invalid{{end}}"><label>{{t "recipes.f.source"}}<input name="source" type="text" value="{{.F.Source}}"{{if and .Issues .Issues.More.source}} aria-invalid="true" aria-describedby="err-source"{{else}} maxlength="300"{{end}}></label>
+          {{if and .Issues .Issues.More.source}}<p class="ferr" id="err-source" role="alert">{{template "errIcon"}}<span>{{.Issues.More.source}}</span></p>{{end}}
+          <p class="hint">{{t "recipes.f.source.hint"}}</p></div>
+      {{template "moreClose"}}
+    </fieldset>
+    <div class="savebar"><button class="button" type="submit">{{.Save}}</button><span class="dirty" hidden>{{t "recipes.dirty"}}</span><a class="cancel" href="{{.CancelHref}}">{{t "recipes.cancel"}}</a></div>
+  </form>
+  <script src="/static/recipe.js" defer></script>
+{{template "foot"}}
+
+{{define "tickChip"}}<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>{{end}}
+{{define "errIcon"}}<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{end}}
+
+{{/* One ingredient line of the recipe form (ticket 279). Arguments: L (the line) and Groups (the units to choose from). */}}
+{{define "rcpIngLine"}}{{$l := .L}}
+<li class="ing{{if $l.Blank}} blank{{end}}{{if $l.Err}} invalid{{end}}" id="ing{{$l.Num}}">
+  <input class="iq{{if eq $l.Bad "amount"}} bad{{end}}" type="text" name="ing_amount" inputmode="decimal" autocomplete="off" aria-label="{{repl (t "recipes.f.qty.label") "%d" $l.Num}}" placeholder="{{t "recipes.f.qty.placeholder"}}" value="{{$l.Amount}}"{{if eq $l.Bad "amount"}} aria-invalid="true" aria-describedby="err-ing{{$l.Num}}"{{end}}>
+  <select class="iu{{if eq $l.Bad "unit"}} bad{{end}}" name="ing_unit" aria-label="{{repl (t "recipes.f.unit.label") "%d" $l.Num}}"{{if eq $l.Bad "unit"}} aria-invalid="true" aria-describedby="err-ing{{$l.Num}}"{{end}}><option value=""{{if not $l.Unit}} selected{{end}}>{{t "recipes.f.unit.none"}}</option>{{range .Groups}}<optgroup label="{{.Label}}">{{range .Units}}<option value="{{.Key}}"{{if eq .Key $l.Unit}} selected{{end}}>{{.Name}}</option>{{end}}</optgroup>{{end}}</select>
+  <input class="in{{if eq $l.Bad "name"}} bad{{end}}" type="text" role="combobox" name="ing_name" autocomplete="off" aria-label="{{repl (t "recipes.f.ing.label") "%d" $l.Num}}" placeholder="{{t "recipes.f.ing.placeholder"}}" value="{{$l.Name}}"{{if eq $l.Bad "name"}} aria-invalid="true" aria-describedby="err-ing{{$l.Num}}"{{end}}>
+  <input type="hidden" name="ing_article" value="{{$l.Article}}">
+  {{if not $l.Blank}}<button class="button secondary sq rm" type="submit" name="act" value="rm-ing-{{$l.Num}}" formnovalidate aria-label="{{$l.AriaRemove}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>{{t "recipes.f.ing.remove"}}</button>{{end}}
+  {{if $l.IsArticle}}<div class="ing-meta"><p class="ing-state ok"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>{{$l.StateHTML}}</span></p>
+    <details class="more variety-more"{{if or $l.VarietyOpen (eq $l.Bad "variety")}} open{{end}}><summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><span>{{t "recipes.ing.variety"}}</span><span class="v-state{{if $l.ShownVariety}} chosen{{end}}">{{or $l.ShownVariety (t "recipes.ing.variety.none")}}</span></summary><div><div class="f"><label>{{$l.VarLabel}}<input type="text" name="ing_variety" maxlength="60" value="{{$l.Variety}}" list="var{{$l.Num}}" autocomplete="off"></label><datalist id="var{{$l.Num}}">{{range $l.KnownVarieties}}<option value="{{.}}">{{end}}</datalist><p class="hint">{{t "recipes.ing.variety.hint"}}</p></div></div></details></div>
+  {{else}}<input type="hidden" name="ing_variety" value="">{{if $l.FreeState}}<p class="ing-state free">{{template "helpIcon"}}<span>{{$l.FreeState}}</span></p>{{end}}{{end}}
+  {{range $l.Warns}}{{.}}{{end}}
+  {{if $l.Err}}<p class="ferr" id="err-ing{{$l.Num}}" role="alert">{{template "errIcon"}}<span>{{$l.Err}}</span></p>{{end}}
+</li>{{end}}
+
+{{/* One step of the recipe form. Arguments: L (the step). */}}
+{{define "rcpStepLine"}}{{$l := .L}}
+<li class="step{{if $l.Blank}} blank{{end}}{{if $l.Err}} invalid{{end}}" id="step{{$l.Num}}">
+  <textarea name="step" rows="3" maxlength="2000" aria-label="{{repl (t "recipes.f.step.label") "%d" $l.Num}}" placeholder="{{t "recipes.f.step.placeholder"}}"{{if $l.Err}} aria-invalid="true" aria-describedby="err-step{{$l.Num}}"{{end}}>{{$l.Text}}</textarea>
+  <div class="acts">{{if not $l.NoUp}}<button class="button secondary sq" type="submit" name="act" value="up-step-{{$l.Num}}" formnovalidate aria-label="{{repl (t "recipes.f.step.up.aria") "%d" $l.Num}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>{{t "recipes.f.step.up"}}</button>{{end}}{{if not $l.NoDown}}<button class="button secondary sq" type="submit" name="act" value="down-step-{{$l.Num}}" formnovalidate aria-label="{{repl (t "recipes.f.step.down.aria") "%d" $l.Num}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>{{t "recipes.f.step.down"}}</button>{{end}}<button class="button secondary sq" type="submit" name="act" value="rm-step-{{$l.Num}}" formnovalidate aria-label="{{repl (t "recipes.f.step.remove.aria") "%d" $l.Num}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>{{t "recipes.f.step.remove"}}</button></div>
+  {{if $l.Err}}<p class="ferr" id="err-step{{$l.Num}}" role="alert">{{template "errIcon"}}<span>{{$l.Err}}</span></p>{{end}}
+</li>{{end}}
+
+{{/* The suggestions under an ingredient line (ticket 279), a fragment the script of the form asks for. Argument: rcpSuggView. */}}
+{{define "rcpSuggest"}}<div class="sugg"><p class="sugg-q" id="sq{{.N}}">{{.Intro}}</p>
+  <ul class="place-list art-sugg" role="listbox" aria-labelledby="sq{{.N}}">{{range .Rows}}
+    <li role="option" data-article="{{.ID}}" data-name="{{.Name}}"{{with .Variety}} data-variety="{{.}}"{{end}}><span class="art-sym" aria-hidden="true">{{.Symbol}}</span><b>{{.Name}}{{with .Variety}}<span class="variety"> · {{.}}</span>{{end}}</b><small>{{.Sub}}</small>{{range .Warns}}{{.}}{{end}}</li>{{end}}
+    <li role="option" class="free" data-free><span class="art-sym" aria-hidden="true"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h8"/></svg></span><b>{{.FreeName}}</b><small>{{.FreeSub}}</small></li>
+  </ul></div>{{end}}

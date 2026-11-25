@@ -34,9 +34,12 @@ const (
 	Events   BlockID = "events"
 	Routines BlockID = "routines"
 	Tasks    BlockID = "tasks"
+	Stars    BlockID = "stars" // stars and savings goal (ticket 293)
 	Meals    BlockID = "meals"
 	Tomorrow BlockID = "tomorrow"
 	List     BlockID = "list"
+	// Emergency is the emergency numbers of the contact group "Notfall" (ticket 303): a row of its own in the footer.
+	Emergency BlockID = "emergency"
 )
 
 type spec struct {
@@ -49,8 +52,8 @@ type spec struct {
 // one list, start off so a new display looks like today (Q89, Q128).
 var catalogue = []spec{
 	{Clock, Header, true}, {Weather, Header, true},
-	{Events, Columns, true}, {Routines, Columns, false}, {Tasks, Columns, true},
-	{Meals, Footer, true}, {Tomorrow, Footer, true}, {List, Footer, false},
+	{Events, Columns, true}, {Routines, Columns, false}, {Tasks, Columns, true}, {Stars, Columns, true},
+	{Meals, Footer, true}, {Tomorrow, Footer, true}, {List, Footer, false}, {Emergency, Footer, false},
 }
 
 // ZoneOf is the zone a block belongs to; false for an unknown block.
@@ -74,6 +77,26 @@ type Block struct {
 
 // MaxListEntries is how many open entries the list block shows in full (Q129).
 const MaxListEntries = 8
+
+// EmergencyFit is how many contacts of the emergency numbers block fit in the
+// rows that leave the columns room: one row of three in landscape, two rows of
+// two in portrait (ticket 303). More contacts still show in full, in more rows.
+func EmergencyFit(portrait bool) int {
+	if portrait {
+		return 4
+	}
+	return 3
+}
+
+// EmergencyRows is how many rows n contacts need: three per row in landscape,
+// two in portrait.
+func EmergencyRows(n int, portrait bool) int {
+	perRow := 3
+	if portrait {
+		perRow = 2
+	}
+	return (n + perRow - 1) / perRow
+}
 
 // Layout is the layout of one display.
 type Layout struct {

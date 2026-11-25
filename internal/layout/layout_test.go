@@ -28,8 +28,8 @@ func TestADefaultLayoutLooksLikeTodaysDisplay(t *testing.T) {
 	}
 	want := map[layout.BlockID]bool{
 		layout.Clock: true, layout.Weather: true,
-		layout.Events: true, layout.Routines: false, layout.Tasks: true,
-		layout.Meals: true, layout.Tomorrow: true, layout.List: false,
+		layout.Events: true, layout.Routines: false, layout.Tasks: true, layout.Stars: true,
+		layout.Meals: true, layout.Tomorrow: true, layout.List: false, layout.Emergency: false,
 	}
 	for id, on := range want {
 		if l.Enabled(id) != on {
@@ -40,10 +40,10 @@ func TestADefaultLayoutLooksLikeTodaysDisplay(t *testing.T) {
 	if got := ids(l.In(layout.Header)); !slices.Equal(got, []layout.BlockID{layout.Clock, layout.Weather}) {
 		t.Errorf("header = %v", got)
 	}
-	if got := ids(l.In(layout.Columns)); !slices.Equal(got, []layout.BlockID{layout.Events, layout.Routines, layout.Tasks}) {
+	if got := ids(l.In(layout.Columns)); !slices.Equal(got, []layout.BlockID{layout.Events, layout.Routines, layout.Tasks, layout.Stars}) {
 		t.Errorf("columns = %v", got)
 	}
-	if got := ids(l.In(layout.Footer)); !slices.Equal(got, []layout.BlockID{layout.Meals, layout.Tomorrow, layout.List}) {
+	if got := ids(l.In(layout.Footer)); !slices.Equal(got, []layout.BlockID{layout.Meals, layout.Tomorrow, layout.List, layout.Emergency}) {
 		t.Errorf("footer = %v", got)
 	}
 }
@@ -62,7 +62,7 @@ func TestNormalizeCompletesBlocksAndDropsUnknownOnes(t *testing.T) {
 	if n.Enabled(layout.Weather) {
 		t.Errorf("the stored switch was lost")
 	}
-	if got := ids(n.In(layout.Columns)); !slices.Equal(got, []layout.BlockID{layout.Tasks, layout.Events, layout.Routines}) {
+	if got := ids(n.In(layout.Columns)); !slices.Equal(got, []layout.BlockID{layout.Tasks, layout.Events, layout.Routines, layout.Stars}) {
 		t.Errorf("columns = %v", got)
 	}
 	if n.Enabled(layout.Events) != true || n.Enabled(layout.Routines) != false {
@@ -197,5 +197,42 @@ func TestTheRotationFollowsTheNumberOfPeople(t *testing.T) {
 	}
 	if got := four.Order(101); !slices.Equal(got, []string{"d", "a", "b", "c"}) { // 101 mod 4 = 1
 		t.Errorf("four = %v", got)
+	}
+}
+
+// Ticket 303: the emergency numbers block is new, so a stored layout gets it at
+// the end of the footer, off.
+func TestEmergencyNumbersJoinAnExistingFooterAtTheEndAndOff(t *testing.T) {
+	l := layout.Layout{Whole: true, People: family, Blocks: []layout.Block{
+		{ID: layout.List, On: true}, {ID: layout.Meals, On: true}, {ID: layout.Tomorrow, On: true},
+	}}
+	n := l.Normalize(family)
+	if got := ids(n.In(layout.Footer)); !slices.Equal(got, []layout.BlockID{layout.List, layout.Meals, layout.Tomorrow, layout.Emergency}) {
+		t.Errorf("footer = %v", got)
+	}
+	if n.Enabled(layout.Emergency) {
+		t.Errorf("a block that was added later starts off")
+	}
+	if z, ok := layout.ZoneOf(layout.Emergency); !ok || z != layout.Footer {
+		t.Errorf("zone = %v %v", z, ok)
+	}
+}
+
+// Ticket 303: 3 contacts fit in one row in landscape, 2 per row in portrait, and
+// four fit in two rows; more need more rows, and nothing is cut.
+func TestEmergencyContactsThatFitAndTheRowsTheyNeed(t *testing.T) {
+	for _, c := range []struct {
+		portrait     bool
+		fit, n, rows int
+	}{
+		{false, 3, 0, 0}, {false, 3, 1, 1}, {false, 3, 3, 1}, {false, 3, 4, 2}, {false, 3, 7, 3},
+		{true, 4, 2, 1}, {true, 4, 4, 2}, {true, 4, 5, 3}, {true, 4, 8, 4},
+	} {
+		if got := layout.EmergencyFit(c.portrait); got != c.fit {
+			t.Errorf("fit(portrait %v) = %d, want %d", c.portrait, got, c.fit)
+		}
+		if got := layout.EmergencyRows(c.n, c.portrait); got != c.rows {
+			t.Errorf("rows(%d, portrait %v) = %d, want %d", c.n, c.portrait, got, c.rows)
+		}
 	}
 }

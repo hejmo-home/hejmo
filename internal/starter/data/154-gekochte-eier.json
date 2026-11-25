@@ -1,0 +1,86 @@
+{
+  "n": 154,
+  "slug": "gekochte-eier",
+  "category": "Frühstück",
+  "servings": 1,
+  "time_minutes": 7,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/soft-boiled-eggs",
+    "site": "BBC Good Food",
+    "ratings": 27
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eier, Größe L",
+      "article_en": "Eggs, large",
+      "note_de": "zimmerwarm",
+      "note_en": "at room temperature"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Toast",
+      "article_en": "Toast",
+      "note_de": "zum Servieren",
+      "note_en": "to serve"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Wasser",
+      "article_en": "Water",
+      "note_de": "zum Kochen, in einem mittelgroßen Topf",
+      "note_en": "for boiling, in a medium saucepan"
+    }
+  ],
+  "de": {
+    "title": "Gekochte Eier",
+    "steps": [
+      "Die Eier rechtzeitig aus dem Kühlschrank nehmen. Zimmerwarme Eier platzen beim Kochen seltener. Wer hat, kann sie vorher mit dem Eierpiekser anpiksen.",
+      "Einen mittelgroßen Topf mit Wasser füllen und zum sprudelnden Kochen bringen.",
+      "Die Eier mit einem Löffel langsam ins Wasser gleiten lassen. Nicht fallen lassen, sonst springt die Schale.",
+      "Ab jetzt die Zeit stoppen: Für ein flüssiges Eigelb zum Tunken (zum Beispiel für Toast) 4 bis 5 Minuten kochen.",
+      "Für Salat sollen die Eier weich gekocht sein, das heißt 6 bis 7 Minuten. Das Eigelb ist dann weich gestockt.",
+      "Für Salat die Eier sofort in kaltes Wasser (gern mit Eiswürfeln) legen. Das stoppt das Garen.",
+      "Zum Tunken die Eier direkt im Eierbecher servieren, dazu Toast reichen."
+    ]
+  },
+  "en": {
+    "title": "Boiled eggs",
+    "steps": [
+      "Take the eggs out of the fridge in good time. Room-temperature eggs crack less often. If you have an egg pricker, prick them first.",
+      "Fill a medium saucepan with water and bring it to a rolling boil.",
+      "Slide the eggs into the water slowly with a spoon. Do not drop them, or the shell will crack.",
+      "Start the timer now: for a runny yolk for dipping (for example with toast), cook 4 to 5 minutes.",
+      "For salad the eggs should be soft-boiled, which means 6 to 7 minutes. The yolk is then softly set.",
+      "For salad, put the eggs straight into cold water (ice cubes are fine). This stops the cooking.",
+      "For dipping, serve the eggs right away in egg cups, with toast alongside."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Rating count from the list. Source brand name (Clarence Court) dropped. Page shows total time 5 min but cook time 7 min; 7 used. Source steps not copied. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

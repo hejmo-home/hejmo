@@ -1,0 +1,149 @@
+{
+  "n": 189,
+  "slug": "vanillepudding",
+  "category": "Desserts",
+  "servings": 6,
+  "time_minutes": 60,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/vla-niederlaendischer-vanillepudding-96097",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "1 EL zu den Eiern, der Rest zur Sahne",
+      "note_en": "1 tbsp for the eggs, the rest for the cream"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    },
+    {
+      "amount": 40,
+      "unit": "g",
+      "article_de": "Speisestärke",
+      "article_en": "Cornflour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Liter",
+      "article_de": "Milch",
+      "article_en": "Whole milk",
+      "note_de": "3,5 % Fett",
+      "note_en": "3.5% fat"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Vanilleschote",
+      "article_en": "Vanilla pod",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "ml",
+      "article_de": "Sahne",
+      "article_en": "Whipping cream",
+      "note_de": "30 % Fett",
+      "note_en": "30% fat"
+    },
+    {
+      "amount": 20,
+      "unit": "g",
+      "article_de": "Heidelbeeren",
+      "article_en": "Blueberries",
+      "note_de": "zum Servieren",
+      "note_en": "to serve"
+    },
+    {
+      "amount": 20,
+      "unit": "g",
+      "article_de": "Himbeeren",
+      "article_en": "Raspberries",
+      "note_de": "zum Servieren",
+      "note_en": "to serve"
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Erdbeeren",
+      "article_en": "Strawberries",
+      "note_de": "zum Servieren",
+      "note_en": "to serve"
+    }
+  ],
+  "de": {
+    "title": "Vla (niederländischer Vanillepudding)",
+    "steps": [
+      "Verquirle 2 Eier mit 1 EL Zucker, bis die Masse schaumig ist.",
+      "Rühre 40 g Speisestärke in 2 EL kalter Milch aus dem Liter glatt.",
+      "Erhitze die restliche Milch mit der aufgeschlitzten Vanilleschote in einem Topf. Wenn die Milch zu kochen beginnt, nimm die Schote heraus und zieh den Topf vom Herd.",
+      "Rühre erst jetzt, weg von der Hitze, die Stärke ein, dann die Eiermasse.",
+      "Lass den Pudding abkühlen und rühre ihn dabei alle 5 Minuten durch, damit sich keine Haut bildet.",
+      "Schlage 250 ml Sahne mit den restlichen 2 EL Zucker steif und hebe sie unter den abgekühlten Pudding.",
+      "Serviere ihn mit Heidelbeeren, Himbeeren und Erdbeeren."
+    ]
+  },
+  "en": {
+    "title": "Vla (Dutch vanilla pudding)",
+    "steps": [
+      "Whisk 2 eggs with 1 tbsp sugar until frothy.",
+      "Stir 40 g cornflour smooth in 2 tbsp cold milk taken from the litre.",
+      "Heat the rest of the milk with the split vanilla pod in a pot. When the milk starts to boil, take out the pod and pull the pot off the heat.",
+      "Only now, off the heat, stir in the cornflour, then the egg mixture.",
+      "Let the custard cool and stir it every 5 minutes so no skin forms.",
+      "Whip 250 ml cream with the remaining 2 tbsp sugar until stiff and fold it into the cooled custard.",
+      "Serve with blueberries, raspberries and strawberries."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1000,
+        "unit": "ml"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Page shows 40 ratings; list says Redaktionsküche. Source yield \"ca. 6 Portionen\". Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

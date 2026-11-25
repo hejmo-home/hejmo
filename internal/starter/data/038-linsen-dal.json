@@ -1,0 +1,138 @@
+{
+  "n": 38,
+  "slug": "linsen-dal",
+  "category": "Hauptgerichte",
+  "servings": 2,
+  "time_minutes": 70,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/tarka-dhal",
+    "site": "BBC Good Food",
+    "ratings": 50
+  },
+  "ingredients": [
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Linsen, rot",
+      "article_en": "Red lentils",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Ghee oder Pflanzenöl",
+      "article_en": "Ghee or vegetable oil",
+      "note_de": "Pflanzenöl für die vegane Variante",
+      "note_en": "vegetable oil if you are vegan"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel, klein",
+      "article_en": "Small onion",
+      "note_de": "fein gehackt",
+      "note_en": "finely chopped"
+    },
+    {
+      "amount": 3,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": "fein gehackt",
+      "note_en": "finely chopped"
+    },
+    {
+      "amount": 0.2,
+      "unit": "TL",
+      "article_de": "Kurkuma",
+      "article_en": "Turmeric",
+      "note_de": "¼ TL",
+      "note_en": "¼ tsp"
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Garam Masala",
+      "article_en": "Garam masala",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Koriander",
+      "article_en": "Coriander",
+      "note_de": "zum Servieren",
+      "note_en": "to serve"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Tomate, klein",
+      "article_en": "Small tomato",
+      "note_de": "gehackt",
+      "note_en": "chopped"
+    }
+  ],
+  "de": {
+    "title": "Linsen-Dal",
+    "steps": [
+      "Wasche die roten Linsen in einem Sieb unter fließendem Wasser, bis das Wasser klar abläuft.",
+      "Gib die Linsen mit 1 Liter Wasser und etwas Salz in einen Topf mit Deckel und bringe sie zum Kochen. Lass sie ohne Deckel 25 Minuten sanft köcheln und schöpfe den Schaum ab, der oben schwimmt.",
+      "Lege den Deckel auf und lass das Dal weitere 40 Minuten garen. Rühre zwischendurch gelegentlich um. Am Ende soll es dick und suppig sein.",
+      "Erhitze in der Zwischenzeit das Ghee in einer beschichteten Pfanne bei mittlerer Hitze. Brate Zwiebel und Knoblauch ca. 8 Minuten, bis die Zwiebel weich ist. Rühre Kurkuma und Garam Masala ein und brate sie 1 Minute mit.",
+      "Fülle das Dal in Schalen und gib die Zwiebelmischung obenauf. Garniere mit Koriander und der gehackten Tomate."
+    ]
+  },
+  "en": {
+    "title": "Red lentil dal",
+    "steps": [
+      "Wash the red lentils in a sieve under running water until the water runs clear.",
+      "Put the lentils with 1 litre of water and a little salt in a pot with a lid and bring to the boil. Simmer gently without a lid for 25 minutes and skim off the froth that floats on top.",
+      "Put the lid on and let the dal cook for another 40 minutes. Stir occasionally. At the end it should be thick and soupy.",
+      "In the meantime, heat the ghee in a non-stick frying pan over medium heat. Fry the onion and garlic for about 8 minutes, until the onion is soft. Stir in the turmeric and garam masala and cook for 1 minute.",
+      "Ladle the dal into bowls and put the onion mixture on top. Garnish with coriander and the chopped tomato."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 3,
+        "unit": "clove"
+      },
+      {
+        "index": 4,
+        "amount": 0.2,
+        "unit": "tsp"
+      },
+      {
+        "index": 5,
+        "amount": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "piece"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Source states water (1 litre) and a pinch of salt only in the method; kept out of the ingredient list. The list calls this vegan; that only holds when vegetable oil is used instead of ghee. Turmeric 1/4 tsp rounded down to 0.2. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

@@ -1,0 +1,236 @@
+{
+  "n": 34,
+  "slug": "chili-con-carne",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 70,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/chilli-con-carne-recipe",
+    "site": "BBC Good Food",
+    "ratings": 3129
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel, groß",
+      "article_en": "Large onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Paprika, rot",
+      "article_en": "Red pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Chilipulver, scharf",
+      "article_en": "Hot chilli powder",
+      "note_de": "gehäuft; oder 1 EL gestrichen, wenn nur mildes vorhanden",
+      "note_en": "heaped; or 1 level tbsp if you only have mild"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Paprikapulver",
+      "article_en": "Paprika",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Kreuzkümmel, gemahlen",
+      "article_en": "Ground cumin",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Rinderhackfleisch, mager",
+      "article_en": "Lean minced beef",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Rinderbrühwürfel",
+      "article_en": "Beef stock cube",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Tomaten, gehackt (Dose)",
+      "article_en": "Chopped tomatoes (can)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Majoran, getrocknet",
+      "article_en": "Dried marjoram",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "oder ein daumennagelgroßes Stück dunkle Schokolade zusammen mit den Bohnen",
+      "note_en": "or a thumbnail-sized piece of dark chocolate added with the beans"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Tomatenmark",
+      "article_en": "Tomato purée",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 410,
+      "unit": "g",
+      "article_de": "Kidneybohnen, rot (Dose)",
+      "article_en": "Red kidney beans (can)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Langkornreis, gekocht",
+      "article_en": "Plain boiled long-grain rice",
+      "note_de": "zum Servieren",
+      "note_en": "to serve"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Saure Sahne",
+      "article_en": "Soured cream",
+      "note_de": "zum Servieren",
+      "note_en": "to serve"
+    }
+  ],
+  "de": {
+    "title": "Chili con Carne",
+    "steps": [
+      "Würfle die Zwiebel in etwa 5 mm große Stücke. Hacke die Paprika und den Knoblauch. Koche gleich den Reis nach Packungsanleitung, damit er zum Servieren fertig ist.",
+      "Erhitze das Öl 1 bis 2 Minuten in einem großen Topf mit Deckel bei mittlerer Hitze. Brate die Zwiebel etwa 5 Minuten, bis sie weich und glasig ist.",
+      "Gib Knoblauch, Paprika, Chilipulver, Paprikapulver und Kreuzkümmel dazu und brate alles 5 Minuten mit.",
+      "Erhöhe die Hitze und gib das Hackfleisch dazu. Brate es mindestens 5 Minuten unter Rühren und Zerdrücken, bis nichts Rosafarbenes mehr zu sehen ist. Es soll braten, nicht im eigenen Saft schmoren.",
+      "Löse den Brühwürfel in 300 ml heißem Wasser auf und gieße ihn dazu. Gib Tomaten, Majoran, Zucker und Tomatenmark dazu. Lass alles zugedeckt bei niedriger Hitze 20 Minuten sanft köcheln. Schaue zwischendurch nach und rühre um. Wenn etwas ansetzt, gib einen Schuss Wasser dazu.",
+      "Gib die abgetropften Kidneybohnen dazu und lass alles weitere 10 Minuten ohne Deckel köcheln. Die Soße soll dick, aber saftig sein.",
+      "Schmecke kräftig ab. Chili braucht mehr Würze, als man denkt. Nimm den Topf vom Herd und lass das Chili 10 Minuten ruhen. Das lohnt sich. Serviere es mit Reis und saurer Sahne."
+    ]
+  },
+  "en": {
+    "title": "Chilli con carne",
+    "steps": [
+      "Dice the onion into pieces of about 5 mm. Chop the pepper and garlic. Start the rice according to the packet now, so it is ready for serving.",
+      "Heat the oil for 1 to 2 minutes in a large pan with a lid over medium heat. Cook the onion for about 5 minutes, until soft and translucent.",
+      "Add the garlic, pepper, chilli powder, paprika and cumin and cook everything together for 5 minutes.",
+      "Turn up the heat and add the mince. Cook it for at least 5 minutes, stirring and breaking it up, until there is no pink left. It should fry, not stew in its own juices.",
+      "Dissolve the stock cube in 300 ml of hot water and pour it in. Add the tomatoes, marjoram, sugar and tomato purée. Let everything simmer gently over low heat, covered, for 20 minutes. Check in between and stir. If anything sticks, add a splash of water.",
+      "Add the drained kidney beans and simmer for another 10 minutes without the lid. The sauce should be thick but juicy.",
+      "Season boldly. Chilli needs more seasoning than you expect. Take the pan off the heat and let the chilli rest for 10 minutes. It is worth it. Serve it with rice and soured cream."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "clove"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 10,
+        "amount": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 11,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 12,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Chilli powder: the source offers hot (1 heaped tsp) or mild (1 level tbsp); the hot variant is listed. Use less for young children. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/badge"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/task"
 )
@@ -211,15 +212,17 @@ func (s *server) apiDeleteTask(w http.ResponseWriter, r *http.Request, p princip
 
 // tickTask ticks a task off or open for today. A child may only change their
 // own tasks (ADR 0015).
-func (s *server) tickTask(p principal, id string, done bool) (task.Task, error) {
+// It also returns the badges the tick awarded (ticket 295).
+func (s *server) tickTask(p principal, id string, done bool) (task.Task, []badge.Key, error) {
 	t, err := s.db.Task(p.household.ID, id)
 	if err != nil {
-		return task.Task{}, err
+		return task.Task{}, nil, err
 	}
 	if p.person.Role == store.RoleChild && t.PersonID != p.person.ID {
-		return task.Task{}, errNotYourTask
+		return task.Task{}, nil, errNotYourTask
 	}
-	return t, s.db.SetTaskDone(p.household.ID, id, s.today(p), done, p.person.ID, s.now())
+	won, err := s.db.TickTask(p.household.ID, id, s.today(p), done, p.person.ID, s.now())
+	return t, won, err
 }
 
 var errNotYourTask = errors.New("a child may only tick off their own tasks")
@@ -236,7 +239,7 @@ func (s *server) apiSetTaskDone(w http.ResponseWriter, r *http.Request, p princi
 		writeError(w, http.StatusUnprocessableEntity, "done is required")
 		return
 	}
-	t, err := s.tickTask(p, r.PathValue("id"), *in.Done)
+	t, _, err := s.tickTask(p, r.PathValue("id"), *in.Done)
 	switch {
 	case errors.Is(err, store.ErrNotFound):
 		writeError(w, http.StatusNotFound, "task not found")

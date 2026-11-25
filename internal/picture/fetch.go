@@ -70,6 +70,9 @@ type Fetcher struct {
 	// switched off or offline mode on, nothing is downloaded. Nil lets every
 	// public address through (tests and tools).
 	Gate *outbound.Gate
+	// Service is the connection the download counts as; the zero value is outbound.Images. The recipe
+	// import (ticket 289) fetches the page's picture as outbound.Recipes.
+	Service outbound.Service
 }
 
 func (f *Fetcher) public(a netip.Addr) bool {
@@ -107,7 +110,11 @@ func (f *Fetcher) FetchMax(ctx context.Context, rawURL string, maxSide int) (Fet
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	client := f.Gate.NewClient(outbound.Images, outbound.ClientConfig{
+	svc := f.Service
+	if svc == "" {
+		svc = outbound.Images
+	}
+	client := f.Gate.NewClient(svc, outbound.ClientConfig{
 		Timeout: timeout,
 		AllowAddr: func(a netip.Addr) error {
 			if !f.public(a) {

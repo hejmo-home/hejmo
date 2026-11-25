@@ -2917,6 +2917,42 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /recipes/{id}/favourites:
+    put:
+      operationId: setRecipeFavourites
+      summary: Mark a recipe as the favourite of people, "Mia likes it" (scope meals:write, parents only)
+      description: |
+        Replaces the marks: the recipe is afterwards a favourite of exactly the
+        people in `person_ids` (members of the household, each once), and of
+        nobody with an empty list. The meal plan's suggestions show favourites
+        first. Only the household's own recipes can be marked: a starter recipe
+        (id starts with `starter-`) cannot be planned and answers 403. An unknown
+        person is 422, field `person_ids`; nothing changes then. Answers the
+        recipe with `favourite_of` and `last_cooked`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [person_ids]
+              properties:
+                person_ids:
+                  type: array
+                  items: { type: string, format: uuid }
+      responses:
+        "200":
+          description: The recipe with its marks
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Recipe" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /recipes/{id}/warnings:
     get:
       operationId: getRecipeWarnings
@@ -7047,9 +7083,14 @@ components:
           items: { type: string }
     Recipe:
       type: object
-      required: [id, name, category, portions, minutes, mealtimes, tags, tips, source, source_url, source_name, starter, ingredients, steps, diet, created_by, created_at, updated_by, updated_at]
+      required: [id, name, category, portions, minutes, mealtimes, tags, tips, source, source_url, source_name, starter, ingredients, steps, diet, favourite_of, last_cooked, created_by, created_at, updated_by, updated_at]
       properties:
         id: { type: string, description: A uuid; a starter recipe's id starts with "starter-" }
+        favourite_of:
+          type: array
+          items: { type: string, format: uuid }
+          description: "The people who like the recipe (\"Mia likes it\"), in the order of the household; set with `PUT /recipes/{id}/favourites`. Empty for a starter recipe."
+        last_cooked: { type: string, format: date, nullable: true, description: "The latest day the recipe was planned that is over (before today, in the household's time zone), null when it never was. It moves on by itself when a planned day passes. Null for a starter recipe." }
         starter: { type: boolean, description: "True for a recipe of the starter collection, which nobody in the household wrote and nobody can change" }
         source_name: { type: string, nullable: true, description: 'The site the ingredients are after ("Ingredients after: Chefkoch"); only a starter recipe has one' }
         name: { type: string }

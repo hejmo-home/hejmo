@@ -113,7 +113,7 @@ func (s *server) handleRecipeCook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q := r.URL.Query()
-	if q.Get("done") == "1" { // writes nothing: "last cooked" belongs to ticket 287
+	if q.Get("done") == "1" { // writes nothing: "last cooked" follows the meal plan (ticket 287), not this button
 		s.redirectSavedNamed(w, r, recipesPath+"/"+rec.ID, "flash.cook_done", rec.Name)
 		return
 	}

@@ -188,6 +188,15 @@ var wholeFamilyTexts = map[string]bool{
 	"meals.rcp.error.portions":                 true,
 	"meals.rcp.error.portions.empty":           true,
 	"meals.sugg.unchecked":                     true, // "Prüft Hejmo nicht:" is no imperative: Hejmo is the subject (ticket 281)
+	"recipes.import.again":                     true, // the household as a whole (ticket 289)
+	"recipes.import.again.anon":                true, // the household as a whole (ticket 289)
+	"recipes.import.newart.title":              true, // the household as a whole (ticket 289)
+	"recipes.import.pic.on":                    true, // the household as a whole (ticket 289)
+	"recipes.import.pick.own.sub":              true, // the household as a whole (ticket 289)
+	"recipes.import.privacy":                   true, // the household as a whole (ticket 289)
+	"recipes.import.source.hint":               true, // the household as a whole (ticket 289)
+	"recipes.import.steps.hint":                true, // the household as a whole (ticket 289)
+	"recipes.import.yield.none":                true, // the household as a whole (ticket 289)
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

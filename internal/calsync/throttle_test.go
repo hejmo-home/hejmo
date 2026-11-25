@@ -459,6 +459,15 @@ func TestCalDAVThrottledStateAbortsTheImportAndTheNextSyncWaits(t *testing.T) {
 			if evs, _ := fx.db.CalendarEvents(fx.h.ID, fx.cal.ID); len(evs) != 0 {
 				t.Fatalf("%d events imported, want none", len(evs))
 			}
+
+			// The next sync waits: no request goes out while the connection is throttled.
+			before := fx.tamper.Count("PROPFIND") + fx.tamper.Count("REPORT")
+			if err := fx.svc.Sync(context.Background(), fx.h.ID, fx.cal.ID); err == nil {
+				t.Fatal("second sync during the wait succeeded")
+			}
+			if n := fx.tamper.Count("PROPFIND") + fx.tamper.Count("REPORT") - before; n != 0 {
+				t.Fatalf("%d requests went out during the wait, want 0", n)
+			}
 		})
 	}
 }

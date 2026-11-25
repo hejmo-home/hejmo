@@ -273,7 +273,7 @@ func (tr tamper) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 	tr.seen[req.Method]++
 	after := tr.after
-	if req.Method == "PROPFIND" {
+	if req.Method == "PROPFIND" && req.Header.Get("Depth") == "0" {
 		after = tr.stateAt
 	}
 	tr.mu.Unlock()

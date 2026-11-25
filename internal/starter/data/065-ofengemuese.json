@@ -1,0 +1,185 @@
+{
+  "n": 65,
+  "slug": "ofengemuese",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 50,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/einfaches-ofengemuese-84899.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Kartoffeln",
+      "article_en": "Potatoes",
+      "note_de": "z. B. Drillinge",
+      "note_en": "e.g. baby potatoes"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Paprika, rot",
+      "article_en": "Red bell pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Paprikaschote, gelb",
+      "article_en": "Yellow bell pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zucchini",
+      "article_en": "Zucchini",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Champignons",
+      "article_en": "Button mushrooms",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zwiebeln, rot",
+      "article_en": "Red onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Oregano, getrocknet",
+      "article_en": "Dried oregano",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Thymian, getrocknet",
+      "article_en": "Dried thyme",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": "frisch gemahlen",
+      "note_en": "freshly ground"
+    }
+  ],
+  "de": {
+    "title": "Ofengemüse",
+    "steps": [
+      "Heize den Ofen auf 200 °C Ober-/Unterhitze vor (180 °C Umluft). Lege ein Backblech mit Backpapier aus.",
+      "Wasche das ganze Gemüse. Schneide alles in mundgerechte Stücke, etwa so groß wie ein Stück Kartoffel. Die Kartoffeln (500 g) halbierst du, die drei Möhren schneidest du in Stücke. Paprika (rot und gelb) und Zucchini kommen in gleich große Stücke, die Champignons halbierst du und die beiden roten Zwiebeln schneidest du in Spalten.",
+      "Gib das ganze Gemüse in eine große Schüssel. Mische 4 EL Olivenöl, je 1 TL Oregano und Thymian, Salz und frisch gemahlenen Pfeffer darüber und vermenge alles gründlich mit den Händen, bis jedes Stück glänzt.",
+      "Verteile das Gemüse gleichmäßig auf dem Blech, möglichst in einer Schicht und ohne Berge. So wird es schön röstig.",
+      "Röste das Gemüse 35 bis 40 Minuten im Ofen. Schmecke es danach bei Bedarf noch einmal mit Salz und Pfeffer ab."
+    ]
+  },
+  "en": {
+    "title": "Roasted oven vegetables",
+    "steps": [
+      "Preheat the oven to 200 °C top/bottom heat (180 °C fan). Line a baking tray with baking paper.",
+      "Wash all the vegetables. Cut everything into bite-sized pieces, about the size of a piece of potato. Halve the potatoes (500 g) and cut the three carrots into pieces. Cut the red and yellow bell peppers and the zucchini into pieces of the same size, halve the mushrooms and cut the two red onions into wedges.",
+      "Put all the vegetables in a large bowl. Add 4 tbsp olive oil, 1 tsp each of oregano and thyme, salt and freshly ground pepper, and mix everything thoroughly with your hands until every piece is shiny.",
+      "Spread the vegetables evenly on the tray, ideally in a single layer with no piles. That way they roast nicely.",
+      "Roast the vegetables in the oven for 35 to 40 minutes. Afterwards, season again with salt and pepper if needed."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 7,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "Source rating shows 24 ratings; list says Redaktionsküche. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

@@ -1,0 +1,215 @@
+{
+  "n": 105,
+  "slug": "haehnchen-fajitas",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 25,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/easy-chicken-fajitas",
+    "site": "BBC Good Food",
+    "ratings": 254
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Hähnchenbrustfilets",
+      "article_en": "Chicken breasts",
+      "note_de": "in feine Streifen geschnitten",
+      "note_en": "finely sliced"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel, rot",
+      "article_en": "Red onion",
+      "note_de": "in feine Streifen geschnitten",
+      "note_en": "finely sliced"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Paprikaschote, rot",
+      "article_en": "Red pepper",
+      "note_de": "in Streifen geschnitten",
+      "note_en": "sliced"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Chilischote, rot",
+      "article_en": "Red chilli",
+      "note_de": "optional, in feine Ringe geschnitten",
+      "note_en": "optional, finely sliced"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Paprikapulver, geräuchert",
+      "article_en": "Smoked paprika",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Koriander, gemahlen",
+      "article_en": "Ground coriander",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Kreuzkümmel, gemahlen",
+      "article_en": "Ground cumin",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic cloves",
+      "note_de": "zerdrückt",
+      "note_en": "crushed"
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Limette",
+      "article_en": "Lime",
+      "note_de": "Saft",
+      "note_en": "juiced"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Tabasco",
+      "article_en": "Tabasco",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 8,
+      "unit": "Stk",
+      "article_de": "Tortillas",
+      "article_en": "Tortillas",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Gemischter Salat",
+      "article_en": "Mixed salad",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 230,
+      "unit": "g",
+      "article_de": "Salsa, frisch",
+      "article_en": "Fresh salsa",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Hähnchen-Fajitas",
+    "steps": [
+      "Ofen auf 200 °C Ober-/Unterhitze (180 °C Umluft, Gas Stufe 6) vorheizen. Die Tortillas in Alufolie einwickeln.",
+      "Für die Marinade Paprikapulver, Koriander, Kreuzkümmel, Knoblauch, Olivenöl, Limettensaft und Tabasco in einer großen Schüssel verrühren.",
+      "Hähnchenstreifen, Zwiebel, Paprika und Chili dazugeben und gut mischen.",
+      "Die Grillpfanne bei hoher Hitze so heiß werden lassen, dass sie raucht. Hähnchen und Gemüse darin etwa 5 Minuten braten und dabei ständig bewegen, bis alles angekohlt ist. Ist die Pfanne klein, brate in mehreren Portionen.",
+      "Prüfe das Fleisch: Reiß das dickste Stück mit zwei Gabeln auf. Es darf innen nicht mehr roh sein.",
+      "Die Tortillas in der Folie kurz im Ofen aufwärmen.",
+      "Hähnchen und Gemüse mit den Tortillas, gemischtem Salat und Salsa servieren."
+    ]
+  },
+  "en": {
+    "title": "Chicken fajitas",
+    "steps": [
+      "Preheat the oven to 200 °C top/bottom heat (180 °C fan, gas mark 6). Wrap the tortillas in aluminium foil.",
+      "For the marinade, stir paprika, coriander, cumin, garlic, olive oil, lime juice and Tabasco together in a large bowl.",
+      "Add the chicken strips, onion, pepper and chilli and mix well.",
+      "Heat the griddle pan over high heat until it smokes. Fry chicken and vegetables in it for about 5 minutes, moving them constantly, until everything is charred. If the pan is small, cook in several batches.",
+      "Check the meat: tear open the thickest piece with two forks. It must not be raw inside any more.",
+      "Warm the tortillas in their foil briefly in the oven.",
+      "Serve chicken and vegetables with the tortillas, mixed salad and salsa."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 2,
+        "unit": "clove"
+      },
+      {
+        "index": 8,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 11,
+        "amount": 8,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Source gives 'ground cumin' without a quantity (the method says a pinch) and 8 medium tortillas; amounts not invented. Ratings from the list (page JSON-LD has none). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "n": 181,
+  "slug": "apple-crumble",
+  "category": "Desserts",
+  "servings": 4,
+  "time_minutes": 55,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/best-apple-crumble",
+    "site": "BBC Good Food",
+    "ratings": 625
+  },
+  "ingredients": [
+    {
+      "amount": 575,
+      "unit": "g",
+      "article_de": "Bramley-Kochäpfel",
+      "article_en": "Bramley apples",
+      "note_de": "ca. 3 mittelgroße; geschält, entkernt, in 1 cm dicke Scheiben geschnitten",
+      "note_en": "about 3 medium; peeled, cored and sliced 1 cm thick"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Feiner Rohrzucker (Golden Caster Sugar)",
+      "article_en": "Golden caster sugar",
+      "note_de": "für die Äpfel",
+      "note_en": "for the apples"
+    },
+    {
+      "amount": 175,
+      "unit": "g",
+      "article_de": "Weizenmehl",
+      "article_en": "Plain flour",
+      "note_de": "für die Streusel",
+      "note_en": "for the crumble"
+    },
+    {
+      "amount": 110,
+      "unit": "g",
+      "article_de": "Feiner Rohrzucker (Golden Caster Sugar)",
+      "article_en": "Golden caster sugar",
+      "note_de": "für die Streusel",
+      "note_en": "for the crumble"
+    },
+    {
+      "amount": 110,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "kalt",
+      "note_en": "cold"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Haferflocken, zart",
+      "article_en": "Rolled oats",
+      "note_de": "optional",
+      "note_en": "optional"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Demerara-Zucker (brauner Rohrzucker)",
+      "article_en": "Demerara sugar",
+      "note_de": "optional",
+      "note_en": "optional"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Sahne, Clotted Cream oder Vanillesauce",
+      "article_en": "Double cream, clotted cream or custard",
+      "note_de": "zum Servieren",
+      "note_en": "to serve"
+    }
+  ],
+  "de": {
+    "title": "Apple Crumble",
+    "steps": [
+      "Den Ofen auf 190 °C (170 °C Umluft) vorheizen. Die Apfelscheiben mit 2 EL Zucker vermengen und in eine mindestens 5 cm tiefe Form (rund, etwa 23 cm) füllen. Mit der Hand festdrücken, damit später keine Streusel durchrutschen.",
+      "Mehl, 110 g Zucker und eine kräftige Prise Salz in einer Schüssel mischen. Die kalte Butter in Stückchen daraufgeben und mit den Fingerspitzen einarbeiten, bis die Masse an feuchte Paniermehlkrümel erinnert. Große Stücke, die beim Schütteln nach oben wandern, nachreiben; alternativ kurz in der Küchenmaschine zu sandiger Konsistenz mixen.",
+      "Die Streusel als Hügel in die Mitte der Äpfel geben und mit einer Gabel gleichmäßig verteilen. Mit dem Gabelrücken sanft andrücken, damit sie zusammenhalten und knusprig werden, und mit den Zinken ein Muster ziehen. Nach Wunsch Haferflocken und Demerara-Zucker darüberstreuen.",
+      "Die Form auf ein Blech stellen und 35 bis 40 Minuten backen, bis die Oberfläche goldbraun ist und ein spitzes Messer mühelos in die Äpfel gleitet. Vor dem Servieren 10 Minuten stehen lassen."
+    ]
+  },
+  "en": {
+    "title": "Apple crumble",
+    "steps": [
+      "Preheat the oven to 190 °C (170 °C fan). Toss the sliced apples with 2 tbsp sugar and tip them into a dish at least 5 cm deep (round, about 23 cm). Press down by hand so the topping does not fall through later.",
+      "Stir the flour, 110 g sugar and a generous pinch of salt together in a bowl. Add the cold butter in pieces and rub it into the flour with your fingertips until the mixture forms damp, crumbly clumps. Rub in any larger lumps that rise to the top when you shake the bowl; or pulse briefly in a food processor to a sandy texture.",
+      "Pile the crumble in the centre of the apples and spread it evenly with a fork. Press lightly with the underside of the fork so it sticks together and turns crisp, and drag the tines across for a pattern. Sprinkle over oats and demerara sugar if you like.",
+      "Set the dish on a tray and bake for 35 to 40 minutes, the topping should be golden and a sharp knife should meet no resistance in the apples. Rest for 10 minutes, then serve."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Source is English; \"plain flour\" kept as Weizenmehl (no type stated in source). Rating count 625 from the list. Steps restructured (own step division and order of work) after paraphrase spot-check 23/11/2026.",
+  "originality": {
+    "overlap_5gram": 0.011,
+    "checked": "23/11/2026"
+  }
+}

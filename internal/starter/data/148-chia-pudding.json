@@ -1,0 +1,107 @@
+{
+  "n": 148,
+  "slug": "chia-pudding",
+  "category": "Frühstück",
+  "servings": 2,
+  "time_minutes": 495,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/overnight-chia-pudding-90799",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 200,
+      "unit": "ml",
+      "article_de": "Mandeldrink",
+      "article_en": "Almond drink",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Msp.",
+      "article_de": "Vanille, gemahlen",
+      "article_en": "Ground vanilla",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Kakaopulver, roh",
+      "article_en": "Raw cocoa powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 40,
+      "unit": "g",
+      "article_de": "Chia-Samen",
+      "article_en": "Chia seeds",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Himbeeren",
+      "article_en": "Raspberries",
+      "note_de": "ersatzweise aufgetaute TK-Himbeeren",
+      "note_en": "or thawed frozen raspberries"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Kakao-Nibs",
+      "article_en": "Cocoa nibs",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Overnight-Chia-Pudding",
+    "steps": [
+      "Mandeldrink, Vanille und Kakao in einer Schüssel glatt verquirlen. Dann die Chiasamen einrühren.",
+      "Ca. 10 Min. quellen lassen und danach noch einmal gut durchrühren, damit keine Klümpchen bleiben.",
+      "Die Masse auf zwei Schalen oder Gläser verteilen und 8–12 Std. im Kühlschrank durchziehen lassen, am besten über Nacht.",
+      "Himbeeren nur waschen, wenn es nötig ist, und trockentupfen. Ein paar für die Deko beiseitelegen, den Rest im hohen Becher mit dem Stabmixer pürieren.",
+      "Das Püree auf dem Pudding verteilen und mit Kakao-Nibs und den übrigen Himbeeren garnieren."
+    ]
+  },
+  "en": {
+    "title": "Overnight chia pudding",
+    "steps": [
+      "Whisk the almond drink, vanilla and cocoa until smooth in a bowl. Then stir in the chia seeds.",
+      "Leave to swell for about 10 min, then stir well again so no clumps remain.",
+      "Divide between two bowls or jars and chill for 8-12 h in the fridge, ideally overnight.",
+      "Wash the raspberries only if necessary and pat them dry. Set a few aside for garnish and purée the rest in a tall beaker with the hand blender.",
+      "Spread the purée over the pudding and garnish with cocoa nibs and the remaining raspberries."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Time from source: 15 min prep + 8 h resting = 495 min (Aufwand shown on the page). The list allergen suggestion is empty, but almond drink is a tree nut: please check the allergen suggestion. Rating count from the list (the source page shows 36). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

@@ -1,0 +1,247 @@
+{
+  "n": 75,
+  "slug": "schupfnudeln-sauerkraut",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 60,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/schupfnudeln-mit-sauerkraut-1764",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Speck, durchwachsen",
+      "article_en": "Streaky bacon",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 800,
+      "unit": "g",
+      "article_de": "Sauerkraut",
+      "article_en": "Sauerkraut",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Weißwein",
+      "article_en": "White wine",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Apfelsaft",
+      "article_en": "Apple juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Brühe (Instant)",
+      "article_en": "Stock (instant)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 5,
+      "unit": "Stk",
+      "article_de": "Wacholderbeeren",
+      "article_en": "Juniper berries",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Lorbeerblatt",
+      "article_en": "Bay leaf",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Nelke",
+      "article_en": "Clove",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Kümmel",
+      "article_en": "Caraway seeds",
+      "note_de": "nach Belieben",
+      "note_en": "to taste"
+    },
+    {
+      "amount": 1,
+      "unit": "kg",
+      "article_de": "Kartoffeln, gekocht und gepellt",
+      "article_en": "Potatoes, boiled and peeled",
+      "note_de": "vom Vortag",
+      "note_en": "from the day before"
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": "frisch gemahlen",
+      "note_en": "freshly ground"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Muskatnuss",
+      "article_en": "Nutmeg",
+      "note_de": "frisch gerieben",
+      "note_en": "freshly grated"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "zum Abschmecken des Sauerkrauts",
+      "note_en": "to season the sauerkraut"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Butterschmalz",
+      "article_en": "Clarified butter",
+      "note_de": "zum Ausbacken",
+      "note_en": "for frying"
+    }
+  ],
+  "de": {
+    "title": "Schupfnudeln mit Sauerkraut",
+    "steps": [
+      "Sauerkraut: Würfle 100 g Speck und hacke die Zwiebel. Erhitze 1 EL Öl in einem Topf und brate Speck und Zwiebel darin an, bis sie Farbe haben.",
+      "Gib 800 g Sauerkraut, je 100 ml Weißwein, Apfelsaft und Brühe dazu. Füge 5 Wacholderbeeren, das Lorbeerblatt, die Nelke und nach Belieben Kümmel hinzu. Lass alles bei niedriger Hitze 45 Minuten schmoren.",
+      "Schupfnudeln: Reibe die gekochten, gepellten Kartoffeln vom Vortag (1 kg) auf der Reibe oder drücke sie durch die Presse. Knete sie mit 250 g Mehl, 2 Eiern, Salz, Pfeffer und Muskat zu einem Teig.",
+      "Forme aus dem Teig fingerdicke Rollen und schneide sie in Stücke. Rolle jedes Stück zwischen den Händen zu einer daumengroßen Nudel, an den Enden etwas spitz.",
+      "Bringe in einem großen Topf Salzwasser zum Sieden. Lass die Nudeln darin portionsweise 2 Minuten ziehen und hebe sie mit der Schaumkelle heraus. Lass sie gut abtropfen.",
+      "Erhitze Butterschmalz in einer Pfanne und brate die Nudeln portionsweise goldbraun. Nicht alles auf einmal, sonst werden sie nicht knusprig.",
+      "Schmecke das Sauerkraut mit Salz, Pfeffer und etwas Zucker ab und serviere es mit den Schupfnudeln."
+    ]
+  },
+  "en": {
+    "title": "Schupfnudeln with sauerkraut",
+    "steps": [
+      "Sauerkraut: Dice 100 g bacon and chop the onion. Heat 1 tbsp oil in a pot and fry the bacon and onion until they take colour.",
+      "Add 800 g sauerkraut and 100 ml each of white wine, apple juice and stock. Add 5 juniper berries, the bay leaf, the clove and caraway to taste. Braise everything over low heat for 45 minutes.",
+      "Schupfnudeln: Grate the boiled, peeled potatoes from the day before (1 kg) on the grater or press them through a ricer. Knead them with 250 g flour, 2 eggs, salt, pepper and nutmeg into a dough.",
+      "Shape the dough into finger-thick rolls and cut them into pieces. Roll each piece between your hands into a thumb-sized noodle, slightly pointed at the ends.",
+      "Bring salted water to a simmer in a large pot. Let the noodles simmer in it in batches for 2 minutes and lift them out with the slotted spoon. Drain them well.",
+      "Heat clarified butter in a pan and fry the noodles in batches until golden brown. Not everything at once, otherwise they do not get crisp.",
+      "Season the sauerkraut with salt, pepper and a little sugar and serve it with the Schupfnudeln."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 5,
+        "unit": "piece"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 13,
+        "amount": 2,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Time from source: 60 min, stated as Aufwand (the only time figure on the page). Source rating shows 30 ratings with value 1; list says Redaktionsküche. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

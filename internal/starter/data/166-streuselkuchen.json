@@ -1,0 +1,219 @@
+{
+  "n": 166,
+  "slug": "streuselkuchen",
+  "category": "Backen",
+  "servings": 8,
+  "time_minutes": 70,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.essen-und-trinken.de/rezepte/84032-rzpt-streuselkuchen",
+    "site": "Essen & Trinken",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "für die Streusel",
+      "note_en": "for the streusel"
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "für die Streusel",
+      "note_en": "for the streusel"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Vanilleschote",
+      "article_en": "Vanilla pod",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "kalt, für die Streusel",
+      "note_en": "cold, for the streusel"
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": "für die Streusel",
+      "note_en": "for the streusel"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Wasser",
+      "article_en": "Water",
+      "note_de": "kalt, für die Streusel",
+      "note_en": "cold, for the streusel"
+    },
+    {
+      "amount": 10,
+      "unit": "g",
+      "article_de": "Frische Hefe",
+      "article_en": "Fresh yeast",
+      "note_de": "für den Hefeteig",
+      "note_en": "for the yeast dough"
+    },
+    {
+      "amount": 50,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": "lauwarm, für den Hefeteig",
+      "note_en": "lukewarm, for the yeast dough"
+    },
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "für den Hefeteig",
+      "note_en": "for the yeast dough"
+    },
+    {
+      "amount": 30,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "für den Hefeteig",
+      "note_en": "for the yeast dough"
+    },
+    {
+      "amount": 20,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "für den Hefeteig",
+      "note_en": "for the yeast dough"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Bio-Ei",
+      "article_en": "Organic egg",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": "für den Hefeteig",
+      "note_en": "for the yeast dough"
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "in Flöckchen, für den Belag",
+      "note_en": "in flakes, for the topping"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Puderzucker",
+      "article_en": "Icing sugar",
+      "note_de": "zum Bestäuben",
+      "note_en": "for dusting"
+    }
+  ],
+  "de": {
+    "title": "Streuselkuchen",
+    "steps": [
+      "Die Vanilleschote längs aufschneiden und das Mark mit dem Messerrücken herauskratzen.",
+      "Für die Streusel Mehl, Zucker, Vanillemark und Salz mischen.",
+      "Die kalte Butter in Stücken und das kalte Wasser dazugeben und mit den Fingern zu groben Streuseln krümeln. Die Butter muss kalt sein, sonst klebt alles. Die Streusel mindestens 30 Minuten kalt stellen.",
+      "Für den Hefeteig die Hefe in der lauwarmen Milch auflösen.",
+      "Mehl, Zucker, Butter, Ei und Salz dazugeben und mit den Knethaken des Handmixers etwa 5 Minuten kneten.",
+      "Den Teig abgedeckt an einem warmen Ort gehen lassen, bis er deutlich größer geworden ist.",
+      "Eine 26-cm-Springform vorbereiten. Den Teig mit bemehlten Händen in die Form drücken, so klebt er nicht.",
+      "Die Streusel gleichmäßig darauf verteilen und die Butterflöckchen darüber setzen.",
+      "Noch 15 Minuten gehen lassen. In der Zeit den Ofen auf 180 °C Ober-/Unterhitze (160 °C Umluft) vorheizen, Rost in die Mitte.",
+      "20 bis 25 Minuten backen.",
+      "Den Rand der Form lösen und den Kuchen etwas abkühlen lassen. Mit Puderzucker bestäuben und lauwarm servieren."
+    ]
+  },
+  "en": {
+    "title": "Streusel cake",
+    "steps": [
+      "Slit the vanilla pod lengthways and scrape out the seeds with the back of a knife.",
+      "For the streusel, mix the flour, sugar, vanilla seeds and salt.",
+      "Add the cold butter in pieces and the cold water and crumble with your fingers into coarse crumbs. The butter must be cold, or everything turns sticky. Chill the streusel for at least 30 minutes.",
+      "For the yeast dough, dissolve the yeast in the lukewarm milk.",
+      "Add the flour, sugar, butter, egg and salt and knead with the dough hooks of a hand mixer for about 5 minutes.",
+      "Cover the dough and let it rise in a warm place until it has clearly grown.",
+      "Prepare a 26 cm springform tin. Press the dough into the tin with floured hands so it does not stick.",
+      "Spread the streusel evenly on top and dot with the butter flakes.",
+      "Let it rise another 15 minutes. Meanwhile, preheat the oven to 180 °C top and bottom heat (160 °C fan), shelf in the middle.",
+      "Bake 20 to 25 minutes.",
+      "Release the edge of the tin and let the cake cool a little. Dust with icing sugar and serve lukewarm."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 11,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 12,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 14,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Rating count from the list. Source page shows 111 ratings; list says Redaktionsküche. Source steps not copied. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

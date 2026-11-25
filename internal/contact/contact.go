@@ -46,6 +46,9 @@ type Line struct {
 	Kind  Kind
 	Label string
 	Value string
+	// E164 is a number in international form, read with the household's home country (ADR 0026); empty when
+	// the number cannot be read, and always empty for an e-mail address. Callers do not set it: the store does.
+	E164 string
 }
 
 // KindValid reports whether k is a known kind.

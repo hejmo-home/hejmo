@@ -1,0 +1,219 @@
+{
+  "n": 23,
+  "slug": "ofenkartoffeln-kraeuterquark",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 60,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/2139701343834129/Catharinas-Ofenkartoffeln-nach-Fiefhusener-Art-mit-Kraeuterquark.html",
+    "site": "Chefkoch",
+    "ratings": 546
+  },
+  "ingredients": [
+    {
+      "amount": 800,
+      "unit": "g",
+      "article_de": "Kartoffeln, neu, mittelgroß",
+      "article_en": "New potatoes, medium",
+      "note_de": "mit zarter Schale",
+      "note_en": "with thin skin"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": "frisch gepresst",
+      "note_en": "freshly pressed"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Rosmarin",
+      "article_en": "Rosemary",
+      "note_de": "gehackt, oder 1 EL getrocknet",
+      "note_en": "chopped, or 1 tbsp dried"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Meersalz",
+      "article_en": "Sea salt",
+      "note_de": "gestrichen",
+      "note_en": "level"
+    },
+    {
+      "amount": 1,
+      "unit": "Msp.",
+      "article_de": "Kreuzkümmelpulver",
+      "article_en": "Ground cumin",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Cayennepfeffer",
+      "article_en": "Cayenne pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Meersalz, grob",
+      "article_en": "Coarse sea salt",
+      "note_de": "zum Bestreuen, nach Belieben",
+      "note_en": "for sprinkling, to taste"
+    },
+    {
+      "amount": 1,
+      "unit": "Becher",
+      "article_de": "Quark",
+      "article_en": "Quark",
+      "note_de": "für den Kräuterquark",
+      "note_en": "for the herb quark"
+    },
+    {
+      "amount": 0.5,
+      "unit": "Bund",
+      "article_de": "Petersilie, glatt",
+      "article_en": "Flat-leaf parsley",
+      "note_de": "mit Stängeln, mittelfein gehackt",
+      "note_en": "with stems, medium-fine chopped"
+    },
+    {
+      "amount": 0.5,
+      "unit": "Bund",
+      "article_de": "Schnittlauch",
+      "article_en": "Chives",
+      "note_de": "in feinen Röllchen",
+      "note_en": "cut into fine rings"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Schalotte, klein",
+      "article_en": "Small shallot",
+      "note_de": "fein gewürfelt",
+      "note_en": "finely diced"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": "frisch gemahlen, nach Belieben",
+      "note_en": "freshly ground, to taste"
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Ofenkartoffeln mit Kräuterquark",
+    "steps": [
+      "Wasche die Kartoffeln gründlich. Die Schale bleibt dran. Heize den Backofen auf 230 °C Umluft vor und schiebe das Blech mit Backpapier auf die mittlere Schiene.",
+      "Schneide jede Kartoffel im Abstand von etwa 3 mm dünn ein, aber nur fast durch. Sie sollen unten noch zusammenhalten. Suche dir vorher eine stabile Seite, auf der die Kartoffel gut liegt, sonst rutscht sie weg. Setze die Kartoffeln aufs Blech.",
+      "Schmelze die Butter in einem Topf bei niedriger Hitze. Sie darf nicht braun werden. Gib Knoblauch, Rosmarin, Meersalz, Kreuzkümmel und Cayennepfeffer dazu und lass alles 5 Minuten bei niedriger Hitze ziehen.",
+      "Verteile die Hälfte der Gewürzbutter mit einem Backpinsel oder Teelöffel auf den Kartoffeln und lass sie in die Einschnitte laufen. Backe sie im Ofen.",
+      "Nach 25 Minuten bestreichst du die Kartoffeln mit der restlichen Butter. Backe sie insgesamt etwa 50 Minuten. Größere Kartoffeln brauchen länger.",
+      "Mische in der Zwischenzeit den Kräuterquark: Gib Quark, Petersilie, Schnittlauch, die fein gewürfelte Schalotte und die 3 EL Sahne in eine Schüssel. Schmecke mit Salz und Pfeffer ab.",
+      "Streue zum Servieren etwas grobes Meersalz über die Kartoffeln und reiche den Kräuterquark dazu."
+    ]
+  },
+  "en": {
+    "title": "Oven-baked potatoes with herb quark",
+    "steps": [
+      "Wash the potatoes thoroughly. Leave the skins on. Preheat the oven to 230 °C fan and put the tray lined with baking paper on the middle rack.",
+      "Cut thin slits into each potato about 3 mm apart, but only almost all the way through. They should still hold together at the bottom. Find a stable side first on which the potato sits well, otherwise it slides around. Place the potatoes on the tray.",
+      "Melt the butter in a pot over low heat. It must not turn brown. Add the garlic, rosemary, sea salt, cumin and cayenne pepper and let everything infuse for 5 minutes over low heat.",
+      "Spread half of the spiced butter over the potatoes with a pastry brush or teaspoon and let it run into the slits. Bake them in the oven.",
+      "After 25 minutes, brush the potatoes with the remaining butter. Bake them for about 50 minutes in total. Bigger potatoes need longer.",
+      "In the meantime, mix the herb quark: put the quark, parsley, chives, the finely diced shallot and the 3 tbsp of cream in a bowl. Season with salt and pepper.",
+      "Sprinkle a little coarse sea salt over the potatoes to serve and put the herb quark on the table."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 3,
+        "unit": "clove"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 6,
+        "amount": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "tub"
+      },
+      {
+        "index": 9,
+        "amount": 0.5,
+        "unit": "bunch"
+      },
+      {
+        "index": 10,
+        "amount": 0.5,
+        "unit": "bunch"
+      },
+      {
+        "index": 11,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 13,
+        "amount": 3,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

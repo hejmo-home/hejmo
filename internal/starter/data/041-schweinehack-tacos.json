@@ -1,0 +1,200 @@
+{
+  "n": 41,
+  "slug": "schweinehack-tacos",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 25,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/smoky-pork-black-bean-tacos",
+    "site": "BBC Good Food",
+    "ratings": 72
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Pflanzenöl",
+      "article_en": "Vegetable oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Stk",
+      "article_de": "Rote Zwiebel",
+      "article_en": "Red onion",
+      "note_de": "gehackt",
+      "note_en": "chopped"
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Paprikapulver, geräuchert",
+      "article_en": "Smoked paprika",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Kreuzkümmel, gemahlen",
+      "article_en": "Ground cumin",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Schweinehackfleisch, mager",
+      "article_en": "Lean pork mince",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "ml",
+      "article_de": "Passata",
+      "article_en": "Passata",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 5,
+      "unit": "EL",
+      "article_de": "Barbecuesoße",
+      "article_en": "Barbecue sauce",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Schwarze Bohnen (Dose)",
+      "article_en": "Black beans (can)",
+      "note_de": "abgetropft",
+      "note_en": "drained"
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Koriander",
+      "article_en": "Coriander",
+      "note_de": "klein, gehackt",
+      "note_en": "small bunch, chopped"
+    },
+    {
+      "amount": 8,
+      "unit": "Stk",
+      "article_de": "Taco-Schalen",
+      "article_en": "Taco shells",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Avocado, reif",
+      "article_en": "Ripe avocado",
+      "note_de": "geschält, in Scheiben",
+      "note_en": "peeled and sliced"
+    },
+    {
+      "amount": 0.5,
+      "unit": "Stk",
+      "article_de": "Eisbergsalat",
+      "article_en": "Iceberg lettuce",
+      "note_de": "fein geschnitten",
+      "note_en": "finely shredded"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Saure Sahne",
+      "article_en": "Soured cream",
+      "note_de": "optional, zum Servieren",
+      "note_en": "optional, to serve"
+    }
+  ],
+  "de": {
+    "title": "Schweinehack-Tacos mit schwarzen Bohnen",
+    "steps": [
+      "Erhitze das Öl in einer großen Pfanne und dünste die Zwiebel 5 Minuten, bis sie weich ist.",
+      "Gib Paprikapulver und Kreuzkümmel dazu und rühre 1 Minute, bis es duftet.",
+      "Gib das Hackfleisch dazu, zerdrücke es mit dem Holzlöffel und brate es durch, bis nichts Rosafarbenes mehr zu sehen ist.",
+      "Gieße Passata, Barbecuesoße und 4 EL Wasser dazu. Drehe die Hitze höher und lass die Soße einkochen, bis sie dick ist und am Fleisch hängt.",
+      "Gib die Bohnen dazu und lass sie 2 Minuten mitkochen. Rühre den Koriander unter.",
+      "Wärme die Taco-Schalen nach Packungsanleitung auf. Fülle sie mit der Hackmischung und belege sie mit Avocado, Salat und nach Belieben saurer Sahne."
+    ]
+  },
+  "en": {
+    "title": "Pork and black bean tacos",
+    "steps": [
+      "Heat the oil in a large frying pan and soften the onion for 5 minutes.",
+      "Add the paprika and cumin and stir for 1 minute, until fragrant.",
+      "Add the mince, break it up with the wooden spoon and cook it through until no pink is left.",
+      "Pour in the passata, barbecue sauce and 4 tbsp of water. Turn the heat up and let the sauce reduce until thick and clinging to the meat.",
+      "Add the beans and cook them for 2 minutes. Stir in the coriander.",
+      "Warm the taco shells according to the packet. Fill them with the mince mixture and top with avocado, lettuce and soured cream if you like."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "tsp"
+      },
+      {
+        "index": 1,
+        "amount": 0.5,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "tsp"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "tsp"
+      },
+      {
+        "index": 6,
+        "amount": 5,
+        "unit": "tbsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "bunch"
+      },
+      {
+        "index": 9,
+        "amount": 8,
+        "unit": "piece"
+      },
+      {
+        "index": 10,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 11,
+        "amount": 0.5,
+        "unit": "piece"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "List title is Hackfleisch-Tacos / beef tacos, but the linked source recipe uses pork mince; title and ingredients follow the source. Confirmed by Lena 23/11/2026: title follows the filling. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

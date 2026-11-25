@@ -1,0 +1,152 @@
+{
+  "n": 159,
+  "slug": "chocolate-chip-cookies",
+  "category": "Backen",
+  "servings": 10,
+  "time_minutes": 32,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/chocolate-chip-cookies",
+    "site": "BBC Good Food",
+    "ratings": 558
+  },
+  "ingredients": [
+    {
+      "amount": 120,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "weich",
+      "note_en": "softened"
+    },
+    {
+      "amount": 75,
+      "unit": "g",
+      "article_de": "Brauner Zucker, hell",
+      "article_en": "Light brown sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 75,
+      "unit": "g",
+      "article_de": "Zucker, golden (Golden Caster Sugar)",
+      "article_en": "Golden caster sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Ei, Größe M",
+      "article_en": "Egg, medium",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Vanilleextrakt",
+      "article_en": "Vanilla extract",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 180,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Plain flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Natron",
+      "article_en": "Bicarbonate of soda",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Zartbitterschokolade",
+      "article_en": "Dark chocolate",
+      "note_de": "in Stücke geschnitten",
+      "note_en": "cut into chunks"
+    },
+    {
+      "amount": 0.25,
+      "unit": "TL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": "laut Zubereitung der Quelle",
+      "note_en": "from the source method"
+    }
+  ],
+  "de": {
+    "title": "Chocolate Chip Cookies",
+    "steps": [
+      "Zwei Backbleche mit Backpapier belegen. Den Ofen auf 180 °C Ober-/Unterhitze (160 °C Umluft) vorheizen.",
+      "Die Butter mit dem braunen und dem goldenen Zucker sehr hell und luftig aufschlagen. Das Ei und den Vanilleextrakt einarbeiten.",
+      "Mehl, Natron, Salz und Schokostücke unterrühren, nur bis alles vermengt ist.",
+      "Mit einem Esslöffel 10 große Teigportionen abstechen und mit reichlich Abstand auf die Bleche setzen, denn der Teig läuft breit.",
+      "10 bis 12 Minuten backen, bis die Ränder fest, die Mitte aber noch weich ist. Beim Abkühlen werden sie etwas fester.",
+      "Einige Minuten auf dem Blech ruhen lassen. Warm essen oder auf einem Gitter ganz auskühlen lassen. In einer luftdichten Dose halten sie 3 Tage."
+    ]
+  },
+  "en": {
+    "title": "Chocolate chip cookies",
+    "steps": [
+      "Line two baking trays with baking paper. Preheat the oven to 180 °C top/bottom heat (160 °C fan).",
+      "Beat the butter with the brown and golden sugar until very pale and fluffy. Then beat in the egg and the vanilla extract.",
+      "Stir in the flour, bicarbonate of soda, salt and chocolate pieces, only until combined.",
+      "Using a tablespoon, scoop 10 large portions of dough and set them well apart on the trays, as the dough spreads.",
+      "Bake for 10 to 12 minutes, until the edges are firm but the middle is still soft. They keep firming up while cooling.",
+      "Let them rest a few minutes on the sheet. Eat warm or cool completely on a wire rack. In an airtight tin they keep for 3 days."
+    ],
+    "amounts_converted": [
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 6,
+        "amount": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 8,
+        "amount": 0.25,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "Rating count from the list. Brand name (Kerrygold) dropped. Salt (1/4 tsp, 0.25 kept exact) appears only in the source method, not its ingredient list. Source steps not copied. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.033
+  }
+}

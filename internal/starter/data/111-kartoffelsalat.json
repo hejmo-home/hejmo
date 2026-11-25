@@ -1,0 +1,160 @@
+{
+  "n": 111,
+  "slug": "kartoffelsalat",
+  "category": "Beilagen",
+  "servings": 6,
+  "time_minutes": 60,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Senf",
+      "en": "Mustard"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/1811651293462070/Kartoffelsalat.html",
+    "site": "Chefkoch",
+    "ratings": 568
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "kg",
+      "article_de": "Kartoffeln, festkochend",
+      "article_en": "Waxy potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": "mittelgroß",
+      "note_en": "medium"
+    },
+    {
+      "amount": 250,
+      "unit": "ml",
+      "article_de": "Gemüsebrühe",
+      "article_en": "Vegetable stock",
+      "note_de": "oder Geflügelbrühe",
+      "note_en": "or chicken stock"
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Weißweinessig",
+      "article_en": "White wine vinegar",
+      "note_de": "mild, z. B. Marc de Champagne",
+      "note_en": "mild, e.g. Marc de Champagne"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Dijonsenf",
+      "article_en": "Dijon mustard",
+      "note_de": "mit grünem Pfeffer",
+      "note_en": "with green pepper"
+    },
+    {
+      "amount": 6,
+      "unit": "Stk",
+      "article_de": "Gewürzgurken",
+      "article_en": "Gherkins",
+      "note_de": "klein, fein geschnitten",
+      "note_en": "small, finely chopped"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Mayonnaise",
+      "article_en": "Mayonnaise",
+      "note_de": "selbstgemacht oder ein wirklich gutes Fertigprodukt",
+      "note_en": "homemade or a really good ready-made one"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Gurkenflüssigkeit",
+      "article_en": "Gherkin brine",
+      "note_de": "bei Bedarf mehr",
+      "note_en": "more if needed"
+    }
+  ],
+  "de": {
+    "title": "Kartoffelsalat",
+    "steps": [
+      "Die 2 kg Kartoffeln in Salzwasser garen, bis sie weich sind. Abgießen, pellen und vollständig abkühlen lassen. Warm lassen sie sich nicht sauber schneiden.",
+      "Die Kartoffeln mit einem Messer in dünne Scheiben schneiden, nicht mit dem Hobel, und nicht zu dünn, sonst brechen sie. Die Scheiben in eine große Schüssel geben.",
+      "Die Zwiebel fein würfeln und in 250 ml Brühe 2–3 Minuten köcheln. Vom Herd nehmen, 3 EL Essig dazugeben.",
+      "Die Brühe kurz abkühlen lassen, dann 2 EL Senf einrühren. Ist sie zu heiß, verliert der Senf sein Aroma.",
+      "Die Marinade über die Kartoffeln gießen und alles ziehen lassen.",
+      "In der Zwischenzeit die 6 Gewürzgurken fein würfeln und zu den Kartoffeln geben.",
+      "200 g Mayonnaise mit 2 EL Gurkenflüssigkeit glatt rühren, bei Bedarf mehr Flüssigkeit nehmen.",
+      "Die Mayonnaise vorsichtig unterheben, damit die Scheiben ganz bleiben. Mit Salz abschmecken und noch einmal durchziehen lassen."
+    ]
+  },
+  "en": {
+    "title": "Potato salad",
+    "steps": [
+      "Cook the 2 kg potatoes in salted water until tender. Drain, peel and let them cool completely. Warm potatoes will not slice cleanly.",
+      "Slice the potatoes thinly with a knife, not a slicer, and not too thin or they break. Put the slices in a large bowl.",
+      "Finely dice the onion and simmer it in 250 ml stock for 2-3 minutes. Take off the heat and add 3 tbsp vinegar.",
+      "Let the stock cool slightly, then whisk in 2 tbsp mustard. If it is too hot, the mustard loses its aroma.",
+      "Pour the marinade over the potatoes and let everything steep.",
+      "Meanwhile finely dice the 6 pickles and add them to the potatoes.",
+      "Loosen 200 g mayonnaise with 2 tbsp pickle liquid, using more if needed.",
+      "Fold in the mayonnaise gently so the slices stay whole. Season with salt and let it rest once more."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 6,
+        "unit": "piece"
+      },
+      {
+        "index": 8,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Page ratingCount 568. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

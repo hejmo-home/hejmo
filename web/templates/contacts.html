@@ -1,7 +1,7 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "hub.contacts") "Frame" .Frame)}}
   <h1>{{t "hub.contacts"}}</h1>
   <p class="lead">{{t "contact.lead"}}</p>
-  <p><a class="button" href="/contacts/new">{{t "contact.new"}}</a></p>
+  <p class="ct-acts"><a class="button" href="/contacts/new">{{t "contact.new"}}</a>{{if .HasOthers}}<a class="button secondary" href="/contacts/import">{{template "uploadIcon"}}{{t "contact.import.button"}}</a>{{end}}</p>
   {{if .HasOthers}}
   <form class="lib-search" method="get" action="/contacts" role="search">
     <div class="f"><label>{{t "contact.search.label"}}<input name="q" type="search" value="{{.Q}}" placeholder="{{t "contact.search.placeholder"}}"></label></div>
@@ -22,7 +22,7 @@
   {{if or .Others .OthersEmpty}}
   <section aria-labelledby="oth">
     <h2 id="oth">{{.OthersTitle}}</h2>
-    {{if .Others}}{{template "contactRows" .Others}}{{else}}<div class="empty" data-empty><p>{{t "contact.others.empty"}}</p></div>{{end}}
+    {{if .Others}}{{template "contactRows" .Others}}{{else}}<div class="empty" data-empty><p>{{t "contact.others.empty"}}</p><p>{{t "contact.others.empty.import"}}</p><a class="button secondary" href="/contacts/import">{{template "uploadIcon"}}{{t "contact.import.button"}}</a></div>{{end}}
   </section>
   {{end}}
   {{if .Family}}
@@ -35,7 +35,8 @@
   {{end}}
 {{template "foot"}}
 {{define "contactRows"}}<ul class="list-rows contacts">{{range .}}
-    <li><a href="{{.Href}}">{{template "ctPhoto" (dict "Photo" .Photo "Class" "" "Alt" "" "Lazy" true)}}<span class="t">{{if .Person}}<b class="who"><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span><span>{{.Name}}</span></b>{{else}}<b>{{.Name}}</b>{{end}}{{range .Rels}}<span class="meta rel">{{.}}</span>{{end}}{{with .Full}}<span class="meta">{{.}}</span>{{end}}{{if .Nums}}<span class="nums">{{range .Nums}}<span><span class="lab">{{.Label}}</span> {{.Value}}</span>{{end}}</span>{{else}}<span class="none">{{t "contact.nonumber"}}</span>{{end}}{{with .Groups}}<span class="grps">{{range .}}<span class="tag grp">{{.}}</span>{{end}}</span>{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>{{end}}
+    <li><a href="{{.Href}}">{{template "ctPhoto" (dict "Photo" .Photo "Class" "" "Alt" "" "Lazy" true)}}<span class="t">{{if .Person}}<b class="who"><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span><span>{{.Name}}</span></b>{{else}}<b>{{.Name}}</b>{{end}}{{range .Rels}}<span class="meta rel">{{.}}</span>{{end}}{{with .Full}}<span class="meta">{{.}}</span>{{end}}{{if .Nums}}<span class="nums">{{range .Nums}}<span><span class="lab">{{.Label}}</span> {{.Value}}</span>{{end}}</span>{{else}}<span class="none">{{t "contact.nonumber"}}</span>{{end}}{{if or .Fresh .Groups}}<span class="grps">{{with .Fresh}}<span class="tag fresh">{{.}}</span>{{end}}{{range .Groups}}<span class="tag grp">{{.}}</span>{{end}}</span>{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>{{end}}
   </ul>{{end}}
+{{define "uploadIcon"}}<svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 19h14"/></svg>{{end}}
 {{define "ctGalleryIcon"}}<svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M4 17l5-5 4 4 2.5-2.5L20 17"/></svg>{{end}}
 {{define "ctPhoto"}}{{$p := .Photo}}{{if $p.URL}}<span class="ct-photo{{.Class}}"><img src="{{$p.URL}}" alt="{{.Alt}}" width="512" height="512"{{if .Lazy}} loading="lazy"{{end}}></span>{{else if $p.Initials}}<span class="ct-photo{{.Class}} none" aria-hidden="true">{{$p.Initials}}</span>{{else}}<span class="ct-photo{{.Class}} none" aria-hidden="true">{{template "ctGalleryIcon"}}</span>{{end}}{{end}}

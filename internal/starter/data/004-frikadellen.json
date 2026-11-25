@@ -1,0 +1,251 @@
+{
+  "n": 4,
+  "slug": "frikadellen",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 45,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Senf",
+      "en": "Mustard"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/819141186405890/Omas-beste-Frikadellen.html",
+    "site": "Chefkoch",
+    "ratings": 3253
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Brötchen",
+      "article_en": "Bread roll",
+      "note_de": "altbacken, 1-2 Tage alt",
+      "note_en": "stale, 1-2 days old"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "nach Belieben",
+      "note_en": "optional"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Ei",
+      "article_en": "Egg",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Senf",
+      "article_en": "Mustard",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Majoran, getrocknet",
+      "article_en": "Dried marjoram",
+      "note_de": "gestrichen",
+      "note_en": "level"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Paprikapulver edelsüß",
+      "article_en": "Sweet paprika powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Petersilie, getrocknet",
+      "article_en": "Dried parsley",
+      "note_de": "oder 2 EL frische, gehackte",
+      "note_en": "or 2 tbsp chopped fresh"
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Knoblauchpulver",
+      "article_en": "Garlic powder",
+      "note_de": "nach Belieben",
+      "note_en": "optional"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Flüssigwürze",
+      "article_en": "Liquid seasoning",
+      "note_de": "z. B. Maggi",
+      "note_en": "e.g. Maggi"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer, frisch gemahlen",
+      "article_en": "Freshly ground pepper",
+      "note_de": "viel",
+      "note_en": "plenty"
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Hackfleisch, gemischt",
+      "article_en": "Mixed ground meat (beef and pork)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Mehl Type 405",
+      "article_en": "Plain flour (Type 405)",
+      "note_de": "für die Arbeitsfläche; evtl. auch Semmelbrösel zum Wenden",
+      "note_en": "for the work surface; optionally breadcrumbs for coating"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Margarine",
+      "article_en": "Margarine",
+      "note_de": "oder Öl zum Braten",
+      "note_en": "or oil for frying"
+    }
+  ],
+  "de": {
+    "title": "Frikadellen",
+    "steps": [
+      "Das alte Brötchen in einer Schüssel mit Wasser übergießen und einweichen, bis es ganz weich ist.",
+      "Die Zwiebel fein würfeln. Du kannst sie roh verwenden oder in 1 EL Butter kurz glasig andünsten, dann wird sie milder.",
+      "In einer großen Schüssel Hackfleisch, Ei, Zwiebel, Senf, Majoran, Paprikapulver, Petersilie, Flüssigwürze, Salz und viel frisch gemahlenen Pfeffer geben. Wer mag, nimmt eine Prise Knoblauchpulver dazu.",
+      "Das Brötchen sehr gut ausdrücken, zerpflücken und dazugeben. Jetzt alles mit den Händen oder einem großen Löffel (kein Mixer, sonst werden die Frikadellen zäh) mindestens 10-15 Minuten kräftig durchkneten. Je gründlicher, desto lockerer das Ergebnis.",
+      "Probier, ob die Würzung passt: ein kleines Stück braten und kosten, dann nachwürzen.",
+      "Die Arbeitsfläche mit Mehl bestäuben. Aus der Masse Kugeln formen und zu flachen Frikadellen drücken. Wer mag, wendet sie noch in Mehl oder Semmelbröseln.",
+      "Margarine oder Öl in einer schweren Pfanne stark erhitzen und die Frikadellen von beiden Seiten kräftig anbraten. Die Pfanne nicht überfüllen, lieber in Portionen arbeiten.",
+      "Hitze auf mittel bis niedrig reduzieren und die Frikadellen in 15-20 Minuten fertig braten. Dabei nur 1-2 Mal wenden."
+    ]
+  },
+  "en": {
+    "title": "Meatballs (German-style patties)",
+    "steps": [
+      "Pour water over the stale bread roll in a bowl and soak it until completely soft.",
+      "Dice the onion finely. You can use it raw or sweat it briefly in 1 tbsp butter until translucent, which makes it milder.",
+      "In a large bowl combine mince, egg, onion, mustard, marjoram, paprika, parsley, liquid seasoning, salt and plenty of freshly ground pepper. If you like, add a pinch of garlic powder.",
+      "Squeeze the roll out very well, tear it up and add it. Now knead everything by hand or with a big spoon (no mixer, it makes the patties tough) for at least 10-15 minutes. The more thoroughly, the lighter the result.",
+      "Check the seasoning: fry a small piece, taste it, and adjust.",
+      "Dust the work surface with flour. Shape the mixture into balls and press them into flat patties. If you like, turn them in flour or breadcrumbs.",
+      "Heat margarine or oil strongly in a heavy pan and sear the patties well on both sides. Don't crowd the pan, work in batches.",
+      "Reduce to medium-low heat and cook the patties through in 15-20 minutes. Turn them only 1-2 times."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 7,
+        "amount": 2,
+        "unit": "tsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 10,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 14,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

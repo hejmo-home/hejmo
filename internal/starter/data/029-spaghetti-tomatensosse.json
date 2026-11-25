@@ -1,0 +1,169 @@
+{
+  "n": 29,
+  "slug": "spaghetti-tomatensosse",
+  "category": "Hauptgerichte",
+  "servings": 2,
+  "time_minutes": 20,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [
+    {
+      "de": "Sellerie",
+      "en": "Celery"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/446511136906689/Tomatensauce-a-la-Miracoli.html",
+    "site": "Chefkoch",
+    "ratings": 704
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "Dose",
+      "article_de": "Tomaten, stückig",
+      "article_en": "Chopped tomatoes",
+      "note_de": "à 400 g",
+      "note_en": "400 g each"
+    },
+    {
+      "amount": 1,
+      "unit": "Stange",
+      "article_de": "Staudensellerie",
+      "article_en": "Celery",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Meersalz",
+      "article_en": "Sea salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "TL",
+      "article_de": "Gemüsebrühe, instant (Bio)",
+      "article_en": "Instant vegetable stock (organic)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Oregano",
+      "article_en": "Oregano",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Olivenöl, extra nativ",
+      "article_en": "Extra virgin olive oil",
+      "note_de": "wenig",
+      "note_en": "a little"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Tomatenmark",
+      "article_en": "Tomato purée",
+      "note_de": "etwas, nach Geschmack",
+      "note_en": "a little, to taste"
+    }
+  ],
+  "de": {
+    "title": "Spaghetti mit Tomatensoße",
+    "steps": [
+      "Schneide Zwiebel, Staudensellerie und Knoblauch sehr klein. Je feiner, desto besser verschwindet das Gemüse in der Soße.",
+      "Erhitze ca. 3 EL Olivenöl in einem Topf und brate das Gemüse darin an. Es soll leicht weich werden, bevor die Tomaten dazukommen.",
+      "Gib die stückigen Tomaten dazu. Rühre Tomatenmark ein, bis die Soße schön sämig ist.",
+      "Würze mit 1 TL Zucker, 1 Prise Salz, 2 TL Oregano und 2 bis 3 TL Gemüsebrühe. Oregano und Sellerie geben den Geschmack wie von früher. Fange mit wenig an und taste dich heran.",
+      "Schmecke die Soße ab und korrigiere, was fehlt. Sie reicht für ca. 500 g Spaghetti."
+    ]
+  },
+  "en": {
+    "title": "Spaghetti with tomato sauce",
+    "steps": [
+      "Chop the onion, celery and garlic very small. The finer they are, the better the vegetables disappear into the sauce.",
+      "Heat about 3 tbsp of olive oil in a pot and fry the vegetables in it. They should be slightly soft before the tomatoes go in.",
+      "Add the chunky tomatoes. Stir in tomato paste until the sauce is nice and thick.",
+      "Season with 1 tsp of sugar, 1 pinch of salt, 2 tsp of oregano and 2 to 3 tsp of vegetable bouillon. Oregano and celery give that nostalgic flavour. Start with a little and work your way up.",
+      "Taste the sauce and adjust whatever is missing. It makes enough for about 500 g of spaghetti."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "can"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "stalk"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 6,
+        "amount": 3,
+        "unit": "tsp"
+      },
+      {
+        "index": 7,
+        "amount": 2,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "The source says the sauce is enough for about 500 g spaghetti; the spaghetti are not part of its ingredient list. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

@@ -1,0 +1,177 @@
+{
+  "n": 12,
+  "slug": "currysauce-currywurst",
+  "category": "Hauptgerichte",
+  "servings": 6,
+  "time_minutes": 20,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Soja",
+      "en": "Soy"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/304621110745012/Currysauce-fuer-Currywurst.html",
+    "site": "Chefkoch",
+    "ratings": 1144
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zwiebeln, klein",
+      "article_en": "Small onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Tomatenmark",
+      "article_en": "Tomato paste",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "ml",
+      "article_de": "Wasser",
+      "article_en": "Water",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Flasche",
+      "article_de": "Tomatenketchup",
+      "article_en": "Tomato ketchup",
+      "note_de": "ca. 500 ml",
+      "note_en": "about 500 ml"
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Balsamico, dunkel",
+      "article_en": "Dark balsamic vinegar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Honig",
+      "article_en": "Honey",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Spritzer",
+      "article_de": "Sojasauce",
+      "article_en": "Soy sauce",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Currypulver",
+      "article_en": "Curry powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Chilipulver",
+      "article_en": "Chilli powder",
+      "note_de": "etwas, oder Cayennepfeffer",
+      "note_en": "a little, or cayenne pepper"
+    }
+  ],
+  "de": {
+    "title": "Currysauce für Currywurst",
+    "steps": [
+      "Die Zwiebeln sehr fein würfeln.",
+      "Olivenöl in einem Topf bei niedriger Hitze erwärmen und die Zwiebeln darin glasig dünsten.",
+      "Das Tomatenmark einrühren, kurz mitrösten und mit dem Wasser ablöschen.",
+      "Ketchup, Balsamico und Honig dazugeben und alles bei niedriger Hitze köcheln lassen. Der Essig soll dabei nicht zu schnell verdampfen, also nicht zu heiß werden.",
+      "Sojasauce und Currypulver einrühren.",
+      "Ist die Sauce zu dick, gib noch etwas Wasser dazu.",
+      "Zum Schluss mit mehr Curry und Chilipulver (oder Cayennepfeffer) nach Geschmack abschmecken."
+    ]
+  },
+  "en": {
+    "title": "Curry sauce for currywurst and fries",
+    "steps": [
+      "Dice the onions very finely.",
+      "Warm the olive oil in a pot over low heat and soften the onions in it until translucent.",
+      "Stir in the tomato paste, toast briefly and deglaze with the water.",
+      "Add ketchup, balsamic and honey and simmer on low heat. The vinegar shouldn't evaporate too fast, so don't let it get too hot.",
+      "Stir in the soy sauce and curry powder.",
+      "If the sauce is too thick, add a little more water.",
+      "At the end, adjust to taste with more curry and chilli powder (or cayenne)."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "bottle"
+      },
+      {
+        "index": 5,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "dash"
+      },
+      {
+        "index": 8,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

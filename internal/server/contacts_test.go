@@ -177,7 +177,7 @@ func TestWithoutOtherContactsThereIsNoSearchAndTheEmptyStateSaysWhatBelongsHere(
 	t.Parallel()
 	c := newCtBox(t)
 	page := c.page("/contacts", "de").body
-	ctHas(t, "empty overview", page, "Noch keine weiteren Kontakte. Leg zum Beispiel Großeltern, Kita oder Kinderarztpraxis an.", "Aus eurer Familie", "Mama")
+	ctHas(t, "empty overview", page, "Noch keine weiteren Kontakte. Hierher gehören Großeltern, Kita, Arztpraxen und alle, die ihr anrufen wollt.", "Aus eurer Familie", "Mama")
 	ctHasNot(t, "empty overview", page, `class="lib-search"`, `class="lib-filter`, "Gruppen verwalten")
 }
 

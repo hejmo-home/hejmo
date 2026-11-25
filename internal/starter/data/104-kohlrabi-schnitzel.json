@@ -1,0 +1,239 @@
+{
+  "n": 104,
+  "slug": "kohlrabi-schnitzel",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 50,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Nüsse",
+      "en": "Tree nuts"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/kohlrabi-schnitzel-mit-kraeutersosse-46201.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Kohlrabi, groß",
+      "article_en": "Kohlrabi, large",
+      "note_de": "je ca. 450 g",
+      "note_en": "about 450 g each"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Töpfchen",
+      "article_de": "Kerbel",
+      "article_en": "Chervil",
+      "note_de": "oder 1/2 Bund Petersilie",
+      "note_en": "or 1/2 bunch parsley"
+    },
+    {
+      "amount": 3,
+      "unit": "Stiel",
+      "article_de": "Dill",
+      "article_en": "Dill",
+      "note_de": "3 bis 4 Stiele",
+      "note_en": "3 to 4 stalks"
+    },
+    {
+      "amount": 1,
+      "unit": "Beet",
+      "article_de": "Kresse",
+      "article_en": "Cress",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    },
+    {
+      "amount": 6,
+      "unit": "EL",
+      "article_de": "Paniermehl",
+      "article_en": "Breadcrumbs",
+      "note_de": "6 bis 8 EL",
+      "note_en": "6 to 8 tbsp"
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Mandelblättchen",
+      "article_en": "Flaked almonds",
+      "note_de": "50 bis 75 g",
+      "note_en": "50 to 75 g"
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "3 bis 4 EL, zum Wenden",
+      "note_en": "3 to 4 tbsp, for coating"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "ca. 30 g, für die Soße",
+      "note_en": "about 30 g, for the sauce"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "zweite Mehlangabe laut Quelle",
+      "note_en": "second flour entry as listed in the source"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": "zum Braten",
+      "note_en": "for frying"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Butter oder Margarine",
+      "article_en": "Butter or margarine",
+      "note_de": "ca. 30 g",
+      "note_en": "about 30 g"
+    },
+    {
+      "amount": 250,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Kohlrabi-Schnitzel",
+    "steps": [
+      "Zwei Eier hart kochen, abschrecken und pellen. Kerbelblättchen abzupfen, Dill klein schneiden und die Kresse vom Beet abschneiden.",
+      "Den Kohlrabi schälen, waschen und in rund 8 gleichmäßig dicke Scheiben schneiden. In kochendem Salzwasser etwa 10 Minuten garen, abgießen und abkühlen lassen. Mindestens ¼ l vom Kochwasser für die Soße aufbewahren.",
+      "Das dritte Ei verquirlen. Paniermehl mit den Mandelblättchen mischen. Die Scheiben mit Salz und Pfeffer würzen, in 3 EL Mehl wenden, durch das Ei ziehen und in der Mandelmischung wälzen. Die Panade gut festdrücken.",
+      "Bei mittlerer Hitze Öl in einer Pfanne mit Antihaftbeschichtung heiß werden lassen und die Schnitzel beidseitig goldbraun ausbacken.",
+      "Soße: 2 EL Butter oder Margarine im Topf zerlassen, 2 EL Mehl kurz darin anschwitzen. Kochwasser und Milch einrühren, einmal aufwallen und etwa 5 Minuten leise kochen lassen. Die Kräuter bis auf einen kleinen Rest zugeben, kurz pürieren und mit Pfeffer und Salz würzen.",
+      "Eines der harten Eier grob hacken, das andere in Viertel teilen. Die Schnitzel mit Kräutersoße und Eiervierteln anrichten, mit gehacktem Ei und restlichen Kräutern bestreuen. Dazu passt Kartoffelpüree."
+    ]
+  },
+  "en": {
+    "title": "Kohlrabi schnitzel",
+    "steps": [
+      "Hard-boil two eggs, rinse in cold water and peel. Pick the chervil leaves, chop the dill finely and snip the cress.",
+      "Peel and wash the kohlrabi and cut it into about 8 slices of equal thickness. Cook in boiling salted water for about 10 minutes, drain and let cool. Keep at least ¼ l of the cooking water for the sauce.",
+      "Beat the third egg. Mix the breadcrumbs with the flaked almonds. Season the slices with salt and pepper, turn them in 3 tbsp flour, pull them through the egg and coat them in the almond mixture. Press the coating on firmly.",
+      "Heat oil in a non-stick pan over medium heat. Fry the schnitzel until golden brown on each side.",
+      "Sauce: Melt 2 tbsp butter or margarine in a pot and briefly cook 2 tbsp flour in it. Stir in the cooking water and milk, bring to the boil and simmer for about 5 minutes. Add the herbs except for a small amount, blend briefly and season with salt and pepper.",
+      "Chop one boiled egg coarsely and quarter the other. Serve the schnitzel with the herb sauce and egg quarters, sprinkled with the chopped egg and the remaining herbs. Mashed potatoes go well with it."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "pot"
+      },
+      {
+        "index": 4,
+        "amount": 3,
+        "unit": "stalk"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "punnet"
+      },
+      {
+        "index": 6,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 7,
+        "amount": 6,
+        "unit": "tbsp"
+      },
+      {
+        "index": 9,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 10,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 11,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 12,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 13,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Source lists flour three times (3-4 tbsp coating, 2 tbsp/30 g sauce, and another 2 tbsp); all three kept as listed, check on first cook. Fat for sauce is 2 tbsp (30 g) butter or margarine. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.0
+  }
+}

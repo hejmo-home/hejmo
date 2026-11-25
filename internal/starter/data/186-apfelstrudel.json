@@ -1,0 +1,210 @@
+{
+  "n": 186,
+  "slug": "apfelstrudel",
+  "category": "Desserts",
+  "servings": 8,
+  "time_minutes": 90,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Nüsse",
+      "en": "Tree nuts"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://fooby.ch/en/recipes/14188/apple-strudel",
+    "site": "Fooby",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Weißmehl",
+      "article_en": "White flour",
+      "note_de": "für den Teig",
+      "note_en": "for the dough"
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Ei",
+      "article_en": "Egg",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Rapsöl",
+      "article_en": "Rapeseed oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 5,
+      "unit": "EL",
+      "article_de": "Wasser, lauwarm",
+      "article_en": "Lukewarm water",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Sultaninen",
+      "article_en": "Sultanas",
+      "note_de": "oder Cranberries",
+      "note_en": "or dried cranberries"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Rum oder Apfelsaft",
+      "article_en": "Rum or apple juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 600,
+      "unit": "g",
+      "article_de": "Äpfel",
+      "article_en": "Apples",
+      "note_de": "z. B. Boskoop, geviertelt, entkernt und in Scheiben",
+      "note_en": "e.g. Boskoop, quartered, cored and sliced"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zitrone, Bio",
+      "article_en": "Organic lemon",
+      "note_de": "etwas Schale abgerieben und 1 EL Saft",
+      "note_en": "a little grated zest and 1 tbsp of juice"
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.25,
+      "unit": "TL",
+      "article_de": "Zimt",
+      "article_en": "Cinnamon",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "geschmolzen und abgekühlt",
+      "note_en": "melted and cooled"
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Mandeln, gemahlen",
+      "article_en": "Ground almonds",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Apfelstrudel",
+    "steps": [
+      "Vermenge Mehl und Salz. Verquirle Ei, Öl und Wasser getrennt, rühre alles mit dem Kochlöffel zusammen und knete auf einer leicht bemehlten Fläche einen geschmeidigen Teig. Forme ihn zur Kugel und stülpe eine heiß ausgespülte Schüssel darüber. Der Teig ruht so etwa 30 Minuten bei Zimmertemperatur.",
+      "Übergieße die Sultaninen mit dem Rum und lass sie etwa 10 Minuten ziehen. Rühre danach Äpfel, Zitronenschale und -saft, Zucker und Zimt dazu. Heize den Ofen auf 200 °C vor.",
+      "Rolle den Teig auf wenig Mehl zu einem Rechteck, so dünn es geht, und lege ihn auf ein Küchentuch. Ziehe ihn mit bemehlten Händen behutsam von der Mitte zu den Rändern auseinander, bis man durch ihn hindurchsehen kann.",
+      "Streiche etwas Butter auf den Teig und bestreue ihn mit den gemahlenen Mandeln. Häufe die Füllung auf die untere Hälfte und lass etwa 4 cm Rand frei. Klappe die seitlichen Ränder nach innen und rolle den Strudel mithilfe des Tuchs locker auf. Lege ihn mit der Naht nach unten auf ein Blech mit Backpapier und bestreiche ihn dünn mit Butter.",
+      "Backe den Strudel auf mittlerer Schiene etwa 35 Minuten. Pinsele ihn zwischendurch mehrmals mit der restlichen Butter ein. Lass ihn nach dem Backen auf einem Rost kurz abkühlen."
+    ]
+  },
+  "en": {
+    "title": "Apple strudel",
+    "steps": [
+      "Mix the flour and salt in a bowl. Whisk the egg, oil and water, add them to the flour and stir in with a wooden spoon. Knead the dough on a little flour until smooth and supple, shape it into a ball and leave it for about 30 minutes at room temperature under a bowl rinsed in hot water.",
+      "Leave the sultanas to soak in the rum for about 10 minutes. Then mix in the apples, lemon zest and juice, sugar and cinnamon.",
+      "Preheat the oven to 200 °C. Roll the dough out on a little flour into a rectangle as thin as possible, lay it on a tea towel and, with floured hands, stretch it from the middle outwards until it is translucent all over.",
+      "Brush the dough with a little butter and scatter the almonds over it. Spread the filling over the lower half of the dough, leaving a border of about 4 cm. Fold in the sides, roll up the strudel loosely with the help of the towel and place it seam side down on a tray lined with baking paper. Brush it with a little butter.",
+      "Bake the strudel in the middle of the oven for about 35 minutes, brushing it several times with the remaining butter. Let it cool a little on a wire rack."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 5,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 9,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 10,
+        "amount": 0.25,
+        "unit": "tsp"
+      },
+      {
+        "index": 12,
+        "amount": 4,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Replacement for missing time in the previous source, approved by the product owner 23/11/2026. Time from source: 90 min total (25 min active) as shown on the page. The page shows no rating count (editorial recipe). The Fooby page names Betty Bossi's cooking centre as contact, so Fooby and Betty Bossi may count as one publisher in the source mix. Yield: 8 pieces. Dough for 8 pieces; stretching the dough thin is the demanding step.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

@@ -1,0 +1,176 @@
+{
+  "n": 106,
+  "slug": "kartoffel-gemuese-frittata",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 50,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/kartoffel-gemuese-frittata-3036",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 300,
+      "unit": "g",
+      "article_de": "Kartoffeln, festkochend",
+      "article_en": "Waxy potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zucchino",
+      "article_en": "Zucchini",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Paprikaschote, rot",
+      "article_en": "Red bell pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Frühlingszwiebeln",
+      "article_en": "Spring onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Pecorino oder Manchego, mittelalt",
+      "article_en": "Pecorino or Manchego, medium-aged",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 8,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer aus der Mühle",
+      "article_en": "Freshly ground pepper",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Kartoffel-Gemüse-Frittata",
+    "steps": [
+      "Kartoffeln in dünne Scheiben schneiden. 2 EL Olivenöl in einer großen Pfanne bei mittlerer Hitze erhitzen und die Kartoffeln 8 Minuten braten, zwischendurch wenden. Herausnehmen.",
+      "Zucchino, Paprika und Möhren klein schneiden, Frühlingszwiebeln in Ringe schneiden. Pecorino in dünne Scheiben schneiden.",
+      "Restliches Öl in die Pfanne geben. Möhren und Paprika 2 bis 3 Minuten braten.",
+      "Zucchino und Frühlingszwiebeln dazugeben und den Knoblauch hineinpressen. Kurz mitbraten.",
+      "Eier in einer großen Schüssel verquirlen, mit Salz und Pfeffer würzen. Kartoffeln, Gemüse und Käse untermischen.",
+      "Die Pfanne wieder heiß werden lassen, die Masse hineingießen und flach legen. Die Kartoffelscheiben sollen flach liegen. Bei niedriger Hitze 10 Minuten stocken lassen, bis sich unten eine Kruste bildet.",
+      "Die Frittata am Rand lösen und auf einen Teller stürzen. Zurück in die Pfanne gleiten lassen und weitere 10 Minuten braten."
+    ]
+  },
+  "en": {
+    "title": "Potato and vegetable frittata",
+    "steps": [
+      "Cut the potatoes into thin slices. Heat 2 tbsp olive oil in a large pan over medium heat and fry the potatoes for 8 minutes, turning in between. Take them out.",
+      "Cut the zucchini, pepper and carrots small and slice the spring onions into rings. Cut the pecorino into thin slices.",
+      "Add the remaining oil to the pan. Fry the carrots and pepper for 2 to 3 minutes.",
+      "Add the zucchini and spring onions and press in the garlic. Fry briefly.",
+      "Beat the eggs in a large bowl and season with salt and pepper. Mix in the potatoes, vegetables and cheese.",
+      "Heat the pan again, pour in the mixture and lay it flat. The potato slices should lie flat. Let it set over low heat for 10 minutes until a crust forms underneath.",
+      "Loosen the frittata at the edge and flip it onto a plate. Slide it back into the pan and fry for another 10 minutes."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "bunch"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "clove"
+      },
+      {
+        "index": 8,
+        "amount": 8,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Time from source: 50 min, stated as Aufwand (the only time figure on the page). Page JSON-LD ratingCount 109; list says Redaktionsküche. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

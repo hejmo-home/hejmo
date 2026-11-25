@@ -1,0 +1,178 @@
+{
+  "n": 79,
+  "slug": "pellkartoffeln-kraeuterquark",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 30,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Senf",
+      "en": "Mustard"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/pellkartoffeln-mit-kraeuterquark-9532",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 800,
+      "unit": "g",
+      "article_de": "Kartoffeln, klein, neu",
+      "article_en": "Small new potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Meersalz",
+      "article_en": "Sea salt",
+      "note_de": "für das Kochwasser",
+      "note_en": "for the cooking water"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Magerquark",
+      "article_en": "Low-fat quark",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Sahnejoghurt",
+      "article_en": "Creamy yoghurt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Senf",
+      "article_en": "Mustard",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Weißweinessig",
+      "article_en": "White wine vinegar",
+      "note_de": "1 bis 2 TL, nach Geschmack",
+      "note_en": "1 to 2 tsp, to taste"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel, weiß",
+      "article_en": "White onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Kräuter, gemischt",
+      "article_en": "Mixed herbs",
+      "note_de": "z. B. Petersilie, Dill, Schnittlauch, Estragon, Pimpernelle, Basilikum",
+      "note_en": "e.g. parsley, dill, chives, tarragon, salad burnet, basil"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Pellkartoffeln mit Quark",
+    "steps": [
+      "Setze 800 g kleine neue Kartoffeln mit Schale in einem Topf mit kaltem Wasser und reichlich Meersalz auf. Lege den Deckel auf und koche sie 20 bis 25 Minuten, bis sie weich sind.",
+      "Koche die 2 Eier in einem kleinen Topf 10 bis 12 Minuten hart und schrecke sie dann kalt ab.",
+      "Während alles kocht, machst du den Quark. Verrühre 500 g Magerquark, 200 g Sahnejoghurt, 2 TL Senf und 1 bis 2 TL Weißweinessig, je nach Geschmack.",
+      "Schäle die weiße Zwiebel und hacke sie fein. Hacke das Bund gemischte Kräuter. Pelle die abgekühlten Eier und hacke sie. Hebe alles unter den Quark.",
+      "Schmecke den Quark mit Salz und Pfeffer ab.",
+      "Gieße die Kartoffeln ab und lass sie kurz ausdampfen. Streue etwas Salz darüber.",
+      "Serviere die heißen Pellkartoffeln mit dem Kräuterquark."
+    ]
+  },
+  "en": {
+    "title": "Jacket potatoes with quark",
+    "steps": [
+      "Put 800 g small new potatoes in their skins in a pot with cold water and plenty of sea salt. Put the lid on and boil them for 20 to 25 minutes until tender.",
+      "Boil the 2 eggs hard in a small pot for 10 to 12 minutes and then chill them under cold water.",
+      "While everything cooks, make the quark. Stir together 500 g low-fat quark, 200 g cream yoghurt, 2 tsp mustard and 1 to 2 tsp white wine vinegar, to taste.",
+      "Peel the white onion and chop it finely. Chop the bunch of mixed herbs. Peel the cooled eggs and chop them. Fold everything into the quark.",
+      "Season the quark with salt and pepper.",
+      "Drain the potatoes and let them steam dry briefly. Sprinkle with a little salt.",
+      "Serve the hot jacket potatoes with the herb quark."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "tsp"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "bunch"
+      }
+    ]
+  },
+  "review_note": "Time from source: 30 min, stated as Aufwand (the only time figure on the page). Source gives vinegar as 1-2 TL; the lower value 1 is used. Steps rewritten in own words on 23/11/2026 from the source steps (times, temperatures and order per source). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

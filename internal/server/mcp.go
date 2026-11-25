@@ -209,6 +209,8 @@ var mcpTools = []mcpTool{
 	{name: "get_diet_and_allergies", desc: "Get one person's diet and allergies. Free-text allergies (other) are not checked automatically and cannot be filtered by. Health data, read only.", method: "GET", path: "/people/{id}/food", params: []mcpParam{idOf("person")}},
 	{name: "list_recipes", desc: "List the household's own recipes from A to Z; q searches name, ingredients and tags.", method: "GET", path: "/recipes", params: []mcpParam{
 		opt("q", "string", "Search text"), opt("category", "string", "main, side, dessert, baking, breakfast or snack")}},
+	{name: "list_starter_recipes", desc: "List the 200 starter recipes that ship with Hejmo (read only, in the language of the request, each with its source); get one with get_recipe by its id, which starts with starter-.", method: "GET", path: "/starter-recipes", params: []mcpParam{
+		opt("q", "string", "Search text"), opt("category", "string", "main, side, dessert, baking, breakfast or snack")}},
 	{name: "get_recipe", desc: "Get one recipe with its ingredients and its steps in order.", method: "GET", path: "/recipes/{id}", params: []mcpParam{idOf("recipe")}},
 	{name: "create_recipe", desc: "Write a recipe. Only the name is required. Warnings about allergies never block it.", method: "POST", path: "/recipes", params: recipeBody},
 	{name: "update_recipe", desc: "Replace a recipe (give all fields): its ingredients, steps and tags are replaced.", method: "PUT", path: "/recipes/{id}", params: append([]mcpParam{idOf("recipe")}, recipeBody...)},

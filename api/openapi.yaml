@@ -648,6 +648,144 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /contact-imports:
+    post:
+      operationId: createContactImport
+      summary: Upload a contact file and see what it brings (parents only, scope contacts:write)
+      description: |
+        Send a vCard file (2.1 with quoted-printable and a charset, 3.0 or 4.0) as `multipart/form-data` in the
+        part `file`, at most 25 MB. Nothing is saved. The answer says which cards look like contacts Hejmo has
+        (`duplicates`: the same number read with the household's home country, the same e-mail address
+        without regard to case, or only the same name; empty values never match), which are new (`new`, with the
+        name the contact would get), which are already exactly in Hejmo (`same`) and which Hejmo cannot read
+        (`unreadable`). Embedded photos are made under the picture rules (512 px, no location or camera data); a
+        photo given as a web link is never fetched. The file stays on the box for the parent who uploaded it, for
+        an hour at most, and is deleted after the import. A file that is no contact file or holds no card Hejmo
+        can read is refused with 422, one over 25 MB with 413.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "201":
+          description: What the file brings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ContactImport" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "413":
+          description: The file is over 25 MB
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /contact-imports/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getContactImport
+      summary: What an uploaded contact file brings now (parents only, scope contacts:read)
+      description: |
+        Worked out again from the file and from what Hejmo holds at the moment. Only the parent who uploaded
+        the file can read it (404 for everyone else). 410 when the hour is over and the file is deleted.
+      responses:
+        "200":
+          description: What the file brings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ContactImport" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "410":
+          description: The file waited longer than an hour and was deleted; nothing was taken over
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    delete:
+      operationId: deleteContactImport
+      summary: Cancel an import and delete the file (parents only, scope contacts:delete)
+      responses:
+        "204": { description: "Deleted; nothing was taken over" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "410":
+          description: The file was deleted already
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /contact-imports/{id}/confirm:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: confirmContactImport
+      summary: Take over the contacts of an uploaded file (parents only, scope contacts:write)
+      description: |
+        Writes everything in one step or nothing, then deletes the file. A possible duplicate is answered with
+        `merge` (new numbers and e-mail addresses are added, empty fields are filled, a missing birth year is
+        added; nothing is deleted or overwritten, the Hejmo name, the relations and the groups stay; for a
+        person of the household the file never changes the name, the birthday or the e-mail addresses),
+        `new` (an own contact; not for a person of the household) or `skip`. A match by number or e-mail
+        address is merged when nothing is said (`preselect`); a duplicate with no answer and no preselection
+        is refused with 422 and the keys are named. Two cards of the file that look the same are one duplicate
+        with `in_file`: `merge` makes one contact of them, `new` one each. When both sides have a photo, `photos`
+        chooses `file` or `keep` (the default). New contacts are taken unless their key is in `skip`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                duplicates:
+                  type: object
+                  description: "The choice for each duplicate by its key, for example {\"d3\": \"merge\"}"
+                  additionalProperties: { type: string, enum: [merge, new, skip] }
+                photos:
+                  type: object
+                  additionalProperties: { type: string, enum: [keep, file] }
+                skip:
+                  type: array
+                  description: Keys of new contacts that are not taken over
+                  items: { type: string }
+                groups:
+                  type: array
+                  description: The groups the new contacts come into (none by default)
+                  items: { type: string }
+      responses:
+        "200":
+          description: The contacts that were made and completed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [file_name, created, completed]
+                properties:
+                  file_name: { type: string }
+                  created: { type: array, items: { $ref: "#/components/schemas/Contact" } }
+                  completed: { type: array, items: { $ref: "#/components/schemas/Contact" } }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: A contact was given a name this import needs while the file waited; read the file again
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "410":
+          description: The file waited longer than an hour and was deleted; nothing was taken over
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /contact-groups:
     get:
       operationId: listContactGroups
@@ -2511,7 +2649,10 @@ paths:
         The name must be free in the household, ignoring case (else 422, field
         `name`). An ingredient is an article of the library (`article_id`, or the
         exact name, or a name followed by a variety such as "Mehl Type 405") or
-        free text, which Hejmo does not check for allergens. A unit without a
+        free text, which Hejmo does not check for allergens. A variety written in
+        the text (`text` "Mehl Type 405") wins over a `variety` sent with the
+        line, since it is what was typed; `variety` is used when the text has
+        none. A unit without a
         quantity means one. The units are those of `GET /recipe-units`.
         Warnings never block saving.
       requestBody:
@@ -2529,12 +2670,38 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /starter-recipes:
+    get:
+      operationId: listStarterRecipes
+      summary: The starter collection of 200 recipes that ships with the box, from A to Z (scope meals:read)
+      description: |
+        Everyone reads them, children included. The texts come in the language of
+        the request (`Accept-Language` or the person's choice), German when
+        unknown. Each recipe names its source (`source_name`, `source_url`: "Ingredients
+        after: ..."), has `starter` true and an id that starts with `starter-`; the
+        family's own recipes at `/recipes` do not hold them. A starter recipe is read
+        at `GET /recipes/{id}` like an own one but cannot be replaced or deleted
+        (403). `q` and `category` work as at `/recipes`.
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string } }
+        - { name: category, in: query, required: false, schema: { $ref: "#/components/schemas/RecipeCategory" } }
+      responses:
+        "200":
+          description: The starter recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Recipe" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
   /recipes/{id}:
     get:
       operationId: getRecipe
-      summary: One recipe (scope meals:read)
+      summary: One recipe, an own one or a starter recipe (scope meals:read)
+      description: The id of a starter recipe starts with `starter-` (see `GET /starter-recipes`).
       parameters:
-        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: id, in: path, required: true, schema: { type: string } }
       responses:
         "200":
           description: The recipe
@@ -2547,9 +2714,9 @@ paths:
     put:
       operationId: updateRecipe
       summary: Replace a recipe (scope meals:write, parents only)
-      description: Give all fields; the ingredients, steps and tags are replaced. Who wrote the recipe stays.
+      description: Give all fields; the ingredients, steps and tags are replaced. Who wrote the recipe stays. An ingredient's variety is read as in `POST /recipes`. A starter recipe (id starts with `starter-`) is never replaced (403).
       parameters:
-        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: id, in: path, required: true, schema: { type: string } }
       requestBody:
         required: true
         content:
@@ -2569,8 +2736,9 @@ paths:
     delete:
       operationId: deleteRecipe
       summary: Delete a recipe with its ingredients, steps and tips (scope meals:delete, parents only)
+      description: A starter recipe (id starts with `starter-`) is never deleted (403).
       parameters:
-        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: id, in: path, required: true, schema: { type: string } }
       responses:
         "204": { description: Deleted }
         "401": { $ref: "#/components/responses/Unauthorized" }
@@ -2586,9 +2754,9 @@ paths:
         Free-text ingredients (`not_checked_ingredients`) and the people's
         free-text allergies (`not_checked_allergies`) are not checked
         automatically (`note`). The answer is experimental and without
-        guarantee. Warnings never block anything.
+        guarantee. Warnings never block anything. Works for starter recipes too.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: id, in: path, required: true, schema: { type: string } }
       responses:
         "200":
           description: The warnings
@@ -2607,7 +2775,7 @@ paths:
         `tsp`, `pinch`, `knifetip`, `dash`, `splash`, `handful`, `cup`), which never
         convert into or add up with g and ml, then the containers and piece
         measures (`can`, `packet`, `tub`, `bunch`, `jar`, `bottle`, `stick`, `clove`,
-        `slice`, `cube`, `sprig`, `stalk`, `ball`, `leaf`, `punnet`), whose
+        `slice`, `cube`, `sprig`, `stalk`, `ball`, `leaf`, `punnet`, `pot`), whose
         quantities add up only within the same unit.
       responses:
         "200":
@@ -4988,6 +5156,94 @@ components:
         created_at: { type: string, format: date-time }
         updated_by: { type: string, format: uuid, nullable: true }
         updated_at: { type: string, format: date-time }
+    ContactImport:
+      type: object
+      description: An uploaded contact file and what it brings to the household's contacts (ticket 300)
+      required: [id, file_name, uploaded_by, uploaded_at, expires_at, cards, duplicates, new, same, unreadable]
+      properties:
+        id: { type: string, format: uuid }
+        file_name: { type: string }
+        uploaded_by: { type: string, format: uuid }
+        uploaded_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time, description: "One hour after the upload, then the file is deleted" }
+        cards: { type: integer, description: "Cards in the file, including those Hejmo cannot read" }
+        duplicates:
+          type: array
+          items: { $ref: "#/components/schemas/ContactImportDuplicate" }
+        new:
+          type: array
+          items: { $ref: "#/components/schemas/ContactImportNew" }
+        same:
+          type: array
+          description: Cards whose contact already holds everything they say; nothing to do
+          items:
+            type: object
+            required: [contact_id, name]
+            properties:
+              contact_id: { type: string, format: uuid }
+              name: { type: string }
+        unreadable:
+          type: array
+          items:
+            type: object
+            required: [card, line, reason]
+            properties:
+              card: { type: integer }
+              line: { type: integer, description: "The line the card starts on" }
+              reason: { type: string, enum: [empty, cut], description: "`empty`: no name, no number, no e-mail address; `cut`: the card ends in the middle" }
+    ContactImportCard:
+      type: object
+      required: [card, name, full_name, numbers, emails, photo, photo_link]
+      properties:
+        card: { type: integer, description: "Position in the file, from 1" }
+        name: { type: string, description: "The nickname, else the full name" }
+        full_name: { type: string }
+        numbers: { type: array, items: { $ref: "#/components/schemas/ContactLine" } }
+        emails: { type: array, items: { $ref: "#/components/schemas/ContactLine" } }
+        photo: { type: boolean, description: "An embedded photo was read" }
+        photo_link: { type: boolean, description: "The photo is only a web link; Hejmo does not fetch it" }
+    ContactImportDuplicate:
+      type: object
+      required: [key, in_file, contact_id, cards, reasons, preselect, choices, new_name, photo_choice, adds]
+      properties:
+        key: { type: string, description: "For example d3: the number of the first card" }
+        in_file: { type: boolean, description: "Cards of the file that look the same; no contact in Hejmo" }
+        contact_id: { type: string, format: uuid, nullable: true }
+        cards: { type: array, items: { $ref: "#/components/schemas/ContactImportCard" } }
+        reasons:
+          type: array
+          items:
+            type: object
+            required: [kind, value, file_value]
+            properties:
+              kind: { type: string, enum: [number, email, name] }
+              value: { type: string, description: "As Hejmo (or the first card) has it" }
+              file_value: { type: string, description: "As the file writes it" }
+        preselect: { type: string, nullable: true, enum: [merge, null], description: "`merge` for a match by number or e-mail address; null for a match by name only" }
+        choices: { type: array, items: { type: string, enum: [merge, new, skip] } }
+        new_name: { type: string, description: "The Hejmo name an own contact would get" }
+        photo_choice: { type: boolean, description: "Both sides have a photo: `photos` chooses" }
+        adds:
+          type: object
+          description: What merging adds
+          required: [numbers, emails, full_name, address, birthday, birth_year, note, photo]
+          properties:
+            numbers: { type: array, items: { $ref: "#/components/schemas/ContactLine" } }
+            emails: { type: array, items: { $ref: "#/components/schemas/ContactLine" } }
+            full_name: { type: string }
+            address: { type: boolean }
+            birthday: { type: boolean }
+            birth_year: { type: boolean }
+            note: { type: boolean }
+            photo: { type: boolean }
+    ContactImportNew:
+      type: object
+      required: [key, name, name_change, card]
+      properties:
+        key: { type: string, description: "For example n4: the number of the card" }
+        name: { type: string, description: "The Hejmo name the contact gets" }
+        name_change: { type: string, nullable: true, enum: [long, taken, null], description: "Why it is not the name the file gives it: over 40 characters, or another contact has it" }
+        card: { $ref: "#/components/schemas/ContactImportCard" }
     ContactPhoto:
       type: object
       description: Where the photo of a contact came from. The last change wins.
@@ -6282,7 +6538,7 @@ components:
         unit: { type: string, nullable: true, description: "A key of GET /recipe-units; none for a plain number" }
         name: { type: string, maxLength: 200 }
         article_id: { type: string, nullable: true, description: The key of a shipped article or the id of an own one }
-        variety: { type: string, nullable: true, maxLength: 60, description: 'The more exact kind, such as "Type 405"; only an article has one' }
+        variety: { type: string, nullable: true, maxLength: 60, description: 'The more exact kind, such as "Type 405"; only an article has one. A variety written in `text` wins over this ("Mehl Type 405" with variety "Type 550" is Type 405); this counts only when `text` has none' }
     NewRecipe:
       type: object
       required: [name]
@@ -6312,9 +6568,11 @@ components:
           items: { type: string }
     Recipe:
       type: object
-      required: [id, name, category, portions, minutes, mealtimes, tags, tips, source, source_url, ingredients, steps, diet, created_by, created_at, updated_by, updated_at]
+      required: [id, name, category, portions, minutes, mealtimes, tags, tips, source, source_url, source_name, starter, ingredients, steps, diet, created_by, created_at, updated_by, updated_at]
       properties:
-        id: { type: string, format: uuid }
+        id: { type: string, description: A uuid; a starter recipe's id starts with "starter-" }
+        starter: { type: boolean, description: "True for a recipe of the starter collection, which nobody in the household wrote and nobody can change" }
+        source_name: { type: string, nullable: true, description: 'The site the ingredients are after ("Ingredients after: Chefkoch"); only a starter recipe has one' }
         name: { type: string }
         category: { $ref: "#/components/schemas/RecipeCategory" }
         portions: { type: integer }
@@ -6336,14 +6594,14 @@ components:
           items: { type: string }
         diet: { type: string, nullable: true, enum: [vegan, vegetarian, null], description: Set only when every library article fits; free text does not stop it }
         created_by: { type: string, nullable: true, format: uuid }
-        created_at: { type: string, format: date-time }
+        created_at: { type: string, format: date-time, nullable: true, description: Null for a starter recipe }
         updated_by: { type: string, nullable: true, format: uuid }
-        updated_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time, nullable: true, description: Null for a starter recipe }
     RecipeWarnings:
       type: object
       required: [recipe_id, warnings, not_checked_ingredients, not_checked_allergies, diet, note]
       properties:
-        recipe_id: { type: string, format: uuid }
+        recipe_id: { type: string }
         warnings:
           type: array
           items:

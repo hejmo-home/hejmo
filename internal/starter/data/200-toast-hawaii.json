@@ -1,0 +1,133 @@
+{
+  "n": 200,
+  "slug": "toast-hawaii",
+  "category": "Snacks und Brotdose",
+  "servings": 8,
+  "time_minutes": 30,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/toast-hawaii-2592",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 8,
+      "unit": "Scheibe",
+      "article_de": "Toastbrot",
+      "article_en": "Toast bread",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 8,
+      "unit": "Scheibe",
+      "article_de": "Ananas",
+      "article_en": "Pineapple",
+      "note_de": "aus der Dose, abgetropft",
+      "note_en": "tinned, drained"
+    },
+    {
+      "amount": 8,
+      "unit": "Scheibe",
+      "article_de": "Kochschinken",
+      "article_en": "Cooked ham",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 8,
+      "unit": "Scheibe",
+      "article_de": "Käse",
+      "article_en": "Cheese slices",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Preiselbeeren",
+      "article_en": "Cranberry sauce (lingonberry)",
+      "note_de": "nach Belieben",
+      "note_en": "optional"
+    }
+  ],
+  "de": {
+    "title": "Toast Hawaii",
+    "steps": [
+      "Heize den Ofen auf 220 °C Ober-/Unterhitze (200 °C Umluft) vor.",
+      "Röste 8 Scheiben Toastbrot im Toaster und bestreiche sie mit insgesamt 4 EL Butter. Lege sie auf ein Blech.",
+      "Lass 8 Ananasscheiben aus der Dose gut abtropfen, sonst wird der Toast matschig.",
+      "Belege jeden Toast mit 1 Scheibe Kochschinken, dann 1 Ananasscheibe und decke ihn mit 1 Scheibe Käse zu.",
+      "Backe die Toasts 10 bis 15 Minuten, bis der Käse goldbraun ist.",
+      "Gib nach Belieben 1/2 EL Preiselbeeren in die Mitte von jedem Toast."
+    ]
+  },
+  "en": {
+    "title": "Toast Hawaii",
+    "steps": [
+      "Preheat the oven to 220 C conventional (200 C fan).",
+      "Toast 8 slices of bread in the toaster and spread them with 4 tbsp butter in total. Place them on a tray.",
+      "Drain 8 canned pineapple rings well, or the toast turns soggy.",
+      "Top each toast with 1 slice of ham, then 1 pineapple ring, and cover with 1 slice of cheese.",
+      "Bake the toasts for 10 to 15 minutes until the cheese is golden brown.",
+      "Add 1/2 tbsp cranberries to the middle of each toast if you like."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 8,
+        "unit": "slice"
+      },
+      {
+        "index": 1,
+        "amount": 4,
+        "unit": "tbsp"
+      },
+      {
+        "index": 2,
+        "amount": 8,
+        "unit": "slice"
+      },
+      {
+        "index": 3,
+        "amount": 8,
+        "unit": "slice"
+      },
+      {
+        "index": 4,
+        "amount": 8,
+        "unit": "slice"
+      },
+      {
+        "index": 5,
+        "amount": 4,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Page shows 187 ratings; list says Redaktionsküche. Source yield \"8 Toasts\" (servings = pieces). time_minutes = prep 15 + cook 15. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

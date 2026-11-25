@@ -14,10 +14,10 @@ import "slices"
 var Kitchen = []string{"tbsp", "tsp", "pinch", "knifetip", "dash", "splash", "handful", "cup"}
 
 // Containers are the containers and piece measures: can, packet, tub, bunch,
-// jar, bottle, stick, clove, slice, cube, sprig, stalk, ball, leaf and punnet.
+// jar, bottle, stick, clove, slice, cube, sprig, stalk, ball, leaf, punnet and pot.
 // They keep their quantity on a shopping list ("2 cans of tomatoes"), and
 // quantities add up only within the same unit.
-var Containers = []string{"can", "packet", "tub", "bunch", "jar", "bottle", "stick", "clove", "slice", "cube", "sprig", "stalk", "ball", "leaf", "punnet"}
+var Containers = []string{"can", "packet", "tub", "bunch", "jar", "bottle", "stick", "clove", "slice", "cube", "sprig", "stalk", "ball", "leaf", "punnet", "pot"}
 
 // IsKitchen reports whether key is a kitchen measure.
 func IsKitchen(key string) bool { return slices.Contains(Kitchen, key) }

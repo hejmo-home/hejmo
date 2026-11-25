@@ -1,0 +1,116 @@
+{
+  "n": 80,
+  "slug": "kaese-omelett",
+  "category": "Hauptgerichte",
+  "servings": 2,
+  "time_minutes": 15,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.essen-und-trinken.de/rezepte/58178-rzpt-kaese-omelette",
+    "site": "Essen & Trinken",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Bergkäse",
+      "article_en": "Mountain cheese",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 6,
+      "unit": "Stk",
+      "article_de": "Eier, Bio",
+      "article_en": "Organic eggs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Käse-Omelett",
+    "steps": [
+      "Reibe 50 g Bergkäse. Schlage 6 Eier in eine Schüssel, würze sie mit Salz und Pfeffer und verquirle sie kräftig mit der Gabel oder dem Schneebesen.",
+      "Erhitze 1 EL Öl und 1 EL Butter in einer beschichteten Pfanne bei mittlerer Hitze.",
+      "Gieße die Eier hinein. Schalte auf milde bis mittlere Hitze und lass sie 2 bis 3 Minuten stocken. Schiebe dabei den Rand mit dem Silikonspatel 3- bis 4-mal zur Mitte, damit flüssiges Ei nachfließt.",
+      "Streue den Käse auf das Omelett und lass ihn schmelzen.",
+      "Wenn der Käse geschmolzen ist, klappst du das Omelett zur Hälfte zusammen. Lass es noch 1 bis 2 Minuten fertig garen, bis das Ei leicht gestockt ist."
+    ]
+  },
+  "en": {
+    "title": "Cheese omelette",
+    "steps": [
+      "Grate 50 g mountain cheese. Crack 6 eggs into a bowl, season with salt and pepper and beat them vigorously with a fork or whisk.",
+      "Heat 1 tbsp oil and 1 tbsp butter in a non-stick pan over medium heat.",
+      "Pour in the eggs. Turn to mild to medium heat and let them set for 2 to 3 minutes. While doing so, push the edge to the centre 3 to 4 times with the silicone spatula so liquid egg flows underneath.",
+      "Sprinkle the cheese over the omelette and let it melt.",
+      "Once the cheese has melted, fold the omelette in half. Let it finish cooking for 1 to 2 minutes until the egg is lightly set."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 6,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Ratings shown on page: 116; list says Redaktionsküche. Source amounts are for 2 servings; the 6 eggs and 2 servings are as stated. Steps rewritten in own words on 23/11/2026 from the source steps (times, temperatures and order per source). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

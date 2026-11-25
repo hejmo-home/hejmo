@@ -1576,6 +1576,7 @@
   "meals.tpl.hint.tail": " und so weiter.",
   "meals.tpl.week.title": "Mahlzeiten der Woche",
   "meals.tpl.week.hint": "Lässt du ein Feld leer, bleibt diese Mahlzeit frei, und du planst sie im Essensplan selbst.",
+  "meals.tpl.week.recipe.hint": "Schreibe den Namen eines Rezepts, dann plant die Vorlage dieses Rezept, mit so vielen Portionen, wie Personen im Haushalt leben.",
   "meals.tpl.save": "Vorlage speichern",
   "meals.tpl.edit.lead": "Änderungen gelten ab heute und für alle kommenden Wochen. Tage vor heute bleiben, wie sie waren, und Mahlzeiten, die du für eine Woche angepasst hast, behalten ihre Änderung.",
   "meals.tpl.delete.summary": "Vorlage löschen",

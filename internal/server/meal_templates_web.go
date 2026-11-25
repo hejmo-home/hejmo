@@ -14,6 +14,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/meal"
+	"github.com/hejmo-home/hejmo/internal/recipe"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/task"
 )
@@ -406,6 +407,12 @@ func (s *server) handleTemplatePage(w http.ResponseWriter, r *http.Request) {
 // mealtime are kept in the form, the template ignores the ones it does not fill.
 func (s *server) readTemplateForm(r *http.Request, p principal) (meal.Template, tplForm, formErrors) {
 	_ = r.ParseForm()
+	byName := map[string]string{} // recipe name key -> recipe id: a field with a recipe's name is that recipe
+	if recipes, err := s.recipesByID(p); err == nil {
+		for id, rec := range recipes {
+			byName[recipe.NameKey(rec.Name)] = id
+		}
+	}
 	f := tplForm{ID: r.PathValue("id"), Name: strings.TrimSpace(r.PostFormValue("name")), Fills: r.PostFormValue("fills"), Mealtime: r.PostFormValue("mealtime"),
 		Every: strings.TrimSpace(r.PostFormValue("every")), Start: r.PostFormValue("start"), Values: map[string]string{}}
 	if f.Fills != "all" {
@@ -417,7 +424,7 @@ func (s *server) readTemplateForm(r *http.Request, p principal) (meal.Template, 
 	}
 	f.Start = start.Format(task.DateLayout)
 	every, _ := strconv.Atoi(f.Every)
-	t := meal.Template{ID: f.ID, Name: f.Name, AllMealtimes: f.Fills == "all", Mealtime: meal.Mealtime(f.Mealtime), Interval: every, Start: f.Start, Entries: map[meal.Slot]string{}}
+	t := meal.Template{ID: f.ID, Name: f.Name, AllMealtimes: f.Fills == "all", Mealtime: meal.Mealtime(f.Mealtime), Interval: every, Start: f.Start, Entries: map[meal.Slot]string{}, Recipes: map[meal.Slot]string{}}
 	var errs formErrors
 	for wd := 1; wd <= 7; wd++ {
 		for _, m := range meal.Mealtimes() {
@@ -428,7 +435,12 @@ func (s *server) readTemplateForm(r *http.Request, p principal) (meal.Template, 
 			if err != nil && errs.Field == "" {
 				errs.Field = name
 			}
-			t.Entries[meal.Slot{Weekday: wd, Mealtime: m}] = clean
+			slot := meal.Slot{Weekday: wd, Mealtime: m}
+			if id, ok := byName[recipe.NameKey(clean)]; ok && clean != "" {
+				t.Recipes[slot] = id
+				continue
+			}
+			t.Entries[slot] = clean
 		}
 	}
 	if f.Mealtime == "" && !t.AllMealtimes {

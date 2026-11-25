@@ -464,6 +464,14 @@ _Avoid_: avatar, profile picture
 The generated, read-only calendar of the birthdays in the address book: one yearly all-day event per contact, titled with the Hejmo name and, when the year of birth is known, the age ("Mia (7)"). 29 February repeats on the last day of February in years without one. Every contact can be switched out of it; it is made when the first birthday is saved. Name days are not part of it yet: they follow as an option with a household switch (decided on ticket 302, ticket 318).
 _Avoid_: birthday list, anniversary calendar
 
+**Religious holiday**:
+A day or festival of a religion the household chose, such as Pessach (8 days, one event), Ramadan, Zuckerfest, Diwali, Vesak or Vaisakhi: an all-day event in the **Religious holidays calendar**, for the whole family, with no person chip. Dates come from a library or a table with a source; where the day depends on moon sighting it says "oder 1 Tag später", where communities differ it says so in words. A day that is a public holiday in the household's region is never added twice. Jewish festivals add an event "<Fest> beginnt am Abend" on the day before (ticket 339).
+_Avoid_: feast day, holiday (alone: it means a **public holiday**)
+
+**Religious holidays calendar**:
+The generated, read-only calendar "Religiöse Feiertage": one all-day event per religious holiday of the religions a household chose (Settings, Religiöse Feiertage), from last year to nine years ahead as far as the tables reach, written again when the choice, the region or the home location changes and at every start. Off by default: Hejmo never guesses a faith. Switching it off removes the events and keeps the choice (ticket 339).
+_Avoid_: faith calendar, holiday calendar
+
 **Relation**:
 The link of a contact to one or more people of the household, with what they are to them, such as "friend of Mia" or "paediatrician": one free-text word (at most 40 characters) plus the people it is for, or the whole family. The whole family stores no people, so a person who joins later is included. Only further contacts have relations, never the contact of a household person. A relation alone does not make a contact visible to children.
 _Avoid_: connection, relationship type

@@ -522,6 +522,9 @@ func (s *server) religiousEventPage(r *http.Request, p principal, calendarName s
 	}
 	pg := rhEventPage{Title: occ.Title, Calendar: calendarName, Religion: s.religionText(lang, rel, "short"), Explain: s.i18n.T(lang, "rh.ev.explain"),
 		Source: s.rhSourceName(lang, hol.Source), Unchecked: hol.Unchecked, UncheckedText: s.i18n.T(lang, "rh.unchecked"), Href: religiousPath}
+	if pg.Unchecked {
+		pg.Source += "." // the note that it was not checked follows as its own sentence
+	}
 	pg.Lead = s.i18n.Format(lang, i18n.Msg("rh.ev.lead", "when", lead))
 	if hol.Own.Cal != "" {
 		pg.OwnLabel, pg.Own = s.i18n.T(lang, "rh.ev.own."+hol.Own.Cal), s.ownDate(lang, hol.Own)

@@ -245,7 +245,7 @@ func (s *server) fillCalendars(st *firstStep, h store.Household, people []store.
 		return err
 	}
 	for _, c := range cals {
-		if c.Kind == "meals" || c.Kind == "birthdays" {
+		if c.Kind == "meals" || c.Kind == "birthdays" || c.Kind == "religious" {
 			continue
 		}
 		st.Rows = append(st.Rows, fsRow{Name: c.Name, Source: "(" + t("firststeps.source."+c.Kind) + ")", For: audienceText(c.Audience.People, c.Audience.Groups, people, groups, f)})

@@ -128,7 +128,7 @@ func eventHref(o calendar.Occurrence) string {
 }
 
 func (c *calendarContext) item(o calendar.Occurrence) eventItem {
-	it := eventItem{Title: c.s.title(c.r, o.Title), Location: o.Location, ReadOnly: c.readOnly[o.CalendarID], Repeats: o.SeriesID != ""}
+	it := eventItem{Title: c.s.title(c.r, o.Title), Location: o.Location, ReadOnly: c.readOnly[o.CalendarID] && o.Religious == "", Repeats: o.SeriesID != ""}
 	it.Vary = o.VarySighting
 	if !it.ReadOnly || o.Religious != "" { // a religious holiday has a page of its own that says where it comes from (ticket 339)
 		it.Href = eventHref(o)
@@ -150,8 +150,10 @@ func (c *calendarContext) item(o calendar.Occurrence) eventItem {
 		it.Slot = it.People[0].Slot
 	}
 	lang := c.s.langOf(c.r)
-	it.WhoParts = wholine.Of(wholine.Input{Household: c.household, Groups: c.wgroups, Audience: calendar.ViewersOf(o, c.audiences, c.viewers)},
-		c.s.i18n, lang).Parts
+	if o.Religious == "" { // a religious holiday is for the whole family: its page says so, the week stays calm (ticket 339)
+		it.WhoParts = wholine.Of(wholine.Input{Household: c.household, Groups: c.wgroups, Audience: calendar.ViewersOf(o, c.audiences, c.viewers)},
+			c.s.i18n, lang).Parts
+	}
 	it.Date = datefmt.Date(c.p.household.DateFormat, o.Start.In(c.loc))
 	return it
 }

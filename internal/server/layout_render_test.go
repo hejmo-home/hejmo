@@ -38,6 +38,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/passkey/passkeytest"
 	"github.com/hejmo-home/hejmo/internal/recipe"
+	rh "github.com/hejmo-home/hejmo/internal/religiousholiday"
 	"github.com/hejmo-home/hejmo/internal/reward"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/streak"
@@ -357,6 +358,10 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	f.rewards = f.addRewards(t)
 	f.addRequests(t)
 	f.addBadges(t)
+	// Religious holidays (ticket 339): all nine religions on, so the page lists every kind of row and the calendar has the festivals.
+	if _, err := db.SaveReligiousHolidays(h, store.ReligiousInput{On: true, Religions: rh.Religions(), Islamic: rh.UmmAlQura, Orthodox: rh.Julian}, "Religiöse Feiertage", "de"); err != nil {
+		t.Fatal(err)
+	}
 	if r := f.post("/caldav/tokens", url.Values{"name": {"iPhone von Friedrich mit langem Gerätenamen"}}); r.status != http.StatusOK {
 		t.Fatalf("CalDAV token = %d\n%s", r.status, r.body)
 	}
@@ -702,6 +707,7 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	tablet := pairedPersonalDeviceAs(t, f.box, f.people["Anna-Lena"], "Tablet von Anna-Lena", uaIPad)
 	add(siteOf("child tablet", f.box, tablet.client), "/numbers") // ... and the numbers as text on a tablet
 	add(parent, "/contacts/for-children")
+	pages = append(pages, religiousPages(t, f, parent, add)...)
 	add(parent, "/lists/"+f.lists[0]+"?qty="+f.longVariety) // the editor with the Sorte row and the long variety as its pill
 	// The display: the family view and the personal views of two people.
 	display := siteOf("display", f.box, f.display.client)
@@ -1801,4 +1807,47 @@ func contactPhotoPages(t *testing.T, f *layoutFixture) []layoutPage {
 		pages = append(pages, layoutPage{site: site, path: c.path + c.label, html: html})
 	}
 	return pages
+}
+
+// religiousPages returns the pages of ticket 339 that the crawl does not reach: the weeks of the Mawlid (a long name
+// with the sighting note), of Rosh Hashanah (the eve) and of the Opferfest (four days), all before the fixture's meal plan, the page of a festival of each kind, and the form
+// with its error and its success line, which only a POST reaches.
+func religiousPages(t *testing.T, f *layoutFixture, parent layoutSite, add func(layoutSite, string)) []layoutPage {
+	t.Helper()
+	var pages []layoutPage
+	href := regexp.MustCompile(`href="(/calendar/events/[^"]+)">([^<]+)</a>`)
+	seen := map[string]bool{}
+	for _, week := range []string{"/calendar?week=2026-08-24", "/calendar?week=2026-09-07", "/calendar?week=2026-05-25"} {
+		add(parent, week)
+		for _, m := range href.FindAllStringSubmatch(f.do(http.MethodGet, week, nil, nil).body, -1) {
+			if title := m[2]; !seen[title] && (strings.HasPrefix(title, "Geburtstag") || strings.HasPrefix(title, "Rosch") || strings.HasPrefix(title, "Opferfest")) {
+				seen[title] = true
+				add(parent, strings.ReplaceAll(m[1], "&amp;", "&"))
+			}
+		}
+	}
+	add(parent, "/calendar/search?q=Propheten")
+	for _, lang := range []string{"de", "en"} {
+		hdr := map[string]string{"Accept-Language": lang}
+		refused := f.do(http.MethodPost, "/settings/religious-holidays", url.Values{"religious_holidays": {"on"}}, hdr)
+		if refused.status != http.StatusUnprocessableEntity {
+			t.Fatalf("religious holidays, nothing chosen = %d\n%s", refused.status, refused.body)
+		}
+		all := url.Values{"religious_holidays": {"on"}, "islamic_calendar": {"diyanet"}, "orthodox_calendar": {"revised_julian"}}
+		for _, r := range rh.Religions() {
+			all.Add("religions", string(r))
+		}
+		saved := f.do(http.MethodPost, "/settings/religious-holidays", all, hdr)
+		if saved.status != http.StatusOK {
+			t.Fatalf("religious holidays, saved = %d\n%s", saved.status, saved.body)
+		}
+		pages = append(pages,
+			layoutPage{site: parent, path: "/settings/religious-holidays#refused", html: map[string]string{lang: refused.body}},
+			layoutPage{site: parent, path: "/settings/religious-holidays#saved", html: map[string]string{lang: saved.body}})
+	}
+	// Back to the state the fixture started in (Umm al-Qura, old Orthodox calendar), as the other pages expect it.
+	if _, err := f.db.SaveReligiousHolidays(f.householdID, store.ReligiousInput{On: true, Religions: rh.Religions(), Islamic: rh.UmmAlQura, Orthodox: rh.Julian}, "Religiöse Feiertage", "de"); err != nil {
+		t.Fatal(err)
+	}
+	return mergeCardPages(pages)
 }

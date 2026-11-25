@@ -24,8 +24,11 @@ func contactPhotoPath(c store.Contact) string {
 	if !c.HasPhoto {
 		return ""
 	}
-	return contactsPath + "/" + c.ID + "/photo?v=" + strconv.FormatInt(c.PhotoAt.UnixNano(), 36)
+	return contactsPath + "/" + c.ID + "/photo?v=" + photoVersion(c)
 }
+
+// photoVersion is the version in the address of a photo: a changed photo is fetched again.
+func photoVersion(c store.Contact) string { return strconv.FormatInt(c.PhotoAt.UnixNano(), 36) }
 
 // ctPhotoView is what a template needs to draw one .ct-photo: the photo, or the initials (or the gallery icon
 // when there are none).

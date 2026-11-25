@@ -491,6 +491,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /display/list-view", s.handleDisplayListViewChoice)
 	mux.HandleFunc("GET /display/articles/{id}/picture", s.handleDisplayArticlePicture)
 	mux.HandleFunc("GET /display/rewards/{id}/picture", s.handleDisplayRewardPicture)
+	mux.HandleFunc("GET /display/contacts/{id}/photo", s.handleDisplayContactPhoto)
 	mux.HandleFunc("POST /display/lists/{id}/entries/{entry}/done", s.handleDisplayEntryDone)
 	mux.HandleFunc("POST /display/lists/{id}/completed/delete", s.handleDisplayTickedDelete)
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)

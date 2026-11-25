@@ -468,6 +468,10 @@ _Avoid_: birthday list, anniversary calendar
 The link of a contact to one or more people of the household, with what they are to them, such as "friend of Mia" or "paediatrician": one free-text word (at most 40 characters) plus the people it is for, or the whole family. The whole family stores no people, so a person who joins later is included. Only further contacts have relations, never the contact of a household person. A relation alone does not make a contact visible to children.
 _Avoid_: connection, relationship type
 
+**Emergency numbers**:
+The layout block of a display's footer that shows every contact of the contact group "emergency" with at least one phone number, large enough to read across the room: photo (or initials), Hejmo name and every number, the kind of number in words when there are several. Off by default; it takes a footer row of its own and is never shortened or counted.
+_Avoid_: emergency list, SOS tile, Important numbers (that is the children's page)
+
 **Important numbers**:
 The children's page of contacts a parent switched to "visible for children" (`/numbers`, "Wichtige Nummern"): photo, Hejmo name and every phone number of each such contact, never address, e-mail, birthday, groups or note. A child does not see their own contact. A relation alone does not make a contact visible; a visible contact without a phone number is not shown until it has one.
 _Avoid_: emergency list (that is the display block "Emergency numbers"), child contacts

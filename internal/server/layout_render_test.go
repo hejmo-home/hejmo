@@ -379,7 +379,8 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	_, _, shown := c.call(http.MethodGet, "/displays", nil)
 	c.call(http.MethodPatch, "/displays/"+shown[0].(map[string]any)["id"].(string), map[string]any{"screensaver": map[string]any{"album_ids": []string{trip}},
 		// A kiosk app and quiet mode: the Brightness block with its levels and the quiet choice (ticket 179); the second display has no kiosk app, so its block is greyed out.
-		"kiosk": map[string]any{"url": "http://192.168.178.20:8080"}, "quiet_mode": map[string]any{"enabled": true, "from": "22:00", "to": "06:00"}})
+		"layout": map[string]any{"blocks": []map[string]any{{"id": "emergency", "enabled": true}}}, // the emergency numbers tile (ticket 303) with long names and numbers
+		"kiosk":  map[string]any{"url": "http://192.168.178.20:8080"}, "quiet_mode": map[string]any{"enabled": true, "from": "22:00", "to": "06:00"}})
 	// A second display whose only album is empty: it shows the hint.
 	f.hint = newScreen(f.box)
 	if r := f.post("/displays", pairForm(codeOn(t, f.hint.get("/display", "en").body))); r.status != http.StatusSeeOther {
@@ -579,6 +580,7 @@ var notRendered = map[string]string{
 	"/tasks/rewards/requests/{id}/picture":    "the photo a reward had when it was asked for, an image",
 	"/display/articles/{id}/picture":          "an image",
 	"/display/rewards/{id}/picture":           "an image",
+	"/display/contacts/{id}/photo":            "the photo of a contact of the emergency numbers, an image",
 	"/settings/lists/library/picture/{token}": "an image",
 	"/contacts/import/{id}/photo/{n}":         "the photo of a card of an uploaded contact file, an image",
 	"/settings/lists/library/suggest":         "JSON for the live list under the name field",
@@ -1530,6 +1532,7 @@ func (f *layoutFixture) addContacts(t *testing.T) {
 			Numbers: []contact.Line{{Kind: contact.Cell, Value: "+49 (0) 171 3456 789 12 34"}, {Kind: contact.Home, Value: "08031 87 65 43"}, {Kind: contact.Custom, Label: "Gartenhaus im Urlaub", Value: "0160 111 2223"}, {Kind: contact.Work, Value: "089 4455 6677-12"}},
 			Emails:  []contact.Line{{Kind: contact.Home, Value: "gerda.mueller-schulze@gartenfreunde-am-erlenbach-rosenheim.example"}, {Kind: contact.Custom, Label: "Gartenfreundeverein", Value: "gerda@example.de"}}},
 		{HejmoName: "Kinderarztpraxis Yılmaz-Hoffmann", ForChildren: true, FullName: "Kinderarztpraxis Dr. Elif Yılmaz-Hoffmann und Kollegen", Numbers: []contact.Line{{Kind: contact.Work, Value: "089 1234 5670"}}, BdayDay: 2, BdayMonth: 9, BdayYear: 1950, GroupIDs: []string{f.contactGroups[2]}},
+		{HejmoName: "Kinderärztin Dr. Okonkwo-Brandt", GroupIDs: []string{f.contactGroups[3]}, Numbers: []contact.Line{{Kind: contact.Custom, Label: "Notfallsprechstunde Wochenende", Value: "+49 89 1234 5678 9012"}, {Kind: contact.Work, Value: "089 1234 5670"}}},
 		// On the children's page (ticket 301): a long name, a photo, a long own kind and the longest numbers that fit a button at 375 px.
 		{HejmoName: "Oma Käthe und Opa Heinrich am Waldrand", ForChildren: true, PhotoChange: store.SetPicture, Photo: &store.ContactPhoto{JPEG: testJPEG(t, 512, 512)}, GroupIDs: []string{f.contactGroups[0]},
 			Numbers: []contact.Line{{Kind: contact.Cell, Value: "+49 (0) 171 3456 789"}, {Kind: contact.Custom, Label: "Gartenhaus im Urlaub am See", Value: "08031 87 65 43"}}},

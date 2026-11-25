@@ -10,9 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/text/collate"
-	textlang "golang.org/x/text/language"
-
 	"github.com/hejmo-home/hejmo/internal/contact"
 	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"github.com/hejmo-home/hejmo/internal/i18n"
@@ -268,8 +265,7 @@ func (s *server) handleContacts(w http.ResponseWriter, r *http.Request) {
 		return out
 	}
 	shownOthers, shownFamily := keep(others), keep(family)
-	coll := collate.New(textlang.Make(e.lang))
-	slices.SortStableFunc(shownOthers, func(a, b store.Contact) int { return coll.CompareString(a.HejmoName, b.HejmoName) })
+	sortFurther(e.lang, shownOthers)
 	var otherRows, familyRows []ctRow
 	fresh := s.takeFresh(w, r)
 	for _, c := range shownOthers {

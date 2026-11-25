@@ -60,6 +60,7 @@
   --fs-label-large: 15px; --fw-label-large: 400;
   --fs-meta: 13px;        --fw-meta: 400;
   --fs-title-phone: 28px; /* h1 under 600 px */
+  --fs-emergency-number: 28px; --fw-emergency-number: 700; /* phone numbers read across the room (ticket 303) */
   --fs-secret: 19px;      /* a secret shown once, monospace */
   /* shapes and spacing */
   --radius-tile: 22px;
@@ -4055,6 +4056,60 @@ fieldset.choice.goals { max-width: 640px; }
 .cards.stars .st-head .stars-balance { font-variant-numeric: tabular-nums; }
 .cards.stars .st-head .stars-balance::before { content: "\2605\00a0" / ""; color: var(--pc); }
 [data-theme="bw"] .cards.stars .st-head .stars-balance::before { color: var(--text); }
+
+/* ---- ticket 303: layout block "Emergency numbers" (preview docs/design/preview-303.html; new type token emergency-number) ---- */
+/* The tile always takes a footer row of its own, in its place in the layout order. */
+.fv-footer .tile.sos { flex: 1 1 100%; display: grid; gap: 8px; align-content: start; }
+.fv-footer .tile.sos .lab { display: flex; align-items: center; gap: 6px; }
+.fv-footer .tile.sos .lab .icon { stroke: var(--accent); flex: none; }
+[data-theme="bw"] .fv-footer .tile.sos { border: 2px solid var(--text); padding: calc(var(--pad-column) - 2px); }
+/* Contacts side by side: 3 in a row on 1024 x 768, 2 on 768 x 1024, 1 on a phone. */
+.sos-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 14px var(--gap); align-items: start; }
+.sos-ct { display: grid; grid-template-columns: var(--photo-row) minmax(0, 1fr); column-gap: 12px; align-items: start; align-content: start; min-width: 0; }
+.sos-ct > .ct-photo { grid-row: 1 / span 2; }
+.sos-ct .nm { display: flex; align-items: center; gap: 6px; min-width: 0; margin: 0; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); line-height: 1.2; overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; }
+.sos-ct .nm .marker { flex: none; }
+.sos-ct .nm > span:last-child { min-width: 0; }
+.sos-nums { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 4px; min-width: 0; }
+.sos-nums li { display: grid; min-width: 0; }
+.sos-nums .no { font-size: var(--fs-emergency-number); font-weight: var(--fw-emergency-number); line-height: 1.1; font-variant-numeric: tabular-nums; overflow-wrap: normal; }
+.sos-nums .no > span { white-space: nowrap; }
+/* A number breaks only between its digit groups, and only when the line is too narrow for it. */
+
+/* Never cut: with the tile on, the columns keep at least their name, one entry and the progress block (200 px);
+   when the footer needs more, the family view grows past the screen and scrolls as one page. */
+/* Wall displays only; phones (#208) already scroll as one page. */
+@media (min-width: 600px) and (min-height: 501px) {
+  .family-page:has(.tile.sos), .family-page:has(.tile.sos) > [data-view] { height: auto; }
+  .fv:has(.tile.sos) { height: auto; min-height: calc(100vh - 2 * var(--margin)); min-height: calc(100dvh - 2 * var(--margin)); }
+  .fv:has(.tile.sos) .fv-grid { flex: 1 1 0; min-height: 200px; }
+}
+.sos-nums .kind { font-size: var(--fs-label-large); line-height: 1.25; color: var(--text-secondary); min-width: 0; overflow-wrap: break-word; }
+
+/* Settings: what the block will show, in words, under its row. */
+.sub.sos-sub { font-size: var(--fs-label-large); }
+.sub.sos-sub p { margin: 0; overflow-wrap: break-word; }
+.sos-sub .sos-link { display: inline-flex; align-items: center; gap: 6px; min-height: var(--touch-target); font-weight: 600; color: var(--accent); }
+.sos-sub .sos-link .icon { stroke: currentColor; flex: none; }
+[data-theme="bw"] .sos-sub .sos-link { color: var(--text); text-decoration-thickness: 2px; }
+.sub .flag.many { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 8px 10px; border-radius: var(--radius-card); font-size: var(--fs-label); font-weight: 400; overflow-wrap: break-word; }
+.flag.many .icon { flex: none; stroke: currentColor; }
+[data-theme="bw"] .flag.many { background: var(--surface); border: 2px solid var(--text); }
+.why.nosos { margin: 0 0 8px; font-size: var(--fs-label); }
+.why.nosos .icon { flex: none; stroke: var(--accent); }
+.why.nosos a { font-weight: 700; color: var(--accent); }
+[data-theme="bw"] .why.nosos { border: 2px solid var(--text); }
+[data-theme="bw"] .why.nosos a { color: var(--text); }
+
+/* Miniature: the tile as a row of its own with one square per contact. */
+.m-foot { flex-wrap: wrap; }
+.m-tile.m-sos { flex: 1 1 100%; }
+.m-sos .m-row { display: flex; flex-wrap: wrap; gap: 3px 8px; }
+.m-sos .m-row span { display: flex; align-items: center; gap: 3px; }
+.m-sos .m-row b { width: 9px; height: 9px; border-radius: 2px; background: var(--border); flex: none; }
+.m-sos .m-row s { width: 26px; height: 5px; border-radius: 2px; background: var(--text-secondary); }
+[data-theme="bw"] .m-sos .m-row b { background: none; border: 1.5px solid var(--text); box-sizing: border-box; }
+.layout:has(input[name="b_emergency"]:not(:checked)) .m-sos { display: none; }
 
 /* ---- ticket 301: important numbers for children (preview docs/design/preview-301.html; builds on #296 contacts and #297 .ct-photo; no new tokens) ---- */
 /* Child view "Wichtige Nummern": sections, then one card per contact: big photo beside the Hejmo name, below it one full-width call button per number (so a number never has to wrap, at any column width). */

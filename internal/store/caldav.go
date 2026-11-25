@@ -242,10 +242,11 @@ func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []Objec
 	return db.completeObjectSync(householdID, calendarID, nil, changed, deleted, notes, at, next)
 }
 
-// RemoteState is what a CalDAV server said about the version of a calendar
-// when the last run read it: the CTag and the RFC 6578 sync token. Either is
-// empty where the server offers none. DeltaBaseline is Microsoft Graph's own:
-// the time (RFC 3339, UTC) when the current delta link began.
+// RemoteState is what a calendar's provider said about its version when the
+// last run read it. A CalDAV server gives the CTag and the RFC 6578 sync
+// token; either is empty where the server offers none. DeltaBaseline is
+// Microsoft Graph's own: the time (RFC 3339, UTC) when the current delta link
+// began.
 type RemoteState struct {
 	CTag, Token, DeltaBaseline string
 }

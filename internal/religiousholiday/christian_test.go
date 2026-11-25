@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/nameday"
 	rh "github.com/hejmo-home/hejmo/internal/religiousholiday"
 )
 
@@ -99,5 +100,16 @@ func TestDefaultOrthodoxCalendarIsTheRevisedJulianOne(t *testing.T) {
 	hs := rh.Compute(rh.Orthodox, rh.Options{}, 2026, 2026)
 	if got := find(t, hs, "christmas", 2026).Start; !got.Equal(d(2026, 12, 25)) {
 		t.Errorf("Christmas without a choice: %v", got)
+	}
+}
+
+// The name days of ticket 318 and the religious holidays compute the Orthodox Easter apart (the Julian computus):
+// the two must say the same day.
+func TestOrthodoxEasterIsTheSameDayAsInTheNameDays(t *testing.T) {
+	t.Parallel()
+	for _, h := range rh.Compute(rh.Orthodox, rh.Options{}, 2020, 2045) {
+		if h.Key == "easter" && !h.Start.Equal(nameday.OrthodoxEaster(h.Start.Year())) {
+			t.Errorf("Orthodox Easter %d: %s here, %s in the name days", h.Start.Year(), h.Start.Format("2006-01-02"), nameday.OrthodoxEaster(h.Start.Year()).Format("2006-01-02"))
+		}
 	}
 }

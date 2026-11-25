@@ -5487,7 +5487,7 @@
   "rh.source.panchang": "Berechnet aus Sonne und Mond für den Ort eures Zuhauses (Regeln des Panchang)",
   "lic.rh.title": "Religiöse Feiertage",
   "lic.rh.hint": "Die Bibliotheken und Tabellen, aus denen die Box die Tage der Religionen ausrechnet, ohne Internet.",
-  "lic.rh.lib.hebcal": "hebcal-go, GPL-2.0 oder später: jüdischer Kalender",
+  "lic.rh.lib.hebcal": "hebcal-go, GPL-2.0 oder später (mit hdate und greg, GPL-2.0 oder später, noaa-go, LGPL-2.1, sowie locales und gematriya, BSD-2-Clause): jüdischer Kalender",
   "lic.rh.lib.hijri": "go-hijri, MIT: Umm-al-Qura-Kalender",
   "lic.rh.lib.meeus": "meeus v3, MIT: Sonne, Mond, Ostern",
   "lic.rh.unchecked": "{n} von {total} Einträgen noch nicht mit der Quelle abgeglichen",

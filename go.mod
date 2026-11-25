@@ -11,6 +11,8 @@ require (
 	github.com/fxamacker/cbor/v2 v2.9.4
 	github.com/getkin/kin-openapi v0.153.0
 	github.com/go-webauthn/webauthn v0.18.2
+	github.com/hablullah/go-hijri v1.0.2
+	github.com/hebcal/hdate v1.4.0
 	github.com/hebcal/hebcal-go v0.50.1
 	github.com/letsencrypt/pebble/v2 v2.10.3
 	github.com/libdns/cloudflare v0.2.2
@@ -24,6 +26,7 @@ require (
 	github.com/pquerna/otp v1.5.0
 	github.com/sigstore/protobuf-specs v0.5.3-0.20261112181914-a84bc5ff572a
 	github.com/sigstore/sigstore-go v1.4.1
+	github.com/soniakeys/meeus/v3 v3.0.1
 	github.com/teambition/rrule-go v1.8.2
 	go.uber.org/zap v1.28.0
 	go.yaml.in/yaml/v4 v4.0.0
@@ -83,11 +86,9 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.33.0 // indirect
-	github.com/hablullah/go-hijri v1.0.2 // indirect
 	github.com/hablullah/go-juliandays v1.0.0 // indirect
 	github.com/hebcal/gematriya v1.1.0 // indirect
 	github.com/hebcal/greg v1.1.0 // indirect
-	github.com/hebcal/hdate v1.4.0 // indirect
 	github.com/hebcal/locales v1.1.5 // indirect
 	github.com/hebcal/noaa-go v1.0.0 // indirect
 	github.com/in-toto/attestation v1.2.0 // indirect
@@ -113,7 +114,6 @@ require (
 	github.com/sigstore/rekor-tiles/v2 v2.4.2 // indirect
 	github.com/sigstore/sigstore v1.11.4 // indirect
 	github.com/sigstore/timestamp-authority/v2 v2.2.0 // indirect
-	github.com/soniakeys/meeus/v3 v3.0.1 // indirect
 	github.com/soniakeys/unit v1.0.0 // indirect
 	github.com/spf13/cobra v1.10.2 // indirect
 	github.com/spf13/pflag v1.1.0 // indirect

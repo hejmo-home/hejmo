@@ -5487,7 +5487,7 @@
   "rh.source.panchang": "Worked out from the sun and the moon for the place of your home (rules of the Panchang)",
   "lic.rh.title": "Religious holidays",
   "lic.rh.hint": "The libraries and tables the box works the days of the religions out from, without the internet.",
-  "lic.rh.lib.hebcal": "hebcal-go, GPL-2.0 or later: Hebrew calendar",
+  "lic.rh.lib.hebcal": "hebcal-go, GPL-2.0 or later (with hdate and greg, GPL-2.0 or later, noaa-go, LGPL-2.1, and locales and gematriya, BSD-2-Clause): Hebrew calendar",
   "lic.rh.lib.hijri": "go-hijri, MIT: Umm al-Qura calendar",
   "lic.rh.lib.meeus": "meeus v3, MIT: sun, moon, Easter",
   "lic.rh.unchecked": "{n} of {total} entries not yet checked against the source",

@@ -126,55 +126,77 @@ func davAllows(scopes, method, path string) (bool, auth.Permission) {
 	return scopedTo(scopes, res) && auth.ScopesAllow(scopes, perm), perm
 }
 
-// davAuth signs a personal device in with HTTP Basic: the person's username and a device
-// token with token scope calendars as the password. Browser sessions do not
-// count, so CalDAV is not open to cross-site requests.
+// davLogin is who a DAV request came from.
+type davLogin struct {
+	person store.Person
+	house  store.Household
+	token  store.APIToken
+}
+
+// davSignIn reads HTTP Basic: the person's username and a device token as the password. It answers the request
+// itself (and returns false) when that is not a parent's device token. Browser sessions do not count, so DAV is
+// not open to cross-site requests. Children have no account; a token held by one is refused all the same.
+func (s *server) davSignIn(w http.ResponseWriter, r *http.Request, prefix, resource string) (davLogin, bool) {
+	if r.TLS == nil {
+		http.Error(w, "CalDAV and CardDAV are served over HTTPS only", http.StatusForbidden)
+		return davLogin{}, false
+	}
+	user, secret, ok := r.BasicAuth()
+	if !ok || !s.db.Configured() {
+		davChallenge(w)
+		return davLogin{}, false
+	}
+	acc, err := s.db.AccountByUsername(user)
+	if err != nil {
+		davChallenge(w)
+		return davLogin{}, false
+	}
+	token, err := s.db.APITokenByHash(auth.HashToken(secret))
+	if err != nil || token.PersonID != acc.PersonID || token.MCP {
+		davChallenge(w)
+		return davLogin{}, false
+	}
+	house, err := s.db.HomeHousehold()
+	if err != nil {
+		s.fail(w, "household", err)
+		return davLogin{}, false
+	}
+	person, err := s.db.Person(house.ID, acc.PersonID)
+	if err != nil {
+		davChallenge(w)
+		return davLogin{}, false
+	}
+	var allowed bool
+	var perm auth.Permission
+	if resource == "" {
+		allowed, perm = davAllows(token.Scopes, r.Method, r.URL.Path)
+	} else {
+		perm = auth.Perm(resource, davAction(r.Method))
+		allowed = scopedTo(token.Scopes, resource) && auth.ScopesAllow(token.Scopes, perm)
+	}
+	if person.Role != store.RoleParent || !auth.RoleAllows(person.Role, perm) || !allowed {
+		http.Error(w, "forbidden: needs "+perm.String(), http.StatusForbidden)
+		return davLogin{}, false
+	}
+	s.touchToken(token)
+	// Only the signed-in person's own tree exists.
+	if rest, ok := strings.CutPrefix(r.URL.Path, prefix+"/"); ok && rest != "" {
+		if first, _, _ := strings.Cut(rest, "/"); first != person.ID {
+			http.NotFound(w, r)
+			return davLogin{}, false
+		}
+	}
+	return davLogin{person, house, token}, true
+}
+
+// davAuth signs a personal device in for CalDAV.
 func (s *server) davAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.TLS == nil {
-			http.Error(w, "CalDAV is served over HTTPS only", http.StatusForbidden)
+		l, ok := s.davSignIn(w, r, davPrefix, "")
+		if !ok {
 			return
 		}
-		user, secret, ok := r.BasicAuth()
-		if !ok || !s.db.Configured() {
-			davChallenge(w)
-			return
-		}
-		acc, err := s.db.AccountByUsername(user)
-		if err != nil {
-			davChallenge(w)
-			return
-		}
-		token, err := s.db.APITokenByHash(auth.HashToken(secret))
-		if err != nil || token.PersonID != acc.PersonID || token.MCP {
-			davChallenge(w)
-			return
-		}
-		house, err := s.db.HomeHousehold()
-		if err != nil {
-			s.fail(w, "household", err)
-			return
-		}
-		person, err := s.db.Person(house.ID, acc.PersonID)
-		if err != nil {
-			davChallenge(w)
-			return
-		}
-		allowed, perm := davAllows(token.Scopes, r.Method, r.URL.Path)
-		// Children have no account; a token held by one is refused all the same.
-		if person.Role != store.RoleParent || !auth.RoleAllows(person.Role, perm) || !allowed {
-			http.Error(w, "forbidden: needs "+perm.String(), http.StatusForbidden)
-			return
-		}
-		s.touchToken(token)
-		// Only the signed-in person's own tree exists.
-		if rest, ok := strings.CutPrefix(r.URL.Path, davPrefix+"/"); ok && rest != "" {
-			if first, _, _ := strings.Cut(rest, "/"); first != person.ID {
-				http.NotFound(w, r)
-				return
-			}
-		}
-		sess := &davSession{person: person, house: house, req: r, scopes: token.Scopes}
+		sess := &davSession{person: l.person, house: l.house, req: r, scopes: l.token.Scopes}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), davKey{}, sess)))
 	})
 }

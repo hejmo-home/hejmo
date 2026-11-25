@@ -532,6 +532,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /displays/{id}/layout/copy", s.handleDisplayLayoutCopy)
 	s.routeAPI(mux)
 	s.routeCalDAV(mux)
+	s.routeCardDAV(mux)
 	return s.requireHTTPS(sameOrigin(withPageLanguage(withRewardPages(mux, s.routeRewards()))))
 }
 

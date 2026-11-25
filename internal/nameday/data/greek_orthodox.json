@@ -1,0 +1,954 @@
+{
+ "list": "greek_orthodox",
+ "sources": {
+  "eoc": "Ημερολόγιο της Εκκλησίας της Ελλάδος (Kalender der Kirche von Griechenland)"
+ },
+ "entries": [
+  {
+   "id": "vasilios-01-01",
+   "name": "Vasilios",
+   "variants": [
+    "Basil",
+    "Basilius",
+    "Basilios",
+    "Vasilis",
+    "Vassilis",
+    "Vasilis"
+   ],
+   "saint": "Basilius der Große",
+   "day": "01-01",
+   "source": "eoc"
+  },
+  {
+   "id": "vasiliki-01-01",
+   "name": "Vasiliki",
+   "variants": [
+    "Basilike"
+   ],
+   "saint": "Vasiliki",
+   "day": "01-01",
+   "source": "eoc"
+  },
+  {
+   "id": "fotios-01-06",
+   "name": "Fotios",
+   "variants": [
+    "Photios",
+    "Fotis",
+    "Photis"
+   ],
+   "saint": "Theophanie des Herrn",
+   "day": "01-06",
+   "source": "eoc"
+  },
+  {
+   "id": "ioannis-01-07",
+   "name": "Ioannis",
+   "variants": [
+    "Johannes",
+    "Johann",
+    "Giannis",
+    "Yannis",
+    "Jannis",
+    "John",
+    "Jan",
+    "Hans",
+    "Ioannes",
+    "Janis"
+   ],
+   "saint": "Johannes der Täufer (Prodromos)",
+   "day": "01-07",
+   "usual": true,
+   "source": "eoc"
+  },
+  {
+   "id": "antonios-01-17",
+   "name": "Antonios",
+   "variants": [
+    "Anton",
+    "Antonius",
+    "Antonio",
+    "Tony"
+   ],
+   "saint": "Antonius der Große",
+   "day": "01-17",
+   "source": "eoc"
+  },
+  {
+   "id": "athanasios-01-18",
+   "name": "Athanasios",
+   "variants": [
+    "Athanasius",
+    "Thanasis"
+   ],
+   "saint": "Athanasius der Große",
+   "day": "01-18",
+   "source": "eoc"
+  },
+  {
+   "id": "kyrillos-01-18",
+   "name": "Kyrillos",
+   "variants": [
+    "Kyrill",
+    "Cyrill",
+    "Cyril"
+   ],
+   "saint": "Kyrill von Alexandrien",
+   "day": "01-18",
+   "source": "eoc"
+  },
+  {
+   "id": "efthymios-01-20",
+   "name": "Efthymios",
+   "variants": [
+    "Euthymius",
+    "Efthimios",
+    "Thymios"
+   ],
+   "saint": "Euthymius der Große",
+   "day": "01-20",
+   "source": "eoc"
+  },
+  {
+   "id": "xenia-01-24",
+   "name": "Xenia",
+   "variants": [
+    "Xeni"
+   ],
+   "saint": "Xenia von Rom",
+   "day": "01-24",
+   "source": "eoc"
+  },
+  {
+   "id": "grigorios-01-25",
+   "name": "Grigorios",
+   "variants": [
+    "Gregor",
+    "Gregorios",
+    "Gregory"
+   ],
+   "saint": "Gregor der Theologe",
+   "day": "01-25",
+   "source": "eoc"
+  },
+  {
+   "id": "theodoros-02-08",
+   "name": "Theodoros",
+   "variants": [
+    "Theodor",
+    "Theodore",
+    "Theodoros"
+   ],
+   "saint": "Theodor Stratilates",
+   "day": "02-08",
+   "source": "eoc"
+  },
+  {
+   "id": "charalambos-02-10",
+   "name": "Charalambos",
+   "variants": [
+    "Haralambos",
+    "Charalampos",
+    "Charis"
+   ],
+   "saint": "Charalambos",
+   "day": "02-10",
+   "source": "eoc"
+  },
+  {
+   "id": "vlasios-02-11",
+   "name": "Vlasios",
+   "variants": [
+    "Blasius",
+    "Vlassis"
+   ],
+   "saint": "Blasius",
+   "day": "02-11",
+   "source": "eoc"
+  },
+  {
+   "id": "evdokia-03-01",
+   "name": "Evdokia",
+   "variants": [
+    "Eudokia",
+    "Evdokia"
+   ],
+   "saint": "Evdokia",
+   "day": "03-01",
+   "source": "eoc"
+  },
+  {
+   "id": "evangelos-03-25",
+   "name": "Evangelos",
+   "variants": [
+    "Evangelos",
+    "Vangelis",
+    "Evangelia",
+    "Evangelia"
+   ],
+   "saint": "Verkündigung an die Gottesmutter",
+   "day": "03-25",
+   "source": "eoc"
+  },
+  {
+   "id": "alexandra-04-21",
+   "name": "Alexandra",
+   "saint": "Alexandra, Kaiserin",
+   "day": "04-21",
+   "source": "eoc"
+  },
+  {
+   "id": "georgios-04-23",
+   "name": "Georgios",
+   "variants": [
+    "Georg",
+    "George",
+    "Giorgos",
+    "Yorgos",
+    "Jorgos",
+    "Jürgen",
+    "Jörg"
+   ],
+   "saint": "Georg, Großmärtyrer",
+   "day": "04-23",
+   "move": "easter_monday",
+   "usual": true,
+   "source": "eoc"
+  },
+  {
+   "id": "markos-04-25",
+   "name": "Markos",
+   "variants": [
+    "Markus",
+    "Marcus",
+    "Mark",
+    "Marc"
+   ],
+   "saint": "Markus, Evangelist",
+   "day": "04-25",
+   "source": "eoc"
+  },
+  {
+   "id": "irini-05-05",
+   "name": "Irini",
+   "variants": [
+    "Irene",
+    "Irina"
+   ],
+   "saint": "Irini",
+   "day": "05-05",
+   "source": "eoc"
+  },
+  {
+   "id": "zoi-05-18",
+   "name": "Zoi",
+   "variants": [
+    "Zoe"
+   ],
+   "saint": "Zoi",
+   "day": "05-18",
+   "source": "eoc"
+  },
+  {
+   "id": "konstantinos-05-21",
+   "name": "Konstantinos",
+   "variants": [
+    "Konstantin",
+    "Constantin",
+    "Kostas",
+    "Costas",
+    "Dinos"
+   ],
+   "saint": "Konstantin der Große",
+   "day": "05-21",
+   "source": "eoc"
+  },
+  {
+   "id": "eleni-05-21",
+   "name": "Eleni",
+   "variants": [
+    "Helene",
+    "Helena",
+    "Elena",
+    "Ellen"
+   ],
+   "saint": "Helena",
+   "day": "05-21",
+   "source": "eoc"
+  },
+  {
+   "id": "varnavas-06-11",
+   "name": "Varnavas",
+   "variants": [
+    "Barnabas"
+   ],
+   "saint": "Barnabas, Apostel",
+   "day": "06-11",
+   "source": "eoc"
+  },
+  {
+   "id": "petros-06-29",
+   "name": "Petros",
+   "variants": [
+    "Petrus",
+    "Peter",
+    "Pierre",
+    "Petros"
+   ],
+   "saint": "Petrus, Apostel",
+   "day": "06-29",
+   "source": "eoc"
+  },
+  {
+   "id": "pavlos-06-29",
+   "name": "Pavlos",
+   "variants": [
+    "Paul",
+    "Paulus",
+    "Pavel"
+   ],
+   "saint": "Paulus, Apostel",
+   "day": "06-29",
+   "source": "eoc"
+  },
+  {
+   "id": "kyriaki-07-07",
+   "name": "Kyriaki",
+   "variants": [
+    "Kyriaki",
+    "Domenica"
+   ],
+   "saint": "Kyriaki",
+   "day": "07-07",
+   "source": "eoc"
+  },
+  {
+   "id": "marina-07-17",
+   "name": "Marina",
+   "saint": "Marina",
+   "day": "07-17",
+   "source": "eoc"
+  },
+  {
+   "id": "ilias-07-20",
+   "name": "Ilias",
+   "variants": [
+    "Elias",
+    "Elija",
+    "Elia",
+    "Elijah",
+    "Ilias"
+   ],
+   "saint": "Elija, Prophet",
+   "day": "07-20",
+   "source": "eoc"
+  },
+  {
+   "id": "magdalini-07-22",
+   "name": "Magdalini",
+   "variants": [
+    "Magdalena",
+    "Madeleine"
+   ],
+   "saint": "Maria Magdalena",
+   "day": "07-22",
+   "source": "eoc"
+  },
+  {
+   "id": "christina-07-24",
+   "name": "Christina",
+   "variants": [
+    "Christine",
+    "Kristina"
+   ],
+   "saint": "Christina",
+   "day": "07-24",
+   "source": "eoc"
+  },
+  {
+   "id": "anna-07-25",
+   "name": "Anna",
+   "variants": [
+    "Anne",
+    "Hanna",
+    "Ana"
+   ],
+   "saint": "Anna, Mutter der Gottesmutter",
+   "day": "07-25",
+   "source": "eoc"
+  },
+  {
+   "id": "paraskevi-07-26",
+   "name": "Paraskevi",
+   "variants": [
+    "Paraschiva",
+    "Evi"
+   ],
+   "saint": "Paraskevi",
+   "day": "07-26",
+   "source": "eoc"
+  },
+  {
+   "id": "panteleimon-07-27",
+   "name": "Panteleimon",
+   "variants": [
+    "Pantelis",
+    "Pantelejmon"
+   ],
+   "saint": "Panteleimon",
+   "day": "07-27",
+   "source": "eoc"
+  },
+  {
+   "id": "sotirios-08-06",
+   "name": "Sotirios",
+   "variants": [
+    "Sotiris",
+    "Sotiria"
+   ],
+   "saint": "Verklärung des Herrn",
+   "day": "08-06",
+   "source": "eoc"
+  },
+  {
+   "id": "maria-08-15",
+   "name": "Maria",
+   "variants": [
+    "Marie",
+    "Marija",
+    "Mary",
+    "Despina"
+   ],
+   "saint": "Entschlafung der Gottesmutter",
+   "day": "08-15",
+   "usual": true,
+   "source": "eoc"
+  },
+  {
+   "id": "panagiotis-08-15",
+   "name": "Panagiotis",
+   "variants": [
+    "Panagiota"
+   ],
+   "saint": "Entschlafung der Gottesmutter",
+   "day": "08-15",
+   "source": "eoc"
+  },
+  {
+   "id": "gerasimos-08-16",
+   "name": "Gerasimos",
+   "variants": [
+    "Gerasim"
+   ],
+   "saint": "Gerasimos von Kefalonia",
+   "day": "08-16",
+   "source": "eoc"
+  },
+  {
+   "id": "titos-08-25",
+   "name": "Titos",
+   "variants": [
+    "Titus"
+   ],
+   "saint": "Titus, Apostel",
+   "day": "08-25",
+   "source": "eoc"
+  },
+  {
+   "id": "fanourios-08-27",
+   "name": "Fanourios",
+   "variants": [
+    "Fanouris"
+   ],
+   "saint": "Fanourios",
+   "day": "08-27",
+   "source": "eoc"
+  },
+  {
+   "id": "alexandros-08-30",
+   "name": "Alexandros",
+   "variants": [
+    "Alexander",
+    "Alexandre",
+    "Alex",
+    "Sandro"
+   ],
+   "saint": "Alexander, Patriarch von Konstantinopel",
+   "day": "08-30",
+   "source": "eoc"
+  },
+  {
+   "id": "stavros-09-14",
+   "name": "Stavros",
+   "variants": [
+    "Stavroula"
+   ],
+   "saint": "Kreuzerhöhung",
+   "day": "09-14",
+   "source": "eoc"
+  },
+  {
+   "id": "sofia-09-17",
+   "name": "Sofia",
+   "variants": [
+    "Sophia",
+    "Sophie",
+    "Sofie",
+    "Sonja"
+   ],
+   "saint": "Sofia und ihre Töchter",
+   "day": "09-17",
+   "source": "eoc"
+  },
+  {
+   "id": "agapi-09-17",
+   "name": "Agapi",
+   "variants": [
+    "Agape"
+   ],
+   "saint": "Agapi, Tochter der Sofia",
+   "day": "09-17",
+   "source": "eoc"
+  },
+  {
+   "id": "elpida-09-17",
+   "name": "Elpida",
+   "variants": [
+    "Elpis"
+   ],
+   "saint": "Elpis, Tochter der Sofia",
+   "day": "09-17",
+   "source": "eoc"
+  },
+  {
+   "id": "efstathios-09-20",
+   "name": "Efstathios",
+   "variants": [
+    "Eustathius",
+    "Stathis"
+   ],
+   "saint": "Efstathios",
+   "day": "09-20",
+   "source": "eoc"
+  },
+  {
+   "id": "ionas-09-22",
+   "name": "Ionas",
+   "gloss": "Jonas",
+   "variants": [
+    "Jona",
+    "Jonah"
+   ],
+   "saint": "Jonas, Prophet",
+   "day": "09-22",
+   "source": "eoc"
+  },
+  {
+   "id": "kyriakos-09-29",
+   "name": "Kyriakos",
+   "variants": [
+    "Kyriakus"
+   ],
+   "saint": "Kyriakos der Einsiedler",
+   "day": "09-29",
+   "source": "eoc"
+  },
+  {
+   "id": "dionysios-10-03",
+   "name": "Dionysios",
+   "variants": [
+    "Dionys",
+    "Dionysius",
+    "Denis",
+    "Dennis"
+   ],
+   "saint": "Dionysios Areopagites",
+   "day": "10-03",
+   "source": "eoc"
+  },
+  {
+   "id": "thomas-10-06",
+   "name": "Thomas",
+   "variants": [
+    "Tomas",
+    "Tom"
+   ],
+   "saint": "Thomas, Apostel",
+   "day": "10-06",
+   "source": "eoc"
+  },
+  {
+   "id": "loukas-10-18",
+   "name": "Loukas",
+   "variants": [
+    "Lukas",
+    "Luke",
+    "Lucas",
+    "Luca"
+   ],
+   "saint": "Lukas, Evangelist",
+   "day": "10-18",
+   "source": "eoc"
+  },
+  {
+   "id": "iakovos-10-23",
+   "name": "Iakovos",
+   "variants": [
+    "Jakob",
+    "Jakobus",
+    "James",
+    "Jacob"
+   ],
+   "saint": "Jakobus, Bruder des Herrn",
+   "day": "10-23",
+   "source": "eoc"
+  },
+  {
+   "id": "dimitrios-10-26",
+   "name": "Dimitrios",
+   "variants": [
+    "Demetrius",
+    "Dimitri",
+    "Dimitris",
+    "Dmitri",
+    "Dimitry"
+   ],
+   "saint": "Demetrios, Großmärtyrer",
+   "day": "10-26",
+   "source": "eoc"
+  },
+  {
+   "id": "kosmas-11-01",
+   "name": "Kosmas",
+   "variants": [
+    "Cosmas",
+    "Kosmas"
+   ],
+   "saint": "Kosmas, Anargyros",
+   "day": "11-01",
+   "source": "eoc"
+  },
+  {
+   "id": "damianos-11-01",
+   "name": "Damianos",
+   "variants": [
+    "Damian"
+   ],
+   "saint": "Damian, Anargyros",
+   "day": "11-01",
+   "source": "eoc"
+  },
+  {
+   "id": "michail-11-08",
+   "name": "Michail",
+   "variants": [
+    "Michael",
+    "Michalis",
+    "Mihalis",
+    "Michel",
+    "Michi"
+   ],
+   "saint": "Synaxis des Erzengels Michael",
+   "day": "11-08",
+   "source": "eoc"
+  },
+  {
+   "id": "gavriil-11-08",
+   "name": "Gavriil",
+   "variants": [
+    "Gabriel",
+    "Gabriele"
+   ],
+   "saint": "Synaxis des Erzengels Gabriel",
+   "day": "11-08",
+   "source": "eoc"
+  },
+  {
+   "id": "nektarios-11-09",
+   "name": "Nektarios",
+   "variants": [
+    "Nektar"
+   ],
+   "saint": "Nektarios von Ägina",
+   "day": "11-09",
+   "source": "eoc"
+  },
+  {
+   "id": "filippos-11-14",
+   "name": "Filippos",
+   "variants": [
+    "Philipp",
+    "Philippus",
+    "Philip"
+   ],
+   "saint": "Philippus, Apostel",
+   "day": "11-14",
+   "source": "eoc"
+  },
+  {
+   "id": "matthaios-11-16",
+   "name": "Matthaios",
+   "variants": [
+    "Matthäus",
+    "Matthew"
+   ],
+   "saint": "Matthäus, Apostel und Evangelist",
+   "day": "11-16",
+   "source": "eoc"
+  },
+  {
+   "id": "aikaterini-11-25",
+   "name": "Aikaterini",
+   "gloss": "Katharina",
+   "variants": [
+    "Katharina",
+    "Katherina",
+    "Catherine",
+    "Katerina",
+    "Katrin",
+    "Kathrin",
+    "Katja",
+    "Katarina",
+    "Ekaterini",
+    "Caterina",
+    "Käthe"
+   ],
+   "saint": "Katharina von Alexandrien",
+   "day": "11-25",
+   "source": "eoc"
+  },
+  {
+   "id": "andreas-11-30",
+   "name": "Andreas",
+   "variants": [
+    "Andrew",
+    "André",
+    "Andre",
+    "Andrea",
+    "Andy"
+   ],
+   "saint": "Andreas, Apostel",
+   "day": "11-30",
+   "source": "eoc"
+  },
+  {
+   "id": "nikolaos-12-06",
+   "name": "Nikolaos",
+   "gloss": "Nikolaus",
+   "variants": [
+    "Nikolaus",
+    "Nicolas",
+    "Niklas",
+    "Nikos",
+    "Nikolas",
+    "Nicola",
+    "Klaus",
+    "Nick",
+    "Niko"
+   ],
+   "saint": "Nikolaus von Myra",
+   "day": "12-06",
+   "source": "eoc"
+  },
+  {
+   "id": "spyridon-12-12",
+   "name": "Spyridon",
+   "variants": [
+    "Spiridon",
+    "Spiros",
+    "Spyros"
+   ],
+   "saint": "Spyridon von Trimythous",
+   "day": "12-12",
+   "source": "eoc"
+  },
+  {
+   "id": "efstratios-12-13",
+   "name": "Efstratios",
+   "variants": [
+    "Eustratius"
+   ],
+   "saint": "Efstratios",
+   "day": "12-13",
+   "source": "eoc"
+  },
+  {
+   "id": "orestis-12-13",
+   "name": "Orestis",
+   "variants": [
+    "Orest"
+   ],
+   "saint": "Orestis",
+   "day": "12-13",
+   "source": "eoc"
+  },
+  {
+   "id": "eleftherios-12-15",
+   "name": "Eleftherios",
+   "variants": [
+    "Lefteris"
+   ],
+   "saint": "Eleftherios",
+   "day": "12-15",
+   "source": "eoc"
+  },
+  {
+   "id": "eleftheria-12-15",
+   "name": "Eleftheria",
+   "saint": "Eleftheria",
+   "day": "12-15",
+   "source": "eoc"
+  },
+  {
+   "id": "dionysios-12-17",
+   "name": "Dionysios",
+   "variants": [
+    "Dionys",
+    "Dionysius"
+   ],
+   "saint": "Dionysios von Zakynthos",
+   "day": "12-17",
+   "usual": true,
+   "source": "eoc"
+  },
+  {
+   "id": "sevastianos-12-18",
+   "name": "Sevastianos",
+   "gloss": "Sebastian",
+   "variants": [
+    "Sebastian",
+    "Sevastianos"
+   ],
+   "saint": "Sebastian",
+   "day": "12-18",
+   "source": "eoc"
+  },
+  {
+   "id": "evgenia-12-24",
+   "name": "Evgenia",
+   "variants": [
+    "Eugenia"
+   ],
+   "saint": "Evgenia",
+   "day": "12-24",
+   "source": "eoc"
+  },
+  {
+   "id": "christos-12-25",
+   "name": "Christos",
+   "variants": [
+    "Christian",
+    "Christian"
+   ],
+   "saint": "Geburt Christi",
+   "day": "12-25",
+   "source": "eoc"
+  },
+  {
+   "id": "stefanos-12-27",
+   "name": "Stefanos",
+   "variants": [
+    "Stephan",
+    "Stefan",
+    "Stephen",
+    "Stephanus",
+    "Stefanie"
+   ],
+   "saint": "Stephanus, erster Märtyrer",
+   "day": "12-27",
+   "source": "eoc"
+  },
+  {
+   "id": "anastasios-easter-plus-0",
+   "name": "Anastasios",
+   "variants": [
+    "Anastasius",
+    "Anastasia",
+    "Stasis",
+    "Tasos"
+   ],
+   "saint": "Auferstehung des Herrn (Ostersonntag)",
+   "easter": 0,
+   "source": "eoc"
+  },
+  {
+   "id": "lambros-easter-plus-0",
+   "name": "Lambros",
+   "variants": [
+    "Lambrini",
+    "Lambrini",
+    "Lampros"
+   ],
+   "saint": "Auferstehung des Herrn (Ostersonntag)",
+   "easter": 0,
+   "source": "eoc"
+  },
+  {
+   "id": "paschalis-easter-plus-0",
+   "name": "Paschalis",
+   "variants": [
+    "Paschalina",
+    "Pascal"
+   ],
+   "saint": "Auferstehung des Herrn (Ostersonntag)",
+   "easter": 0,
+   "source": "eoc"
+  },
+  {
+   "id": "vaios-easter-minus-7",
+   "name": "Vaios",
+   "variants": [
+    "Vaia"
+   ],
+   "saint": "Palmsonntag",
+   "easter": -7,
+   "source": "eoc"
+  },
+  {
+   "id": "lazaros-easter-minus-8",
+   "name": "Lazaros",
+   "variants": [
+    "Lazarus",
+    "Lazaria"
+   ],
+   "saint": "Lazarus-Samstag",
+   "easter": -8,
+   "usual": true,
+   "source": "eoc"
+  },
+  {
+   "id": "theodoros-easter-minus-43",
+   "name": "Theodoros",
+   "variants": [
+    "Theodor",
+    "Theodore"
+   ],
+   "saint": "Theodor Tiron (Samstag der ersten Fastenwoche)",
+   "easter": -43,
+   "source": "eoc"
+  },
+  {
+   "id": "pigi-easter-plus-5",
+   "name": "Pigi",
+   "variants": [
+    "Peghi",
+    "Zoodochos Pigi"
+   ],
+   "saint": "Lebensspendende Quelle (Freitag der Osterwoche)",
+   "easter": 5,
+   "source": "eoc"
+  },
+  {
+   "id": "thomas-easter-plus-7",
+   "name": "Thomas",
+   "variants": [
+    "Tomas",
+    "Tom"
+   ],
+   "saint": "Thomas-Sonntag (Sonntag nach Ostern)",
+   "easter": 7,
+   "usual": true,
+   "source": "eoc"
+  }
+ ]
+}

@@ -1,0 +1,2191 @@
+{
+ "list": "catholic",
+ "sources": {
+  "rk": "Regionalkalender für das deutsche Sprachgebiet (Eigenkalender für Deutschland, Österreich und die Schweiz)",
+  "mr": "Martyrologium Romanum (Gedenktage der Heiligen der katholischen Kirche)"
+ },
+ "entries": [
+  {
+   "id": "basilius-01-02",
+   "name": "Basilius",
+   "variants": [
+    "Basil"
+   ],
+   "saint": "Basilius der Große",
+   "day": "01-02",
+   "usual": true,
+   "source": "rk"
+  },
+  {
+   "id": "gregor-01-02",
+   "name": "Gregor",
+   "variants": [
+    "Gregorius",
+    "Grigori",
+    "Gregory"
+   ],
+   "saint": "Gregor von Nazianz",
+   "day": "01-02",
+   "source": "rk"
+  },
+  {
+   "id": "raimund-01-07",
+   "name": "Raimund",
+   "variants": [
+    "Raymund",
+    "Ramon",
+    "Raymond"
+   ],
+   "saint": "Raimund von Peñafort",
+   "day": "01-07",
+   "source": "rk"
+  },
+  {
+   "id": "hilarius-01-13",
+   "name": "Hilarius",
+   "variants": [
+    "Hilary"
+   ],
+   "saint": "Hilarius von Poitiers",
+   "day": "01-13",
+   "source": "rk"
+  },
+  {
+   "id": "maurus-01-15",
+   "name": "Maurus",
+   "variants": [
+    "Maur"
+   ],
+   "saint": "Maurus",
+   "day": "01-15",
+   "source": "mr"
+  },
+  {
+   "id": "antonius-01-17",
+   "name": "Antonius",
+   "variants": [
+    "Anton",
+    "Antonio",
+    "Tony",
+    "Toni"
+   ],
+   "saint": "Antonius der Große",
+   "day": "01-17",
+   "source": "rk"
+  },
+  {
+   "id": "fabian-01-20",
+   "name": "Fabian",
+   "saint": "Fabian",
+   "day": "01-20",
+   "source": "rk"
+  },
+  {
+   "id": "sebastian-01-20",
+   "name": "Sebastian",
+   "variants": [
+    "Sebastiano",
+    "Basti"
+   ],
+   "saint": "Sebastian",
+   "day": "01-20",
+   "usual": true,
+   "source": "rk"
+  },
+  {
+   "id": "agnes-01-21",
+   "name": "Agnes",
+   "variants": [
+    "Agnese",
+    "Agnieszka",
+    "Inés"
+   ],
+   "saint": "Agnes von Rom",
+   "day": "01-21",
+   "source": "rk"
+  },
+  {
+   "id": "vinzenz-01-22",
+   "name": "Vinzenz",
+   "variants": [
+    "Vincenz",
+    "Vincent",
+    "Vinzent",
+    "Vicente"
+   ],
+   "saint": "Vinzenz von Saragossa",
+   "day": "01-22",
+   "source": "rk"
+  },
+  {
+   "id": "franz-01-24",
+   "name": "Franz",
+   "variants": [
+    "Francis",
+    "Francisco",
+    "Franciszek"
+   ],
+   "saint": "Franz von Sales",
+   "day": "01-24",
+   "source": "rk"
+  },
+  {
+   "id": "paul-01-25",
+   "name": "Paul",
+   "variants": [
+    "Paulus",
+    "Pavel",
+    "Pablo",
+    "Paolo"
+   ],
+   "saint": "Bekehrung des Apostels Paulus",
+   "day": "01-25",
+   "source": "rk"
+  },
+  {
+   "id": "timotheus-01-26",
+   "name": "Timotheus",
+   "variants": [
+    "Timothy",
+    "Timo",
+    "Timotheos"
+   ],
+   "saint": "Timotheus",
+   "day": "01-26",
+   "source": "rk"
+  },
+  {
+   "id": "titus-01-26",
+   "name": "Titus",
+   "saint": "Titus",
+   "day": "01-26",
+   "source": "rk"
+  },
+  {
+   "id": "paula-01-26",
+   "name": "Paula",
+   "variants": [
+    "Paola"
+   ],
+   "saint": "Paula von Rom",
+   "day": "01-26",
+   "source": "mr"
+  },
+  {
+   "id": "angela-01-27",
+   "name": "Angela",
+   "variants": [
+    "Angelika",
+    "Angelica"
+   ],
+   "saint": "Angela Merici",
+   "day": "01-27",
+   "source": "rk"
+  },
+  {
+   "id": "thomas-01-28",
+   "name": "Thomas",
+   "variants": [
+    "Tomas",
+    "Tom"
+   ],
+   "saint": "Thomas von Aquin",
+   "day": "01-28",
+   "source": "rk"
+  },
+  {
+   "id": "johannes-01-31",
+   "name": "Johannes",
+   "variants": [
+    "Johann",
+    "Hans",
+    "Jan",
+    "Jean",
+    "Giovanni",
+    "Juan",
+    "John",
+    "Ivan",
+    "Iwan",
+    "Hannes",
+    "Jens",
+    "Joannes",
+    "Johan"
+   ],
+   "saint": "Johannes Bosco",
+   "day": "01-31",
+   "source": "rk"
+  },
+  {
+   "id": "blasius-02-03",
+   "name": "Blasius",
+   "variants": [
+    "Blasi"
+   ],
+   "saint": "Blasius von Sebaste",
+   "day": "02-03",
+   "source": "rk"
+  },
+  {
+   "id": "ansgar-02-03",
+   "name": "Ansgar",
+   "variants": [
+    "Anskar",
+    "Oskar"
+   ],
+   "saint": "Ansgar",
+   "day": "02-03",
+   "source": "rk"
+  },
+  {
+   "id": "agatha-02-05",
+   "name": "Agatha",
+   "variants": [
+    "Agathe"
+   ],
+   "saint": "Agatha von Catania",
+   "day": "02-05",
+   "source": "rk"
+  },
+  {
+   "id": "dorothea-02-06",
+   "name": "Dorothea",
+   "variants": [
+    "Dorothee",
+    "Dorota"
+   ],
+   "saint": "Dorothea von Cäsarea",
+   "day": "02-06",
+   "source": "mr"
+  },
+  {
+   "id": "scholastika-02-10",
+   "name": "Scholastika",
+   "saint": "Scholastika",
+   "day": "02-10",
+   "source": "rk"
+  },
+  {
+   "id": "adolf-02-11",
+   "name": "Adolf",
+   "variants": [
+    "Adolph"
+   ],
+   "saint": "Adolf von Osnabrück",
+   "day": "02-11",
+   "source": "mr"
+  },
+  {
+   "id": "valentin-02-14",
+   "name": "Valentin",
+   "variants": [
+    "Valentino"
+   ],
+   "saint": "Valentin von Terni",
+   "day": "02-14",
+   "source": "rk"
+  },
+  {
+   "id": "kyrill-02-14",
+   "name": "Kyrill",
+   "variants": [
+    "Cyrill",
+    "Cyril"
+   ],
+   "saint": "Kyrill",
+   "day": "02-14",
+   "source": "rk"
+  },
+  {
+   "id": "method-02-14",
+   "name": "Method",
+   "variants": [
+    "Methodius"
+   ],
+   "saint": "Method",
+   "day": "02-14",
+   "source": "rk"
+  },
+  {
+   "id": "polykarp-02-23",
+   "name": "Polykarp",
+   "variants": [
+    "Polycarp"
+   ],
+   "saint": "Polykarp von Smyrna",
+   "day": "02-23",
+   "source": "rk"
+  },
+  {
+   "id": "walburga-02-25",
+   "name": "Walburga",
+   "variants": [
+    "Walpurga",
+    "Walburg"
+   ],
+   "saint": "Walburga",
+   "day": "02-25",
+   "source": "rk"
+  },
+  {
+   "id": "kunigunde-03-03",
+   "name": "Kunigunde",
+   "variants": [
+    "Kunigund"
+   ],
+   "saint": "Kunigunde von Luxemburg",
+   "day": "03-03",
+   "source": "mr"
+  },
+  {
+   "id": "kasimir-03-04",
+   "name": "Kasimir",
+   "variants": [
+    "Casimir",
+    "Kazimierz"
+   ],
+   "saint": "Kasimir von Polen",
+   "day": "03-04",
+   "source": "rk"
+  },
+  {
+   "id": "perpetua-03-07",
+   "name": "Perpetua",
+   "saint": "Perpetua",
+   "day": "03-07",
+   "source": "rk"
+  },
+  {
+   "id": "felicitas-03-07",
+   "name": "Felicitas",
+   "variants": [
+    "Felicity"
+   ],
+   "saint": "Felicitas",
+   "day": "03-07",
+   "source": "rk"
+  },
+  {
+   "id": "franziska-03-09",
+   "name": "Franziska",
+   "variants": [
+    "Francesca",
+    "Franciska"
+   ],
+   "saint": "Franziska von Rom",
+   "day": "03-09",
+   "source": "rk"
+  },
+  {
+   "id": "mathilde-03-14",
+   "name": "Mathilde",
+   "variants": [
+    "Mechthild",
+    "Matilda",
+    "Mathilda"
+   ],
+   "saint": "Mathilde",
+   "day": "03-14",
+   "source": "rk"
+  },
+  {
+   "id": "gertrud-03-17",
+   "name": "Gertrud",
+   "variants": [
+    "Gertrude",
+    "Gertraud",
+    "Trude"
+   ],
+   "saint": "Gertrud von Nivelles",
+   "day": "03-17",
+   "usual": true,
+   "source": "rk"
+  },
+  {
+   "id": "patrick-03-17",
+   "name": "Patrick",
+   "variants": [
+    "Patricius",
+    "Patrizius"
+   ],
+   "saint": "Patrick",
+   "day": "03-17",
+   "source": "rk"
+  },
+  {
+   "id": "josef-03-19",
+   "name": "Josef",
+   "variants": [
+    "Joseph",
+    "Sepp",
+    "Jupp",
+    "José",
+    "Giuseppe",
+    "Josip",
+    "Joe"
+   ],
+   "saint": "Josef, Bräutigam der Gottesmutter Maria",
+   "day": "03-19",
+   "source": "rk"
+  },
+  {
+   "id": "ludger-03-26",
+   "name": "Ludger",
+   "saint": "Ludger",
+   "day": "03-26",
+   "source": "rk"
+  },
+  {
+   "id": "hugo-04-01",
+   "name": "Hugo",
+   "variants": [
+    "Hugh"
+   ],
+   "saint": "Hugo von Grenoble",
+   "day": "04-01",
+   "source": "mr"
+  },
+  {
+   "id": "isidor-04-04",
+   "name": "Isidor",
+   "variants": [
+    "Isidore",
+    "Isidoro"
+   ],
+   "saint": "Isidor von Sevilla",
+   "day": "04-04",
+   "source": "rk"
+  },
+  {
+   "id": "irene-04-05",
+   "name": "Irene",
+   "variants": [
+    "Irina",
+    "Irini"
+   ],
+   "saint": "Irene von Thessaloniki",
+   "day": "04-05",
+   "source": "mr"
+  },
+  {
+   "id": "stanislaus-04-11",
+   "name": "Stanislaus",
+   "variants": [
+    "Stanislaw",
+    "Stanislav"
+   ],
+   "saint": "Stanislaus von Krakau",
+   "day": "04-11",
+   "source": "rk"
+  },
+  {
+   "id": "bernadette-04-16",
+   "name": "Bernadette",
+   "saint": "Bernadette Soubirous",
+   "day": "04-16",
+   "source": "mr"
+  },
+  {
+   "id": "werner-04-19",
+   "name": "Werner",
+   "saint": "Werner von Oberwesel",
+   "day": "04-19",
+   "source": "rk"
+  },
+  {
+   "id": "anselm-04-21",
+   "name": "Anselm",
+   "variants": [
+    "Anselmus"
+   ],
+   "saint": "Anselm von Canterbury",
+   "day": "04-21",
+   "source": "rk"
+  },
+  {
+   "id": "adalbert-04-23",
+   "name": "Adalbert",
+   "variants": [
+    "Wojciech",
+    "Vojtech"
+   ],
+   "saint": "Adalbert von Prag",
+   "day": "04-23",
+   "source": "rk"
+  },
+  {
+   "id": "georg-04-23",
+   "name": "Georg",
+   "variants": [
+    "Jörg",
+    "Jürg",
+    "Jürgen",
+    "Jorge",
+    "Giorgio",
+    "George",
+    "Georgios"
+   ],
+   "saint": "Georg",
+   "day": "04-23",
+   "usual": true,
+   "source": "rk"
+  },
+  {
+   "id": "fidelis-04-24",
+   "name": "Fidelis",
+   "saint": "Fidelis von Sigmaringen",
+   "day": "04-24",
+   "source": "rk"
+  },
+  {
+   "id": "markus-04-25",
+   "name": "Markus",
+   "variants": [
+    "Marcus",
+    "Mark",
+    "Marc",
+    "Marco"
+   ],
+   "saint": "Markus, Evangelist",
+   "day": "04-25",
+   "source": "rk"
+  },
+  {
+   "id": "zita-04-27",
+   "name": "Zita",
+   "saint": "Zita von Lucca",
+   "day": "04-27",
+   "source": "mr"
+  },
+  {
+   "id": "katharina-04-29",
+   "name": "Katharina",
+   "variants": [
+    "Katherina",
+    "Katarina",
+    "Catharina",
+    "Catherine",
+    "Kathrin",
+    "Katrin",
+    "Katja",
+    "Käthe",
+    "Karin",
+    "Kathi",
+    "Kati",
+    "Caterina",
+    "Cathrin",
+    "Karina"
+   ],
+   "saint": "Katharina von Siena",
+   "day": "04-29",
+   "source": "rk"
+  },
+  {
+   "id": "josef-05-01",
+   "name": "Josef",
+   "variants": [
+    "Joseph",
+    "Sepp",
+    "Jupp"
+   ],
+   "saint": "Josef der Arbeiter",
+   "day": "05-01",
+   "source": "rk"
+  },
+  {
+   "id": "athanasius-05-02",
+   "name": "Athanasius",
+   "variants": [
+    "Athanasios"
+   ],
+   "saint": "Athanasius",
+   "day": "05-02",
+   "source": "rk"
+  },
+  {
+   "id": "philipp-05-03",
+   "name": "Philipp",
+   "variants": [
+    "Philippus",
+    "Philip",
+    "Phillip",
+    "Filip",
+    "Felipe"
+   ],
+   "saint": "Philippus, Apostel",
+   "day": "05-03",
+   "source": "rk"
+  },
+  {
+   "id": "jakob-05-03",
+   "name": "Jakob",
+   "variants": [
+    "Jakobus",
+    "Jacob",
+    "James",
+    "Jacques"
+   ],
+   "saint": "Jakobus der Jüngere, Apostel",
+   "day": "05-03",
+   "source": "rk"
+  },
+  {
+   "id": "florian-05-04",
+   "name": "Florian",
+   "variants": [
+    "Florentin"
+   ],
+   "saint": "Florian von Lorch",
+   "day": "05-04",
+   "source": "rk"
+  },
+  {
+   "id": "gisela-05-07",
+   "name": "Gisela",
+   "variants": [
+    "Gisla"
+   ],
+   "saint": "Gisela von Ungarn",
+   "day": "05-07",
+   "source": "mr"
+  },
+  {
+   "id": "pankratius-05-12",
+   "name": "Pankratius",
+   "variants": [
+    "Pankraz"
+   ],
+   "saint": "Pankratius",
+   "day": "05-12",
+   "source": "rk"
+  },
+  {
+   "id": "matthias-05-14",
+   "name": "Matthias",
+   "variants": [
+    "Mathias",
+    "Matthis",
+    "Thies"
+   ],
+   "saint": "Matthias, Apostel",
+   "day": "05-14",
+   "source": "rk"
+  },
+  {
+   "id": "sophia-05-15",
+   "name": "Sophia",
+   "variants": [
+    "Sophie",
+    "Sofie",
+    "Sofia",
+    "Zofia",
+    "Sonja",
+    "Sonia"
+   ],
+   "saint": "Sophia von Rom",
+   "day": "05-15",
+   "source": "mr"
+  },
+  {
+   "id": "erich-05-18",
+   "name": "Erich",
+   "variants": [
+    "Erik"
+   ],
+   "saint": "Erich von Schweden",
+   "day": "05-18",
+   "source": "mr"
+  },
+  {
+   "id": "rita-05-22",
+   "name": "Rita",
+   "saint": "Rita von Cascia",
+   "day": "05-22",
+   "source": "mr"
+  },
+  {
+   "id": "julia-05-22",
+   "name": "Julia",
+   "variants": [
+    "Julie"
+   ],
+   "saint": "Julia von Korsika",
+   "day": "05-22",
+   "source": "mr"
+  },
+  {
+   "id": "philipp-05-26",
+   "name": "Philipp",
+   "variants": [
+    "Philippus",
+    "Philip",
+    "Filip"
+   ],
+   "saint": "Philipp Neri",
+   "day": "05-26",
+   "source": "rk"
+  },
+  {
+   "id": "ferdinand-05-30",
+   "name": "Ferdinand",
+   "variants": [
+    "Fernando"
+   ],
+   "saint": "Ferdinand III. von Kastilien",
+   "day": "05-30",
+   "source": "mr"
+  },
+  {
+   "id": "justin-06-01",
+   "name": "Justin",
+   "variants": [
+    "Justinus"
+   ],
+   "saint": "Justin der Märtyrer",
+   "day": "06-01",
+   "source": "rk"
+  },
+  {
+   "id": "bonifatius-06-05",
+   "name": "Bonifatius",
+   "variants": [
+    "Bonifaz"
+   ],
+   "saint": "Bonifatius",
+   "day": "06-05",
+   "source": "rk"
+  },
+  {
+   "id": "norbert-06-06",
+   "name": "Norbert",
+   "saint": "Norbert von Xanten",
+   "day": "06-06",
+   "source": "rk"
+  },
+  {
+   "id": "barnabas-06-11",
+   "name": "Barnabas",
+   "saint": "Barnabas, Apostel",
+   "day": "06-11",
+   "source": "rk"
+  },
+  {
+   "id": "antonius-06-13",
+   "name": "Antonius",
+   "variants": [
+    "Anton",
+    "Antonio",
+    "Tony",
+    "Toni"
+   ],
+   "saint": "Antonius von Padua",
+   "day": "06-13",
+   "usual": true,
+   "source": "rk"
+  },
+  {
+   "id": "vitus-06-15",
+   "name": "Vitus",
+   "variants": [
+    "Veit"
+   ],
+   "saint": "Vitus",
+   "day": "06-15",
+   "source": "mr"
+  },
+  {
+   "id": "benno-06-16",
+   "name": "Benno",
+   "saint": "Benno von Meißen",
+   "day": "06-16",
+   "source": "rk"
+  },
+  {
+   "id": "aloisius-06-21",
+   "name": "Aloisius",
+   "variants": [
+    "Alois",
+    "Luigi"
+   ],
+   "saint": "Aloisius von Gonzaga",
+   "day": "06-21",
+   "source": "rk"
+  },
+  {
+   "id": "thomas-06-22",
+   "name": "Thomas",
+   "variants": [
+    "Tomas",
+    "Tom"
+   ],
+   "saint": "Thomas Morus",
+   "day": "06-22",
+   "source": "rk"
+  },
+  {
+   "id": "johannes-06-24",
+   "name": "Johannes",
+   "variants": [
+    "Johann",
+    "Hans",
+    "Jan",
+    "Jean",
+    "Giovanni",
+    "Juan",
+    "John",
+    "Ivan",
+    "Iwan",
+    "Hannes",
+    "Jens",
+    "Joannes",
+    "Johan"
+   ],
+   "saint": "Geburt Johannes' des Täufers",
+   "day": "06-24",
+   "usual": true,
+   "source": "rk"
+  },
+  {
+   "id": "hemma-06-27",
+   "name": "Hemma",
+   "variants": [
+    "Hemma von Gurk"
+   ],
+   "saint": "Hemma von Gurk",
+   "day": "06-27",
+   "source": "rk"
+  },
+  {
+   "id": "irenaus-06-28",
+   "name": "Irenäus",
+   "variants": [
+    "Irenaeus"
+   ],
+   "saint": "Irenäus von Lyon",
+   "day": "06-28",
+   "source": "rk"
+  },
+  {
+   "id": "petrus-06-29",
+   "name": "Petrus",
+   "variants": [
+    "Peter",
+    "Pierre",
+    "Pedro",
+    "Pietro",
+    "Piet",
+    "Pjotr"
+   ],
+   "saint": "Petrus, Apostel",
+   "day": "06-29",
+   "source": "rk"
+  },
+  {
+   "id": "paul-06-29",
+   "name": "Paul",
+   "variants": [
+    "Paulus",
+    "Pavel",
+    "Pablo",
+    "Paolo"
+   ],
+   "saint": "Paulus, Apostel",
+   "day": "06-29",
+   "usual": true,
+   "source": "rk"
+  },
+  {
+   "id": "otto-07-02",
+   "name": "Otto",
+   "saint": "Otto von Bamberg",
+   "day": "07-02",
+   "source": "rk"
+  },
+  {
+   "id": "thomas-07-03",
+   "name": "Thomas",
+   "variants": [
+    "Tomas",
+    "Tom"
+   ],
+   "saint": "Thomas, Apostel",
+   "day": "07-03",
+   "usual": true,
+   "source": "rk"
+  },
+  {
+   "id": "ulrich-07-04",
+   "name": "Ulrich",
+   "variants": [
+    "Udalrich",
+    "Ulrik"
+   ],
+   "saint": "Ulrich von Augsburg",
+   "day": "07-04",
+   "source": "rk"
+  },
+  {
+   "id": "veronika-07-04",
+   "name": "Veronika",
+   "variants": [
+    "Veronica"
+   ],
+   "saint": "Veronika",
+   "day": "07-04",
+   "source": "mr"
+  },
+  {
+   "id": "kilian-07-08",
+   "name": "Kilian",
+   "saint": "Kilian",
+   "day": "07-08",
+   "source": "rk"
+  },
+  {
+   "id": "benedikt-07-11",
+   "name": "Benedikt",
+   "variants": [
+    "Benedict",
+    "Benedetto"
+   ],
+   "saint": "Benedikt von Nursia",
+   "day": "07-11",
+   "source": "rk"
+  },
+  {
+   "id": "heinrich-07-13",
+   "name": "Heinrich",
+   "variants": [
+    "Henry",
+    "Henri",
+    "Heiner",
+    "Heinz",
+    "Henrik",
+    "Enrico"
+   ],
+   "saint": "Heinrich II.",
+   "day": "07-13",
+   "source": "rk"
+  },
+  {
+   "id": "bonaventura-07-15",
+   "name": "Bonaventura",
+   "saint": "Bonaventura",
+   "day": "07-15",
+   "source": "rk"
+  },
+  {
+   "id": "friedrich-07-18",
+   "name": "Friedrich",
+   "variants": [
+    "Frederick",
+    "Fritz"
+   ],
+   "saint": "Friedrich von Utrecht",
+   "day": "07-18",
+   "source": "rk"
+  },
+  {
+   "id": "elias-07-20",
+   "name": "Elias",
+   "variants": [
+    "Elija",
+    "Elia",
+    "Elijah"
+   ],
+   "saint": "Elija, Prophet",
+   "day": "07-20",
+   "source": "mr"
+  },
+  {
+   "id": "margareta-07-20",
+   "name": "Margareta",
+   "variants": [
+    "Margarete",
+    "Margarita",
+    "Margit",
+    "Marguerite",
+    "Margaretha",
+    "Greta",
+    "Grete",
+    "Gretel"
+   ],
+   "saint": "Margareta von Antiochien",
+   "day": "07-20",
+   "source": "rk"
+  },
+  {
+   "id": "maria-magdalena-07-22",
+   "name": "Maria Magdalena",
+   "variants": [
+    "Magdalena",
+    "Magdalene",
+    "Madeleine"
+   ],
+   "saint": "Maria Magdalena",
+   "day": "07-22",
+   "source": "rk"
+  },
+  {
+   "id": "birgitta-07-23",
+   "name": "Birgitta",
+   "variants": [
+    "Brigitte",
+    "Brigitta",
+    "Birgit",
+    "Britta",
+    "Bridget"
+   ],
+   "saint": "Birgitta von Schweden",
+   "day": "07-23",
+   "source": "rk"
+  },
+  {
+   "id": "liborius-07-23",
+   "name": "Liborius",
+   "saint": "Liborius",
+   "day": "07-23",
+   "source": "rk"
+  },
+  {
+   "id": "christophorus-07-24",
+   "name": "Christophorus",
+   "variants": [
+    "Christoph",
+    "Christopher",
+    "Kristof"
+   ],
+   "saint": "Christophorus",
+   "day": "07-24",
+   "source": "mr"
+  },
+  {
+   "id": "jakobus-07-25",
+   "name": "Jakobus",
+   "variants": [
+    "Jakob",
+    "Jacob",
+    "James",
+    "Jacques",
+    "Santiago"
+   ],
+   "saint": "Jakobus der Ältere, Apostel",
+   "day": "07-25",
+   "usual": true,
+   "source": "rk"
+  },
+  {
+   "id": "anna-07-26",
+   "name": "Anna",
+   "variants": [
+    "Anne",
+    "Hanna",
+    "Hannah",
+    "Anni",
+    "Anja",
+    "Annika",
+    "Annette",
+    "Ana"
+   ],
+   "saint": "Anna, Mutter Marias",
+   "day": "07-26",
+   "usual": true,
+   "source": "rk"
+  },
+  {
+   "id": "joachim-07-26",
+   "name": "Joachim",
+   "variants": [
+    "Jochen"
+   ],
+   "saint": "Joachim, Vater Marias",
+   "day": "07-26",
+   "source": "rk"
+  },
+  {
+   "id": "martha-07-29",
+   "name": "Martha",
+   "variants": [
+    "Marta"
+   ],
+   "saint": "Martha von Betanien",
+   "day": "07-29",
+   "source": "rk"
+  },
+  {
+   "id": "ignatius-07-31",
+   "name": "Ignatius",
+   "variants": [
+    "Ignaz",
+    "Ignacio"
+   ],
+   "saint": "Ignatius von Loyola",
+   "day": "07-31",
+   "source": "rk"
+  },
+  {
+   "id": "alfons-08-01",
+   "name": "Alfons",
+   "variants": [
+    "Alphons",
+    "Alfonso"
+   ],
+   "saint": "Alfons Maria von Liguori",
+   "day": "08-01",
+   "source": "rk"
+  },
+  {
+   "id": "lydia-08-03",
+   "name": "Lydia",
+   "saint": "Lydia",
+   "day": "08-03",
+   "source": "mr"
+  },
+  {
+   "id": "kajetan-08-07",
+   "name": "Kajetan",
+   "variants": [
+    "Gaetano"
+   ],
+   "saint": "Kajetan von Thiene",
+   "day": "08-07",
+   "source": "rk"
+  },
+  {
+   "id": "dominikus-08-08",
+   "name": "Dominikus",
+   "variants": [
+    "Dominik",
+    "Dominic",
+    "Domenico"
+   ],
+   "saint": "Dominikus",
+   "day": "08-08",
+   "source": "rk"
+  },
+  {
+   "id": "edith-08-09",
+   "name": "Edith",
+   "variants": [
+    "Teresia Benedicta"
+   ],
+   "saint": "Edith Stein",
+   "day": "08-09",
+   "source": "rk"
+  },
+  {
+   "id": "laurentius-08-10",
+   "name": "Laurentius",
+   "variants": [
+    "Lorenz",
+    "Laurenz",
+    "Lawrence",
+    "Lorenzo"
+   ],
+   "saint": "Laurentius von Rom",
+   "day": "08-10",
+   "usual": true,
+   "source": "rk"
+  },
+  {
+   "id": "klara-08-11",
+   "name": "Klara",
+   "variants": [
+    "Clara",
+    "Chiara",
+    "Claire"
+   ],
+   "saint": "Klara von Assisi",
+   "day": "08-11",
+   "source": "rk"
+  },
+  {
+   "id": "susanna-08-11",
+   "name": "Susanna",
+   "variants": [
+    "Susanne",
+    "Suzanne",
+    "Sanne"
+   ],
+   "saint": "Susanna",
+   "day": "08-11",
+   "source": "rk"
+  },
+  {
+   "id": "maximilian-08-14",
+   "name": "Maximilian",
+   "variants": [
+    "Max",
+    "Maxim"
+   ],
+   "saint": "Maximilian Maria Kolbe",
+   "day": "08-14",
+   "source": "rk"
+  },
+  {
+   "id": "maria-08-15",
+   "name": "Maria",
+   "variants": [
+    "Marie",
+    "Marija",
+    "Mary"
+   ],
+   "saint": "Mariä Aufnahme in den Himmel",
+   "day": "08-15",
+   "usual": true,
+   "source": "rk"
+  },
+  {
+   "id": "stephan-08-16",
+   "name": "Stephan",
+   "variants": [
+    "Stefan",
+    "Stephen"
+   ],
+   "saint": "Stephan von Ungarn",
+   "day": "08-16",
+   "source": "rk"
+  },
+  {
+   "id": "helena-08-18",
+   "name": "Helena",
+   "variants": [
+    "Helene",
+    "Elena"
+   ],
+   "saint": "Helena",
+   "day": "08-18",
+   "source": "rk"
+  },
+  {
+   "id": "bernhard-08-20",
+   "name": "Bernhard",
+   "variants": [
+    "Bernard",
+    "Bernd",
+    "Bernardo",
+    "Bernt"
+   ],
+   "saint": "Bernhard von Clairvaux",
+   "day": "08-20",
+   "source": "rk"
+  },
+  {
+   "id": "pius-08-21",
+   "name": "Pius",
+   "variants": [
+    "Pio"
+   ],
+   "saint": "Pius X.",
+   "day": "08-21",
+   "source": "rk"
+  },
+  {
+   "id": "rosa-08-23",
+   "name": "Rosa",
+   "variants": [
+    "Rose"
+   ],
+   "saint": "Rosa von Lima",
+   "day": "08-23",
+   "source": "rk"
+  },
+  {
+   "id": "bartholomaus-08-24",
+   "name": "Bartholomäus",
+   "variants": [
+    "Bartholomew",
+    "Bartolomeo"
+   ],
+   "saint": "Bartholomäus, Apostel",
+   "day": "08-24",
+   "source": "rk"
+  },
+  {
+   "id": "ludwig-08-25",
+   "name": "Ludwig",
+   "variants": [
+    "Louis",
+    "Luis",
+    "Lewis",
+    "Ludovic"
+   ],
+   "saint": "Ludwig IX. von Frankreich",
+   "day": "08-25",
+   "source": "rk"
+  },
+  {
+   "id": "monika-08-27",
+   "name": "Monika",
+   "variants": [
+    "Monica"
+   ],
+   "saint": "Monika",
+   "day": "08-27",
+   "source": "rk"
+  },
+  {
+   "id": "augustinus-08-28",
+   "name": "Augustinus",
+   "variants": [
+    "Augustin",
+    "Augustine",
+    "Agostino"
+   ],
+   "saint": "Augustinus von Hippo",
+   "day": "08-28",
+   "source": "rk"
+  },
+  {
+   "id": "sabine-08-29",
+   "name": "Sabine",
+   "variants": [
+    "Sabina"
+   ],
+   "saint": "Sabina",
+   "day": "08-29",
+   "source": "mr"
+  },
+  {
+   "id": "agidius-09-01",
+   "name": "Ägidius",
+   "variants": [
+    "Egidius",
+    "Egid"
+   ],
+   "saint": "Ägidius",
+   "day": "09-01",
+   "source": "mr"
+  },
+  {
+   "id": "gregor-09-03",
+   "name": "Gregor",
+   "variants": [
+    "Gregorius",
+    "Grigori",
+    "Gregory"
+   ],
+   "saint": "Gregor der Große",
+   "day": "09-03",
+   "usual": true,
+   "source": "rk"
+  },
+  {
+   "id": "ida-09-04",
+   "name": "Ida",
+   "saint": "Ida von Herzfeld",
+   "day": "09-04",
+   "source": "mr"
+  },
+  {
+   "id": "teresa-09-05",
+   "name": "Teresa",
+   "variants": [
+    "Theresa",
+    "Mutter Teresa"
+   ],
+   "saint": "Mutter Teresa von Kalkutta",
+   "day": "09-05",
+   "source": "rk"
+  },
+  {
+   "id": "magnus-09-06",
+   "name": "Magnus",
+   "saint": "Magnus von Füssen",
+   "day": "09-06",
+   "source": "rk"
+  },
+  {
+   "id": "regina-09-07",
+   "name": "Regina",
+   "saint": "Regina",
+   "day": "09-07",
+   "source": "mr"
+  },
+  {
+   "id": "cornelius-09-16",
+   "name": "Cornelius",
+   "variants": [
+    "Kornelius",
+    "Cornelia"
+   ],
+   "saint": "Cornelius",
+   "day": "09-16",
+   "source": "rk"
+  },
+  {
+   "id": "zyprian-09-16",
+   "name": "Zyprian",
+   "variants": [
+    "Cyprian"
+   ],
+   "saint": "Cyprian von Karthago",
+   "day": "09-16",
+   "source": "rk"
+  },
+  {
+   "id": "hildegard-09-17",
+   "name": "Hildegard",
+   "variants": [
+    "Hildegarde"
+   ],
+   "saint": "Hildegard von Bingen",
+   "day": "09-17",
+   "source": "rk"
+  },
+  {
+   "id": "lambert-09-17",
+   "name": "Lambert",
+   "variants": [
+    "Lambertus"
+   ],
+   "saint": "Lambert von Maastricht",
+   "day": "09-17",
+   "source": "rk"
+  },
+  {
+   "id": "januarius-09-19",
+   "name": "Januarius",
+   "variants": [
+    "Gennaro"
+   ],
+   "saint": "Januarius",
+   "day": "09-19",
+   "source": "rk"
+  },
+  {
+   "id": "matthaus-09-21",
+   "name": "Matthäus",
+   "variants": [
+    "Matthew",
+    "Mattäus"
+   ],
+   "saint": "Matthäus, Apostel und Evangelist",
+   "day": "09-21",
+   "source": "rk"
+  },
+  {
+   "id": "jona-09-21",
+   "name": "Jona",
+   "variants": [
+    "Jonas",
+    "Jonah"
+   ],
+   "saint": "Jona, Prophet",
+   "day": "09-21",
+   "source": "mr"
+  },
+  {
+   "id": "mauritius-09-22",
+   "name": "Mauritius",
+   "variants": [
+    "Moritz",
+    "Maurice"
+   ],
+   "saint": "Mauritius",
+   "day": "09-22",
+   "source": "mr"
+  },
+  {
+   "id": "thekla-09-23",
+   "name": "Thekla",
+   "variants": [
+    "Tecla"
+   ],
+   "saint": "Thekla",
+   "day": "09-23",
+   "source": "mr"
+  },
+  {
+   "id": "rupert-09-24",
+   "name": "Rupert",
+   "variants": [
+    "Ruprecht"
+   ],
+   "saint": "Rupert von Salzburg",
+   "day": "09-24",
+   "source": "rk"
+  },
+  {
+   "id": "kosmas-09-26",
+   "name": "Kosmas",
+   "variants": [
+    "Cosmas"
+   ],
+   "saint": "Kosmas",
+   "day": "09-26",
+   "source": "rk"
+  },
+  {
+   "id": "damian-09-26",
+   "name": "Damian",
+   "variants": [
+    "Damianus"
+   ],
+   "saint": "Damian",
+   "day": "09-26",
+   "source": "rk"
+  },
+  {
+   "id": "vinzenz-09-27",
+   "name": "Vinzenz",
+   "variants": [
+    "Vincenz",
+    "Vincent",
+    "Vinzent",
+    "Vicente"
+   ],
+   "saint": "Vinzenz von Paul",
+   "day": "09-27",
+   "usual": true,
+   "source": "rk"
+  },
+  {
+   "id": "wenzel-09-28",
+   "name": "Wenzel",
+   "variants": [
+    "Wenzeslaus",
+    "Vaclav"
+   ],
+   "saint": "Wenzel von Böhmen",
+   "day": "09-28",
+   "source": "rk"
+  },
+  {
+   "id": "lioba-09-28",
+   "name": "Lioba",
+   "variants": [
+    "Leoba"
+   ],
+   "saint": "Lioba",
+   "day": "09-28",
+   "source": "rk"
+  },
+  {
+   "id": "michael-09-29",
+   "name": "Michael",
+   "variants": [
+    "Michel",
+    "Michele",
+    "Mike",
+    "Michi",
+    "Michal",
+    "Michaël"
+   ],
+   "saint": "Michael, Erzengel",
+   "day": "09-29",
+   "source": "rk"
+  },
+  {
+   "id": "gabriel-09-29",
+   "name": "Gabriel",
+   "variants": [
+    "Gabriele"
+   ],
+   "saint": "Gabriel, Erzengel",
+   "day": "09-29",
+   "source": "rk"
+  },
+  {
+   "id": "raphael-09-29",
+   "name": "Raphael",
+   "variants": [
+    "Rafael"
+   ],
+   "saint": "Raphael, Erzengel",
+   "day": "09-29",
+   "source": "rk"
+  },
+  {
+   "id": "hieronymus-09-30",
+   "name": "Hieronymus",
+   "variants": [
+    "Jerome"
+   ],
+   "saint": "Hieronymus",
+   "day": "09-30",
+   "source": "rk"
+  },
+  {
+   "id": "theresia-10-01",
+   "name": "Theresia",
+   "variants": [
+    "Therese",
+    "Thérèse",
+    "Teresia",
+    "Resi",
+    "Theres"
+   ],
+   "saint": "Theresia vom Kinde Jesu",
+   "day": "10-01",
+   "source": "rk"
+  },
+  {
+   "id": "franz-10-04",
+   "name": "Franz",
+   "variants": [
+    "Franziskus",
+    "Francesco",
+    "Francis"
+   ],
+   "saint": "Franz von Assisi",
+   "day": "10-04",
+   "usual": true,
+   "source": "rk"
+  },
+  {
+   "id": "bruno-10-06",
+   "name": "Bruno",
+   "saint": "Bruno der Kartäuser",
+   "day": "10-06",
+   "source": "rk"
+  },
+  {
+   "id": "dionysius-10-09",
+   "name": "Dionysius",
+   "variants": [
+    "Dionys",
+    "Denis",
+    "Dennis"
+   ],
+   "saint": "Dionysius",
+   "day": "10-09",
+   "source": "rk"
+  },
+  {
+   "id": "viktor-10-10",
+   "name": "Viktor",
+   "variants": [
+    "Victor"
+   ],
+   "saint": "Viktor von Xanten",
+   "day": "10-10",
+   "source": "rk"
+  },
+  {
+   "id": "kallistus-10-14",
+   "name": "Kallistus",
+   "variants": [
+    "Calixtus"
+   ],
+   "saint": "Kallistus I.",
+   "day": "10-14",
+   "source": "rk"
+  },
+  {
+   "id": "teresa-10-15",
+   "name": "Teresa",
+   "variants": [
+    "Theresa"
+   ],
+   "saint": "Teresa von Ávila",
+   "day": "10-15",
+   "usual": true,
+   "source": "rk"
+  },
+  {
+   "id": "hedwig-10-16",
+   "name": "Hedwig",
+   "variants": [
+    "Hedwiga"
+   ],
+   "saint": "Hedwig von Andechs",
+   "day": "10-16",
+   "source": "rk"
+  },
+  {
+   "id": "gerhard-10-16",
+   "name": "Gerhard",
+   "variants": [
+    "Gerd",
+    "Gert",
+    "Gerard"
+   ],
+   "saint": "Gerhard Majella",
+   "day": "10-16",
+   "source": "rk"
+  },
+  {
+   "id": "gallus-10-16",
+   "name": "Gallus",
+   "saint": "Gallus",
+   "day": "10-16",
+   "source": "rk"
+  },
+  {
+   "id": "lukas-10-18",
+   "name": "Lukas",
+   "variants": [
+    "Luke",
+    "Lucas",
+    "Luca",
+    "Luc"
+   ],
+   "saint": "Lukas, Evangelist",
+   "day": "10-18",
+   "source": "rk"
+  },
+  {
+   "id": "ursula-10-21",
+   "name": "Ursula",
+   "saint": "Ursula",
+   "day": "10-21",
+   "source": "mr"
+  },
+  {
+   "id": "salome-10-22",
+   "name": "Salome",
+   "saint": "Salome",
+   "day": "10-22",
+   "source": "mr"
+  },
+  {
+   "id": "severin-10-23",
+   "name": "Severin",
+   "variants": [
+    "Severinus"
+   ],
+   "saint": "Severin von Köln",
+   "day": "10-23",
+   "source": "rk"
+  },
+  {
+   "id": "simon-10-28",
+   "name": "Simon",
+   "variants": [
+    "Simeon"
+   ],
+   "saint": "Simon, Apostel",
+   "day": "10-28",
+   "source": "rk"
+  },
+  {
+   "id": "thaddaus-10-28",
+   "name": "Thaddäus",
+   "variants": [
+    "Judas",
+    "Jude"
+   ],
+   "saint": "Judas Thaddäus, Apostel",
+   "day": "10-28",
+   "source": "rk"
+  },
+  {
+   "id": "wolfgang-10-31",
+   "name": "Wolfgang",
+   "saint": "Wolfgang von Regensburg",
+   "day": "10-31",
+   "source": "rk"
+  },
+  {
+   "id": "hubert-11-03",
+   "name": "Hubert",
+   "variants": [
+    "Hubertus"
+   ],
+   "saint": "Hubertus von Lüttich",
+   "day": "11-03",
+   "source": "rk"
+  },
+  {
+   "id": "karl-11-04",
+   "name": "Karl",
+   "variants": [
+    "Carl",
+    "Charles",
+    "Carlo",
+    "Carlos"
+   ],
+   "saint": "Karl Borromäus",
+   "day": "11-04",
+   "usual": true,
+   "source": "rk"
+  },
+  {
+   "id": "zacharias-11-05",
+   "name": "Zacharias",
+   "variants": [
+    "Zacharia"
+   ],
+   "saint": "Zacharias",
+   "day": "11-05",
+   "source": "mr"
+  },
+  {
+   "id": "leonhard-11-06",
+   "name": "Leonhard",
+   "variants": [
+    "Leonard"
+   ],
+   "saint": "Leonhard von Limoges",
+   "day": "11-06",
+   "source": "mr"
+  },
+  {
+   "id": "willibrord-11-07",
+   "name": "Willibrord",
+   "saint": "Willibrord",
+   "day": "11-07",
+   "source": "rk"
+  },
+  {
+   "id": "engelbert-11-07",
+   "name": "Engelbert",
+   "saint": "Engelbert von Köln",
+   "day": "11-07",
+   "source": "rk"
+  },
+  {
+   "id": "leo-11-10",
+   "name": "Leo",
+   "variants": [
+    "Leon"
+   ],
+   "saint": "Leo der Große",
+   "day": "11-10",
+   "usual": true,
+   "source": "rk"
+  },
+  {
+   "id": "martin-11-11",
+   "name": "Martin",
+   "variants": [
+    "Martinus",
+    "Martino",
+    "Merten"
+   ],
+   "saint": "Martin von Tours",
+   "day": "11-11",
+   "source": "rk"
+  },
+  {
+   "id": "albert-11-15",
+   "name": "Albert",
+   "variants": [
+    "Albertus"
+   ],
+   "saint": "Albert der Große",
+   "day": "11-15",
+   "source": "rk"
+  },
+  {
+   "id": "gertrud-11-16",
+   "name": "Gertrud",
+   "variants": [
+    "Gertraud"
+   ],
+   "saint": "Gertrud von Helfta",
+   "day": "11-16",
+   "source": "rk"
+  },
+  {
+   "id": "otmar-11-16",
+   "name": "Otmar",
+   "variants": [
+    "Othmar"
+   ],
+   "saint": "Otmar",
+   "day": "11-16",
+   "source": "rk"
+  },
+  {
+   "id": "elisabeth-11-19",
+   "name": "Elisabeth",
+   "variants": [
+    "Elisabet",
+    "Elizabeth",
+    "Elsa",
+    "Else",
+    "Elise",
+    "Lisa",
+    "Lisbeth",
+    "Liese",
+    "Lisette",
+    "Isabel",
+    "Isabella",
+    "Isabelle",
+    "Ella",
+    "Elli",
+    "Betty"
+   ],
+   "saint": "Elisabeth von Thüringen",
+   "day": "11-19",
+   "source": "rk"
+  },
+  {
+   "id": "bernward-11-20",
+   "name": "Bernward",
+   "saint": "Bernward von Hildesheim",
+   "day": "11-20",
+   "source": "rk"
+  },
+  {
+   "id": "cacilia-11-22",
+   "name": "Cäcilia",
+   "variants": [
+    "Cecilia",
+    "Cecilie",
+    "Zäzilia",
+    "Cecile",
+    "Caecilia",
+    "Silke"
+   ],
+   "saint": "Cäcilia",
+   "day": "11-22",
+   "source": "rk"
+  },
+  {
+   "id": "klemens-11-23",
+   "name": "Klemens",
+   "variants": [
+    "Clemens",
+    "Clement"
+   ],
+   "saint": "Klemens I.",
+   "day": "11-23",
+   "source": "rk"
+  },
+  {
+   "id": "kolumban-11-23",
+   "name": "Kolumban",
+   "variants": [
+    "Columban"
+   ],
+   "saint": "Kolumban",
+   "day": "11-23",
+   "source": "rk"
+  },
+  {
+   "id": "katharina-11-25",
+   "name": "Katharina",
+   "variants": [
+    "Katherina",
+    "Katarina",
+    "Catharina",
+    "Catherine",
+    "Kathrin",
+    "Katrin",
+    "Katja",
+    "Käthe",
+    "Karin",
+    "Kathi",
+    "Kati",
+    "Caterina",
+    "Cathrin",
+    "Karina"
+   ],
+   "saint": "Katharina von Alexandrien",
+   "day": "11-25",
+   "usual": true,
+   "source": "rk"
+  },
+  {
+   "id": "konrad-11-26",
+   "name": "Konrad",
+   "variants": [
+    "Conrad",
+    "Kurt"
+   ],
+   "saint": "Konrad von Konstanz",
+   "day": "11-26",
+   "source": "rk"
+  },
+  {
+   "id": "virgil-11-27",
+   "name": "Virgil",
+   "variants": [
+    "Virgilius"
+   ],
+   "saint": "Virgil von Salzburg",
+   "day": "11-27",
+   "source": "rk"
+  },
+  {
+   "id": "andreas-11-30",
+   "name": "Andreas",
+   "variants": [
+    "Andrew",
+    "André",
+    "Andre",
+    "Andrea",
+    "Andy",
+    "Andrej"
+   ],
+   "saint": "Andreas, Apostel",
+   "day": "11-30",
+   "source": "rk"
+  },
+  {
+   "id": "franz-12-03",
+   "name": "Franz",
+   "variants": [
+    "Franziskus"
+   ],
+   "saint": "Franz Xaver",
+   "day": "12-03",
+   "source": "rk"
+  },
+  {
+   "id": "xaver-12-03",
+   "name": "Xaver",
+   "variants": [
+    "Javier",
+    "Xavier"
+   ],
+   "saint": "Franz Xaver",
+   "day": "12-03",
+   "source": "rk"
+  },
+  {
+   "id": "barbara-12-04",
+   "name": "Barbara",
+   "variants": [
+    "Bärbel",
+    "Barbora"
+   ],
+   "saint": "Barbara",
+   "day": "12-04",
+   "source": "rk"
+  },
+  {
+   "id": "nikolaus-12-06",
+   "name": "Nikolaus",
+   "variants": [
+    "Niklas",
+    "Nicolas",
+    "Nikolas",
+    "Klaus",
+    "Claus",
+    "Nicola",
+    "Niko",
+    "Nico",
+    "Nick",
+    "Nils"
+   ],
+   "saint": "Nikolaus von Myra",
+   "day": "12-06",
+   "source": "rk"
+  },
+  {
+   "id": "ambrosius-12-07",
+   "name": "Ambrosius",
+   "variants": [
+    "Ambros",
+    "Ambrose"
+   ],
+   "saint": "Ambrosius von Mailand",
+   "day": "12-07",
+   "source": "rk"
+  },
+  {
+   "id": "johanna-12-12",
+   "name": "Johanna",
+   "variants": [
+    "Jeanne",
+    "Joanna"
+   ],
+   "saint": "Johanna Franziska von Chantal",
+   "day": "12-12",
+   "source": "rk"
+  },
+  {
+   "id": "luzia-12-13",
+   "name": "Luzia",
+   "variants": [
+    "Lucia",
+    "Lucie"
+   ],
+   "saint": "Luzia von Syrakus",
+   "day": "12-13",
+   "source": "rk"
+  },
+  {
+   "id": "odilia-12-13",
+   "name": "Odilia",
+   "variants": [
+    "Odile"
+   ],
+   "saint": "Odilia",
+   "day": "12-13",
+   "source": "rk"
+  },
+  {
+   "id": "adelheid-12-16",
+   "name": "Adelheid",
+   "variants": [
+    "Adelaide"
+   ],
+   "saint": "Adelheid von Burgund",
+   "day": "12-16",
+   "source": "rk"
+  },
+  {
+   "id": "stephanus-12-26",
+   "name": "Stephanus",
+   "variants": [
+    "Stephan",
+    "Stefan",
+    "Stephen",
+    "Stefanie",
+    "Stephanie"
+   ],
+   "saint": "Stephanus, erster Märtyrer",
+   "day": "12-26",
+   "usual": true,
+   "source": "rk"
+  },
+  {
+   "id": "johannes-12-27",
+   "name": "Johannes",
+   "variants": [
+    "Johann",
+    "Hans",
+    "Jan",
+    "Jean",
+    "Giovanni",
+    "Juan",
+    "John",
+    "Ivan",
+    "Iwan",
+    "Hannes",
+    "Jens",
+    "Joannes",
+    "Johan"
+   ],
+   "saint": "Johannes, Apostel und Evangelist",
+   "day": "12-27",
+   "source": "rk"
+  },
+  {
+   "id": "david-12-29",
+   "name": "David",
+   "variants": [
+    "Davide",
+    "Dawid"
+   ],
+   "saint": "David, König",
+   "day": "12-29",
+   "source": "mr"
+  },
+  {
+   "id": "silvester-12-31",
+   "name": "Silvester",
+   "variants": [
+    "Sylvester",
+    "Sylvestre"
+   ],
+   "saint": "Silvester I.",
+   "day": "12-31",
+   "source": "rk"
+  },
+  {
+   "id": "melanie-12-31",
+   "name": "Melanie",
+   "variants": [
+    "Melania"
+   ],
+   "saint": "Melania die Jüngere",
+   "day": "12-31",
+   "source": "mr"
+  }
+ ]
+}

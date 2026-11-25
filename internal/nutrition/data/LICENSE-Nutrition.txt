@@ -1,0 +1,17 @@
+Nutrition values of Hejmo (internal/nutrition/data/foods.tsv.gz)
+
+Contains data from the Bundeslebensmittelschlüssel (BLS), Version 4.0, German Nutrient Database:
+Max Rubner-Institut (2025): Bundeslebensmittelschlüssel (BLS), Version 4.0 - Deutsche Nährstoffdatenbank. Karlsruhe.
+DOI: 10.25826/Data20251217-134202-0. Publisher: Max Rubner-Institut (MRI), Karlsruhe. https://blsdb.de
+Licence: Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/legalcode
+Changes: reduced to the seven values of the EU nutrition declaration per 100 g edible portion (energy in kJ and kcal, fat,
+saturated fat, available carbohydrate, sugars, protein, salt) and the food names; values in the data file are kept as given.
+
+Contains data from USDA FoodData Central (Foundation Foods, SR Legacy): U.S. Department of Agriculture, Agricultural
+Research Service. https://fdc.nal.usda.gov
+Licence: CC0 1.0 Universal (public domain), https://creativecommons.org/publicdomain/zero/1.0/
+Changes: reduced to the same seven values and the food names. Salt is sodium x 2.5; carbohydrate is "by summation" where
+given, otherwise "by difference" less fibre where given; where only one of kJ and kcal is given the other is calculated
+(1 kcal = 4.184 kJ). A value the source does not give is left empty, never set to 0.
+
+The files are made by tools/foodlist from the files of the sources; they are not part of this repository.

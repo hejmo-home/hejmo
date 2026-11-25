@@ -1,0 +1,168 @@
+{
+  "n": 92,
+  "slug": "kaspressknoedel",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 45,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/kaspressknoedel-83524.html",
+    "site": "Lecker",
+    "ratings": 51
+  },
+  "ingredients": [
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Brötchen, altbacken",
+      "article_en": "Day-old bread rolls",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Bergkäse",
+      "article_en": "Mountain cheese",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Bund",
+      "article_de": "Petersilie, glatt",
+      "article_en": "Flat-leaf parsley",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Bund",
+      "article_de": "Schnittlauch",
+      "article_en": "Chives",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 125,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": "zum Braten, reichlich",
+      "note_en": "for frying, plenty"
+    }
+  ],
+  "de": {
+    "title": "Kaspressknödel",
+    "steps": [
+      "Schneide die Brötchen klein, raspele den Bergkäse und zerkleinere Petersilie und Schnittlauch. Alles kommt in eine große Schüssel.",
+      "Hacke die Zwiebel fein und brate sie in der Butter, bis sie glasig ist. Lösche sie mit der Milch ab und gib sie noch lauwarm zum Brot-Käse-Gemisch.",
+      "Rühre Eier, Pfeffer und eine kräftige Prise Salz unter und knete die Masse zum Schluss mit den Händen durch. Forme daraus mit feuchten Händen 8 flache Laibchen.",
+      "Erhitze reichlich Öl in einer Pfanne und brate die Knödel bei mittlerer Temperatur, bis jede Seite goldbraun ist. Lege sie danach auf Küchenpapier."
+    ]
+  },
+  "en": {
+    "title": "Kaspressknödel (pan-pressed cheese dumplings)",
+    "steps": [
+      "Chop the rolls small, shred the mountain cheese and finely chop the parsley and chives. Everything goes into a large bowl.",
+      "Chop the onion finely and cook it in the butter until translucent. Deglaze with the milk and add it, still lukewarm, to the bread and cheese mixture.",
+      "Stir in the eggs, pepper and a good pinch of salt and finish by kneading the mixture with your hands. With wet hands, shape it into 8 flat patties.",
+      "Heat plenty of oil in a pan and fry the dumplings over medium heat until each side is golden brown. Then lay them on kitchen paper."
+    ],
+    "amounts_converted": [
+      {
+        "index": 2,
+        "amount": 0.5,
+        "unit": "bunch"
+      },
+      {
+        "index": 3,
+        "amount": 0.5,
+        "unit": "bunch"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 3,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Replacement for missing time in the previous source, approved by the product owner 23/11/2026. Replaces the earlier replacement (Essen & Trinken, Kaspressknödel mit Spitzkohl): that recipe gave no weight for the pointed cabbage and had a low rating (3.1). This one is plain Kaspressknödel with full weights, 51 ratings (4.5 of 5) and 4 servings (8 flat dumplings). The frying oil has no quantity in the source ('plenty'); a reviewer should set a sensible amount. The source does not state an oven or warming step.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

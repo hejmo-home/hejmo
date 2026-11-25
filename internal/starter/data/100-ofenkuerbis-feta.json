@@ -1,0 +1,127 @@
+{
+  "n": 100,
+  "slug": "ofenkuerbis-feta",
+  "category": "Hauptgerichte",
+  "servings": 2,
+  "time_minutes": 40,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.essen-und-trinken.de/rezepte/kuerbis-aus-dem-ofen-mit-feta-rezept-13578558.html",
+    "site": "Essen & Trinken",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Hokkaido-Kürbis",
+      "article_en": "Hokkaido pumpkin",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 6,
+      "unit": "Stiel",
+      "article_de": "Thymian",
+      "article_en": "Thyme",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Feta",
+      "article_en": "Feta",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Rapsöl",
+      "article_en": "Rapeseed oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Ofenkürbis mit Feta",
+    "steps": [
+      "Ofen auf 210 °C Ober-/Unterhitze (200 °C Umluft) vorheizen. Den Rost auf die zweite Schiene von unten setzen.",
+      "Kürbis waschen, halbieren und alle Kerne entfernen. Hokkaido kannst du mit Schale essen. Das Fruchtfleisch in etwa 2 cm dicke Spalten schneiden.",
+      "Knoblauch hacken, Thymianblättchen von den Stielen zupfen. Feta in 2 cm große Würfel schneiden.",
+      "Kürbis mit der Hälfte des Öls, Knoblauch, Salz und Pfeffer in einer Schüssel mischen und auf einem Blech mit Backpapier verteilen.",
+      "Feta mit dem restlichen Öl, Thymian und etwas Salz mischen und obenauf auf den Kürbis legen.",
+      "25 Minuten im heißen Ofen backen."
+    ]
+  },
+  "en": {
+    "title": "Roast pumpkin with feta",
+    "steps": [
+      "Preheat the oven to 210 °C top/bottom heat (200 °C fan). Put the rack on the second level from the bottom.",
+      "Wash the pumpkin, halve it and remove all the seeds. You can eat Hokkaido with the skin. Cut the flesh into wedges about 2 cm thick.",
+      "Chop the garlic and pick the thyme leaves from the stems. Cut the feta into 2 cm cubes.",
+      "Mix the pumpkin with half of the oil, garlic, salt and pepper in a bowl and spread it on a tray with baking paper.",
+      "Mix the feta with the remaining oil, thyme and a little salt and place it on top of the pumpkin.",
+      "Bake in the hot oven for 25 minutes."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 2,
+        "amount": 6,
+        "unit": "sprig"
+      },
+      {
+        "index": 4,
+        "amount": 4,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Ratings shown on page: 5; list says Redaktionsküche. Steps rewritten in own words on 23/11/2026 from the source steps (times, temperatures and order per source). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

@@ -14,6 +14,8 @@ import (
 type screen struct {
 	b      *box
 	client *http.Client
+	// ua is the User-Agent the screen sends, when set (a personal device that is a tablet, ticket 301).
+	ua string
 }
 
 func newScreen(b *box) *screen { return &screen{b: b, client: b.trustingClient()} }
@@ -23,6 +25,9 @@ func (s *screen) get(path string, lang string) resp {
 	req, _ := http.NewRequest(http.MethodGet, s.b.srv.URL+path, nil)
 	if lang != "" {
 		req.Header.Set("Accept-Language", lang)
+	}
+	if s.ua != "" {
+		req.Header.Set("User-Agent", s.ua)
 	}
 	res, err := s.client.Do(req)
 	if err != nil {

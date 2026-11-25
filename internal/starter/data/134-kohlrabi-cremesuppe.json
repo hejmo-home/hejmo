@@ -1,0 +1,195 @@
+{
+  "n": 134,
+  "slug": "kohlrabi-cremesuppe",
+  "category": "Suppen",
+  "servings": 4,
+  "time_minutes": 40,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/kohlrabi-creme-suppe-26348.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel, mittelgroß",
+      "article_en": "Onion, medium",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Kohlrabi",
+      "article_en": "Kohlrabi",
+      "note_de": "à ca. 150 g",
+      "note_en": "about 150 g each"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Kartoffel, mittelgroß",
+      "article_en": "Potato, medium",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Butter oder Margarine",
+      "article_en": "Butter or margarine",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 600,
+      "unit": "ml",
+      "article_de": "Gemüsebrühe",
+      "article_en": "Vegetable stock",
+      "note_de": "instant",
+      "note_en": "instant"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Schlagsahne",
+      "article_en": "Whipping cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Cayennepfeffer",
+      "article_en": "Cayenne pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Stk",
+      "article_de": "Zitrone",
+      "article_en": "Lemon",
+      "note_de": "Saft",
+      "note_en": "juice"
+    },
+    {
+      "amount": 2,
+      "unit": "Scheibe",
+      "article_de": "Toastbrot",
+      "article_en": "Toast bread",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Beet",
+      "article_de": "Kresse",
+      "article_en": "Cress",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Kohlrabi-Cremesuppe mit Croûtons",
+    "steps": [
+      "Die Zwiebel würfeln. Einen Kohlrabi und die Kartoffel schälen und in Würfel schneiden. Den zweiten Kohlrabi schälen, in dünne Stifte schneiden und beiseitestellen.",
+      "Butter im Topf bei niedriger Hitze zerlassen. Zwiebel, Kohlrabi- und Kartoffelwürfel darin andünsten, ohne dass sie Farbe nehmen.",
+      "Brühe angießen und ca. 15 Min. köcheln lassen. Dann die Sahne zugeben und aufkochen.",
+      "Mit Salz, Cayennepfeffer und Zitronensaft würzen und die Suppe mit dem Stabmixer fein pürieren.",
+      "Die Kohlrabistifte in Salzwasser ca. 8 Min. blanchieren und abgießen.",
+      "Das Toastbrot in Würfel schneiden. Das Öl in der Pfanne erhitzen und die Würfel goldbraun rösten.",
+      "Die Kresse mit der Schere abschneiden und mit ca. 200 ml Suppe zu einem Püree mixen.",
+      "Die Suppe in Teller füllen, Kohlrabistifte und Kressepüree daraufgeben und mit den Croûtons bestreuen."
+    ]
+  },
+  "en": {
+    "title": "Cream of kohlrabi soup with croutons",
+    "steps": [
+      "Dice the onion. Peel one kohlrabi and the potato and cut them into cubes. Peel the second kohlrabi, cut it into thin sticks and set aside.",
+      "Melt the butter in a pot over low heat. Sweat the onion, kohlrabi cubes and potato cubes in it without letting them colour.",
+      "Pour in the stock and simmer for about 15 min. Then add the cream and bring to the boil.",
+      "Season with salt, cayenne pepper and lemon juice and purée the soup finely with a hand blender.",
+      "Blanch the kohlrabi sticks in salted water for about 8 min and drain.",
+      "Cut the toast into cubes. Heat the oil in the pan and fry the cubes until golden brown.",
+      "Cut the cress with scissors and blend it with about 200 ml of soup into a purée.",
+      "Ladle the soup into bowls, top with the kohlrabi sticks and cress purée and sprinkle with the croutons."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 8,
+        "amount": 0.5,
+        "unit": "piece"
+      },
+      {
+        "index": 9,
+        "amount": 2,
+        "unit": "slice"
+      },
+      {
+        "index": 10,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 11,
+        "amount": 1,
+        "unit": "punnet"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

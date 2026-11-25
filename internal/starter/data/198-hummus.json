@@ -1,0 +1,130 @@
+{
+  "n": 198,
+  "slug": "hummus",
+  "category": "Snacks und Brotdose",
+  "servings": 4,
+  "time_minutes": 10,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Sesam",
+      "en": "Sesame"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bbcgoodfood.com/recipes/hummus",
+    "site": "BBC Good Food",
+    "ratings": 184
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Dose",
+      "article_de": "Kichererbsen",
+      "article_en": "Chickpeas",
+      "note_de": "abgetropft; Dosengröße laut Quelle nicht angegeben",
+      "note_en": "drained; can size not stated in the source"
+    },
+    {
+      "amount": 60,
+      "unit": "ml",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": "plus bis zu 30 ml für eine lockerere Konsistenz",
+      "note_en": "plus up to 30 ml for a looser consistency"
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": "klein, geschält, zerdrückt",
+      "note_en": "small, peeled and crushed"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zitrone",
+      "article_en": "Lemon",
+      "note_de": "Saft; die Schale einer halben Zitrone abreiben",
+      "note_en": "juice; zest of half"
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Tahini (Sesampaste)",
+      "article_en": "Tahini",
+      "note_de": "45 ml",
+      "note_en": "45 ml"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Olivenöl",
+      "article_en": "Olive oil",
+      "note_de": "optional, zum Beträufeln",
+      "note_en": "optional, to garnish"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Gemischtes Rohkostgemüse und geröstetes Pitabrot",
+      "article_en": "Mixed crudités and toasted pitta bread",
+      "note_de": "optional, zum Servieren",
+      "note_en": "optional, to serve"
+    }
+  ],
+  "de": {
+    "title": "Hummus",
+    "steps": [
+      "Die Kichererbsen in einem Sieb unter kaltem fließendem Wasser gründlich abspülen.",
+      "Mit 60 ml Öl in die Schüssel des Food Processors geben und fast glatt mixen. Knoblauch, Zitronensaft, die Schale einer halben Zitrone und Tahini zufügen und etwa 5 Minuten durchmixen, bis das Hummus seidig und cremig ist. Wird es zu fest, nach und nach bis zu 30 ml Wasser zugießen.",
+      "Mit einer ordentlichen Prise Meersalz abschmecken und in eine Schale füllen. Mit dem Löffelrücken Wirbel ins Hummus ziehen, mit etwas Olivenöl beträufeln und mit Rohkoststicks und geröstetem Pitabrot auftragen."
+    ]
+  },
+  "en": {
+    "title": "Hummus",
+    "steps": [
+      "Rinse the chickpeas thoroughly in a sieve under cold running water.",
+      "Put them into the bowl of the food processor with 60 ml oil and purée to a nearly smooth paste. Then add garlic, lemon juice, the zest of half a lemon and the tahini and keep blending for about 5 minutes until the hummus is silky and creamy. If it turns out too stiff, trickle in up to 30 ml water.",
+      "Season with plenty of sea salt and spoon into a bowl. Draw swirls into the surface using a spoon's back, drizzle with a little olive oil and bring to the table with crudités and toasted pitta."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "can"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Source is English; German article names translated. Source ingredient says \"1 lemon juiced then 1/2 zested\" (kept as 1 lemon, zest of half). Oil type not specified in source. Tahini 3 tbsp = 45 ml per source. Rating count 184 from the list; JSON-LD has none. Steps restructured (own step division and order of work) after paraphrase spot-check 23/11/2026.",
+  "originality": {
+    "overlap_5gram": 0.0,
+    "checked": "23/11/2026"
+  }
+}

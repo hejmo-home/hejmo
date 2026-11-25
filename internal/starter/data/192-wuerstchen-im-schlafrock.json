@@ -1,0 +1,168 @@
+{
+  "n": 192,
+  "slug": "wuerstchen-im-schlafrock",
+  "category": "Snacks und Brotdose",
+  "servings": 20,
+  "time_minutes": 25,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Sesam",
+      "en": "Sesame"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/wuerstchen-im-schlafrock-128371.html",
+    "site": "Lecker",
+    "ratings": 2
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "weich",
+      "note_en": "softened"
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Tomatenmark",
+      "article_en": "Tomato purée",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Kräuter, italienisch, getrocknet",
+      "article_en": "Dried Italian herbs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 8,
+      "unit": "Stk",
+      "article_de": "Würstchen",
+      "article_en": "Sausages",
+      "note_de": "aus dem Glas",
+      "note_en": "from a jar"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Blätterteig, Rolle",
+      "article_en": "Puff pastry rolls",
+      "note_de": "aus dem Kühlregal",
+      "note_en": "from the chilled aisle"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Ei",
+      "article_en": "Egg",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Käse, gerieben",
+      "article_en": "Grated cheese",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Sesam",
+      "article_en": "Sesame seeds",
+      "note_de": "zum Bestreuen",
+      "note_en": "for sprinkling"
+    }
+  ],
+  "de": {
+    "title": "Würstchen im Schlafrock",
+    "steps": [
+      "Heize den Ofen auf 200 °C Ober-/Unterhitze vor und lege ein Blech mit Backpapier aus.",
+      "Schmilz die Butter in einem Topf, rühre Tomatenmark, Kräuter und Salz ein und lass die Tomatenbutter abkühlen. Lass die Würstchen gut abtropfen.",
+      "Rolle den Blätterteig aus und schneide ihn der Länge nach in vier Streifen. Bestreiche die untere Hälfte jedes Streifens mit Tomatenbutter und pinsele den oberen Rand mit verquirltem Ei ein.",
+      "Lege auf die bestrichene Hälfte je ein Würstchen, streue etwas Käse darüber und rolle den Streifen möglichst eng auf. Schneide überstehende Teigenden ab und teile jede Rolle in zwei Hälften oder in fünf 2 bis 3 cm breite Stücke. Verarbeite die zweite Teigrolle genauso.",
+      "Setze die Stücke mit etwas Abstand aufs Blech, bepinsele sie mit dem übrigen Ei, bestreue sie mit Sesam und backe sie 10 bis 12 Minuten goldbraun."
+    ]
+  },
+  "en": {
+    "title": "Sausage rolls (Würstchen im Schlafrock)",
+    "steps": [
+      "Preheat the oven to 200 °C top and bottom heat and line a tray with baking paper.",
+      "Melt the butter in a pan, stir in the tomato purée, herbs and salt and let the tomato butter cool. Drain the sausages well.",
+      "Unroll the puff pastry and cut it lengthways into four strips. Spread the lower half of each strip with tomato butter and brush the upper edge with beaten egg.",
+      "Place one sausage on each buttered half, sprinkle with a little cheese and roll the strip up as tightly as possible. Trim any overhanging pastry and cut each roll in half or into five pieces 2 to 3 cm wide. Prepare the second roll of pastry the same way.",
+      "Place the pieces on the tray with a little space between them, brush them with the remaining egg, sprinkle with sesame seeds and bake for 10 to 12 minutes until golden brown."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 1,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 4,
+        "amount": 8,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "piece"
+      }
+    ]
+  },
+  "review_note": "Replacement for missing servings in the previous source, approved by the product owner 23/11/2026. Only 2 ratings (5.0 of 5); chosen as an editorial recipe. 'Servings' = 20 pieces as stated by the source; the actual count depends on how the rolls are cut (halves or five pieces). Sausages 'aus dem Glas' (jarred, e.g. Wiener or cocktail type) as in the source. One egg is used for gluing and for brushing.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

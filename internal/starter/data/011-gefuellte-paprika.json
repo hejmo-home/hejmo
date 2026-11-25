@@ -1,0 +1,201 @@
+{
+  "n": 11,
+  "slug": "gefuellte-paprika",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 70,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/226491093168336/Gefuellte-Paprika-nach-Uroma-Susanne.html",
+    "site": "Chefkoch",
+    "ratings": 2367
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Hackfleisch, gemischt",
+      "article_en": "Mixed ground meat (beef and pork)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Reis, gekocht",
+      "article_en": "Cooked rice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Ei",
+      "article_en": "Egg",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer, schwarz",
+      "article_en": "Salt and black pepper",
+      "note_de": "aus der Mühle",
+      "note_en": "freshly ground"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Paprikapulver",
+      "article_en": "Paprika powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 10,
+      "unit": "Stk",
+      "article_de": "Spitzpaprika, gelb",
+      "article_en": "Yellow pointed peppers",
+      "note_de": "ersatzweise je 2 rote und gelbe Paprikaschoten (à 200 g)",
+      "note_en": "or 2 red and 2 yellow bell peppers (200 g each)"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Mehl Type 405",
+      "article_en": "Plain flour (Type 405)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "ml",
+      "article_de": "Gemüsebrühe",
+      "article_en": "Vegetable stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Dose",
+      "article_de": "Tomatenmark",
+      "article_en": "Tomato paste",
+      "note_de": "kleine Dose",
+      "note_en": "small can"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "etwas",
+      "note_en": "a little"
+    }
+  ],
+  "de": {
+    "title": "Gefüllte Paprika",
+    "steps": [
+      "Den Ofen auf 175 bis 200 °C Ober-/Unterhitze (150 °C Umluft) vorheizen. Zwiebel und Knoblauch abziehen und klein würfeln.",
+      "Zwiebel, Knoblauch, 100 g gekochten Reis, das Ei und das Hack in einer Schüssel mit Paprikapulver, Pfeffer und 1 TL Salz gründlich zu einer Masse verkneten.",
+      "Bei den Spitzpaprika mit einem scharfen Küchenmesser jeweils einen Deckel abtrennen und Kerne samt Trennwänden herausschneiden.",
+      "Die Schoten mit einem Löffel füllen und in eine Auflaufform stellen. Aus der übrigen Masse Bällchen formen und dazwischen verteilen.",
+      "Butter im Topf zerlassen und das Mehl kurz darin anrösten. Mit der Brühe ablöschen, das Tomatenmark einrühren und die Soße unter Rühren etwa 3 Minuten kochen. Salz, Pfeffer und 1 Prise Zucker zum Abschmecken.",
+      "Die Soße zu den Paprika und Bällchen in die Form geben. Etwa 40 Minuten im Ofen oder auf dem Herd schmoren, gegen Ende bei Bedarf abdecken.",
+      "Gut zu wissen: Passierte Tomaten gehen statt Tomatenmark, dann reicht etwas weniger Brühe. Normale Paprika fassen mehr Füllung, daher werden weniger Schoten benötigt."
+    ]
+  },
+  "en": {
+    "title": "Stuffed peppers",
+    "steps": [
+      "Preheat the oven to 175 to 200 °C top/bottom heat (150 °C fan). Peel the onion and garlic and dice them finely.",
+      "Knead the onion, garlic, 100 g cooked rice, the egg and the mince thoroughly in a bowl with 1 tsp salt, pepper and paprika.",
+      "Using a small sharp knife, cut a lid off each pointed pepper and cut out the seeds and the inner walls.",
+      "Fill the peppers with a spoon and stand them in a baking dish. Shape the leftover mixture into small balls and distribute them between the peppers.",
+      "Melt the butter in a pot and briefly cook the flour in it. Deglaze with the stock, stir in the tomato paste and boil the sauce for about 3 minutes, stirring. Season with salt, pepper and 1 pinch of sugar.",
+      "Add the sauce to the peppers and balls in the dish. Braise for about 40 minutes in the oven or on the hob, covering towards the end if needed.",
+      "Good to know: passata works instead of tomato paste, in which case use a little less stock. With regular peppers, which hold more filling, you need fewer."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 7,
+        "amount": 10,
+        "unit": "piece"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 11,
+        "amount": 1,
+        "unit": "can"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.012
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026."
+}

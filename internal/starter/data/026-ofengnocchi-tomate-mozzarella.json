@@ -1,0 +1,147 @@
+{
+  "n": 26,
+  "slug": "ofengnocchi-tomate-mozzarella",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 45,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/664471168345483/Gnocchi-Auflauf-mit-Tomate-und-Mozzarella.html",
+    "site": "Chefkoch",
+    "ratings": 360
+  },
+  "ingredients": [
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Gnocchi",
+      "article_en": "Gnocchi",
+      "note_de": "aus dem Kühlregal",
+      "note_en": "chilled, from the supermarket"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Tomate",
+      "article_en": "Tomato",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Kugel",
+      "article_de": "Mozzarella",
+      "article_en": "Mozzarella",
+      "note_de": "à ca. 125 g",
+      "note_en": "about 125 g each"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "article_de": "Passierte Tomaten",
+      "article_en": "Passata (sieved tomatoes)",
+      "note_de": "ca. 500 g",
+      "note_en": "about 500 g"
+    },
+    {
+      "amount": 200,
+      "unit": "ml",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Basilikum",
+      "article_en": "Basil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Käse, gerieben",
+      "article_en": "Grated cheese",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Ofengnocchi mit Tomate und Mozzarella",
+    "steps": [
+      "Heize den Backofen auf 200 °C Ober-/Unterhitze vor. Der Rost kommt in die Mitte.",
+      "Würfle die Tomate, die Zwiebel und eine der beiden Mozzarellakugeln. Die zweite Kugel schneidest du später in Scheiben.",
+      "Gib die Gnocchi mit Tomate, Zwiebel und Mozzarellawürfeln in eine Auflaufform. Die Gnocchi musst du nicht vorkochen.",
+      "Verrühre die passierten Tomaten mit der Sahne. Würze die Soße mit Salz, Pfeffer und Basilikum.",
+      "Gieße die Soße über die Gnocchi. Lege die Mozzarellascheiben obenauf und streue den geriebenen Käse darüber.",
+      "Backe den Auflauf etwa 30 Minuten."
+    ]
+  },
+  "en": {
+    "title": "Baked gnocchi with tomato and mozzarella",
+    "steps": [
+      "Preheat the oven to 200 °C top/bottom. The rack goes in the middle.",
+      "Dice the tomato, the onion and one of the two mozzarella balls. You slice the second ball later.",
+      "Put the gnocchi with the tomato, onion and diced mozzarella into a baking dish. You do not need to pre-cook the gnocchi.",
+      "Stir the passata with the cream. Season the sauce with salt, pepper and basil.",
+      "Pour the sauce over the gnocchi. Lay the mozzarella slices on top and sprinkle the grated cheese over it.",
+      "Bake the dish for about 30 minutes."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "ball"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "pack"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

@@ -1,0 +1,225 @@
+{
+  "n": 127,
+  "slug": "kartoffelsuppe",
+  "category": "Suppen",
+  "servings": 4,
+  "time_minutes": 70,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/52711018599140/Kartoffelsuppe.html",
+    "site": "Chefkoch",
+    "ratings": "846"
+  },
+  "ingredients": [
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Speck, durchwachsener",
+      "article_en": "Streaky bacon",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Sonnenblumenöl",
+      "article_en": "Sunflower oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 700,
+      "unit": "g",
+      "article_de": "Kartoffeln",
+      "article_en": "Potatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stange",
+      "article_de": "Lauch",
+      "article_en": "Leek",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Lorbeerblätter",
+      "article_en": "Bay leaves",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Gewürznelken",
+      "article_en": "Cloves",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Liter",
+      "article_de": "Gemüsebrühe",
+      "article_en": "Vegetable stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Bund",
+      "article_de": "Petersilie, glatte",
+      "article_en": "Flat-leaf parsley",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Majoran, gerebelt",
+      "article_en": "Marjoram, dried",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Thymian, gerebelt",
+      "article_en": "Thyme, dried",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Becher",
+      "article_de": "Crème fraîche",
+      "article_en": "Crème fraîche",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Wiener Würstchen",
+      "article_en": "Vienna sausages",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Kartoffelsuppe mit Würstchen",
+    "steps": [
+      "Zwiebel, 4 Möhren, 700 g Kartoffeln und 1 Stange Lauch putzen und würfeln bzw. schneiden. 100 g Speck würfeln.",
+      "2 EL Öl im großen Topf erhitzen, den Speck darin auslassen.",
+      "Zwiebel zugeben und glasig dünsten.",
+      "Das restliche Gemüse zugeben und mit 1 Liter Brühe auffüllen, sodass alles bedeckt ist. 2 Lorbeerblätter und 2 Nelken hineingeben.",
+      "Etwa 30 Minuten köcheln lassen.",
+      "Lorbeer und Nelken herausfischen, erst danach würzen: gehackte Petersilie, Majoran, Thymian, Salz und Pfeffer.",
+      "4 Wiener Würstchen in Scheiben schneiden und ganz zum Schluss in der Suppe erwärmen.",
+      "Mit Crème fraîche servieren. Die Suppe schmeckt auch aufgewärmt sehr gut."
+    ]
+  },
+  "en": {
+    "title": "Potato soup with sausages",
+    "steps": [
+      "Clean and dice the onion, 4 carrots, 700 g potatoes and 1 leek. Dice 100 g bacon.",
+      "Heat 2 tbsp oil in a large pot and render the bacon in it.",
+      "Add the onion and sweat until glassy.",
+      "Add the remaining vegetables and pour in 1 litre stock so everything is covered. Add 2 bay leaves and 2 cloves.",
+      "Simmer about 30 minutes.",
+      "Fish out the bay and cloves, and only then season: chopped parsley, marjoram, thyme, salt and pepper.",
+      "Slice 4 Vienna sausages and warm them in the soup at the very end.",
+      "Serve with crème fraîche. The soup also tastes great reheated."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "stalk"
+      },
+      {
+        "index": 6,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 7,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 8,
+        "amount": 1000,
+        "unit": "ml"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "bunch"
+      },
+      {
+        "index": 12,
+        "amount": 1,
+        "unit": "tub"
+      },
+      {
+        "index": 13,
+        "amount": 4,
+        "unit": "piece"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

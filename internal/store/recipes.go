@@ -381,3 +381,27 @@ func (db *DB) RecipeTags(householdID string) ([]string, error) {
 	}
 	return out, nil
 }
+
+// RecipeRef names a recipe.
+type RecipeRef struct{ ID, Name string }
+
+// RecipesWithArticle lists the household's recipes that use an article as an
+// ingredient, by name (ticket 288: the page of an own article says where it is used).
+func (db *DB) RecipesWithArticle(householdID, articleID string) ([]RecipeRef, error) {
+	rows, err := db.sql.Query(`SELECT r.id, r.name FROM recipes r
+		WHERE r.household_id = ? AND EXISTS (SELECT 1 FROM recipe_ingredients i WHERE i.recipe_id = r.id AND i.article_id = ?)
+		ORDER BY r.name_key, r.id`, householdID, articleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []RecipeRef
+	for rows.Next() {
+		var r RecipeRef
+		if err := rows.Scan(&r.ID, &r.Name); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}

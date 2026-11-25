@@ -52,7 +52,7 @@ func scanBrowserSession(r rowScanner) (BrowserSession, error) {
 	var created, expires string
 	var seen sql.NullString
 	if err := r.Scan(&b.ID, &b.Device, &created, &seen, &expires,
-		&b.Person.ID, &b.Person.Name, &b.Person.Role, &b.Person.Color, &b.Person.Shape, &b.Person.Symbol, &b.Person.StreaksShown); err != nil {
+		&b.Person.ID, &b.Person.Name, &b.Person.Role, &b.Person.Color, &b.Person.Shape, &b.Person.Symbol, &b.Person.StreaksShown, &b.Person.NutritionShown); err != nil {
 		return BrowserSession{}, err
 	}
 	b.SignedIn, b.LastSeen = parseStamp(sql.NullString{String: created, Valid: true}), parseStamp(seen)

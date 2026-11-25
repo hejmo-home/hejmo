@@ -1,0 +1,145 @@
+{
+  "n": 124,
+  "slug": "rahmkohlrabi",
+  "category": "Beilagen",
+  "servings": 4,
+  "time_minutes": 35,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/cremiges-kohlrabigemuese-83820.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Kohlrabi",
+      "article_en": "Kohlrabi",
+      "note_de": "je ca. 300 g",
+      "note_en": "about 300 g each"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Muskatnuss",
+      "article_en": "Nutmeg",
+      "note_de": "gerieben",
+      "note_en": "grated"
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Gemüsebrühe",
+      "article_en": "Vegetable stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Speisestärke",
+      "article_en": "Cornstarch",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Rahmkohlrabi",
+    "steps": [
+      "1 Zwiebel würfeln. 2 Kohlrabi (je ca. 300 g) in Stifte schneiden. 4 zarte Kohlrabiblätter hacken.",
+      "1 EL Butter in einer Pfanne mit Deckel bei mittlerer Hitze schmelzen und die Zwiebel darin andünsten.",
+      "Kohlrabi zugeben und kräftig mit Salz, Pfeffer und Muskatnuss würzen.",
+      "100 ml Brühe angießen, Deckel auflegen und etwa 10 Minuten schmoren. Zwischendurch umrühren.",
+      "Die Blätter und 100 ml Sahne zugeben und 5 Minuten köcheln.",
+      "1 TL Speisestärke mit 1–2 TL Wasser glatt rühren, einrühren und aufkochen, damit die Stärke bindet.",
+      "Abschmecken. Nach Wunsch Kräuter, Senf oder Speck zugeben; auch Möhre statt Kohlrabi passt."
+    ]
+  },
+  "en": {
+    "title": "Creamed kohlrabi",
+    "steps": [
+      "Dice 1 onion. Cut 2 kohlrabi (about 300 g each) into sticks. Chop 4 tender kohlrabi leaves.",
+      "Melt 1 tbsp butter in a lidded pan over medium heat and sweat the onion.",
+      "Add the kohlrabi and season strongly with salt, pepper and nutmeg.",
+      "Pour in 100 ml stock, put on the lid and braise about 10 minutes. Stir now and then.",
+      "Add the leaves and 100 ml cream and simmer 5 minutes.",
+      "Stir 1 tsp cornstarch smooth with 1-2 tsp water, stir it in and bring to the boil so the starch thickens.",
+      "Taste. If you like, add herbs, mustard or bacon; a carrot instead of kohlrabi also works."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "Page ratingCount 72 (list: Redaktionsküche). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

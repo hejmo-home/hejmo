@@ -1,0 +1,119 @@
+{
+  "n": 152,
+  "slug": "bircher-muesli",
+  "category": "Frühstück",
+  "servings": 1,
+  "time_minutes": 730,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [
+    {
+      "de": "Nüsse",
+      "en": "Tree nuts"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bettybossi.ch/de/rezepte/rezept/original-birchermuesli-10001233/",
+    "site": "Betty Bossi",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Feine Haferflocken",
+      "article_en": "Fine rolled oats",
+      "note_de": "ca. 8 g",
+      "note_en": "about 8 g"
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Wasser",
+      "article_en": "Water",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Stk",
+      "article_de": "Orange",
+      "article_en": "Orange",
+      "note_de": "nur der Saft",
+      "note_en": "juice only"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Äpfel",
+      "article_en": "Apples",
+      "note_de": "z. B. Jonathan, mit Schale",
+      "note_en": "e.g. Jonathan, unpeeled"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Gemahlene Haselnüsse oder Mandeln",
+      "article_en": "Ground hazelnuts or almonds",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Bircher Müsli",
+    "steps": [
+      "Die Haferflocken mit dem Wasser in einer Schüssel verrühren, abdecken und etwa 12 Stunden quellen lassen, am besten über Nacht.",
+      "Zitronensaft und den Saft der halben Orange gründlich unter die gequollenen Flocken rühren.",
+      "Die Äpfel samt Schale auf der Raffel direkt in die Schüssel reiben und dabei immer wieder umrühren, damit sie nicht braun werden. Die Nüsse darüberstreuen und sofort servieren."
+    ]
+  },
+  "en": {
+    "title": "Bircher muesli",
+    "steps": [
+      "Mix the oats with the water in a bowl, cover and leave to swell for about 12 hours, ideally overnight.",
+      "Stir the lemon juice and the juice of half an orange thoroughly into the soaked oats.",
+      "Grate the apples with their skin straight into the bowl, stirring repeatedly so they do not turn brown. Sprinkle with the nuts and serve immediately."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 1,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 3,
+        "amount": 0.5,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Rating count from the list. Source quantities are for 1 person (time includes the 12 h soaking). Source steps not copied. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.0
+  }
+}

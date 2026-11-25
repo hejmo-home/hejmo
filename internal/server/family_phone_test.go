@@ -73,7 +73,8 @@ func TestFamilyViewOnPhonesAndWallDisplays(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(startChrome(t, chrome), 2*time.Minute)
 	defer cancel()
-	probe := `(() => {
+	// Measure after the web fonts have loaded: with font-display: swap a loaded CI machine measures the fallback font.
+	probe := `document.fonts.ready.then(() => {
 		const col = [...document.querySelectorAll(".fv .column")].filter((c) => c.getBoundingClientRect().left < innerWidth - 1);
 		const lowest = col.map((c) => Math.max(...[...c.querySelectorAll(".events > .event")].slice(0, 3).map((e) => e.getBoundingClientRect().bottom)));
 		const events = col.map((c) => c.querySelectorAll(".events > .event").length);
@@ -83,7 +84,7 @@ func TestFamilyViewOnPhonesAndWallDisplays(t *testing.T) {
 			footerTop: Math.round(document.querySelector(".fv-footer").getBoundingClientRect().top), tile: document.querySelector(".fv-footer .tile").getBoundingClientRect().width,
 			bodyPadding: getComputedStyle(document.body).paddingLeft, clock: getComputedStyle(document.querySelector("[data-clock]")).display,
 		});
-	})()`
+	})`
 	for _, c := range []struct {
 		w, h  int
 		phone bool
@@ -95,7 +96,7 @@ func TestFamilyViewOnPhonesAndWallDisplays(t *testing.T) {
 			if err := chromedp.Do(ctx, chromedp.Navigate(srv.URL+"/")); err != nil {
 				t.Fatal(err)
 			}
-			got, err := chromedp.Run(ctx, chromedp.Evaluate[string](probe))
+			got, err := chromedp.Run(ctx, chromedp.Evaluate[string](probe, chromedp.EvalAwaitPromise))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -370,9 +371,13 @@ func TestFamilyViewFullWidthColumn(t *testing.T) {
 			if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.querySelector(".column[data-full] .person-link").click(), true`)); err != nil {
 				t.Fatal(err)
 			}
-			path, err := chromedp.Run(ctx, chromedp.Evaluate[string](`(async () => { for (let i = 0; i < 100 && location.pathname === "/"; i++) await new Promise((r) => setTimeout(r, 20)); return location.pathname; })()`, chromedp.EvalAwaitPromise))
-			if err != nil {
-				t.Fatal(err)
+			// Polled from here: a page that navigates ends an evaluation that is still waiting inside it.
+			path := "/"
+			for i := 0; i < 250 && path == "/"; i++ {
+				time.Sleep(20 * time.Millisecond)
+				if p, err := chromedp.Run(ctx, chromedp.Evaluate[string](`location.pathname`)); err == nil {
+					path = p
+				}
 			}
 			if path != "/display/person/papa" {
 				t.Errorf("the second tap on the name led to %q", path)

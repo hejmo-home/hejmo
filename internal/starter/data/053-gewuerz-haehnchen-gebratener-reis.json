@@ -1,0 +1,360 @@
+{
+  "n": 53,
+  "slug": "gewuerz-haehnchen-gebratener-reis",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 50,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Soja",
+      "en": "Soy"
+    },
+    {
+      "de": "Sesam",
+      "en": "Sesame"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/gewuerz-haehnchen-mit-gebratenem-reis-39365.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Honig",
+      "article_en": "Honey",
+      "note_de": "Marinade",
+      "note_en": "marinade"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Sherry, trocken",
+      "article_en": "Dry sherry",
+      "note_de": "Marinade",
+      "note_en": "marinade"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Sojasoße",
+      "article_en": "Soy sauce",
+      "note_de": "Marinade",
+      "note_en": "marinade"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Sesamöl",
+      "article_en": "Sesame oil",
+      "note_de": "Marinade",
+      "note_en": "marinade"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Zitronengras, gefriergetrocknet",
+      "article_en": "Freeze-dried lemongrass",
+      "note_de": "aus dem Glas (Gewürzregal), Marinade",
+      "note_en": "from a jar (spice aisle), marinade"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Limettenschale, abgerieben",
+      "article_en": "Grated lime zest",
+      "note_de": "Marinade",
+      "note_en": "marinade"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Orangenschale, abgerieben",
+      "article_en": "Grated orange zest",
+      "note_de": "Marinade",
+      "note_en": "marinade"
+    },
+    {
+      "amount": 6,
+      "unit": "Stk",
+      "article_de": "Hähnchenfilet",
+      "article_en": "Chicken breast fillet",
+      "note_de": "je ca. 125 g",
+      "note_en": "about 125 g each"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": "zum Braten",
+      "note_en": "for frying"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Langkornreis",
+      "article_en": "Long-grain rice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Scheibe",
+      "article_de": "Frühstücksspeck (Bacon)",
+      "article_en": "Streaky bacon (rashers)",
+      "note_de": "ca. 36 g",
+      "note_en": "about 36 g"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Eier, Größe M",
+      "article_en": "Eggs, size M",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Erbsen, tiefgefroren",
+      "article_en": "Frozen peas",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "ml",
+      "article_de": "Sojasoße",
+      "article_en": "Soy sauce",
+      "note_de": "davon 1 EL für den Reis",
+      "note_en": "1 tbsp of it goes into the rice"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Ingwer",
+      "article_en": "Ginger",
+      "note_de": "ca. 2 cm",
+      "note_en": "about 2 cm piece"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Orange",
+      "article_en": "Orange",
+      "note_de": "Saft davon",
+      "note_en": "juice of"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Limette",
+      "article_en": "Lime",
+      "note_de": "Saft davon",
+      "note_en": "juice of"
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Cayennepfeffer",
+      "article_en": "Cayenne pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Limetten",
+      "article_en": "Limes",
+      "note_de": "zum Garnieren",
+      "note_en": "to garnish"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pak Choi",
+      "article_en": "Pak choi",
+      "note_de": "zum Garnieren",
+      "note_en": "to garnish"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": "zum Garnieren, chinesischer Knoblauch",
+      "note_en": "to garnish"
+    }
+  ],
+  "de": {
+    "title": "Gewürz-Hähnchen mit gebratenem Reis",
+    "steps": [
+      "Marinade: Honig, Sherry, 2 EL Sojasoße, Sesamöl, Zitronengras sowie abgeriebene Limetten- und Orangenschale verrühren.",
+      "Die Hähnchenfilets in der Marinade wenden und über Nacht im Kühlschrank durchziehen lassen.",
+      "Am nächsten Tag die Filets aus der Marinade nehmen und gut trocken tupfen, sonst braten sie nicht richtig an. Das Öl in einer Pfanne erhitzen und die Filets 15 bis 20 Minuten braten.",
+      "Währenddessen den Reis kochen: 400 ml Salzwasser aufkochen, den Reis hineingeben und 12 bis 15 Minuten garen.",
+      "Frühstücksspeck in Streifen schneiden und in einer zweiten Pfanne ohne zusätzliches Fett knusprig braten. Das Fett läuft von allein aus. Zwiebel würfeln, Knoblauch und Ingwer fein hacken.",
+      "Die Zwiebel im Speckfett glasig braten. Die Eier dazugeben und stocken lassen.",
+      "Reis, Erbsen und 1 EL von der Sojasoße unterrühren, mit Pfeffer abschmecken.",
+      "Knoblauch und Ingwer erst gegen Ende zum Hähnchen in die Pfanne geben und kurz mitbraten.",
+      "Das Hähnchen mit der restlichen Sojasoße, dem Saft von Orange und Limette und dem Cayennepfeffer ablöschen. Bei hoher Hitze einkochen lassen, bis die Soße glänzend am Fleisch haftet.",
+      "Hähnchen auf dem Reis anrichten. Mit Limetten, Pak Choi und Knoblauch garnieren."
+    ]
+  },
+  "en": {
+    "title": "Spiced chicken with fried rice",
+    "steps": [
+      "Marinade: mix the honey, sherry, 2 tbsp soy sauce, sesame oil, lemongrass and the grated lime and orange zest.",
+      "Turn the chicken fillets in the marinade and leave them to infuse in the fridge overnight.",
+      "The next day take the fillets out of the marinade and pat them very dry, otherwise they will not brown properly. Heat the oil in a pan and fry the fillets for 15 to 20 minutes.",
+      "In the meantime cook the rice: bring 400 ml of salted water to the boil, add the rice and cook for 12 to 15 minutes.",
+      "Cut the bacon into strips and fry it in a second pan without added fat until crisp. The fat renders out by itself. Dice the onion and finely chop the garlic and ginger.",
+      "Fry the onion in the bacon fat until glassy. Add the eggs and let them set.",
+      "Stir in the rice, peas and 1 tbsp of the soy sauce, and season with pepper.",
+      "Add the garlic and ginger to the chicken only towards the end and fry briefly.",
+      "Deglaze the chicken with the rest of the soy sauce, the orange and lime juice and the cayenne pepper. Reduce over high heat until the glaze clings shiny to the meat.",
+      "Serve the chicken on the rice. Garnish with limes, pak choi and garlic."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "tsp"
+      },
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 4,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 7,
+        "amount": 6,
+        "unit": "piece"
+      },
+      {
+        "index": 8,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 11,
+        "amount": 3,
+        "unit": "slice"
+      },
+      {
+        "index": 12,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 13,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 17,
+        "amount": 2,
+        "unit": "clove"
+      },
+      {
+        "index": 18,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 19,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 20,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 21,
+        "amount": 0.5,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "review_note": "Source lists ingredients ungrouped; the notes marinade/rice were derived from the method. Soy sauce appears twice in the source (2 tbsp, and 100 ml); the method uses 2 tbsp in the marinade, 1 tbsp in the rice and the rest in the glaze, as read here. Source says to marinate overnight; time_minutes excludes that. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

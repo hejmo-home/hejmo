@@ -1,0 +1,156 @@
+{
+  "n": 77,
+  "slug": "kaesefondue",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 25,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.bettybossi.ch/de/rezepte/rezept/kasefondue-10009741/",
+    "site": "Betty Bossi",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 600,
+      "unit": "g",
+      "article_de": "Pagnolbrot oder Ruchbrot",
+      "article_en": "Pagnol bread or Swiss Ruch bread (dark crusty bread)",
+      "note_de": "in Würfel geschnitten, zum Dippen",
+      "note_en": "cut into cubes, for dipping"
+    },
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Gruyère oder L’Etivaz",
+      "article_en": "Gruyère or L’Etivaz",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 400,
+      "unit": "g",
+      "article_de": "Freiburger Vacherin",
+      "article_en": "Vacherin fribourgeois",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Maizena (Maisstärke)",
+      "article_en": "Maizena (cornflour)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 300,
+      "unit": "ml",
+      "article_de": "Weißwein",
+      "article_en": "White wine",
+      "note_de": "oder saurer Most oder Apfelsaft (3 dl)",
+      "note_en": "or sour cider or apple juice (3 dl)"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Muskat",
+      "article_en": "Nutmeg",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": "wenig",
+      "note_en": "a little"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Kirsch",
+      "article_en": "Kirsch (cherry brandy)",
+      "note_de": "nach Belieben",
+      "note_en": "optional"
+    }
+  ],
+  "de": {
+    "title": "Käsefondue",
+    "steps": [
+      "Knoblauchzehen schälen, vierteln und die Innenseite des Fonduetopfs (Caquelon) damit ausreiben; die Stücke bleiben im Topf. Das Brot in Würfel schneiden und in ein Körbchen füllen.",
+      "Gruyère und Vacherin grob raspeln, mit der Maisstärke vermischen und in den Topf geben.",
+      "Weißwein und Zitronensaft zugießen und unter ständigem Rühren erhitzen, bis der Käse vollständig geschmolzen ist und die Masse cremig wird.",
+      "Mit Muskat und Pfeffer abschmecken, den Kirsch einrühren und das Caquelon auf das Rechaud stellen. Die Brotwürfel auf Gabeln stecken und in den Käse tauchen."
+    ]
+  },
+  "en": {
+    "title": "Cheese fondue",
+    "steps": [
+      "Peel the garlic cloves, quarter them and rub the inside of the fondue pot (caquelon) with them; leave the pieces in the pot. Cut the bread into cubes and put them in a basket.",
+      "Coarsely grate the Gruyère and Vacherin, toss with the cornstarch and put into the pot.",
+      "Pour in the white wine and lemon juice and heat while stirring constantly, until the cheese has melted completely and the mixture turns creamy.",
+      "Season with nutmeg and pepper, stir in the kirsch and set the caquelon on the rechaud. Spear the bread cubes on forks and dip them into the cheese."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "clove"
+      },
+      {
+        "index": 4,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 9,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Source gives 3 dl liquid, converted to 300 ml. Source lists '2 EL Maizena'; ratings shown on page: 4, list says Redaktionsküche. Kirsch is optional per source; fondue contains alcohol if wine/kirsch used (consider for family flag). Steps restructured (own step division and order of work) after paraphrase spot-check 23/11/2026.",
+  "originality": {
+    "overlap_5gram": 0.012,
+    "checked": "23/11/2026"
+  }
+}

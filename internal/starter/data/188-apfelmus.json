@@ -1,0 +1,92 @@
+{
+  "n": 188,
+  "slug": "apfelmus",
+  "category": "Desserts",
+  "servings": 4,
+  "time_minutes": 35,
+  "diet_suggested": "vegan",
+  "allergens_suggested": [],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/115421048694976/Apfelmus.html",
+    "site": "Chefkoch",
+    "ratings": 778
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "kg",
+      "article_de": "Äpfel",
+      "article_en": "Apples",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "gestrichen, plus etwas zum Abschmecken",
+      "note_en": "level, plus a little to taste"
+    },
+    {
+      "amount": 0.25,
+      "unit": "Liter",
+      "article_de": "Apfelsaft",
+      "article_en": "Apple juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": "etwas",
+      "note_en": "a little"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zimt, gemahlen",
+      "article_en": "Ground cinnamon",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Apfelmus",
+    "steps": [
+      "Die Äpfel schälen, in Achtel schneiden und von den Kerngehäusen befreien.",
+      "Im Topf 2 gestrichene Esslöffel Zucker zerlaufen lassen, bis er hellbraun karamellisiert, das dauert etwa 2 Minuten. Die Apfelspalten hineingeben, die Hitze herunterschalten und 1 bis 2 Minuten kräftig rühren, bis sich der Karamell vom Topfboden zu lösen beginnt.",
+      "0,25 l Apfelsaft zugießen, den Topf zudecken und die Äpfel kochen, bis sie ganz zerfallen.",
+      "Mit dem Kartoffelstampfer zerdrücken und bei Bedarf noch Apfelsaft einrühren, bis die Konsistenz passt. Zuletzt Zimt, Zitronensaft und nach Geschmack mehr Zucker einrühren."
+    ]
+  },
+  "en": {
+    "title": "Apple sauce",
+    "steps": [
+      "Peel the apples, cut them into eighths and remove the cores.",
+      "Melt 2 level tbsp sugar in a pot until it caramelises to light brown, which takes about 2 minutes. Add the apple wedges, turn down the heat and stir vigorously for 1 to 2 minutes, until the caramel begins to come away from the bottom of the pot.",
+      "Pour in 0.25 l apple juice, cover the pot and cook until the apples are completely soft.",
+      "Mash with a potato masher and stir in more apple juice if needed until the texture is right. Finish by adjusting with sugar, lemon juice and cinnamon."
+    ],
+    "amounts_converted": [
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 2,
+        "amount": 250,
+        "unit": "ml"
+      }
+    ]
+  },
+  "review_note": "Source yield 4 portions for 2 kg of apples. \"Äpfel von casasun\" is the recipe author name. Rating count 778. Steps restructured (own step division and order of work) after paraphrase spot-check 23/11/2026.",
+  "originality": {
+    "overlap_5gram": 0.0,
+    "checked": "23/11/2026"
+  }
+}

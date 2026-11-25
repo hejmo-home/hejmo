@@ -1,0 +1,251 @@
+{
+  "n": 93,
+  "slug": "erdaepfelgulasch",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 40,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Sellerie",
+      "en": "Celery"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://extra.orf.at/rezepte/schmeckt-perfekt/21012019-rezept-erdaepfelgulasch100.html",
+    "site": "ORF (extra.ORF.at)",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 700,
+      "unit": "g",
+      "article_de": "Schweinsfilet, zugeputzt",
+      "article_en": "Pork tenderloin, trimmed",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Senf",
+      "article_en": "Mustard",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": "zum Braten",
+      "note_en": "for frying"
+    },
+    {
+      "amount": 1,
+      "unit": "l",
+      "article_de": "Gemüsefond, kräftig",
+      "article_en": "Vegetable stock, strong",
+      "note_de": "zum Pochieren",
+      "note_en": "for poaching"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Thymian",
+      "article_en": "Thyme",
+      "note_de": "zum Pochieren",
+      "note_en": "for poaching"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Majoran",
+      "article_en": "Marjoram",
+      "note_de": "zum Pochieren",
+      "note_en": "for poaching"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfefferkörner",
+      "article_en": "Peppercorns",
+      "note_de": "zum Pochieren",
+      "note_en": "for poaching"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Wacholderbeeren",
+      "article_en": "Juniper berries",
+      "note_de": "zum Pochieren",
+      "note_en": "for poaching"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Kräuter, frisch",
+      "article_en": "Fresh herbs",
+      "note_de": "z. B. Brunnenkresse, Sauerklee, Petersilie; zum Anrichten",
+      "note_en": "e.g. watercress, wood sorrel, parsley; for serving"
+    },
+    {
+      "amount": 800,
+      "unit": "g",
+      "article_de": "Erdäpfel, speckig (festkochend)",
+      "article_en": "Waxy potatoes",
+      "note_de": "für das Gulasch",
+      "note_en": "for the goulash"
+    },
+    {
+      "amount": 2,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 40,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Zwiebeln",
+      "article_en": "Onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 20,
+      "unit": "g",
+      "article_de": "Paprikapulver, edelsüß",
+      "article_en": "Sweet paprika powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Essig",
+      "article_en": "Vinegar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "ml",
+      "article_de": "Rindsuppe, kräftig",
+      "article_en": "Beef broth, strong",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Kümmel",
+      "article_en": "Caraway seeds",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Majoran",
+      "article_en": "Marjoram",
+      "note_de": "für das Gulasch",
+      "note_en": "for the goulash"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz und Pfeffer",
+      "article_en": "Salt and pepper",
+      "note_de": "für das Gulasch",
+      "note_en": "for the goulash"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Sauerrahm",
+      "article_en": "Sour cream",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Erdäpfelgulasch",
+    "steps": [
+      "Erdäpfel schälen und in Würfel von 1 cm Kantenlänge teilen. Zwiebeln und Knoblauch abziehen und klein hacken.",
+      "Das Schweinsfilet rundum mit Senf, Salz und Pfeffer einreiben und in heißem Öl von allen Seiten kräftig anbraten.",
+      "Den Gemüsefond mit Thymian, Majoran, Pfefferkörnern und Wacholderbeeren in einem Topf warm werden lassen, bis er etwa 80 °C erreicht. Das Filet hineinlegen, den Topf vom Herd ziehen und das Fleisch ca. 12 Minuten gar ziehen lassen. Danach warm halten.",
+      "Gulasch: Butter im Topf zerlassen und die Zwiebeln goldbraun rösten. Paprikapulver und Knoblauch kurz mitrösten und sofort mit dem Essig ablöschen, sonst wird das Paprikapulver bitter. Erdäpfel, Rindsuppe, Kümmel, Majoran, Salz und Pfeffer zugeben. Sanft garen, bis die Erdäpfel gar sind und die Flüssigkeit sämig wird.",
+      "Den Sauerrahm glatt rühren. Das Filet in Scheiben schneiden und mit dem Gulasch, einem Klecks Sauerrahm und frischen Kräutern anrichten."
+    ]
+  },
+  "en": {
+    "title": "Austrian potato goulash",
+    "steps": [
+      "Peel the potatoes and cut them into 1 cm cubes. Peel the onions and garlic and chop them finely.",
+      "Rub the pork fillet with salt, pepper and mustard and sear it hard on all sides in hot oil.",
+      "Heat the vegetable stock with thyme, marjoram, peppercorns and juniper berries to about 80 °C. Lay the fillet in it, take the pot off the heat and let the meat steep for about 12 minutes. Then keep it warm.",
+      "Goulash: Melt the butter in a pot and fry the onions until golden brown. Roast the paprika and garlic briefly and deglaze straight away with the vinegar, otherwise the paprika turns bitter. Add the potatoes, beef broth, caraway, marjoram, salt and pepper. Simmer on low heat until the potatoes are soft and the liquid is thick.",
+      "Stir the sour cream smooth. Slice the fillet and serve it with the goulash, a dollop of sour cream and fresh herbs."
+    ],
+    "amounts_converted": [
+      {
+        "index": 12,
+        "amount": 2,
+        "unit": "clove"
+      },
+      {
+        "index": 16,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 18,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 19,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 21,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "ORF page has no schema.org Recipe data; ingredients taken from the page's ingredient text. Page states 40 minutes and 4 servings. Several seasonings have no amounts in the source. Rating: Redaktionsküche (no count on page). Marjoram listed twice (poaching liquid and goulash) as in the source. Steps rewritten in own words on 23/11/2026 from the source steps (times, temperatures and order per source). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026). Steps rewritten clean-room after paraphrase check 23/11/2026.",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026",
+    "overlap_5gram": 0.0
+  }
+}

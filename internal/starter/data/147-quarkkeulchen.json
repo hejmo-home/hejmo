@@ -1,0 +1,247 @@
+{
+  "n": 147,
+  "slug": "quarkkeulchen",
+  "category": "Frühstück",
+  "servings": 4,
+  "time_minutes": 60,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/saechsische-quarkkeulchen-mit-apfelmus-2200",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zimtstange",
+      "article_en": "Cinnamon stick",
+      "note_de": "für das Apfelmus",
+      "note_en": "for the apple sauce"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zitronenschale, unbehandelt",
+      "article_en": "Lemon peel, untreated",
+      "note_de": "langes Stück, für das Apfelmus",
+      "note_en": "long strip, for the apple sauce"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Nelken",
+      "article_en": "Cloves",
+      "note_de": "für das Apfelmus",
+      "note_en": "for the apple sauce"
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "für das Apfelmus",
+      "note_en": "for the apple sauce"
+    },
+    {
+      "amount": 1,
+      "unit": "kg",
+      "article_de": "Äpfel",
+      "article_en": "Apples",
+      "note_de": "auch Fallobst, für das Apfelmus",
+      "note_en": "windfalls work too, for the apple sauce"
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Magerquark",
+      "article_en": "Low-fat quark",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 800,
+      "unit": "g",
+      "article_de": "Pellkartoffeln, mehligkochend",
+      "article_en": "Boiled potatoes in their skins, floury",
+      "note_de": "vom Vortag",
+      "note_en": "from the day before"
+    },
+    {
+      "amount": 150,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Backpulver",
+      "article_en": "Baking powder",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Rosinen",
+      "article_en": "Raisins",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Zitronenschale, unbehandelt, abgerieben",
+      "article_en": "Lemon zest, untreated, grated",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Päckchen",
+      "article_de": "Vanillezucker",
+      "article_en": "Vanilla sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "EL",
+      "article_de": "Butterschmalz",
+      "article_en": "Clarified butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zimt und Zucker",
+      "article_en": "Cinnamon and sugar",
+      "note_de": "zum Bestreuen",
+      "note_en": "for sprinkling"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "für die Arbeitsfläche",
+      "note_en": "for the work surface"
+    }
+  ],
+  "de": {
+    "title": "Sächsische Quarkkeulchen mit Apfelmus",
+    "steps": [
+      "Den Quark in ein feines Sieb geben und gründlich abtropfen lassen. Die Pellkartoffeln häuten und fein reiben oder pressen.",
+      "Apfelmus: 250 ml Wasser mit Zucker, Zimtstange, Nelken und Zitronenschale 5 Minuten aufkochen. Die Äpfel waschen, vierteln, Stiel- und Blütenansatz herausschneiden und 10 Minuten in diesem Sud garen. Noch heiß durch ein Passiergerät oder feines Sieb streichen.",
+      "Zu den Kartoffeln Vanillezucker, Zitronenschale, Rosinen, Salz, Backpulver und Mehl geben. Die Eier verquirlen, mit dem Quark dazugeben und nur kurz unterheben, denn zu langes Rühren macht die Masse zäh.",
+      "Auf der bemehlten Arbeitsfläche eine Rolle von 6 bis 8 cm Durchmesser formen, Scheiben von rund eineinhalb Zentimetern Stärke abschneiden und leicht plattdrücken.",
+      "Butterschmalz portionsweise in einer großen Pfanne erhitzen und die Keulchen pro Seite 4 Minuten goldbraun backen. Mit Zimtzucker bestreut zum Apfelmus servieren."
+    ]
+  },
+  "en": {
+    "title": "Saxon quark pancakes (Quarkkeulchen) with apple sauce",
+    "steps": [
+      "Leave the quark to drain well in a fine sieve. Peel the boiled potatoes and grate them finely or push them through a press.",
+      "Apple sauce: bring 250 ml water to the boil with the sugar, cinnamon stick, cloves and lemon zest and boil for 5 minutes. Wash and quarter the apples, cut out the stalk and blossom ends and cook them in this syrup for 10 minutes. Pass through a food mill or fine sieve while still hot.",
+      "Add the flour, baking powder, salt, raisins, lemon zest and vanilla sugar to the potatoes. Beat the eggs, add them with the quark and fold in only briefly, because stirring too long makes the mixture tough.",
+      "On the floured work surface, shape the dough into a log 6 to 8 cm across, cut it into slices about 1.5 cm thick and press them slightly flat.",
+      "Heat the clarified butter in batches in a large pan and cook the Keulchen for 4 minutes per side until golden. Dust with cinnamon sugar and serve with the apple sauce."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 1000,
+        "unit": "g"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 9,
+        "amount": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "index": 11,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 12,
+        "amount": 2,
+        "unit": "packet"
+      },
+      {
+        "index": 13,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 14,
+        "amount": 4,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Source gives no water amount for the apple sauce and no patty thickness; steps say a splash of water and about 1.5 cm as guidance, please check. Steps restructured (own step division and order of work) after paraphrase spot-check 23/11/2026.",
+  "originality": {
+    "overlap_5gram": 0.0,
+    "checked": "23/11/2026"
+  }
+}

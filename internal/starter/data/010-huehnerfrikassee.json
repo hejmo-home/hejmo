@@ -1,0 +1,231 @@
+{
+  "n": 10,
+  "slug": "huehnerfrikassee",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 90,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/689991171467187/Huehnerfrikassee.html",
+    "site": "Chefkoch",
+    "ratings": 763
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Hähnchen",
+      "article_en": "Whole chicken",
+      "note_de": "oder Suppenhuhn, ca. 1,2-1,5 kg",
+      "note_en": "or stewing hen, about 1.2-1.5 kg"
+    },
+    {
+      "amount": 2,
+      "unit": "TL",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel",
+      "article_en": "Onion",
+      "note_de": "ca. 100 g",
+      "note_en": "about 100 g"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Tomaten",
+      "article_en": "Tomatoes",
+      "note_de": "ca. 200 g",
+      "note_en": "about 200 g"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": "nach Belieben",
+      "note_en": "to taste"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Margarine",
+      "article_en": "Margarine",
+      "note_de": "oder Butter",
+      "note_en": "or butter"
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Mehl Type 405",
+      "article_en": "Plain flour (Type 405)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Spritzer",
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eigelb",
+      "article_en": "Egg yolks",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    },
+    {
+      "amount": 0.5,
+      "unit": "Becher",
+      "article_de": "Sahne",
+      "article_en": "Cream",
+      "note_de": "halber Becher",
+      "note_en": "half a tub"
+    },
+    {
+      "amount": 1,
+      "unit": "Glas",
+      "article_de": "Champignons",
+      "article_en": "Mushrooms",
+      "note_de": "280 g",
+      "note_en": "280 g"
+    },
+    {
+      "amount": 1,
+      "unit": "Dose",
+      "article_de": "Spargelstücke",
+      "article_en": "Asparagus pieces",
+      "note_de": "ca. 420 g",
+      "note_en": "about 420 g"
+    },
+    {
+      "amount": 1,
+      "unit": "Dose",
+      "article_de": "Erbsen und Möhren",
+      "article_en": "Peas and carrots",
+      "note_de": "400 g",
+      "note_en": "400 g"
+    }
+  ],
+  "de": {
+    "title": "Hühnerfrikassee",
+    "steps": [
+      "Das Huhn innen und außen mit 2 TL Salz einreiben und in einen großen Topf legen.",
+      "So viel Wasser angießen, dass das Huhn ganz bedeckt ist. Die Zwiebel, die Tomaten, Pfeffer und etwas Salz dazugeben.",
+      "Alles aufkochen, dann sanft köcheln lassen, bis das Fleisch gar ist: ein Brathähnchen 40-60 Minuten, ein Suppenhuhn mindestens 2 Stunden, Keulen 25-30 Minuten. Gar ist es, wenn sich die Keule leicht lösen lässt.",
+      "Huhn herausnehmen und abkühlen lassen. Die Brühe durch ein Sieb gießen.",
+      "Haut und Knochen entfernen und das Fleisch in mundgerechte Stücke zupfen.",
+      "Margarine im Topf schmelzen, das Mehl einrühren und kurz anschwitzen.",
+      "Etwa 500 ml Brühe nach und nach einrühren, erst nur einen kleinen Schluck, dann mehr, damit keine Klümpchen entstehen.",
+      "Die Sauce etwa 10 Minuten köcheln lassen und oft umrühren. Mit Zitronensaft, Salz und Pfeffer abschmecken.",
+      "Eigelb und Sahne verrühren und mit etwas heißer Brühe verdünnen. Dann in die Sauce rühren, die ab jetzt nicht mehr kochen darf.",
+      "Hühnerfleisch, abgetropfte Champignons, Spargel, Erbsen und Möhren dazugeben und nur noch erhitzen. Dabei häufig rühren."
+    ]
+  },
+  "en": {
+    "title": "Chicken fricassee",
+    "steps": [
+      "Rub the chicken inside and out with 2 tsp salt and put it into a large pot.",
+      "Add enough water to cover the chicken fully. Add the onion, tomatoes, pepper and a little more salt.",
+      "Bring it all to the boil, then simmer gently until the meat is cooked: a roasting chicken 40-60 minutes, a soup hen at least 2 hours, thighs 25-30 minutes. It is done when the drumstick pulls away easily.",
+      "Take the chicken out and let it cool. Pour the broth through a sieve.",
+      "Remove skin and bones and pull the meat into bite-size pieces.",
+      "Melt the margarine in the pot, stir in the flour and cook briefly.",
+      "Stir in about 500 ml of broth gradually, first just a small splash, then more, so no lumps form.",
+      "Simmer the sauce for about 10 minutes, stirring often. Season with lemon juice, salt and pepper.",
+      "Mix egg yolks and cream and thin with a little hot broth. Then stir it into the sauce, which must not boil from now on.",
+      "Add the chicken, drained mushrooms, asparagus, peas and carrots and only heat through. Stir often."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "tsp"
+      },
+      {
+        "index": 2,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "dash"
+      },
+      {
+        "index": 8,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 9,
+        "amount": 0.5,
+        "unit": "tub"
+      },
+      {
+        "index": 10,
+        "amount": 1,
+        "unit": "jar"
+      },
+      {
+        "index": 11,
+        "amount": 1,
+        "unit": "can"
+      },
+      {
+        "index": 12,
+        "amount": 1,
+        "unit": "can"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

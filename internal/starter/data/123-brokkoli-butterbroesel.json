@@ -1,0 +1,120 @@
+{
+  "n": 123,
+  "slug": "brokkoli-butterbroesel",
+  "category": "Beilagen",
+  "servings": 2,
+  "time_minutes": 20,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.essen-und-trinken.de/rezepte/56601-rzpt-broccoli-mit-chilibroeseln",
+    "site": "Essen & Trinken",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Brötchen",
+      "article_en": "Bread roll",
+      "note_de": "trocken, altbacken",
+      "note_en": "dry, stale"
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Chiliflocken",
+      "article_en": "Chili flakes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Brokkoli",
+      "article_en": "Broccoli",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Brokkoli mit Butterbröseln",
+    "steps": [
+      "1 trockenes, altbackenes Brötchen grob reiben.",
+      "2 EL Butter in einer Pfanne bei mittlerer Hitze schmelzen, die Brösel darin hellbraun rösten.",
+      "Mit Salz und Chiliflocken würzen und aus der Pfanne nehmen.",
+      "500 g Brokkoli in Röschen teilen. Den Strunk schälen und in Scheiben schneiden.",
+      "In kochendem Salzwasser 3 Minuten blanchieren, dann abgießen.",
+      "In der Pfanne 1 EL Butter schmelzen. 1 Knoblauchzehe nur kurz darin anbraten, sie wird schnell bitter.",
+      "Brokkoli zugeben und schwenken. Mit den Chilibröseln bestreut servieren."
+    ]
+  },
+  "en": {
+    "title": "Broccoli with buttered breadcrumbs",
+    "steps": [
+      "Coarsely grate 1 dry, stale bread roll.",
+      "Melt 2 tbsp butter in a pan over medium heat and toast the crumbs until light brown.",
+      "Season with salt and chilli flakes and take them out of the pan.",
+      "Cut 500 g broccoli into florets. Peel the stem and slice it.",
+      "Blanch in boiling salted water for 3 minutes, then drain.",
+      "Melt 1 tbsp butter in the pan. Fry 1 garlic clove only briefly, as it turns bitter quickly.",
+      "Add the broccoli and toss. Serve topped with the chilli crumbs."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "clove"
+      }
+    ]
+  },
+  "review_note": "Source recipe is 'Broccoli mit Chilibröseln' (with chili flakes); title follows the list. Page ratingCount 19 (list: Redaktionsküche). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

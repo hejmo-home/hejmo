@@ -1,0 +1,127 @@
+{
+  "n": 135,
+  "slug": "gemuesesuppe",
+  "category": "Suppen",
+  "servings": 4,
+  "time_minutes": 20,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.chefkoch.de/rezepte/131991056810257/Schnelle-Gemuesesuppe.html",
+    "site": "Chefkoch",
+    "ratings": "325"
+  },
+  "ingredients": [
+    {
+      "amount": 5,
+      "unit": "Stk",
+      "article_de": "Möhren",
+      "article_en": "Carrots",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Kohlrabi",
+      "article_en": "Kohlrabi",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Zwiebeln, mittelgroß",
+      "article_en": "Onions, medium",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Frischkäse, natur",
+      "article_en": "Cream cheese, plain",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.75,
+      "unit": "Liter",
+      "article_de": "Gemüsebrühe",
+      "article_en": "Vegetable stock",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Petersilie, gehackt",
+      "article_en": "Parsley, chopped",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Schnelle Gemüsesuppe",
+    "steps": [
+      "Zwiebeln würfeln. Möhren und Kohlrabi schälen und in Streifen schneiden.",
+      "Butter im Topf bei mittlerer Hitze zerlassen. Zwiebeln, Möhren und Kohlrabi darin andünsten, bis alles glasig ist.",
+      "Die Brühe zugießen und ca. 5 Min. köcheln lassen.",
+      "Etwa die Hälfte des Gemüses mit einer Schaumkelle herausnehmen und beiseitestellen. Das restliche Gemüse in der Brühe pürieren.",
+      "Die Hitze auf mild stellen, den Frischkäse einrühren und darin schmelzen lassen. Er soll nicht kochen.",
+      "Die Gemüsestreifen zurück in die Suppe geben, kurz erwärmen und mit Petersilie bestreut servieren."
+    ]
+  },
+  "en": {
+    "title": "Quick vegetable soup",
+    "steps": [
+      "Dice the onions. Peel the carrots and kohlrabi and cut them into strips.",
+      "Melt the butter in a pot over medium heat. Sweat the onions, carrots and kohlrabi until glassy.",
+      "Pour in the stock and simmer for about 5 min.",
+      "Lift out about half of the vegetables with a skimmer and set aside. Purée the rest in the stock.",
+      "Turn the heat down to low, stir in the cream cheese and let it melt. It should not boil.",
+      "Return the vegetable strips to the soup, warm through briefly and serve sprinkled with parsley."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 5,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 2,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 4,
+        "amount": 750,
+        "unit": "ml"
+      }
+    ]
+  },
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  },
+  "review_note": "Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026)."
+}

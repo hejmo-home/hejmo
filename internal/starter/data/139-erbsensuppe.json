@@ -1,0 +1,188 @@
+{
+  "n": 139,
+  "slug": "erbsensuppe",
+  "category": "Suppen",
+  "servings": 4,
+  "time_minutes": 70,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Sellerie",
+      "en": "Celery"
+    },
+    {
+      "de": "Schwefeldioxid",
+      "en": "Sulphur dioxide"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/erbsensuppe-aus-dem-schnellkochtopf-63453",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Zwiebeln",
+      "article_en": "Onions",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Stange",
+      "article_de": "Lauch",
+      "article_en": "Leek",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 0.5,
+      "unit": "Stk",
+      "article_de": "Knollensellerie",
+      "article_en": "Celeriac",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Speck, durchwachsener",
+      "article_en": "Streaky bacon",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Kassler",
+      "article_en": "Smoked pork loin (Kassler)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "EL",
+      "article_de": "Rapsöl",
+      "article_en": "Rapeseed oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "article_de": "Schälerbsen, grün, getrocknet",
+      "article_en": "Dried green split peas",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "Stk",
+      "article_de": "Lorbeerblätter",
+      "article_en": "Bay leaves",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Majoran, getrocknet",
+      "article_en": "Marjoram, dried",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Weißweinessig",
+      "article_en": "White wine vinegar",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Erbsensuppe aus dem Schnellkochtopf",
+    "steps": [
+      "Zwiebeln würfeln. Den Lauch der Länge nach einschlitzen, gründlich unter Wasser waschen (zwischen den Blättern sitzt oft Sand) und in Scheiben schneiden.",
+      "Sellerie schälen und würfeln. Speck und Kassler ebenfalls in Würfel schneiden.",
+      "Das Öl im Schnellkochtopf erhitzen. Speck und Kassler ca. 1 Min. anbraten.",
+      "Erbsen, Zwiebeln, Lauch und Sellerie dazugeben und ca. 2 Min. mit andünsten.",
+      "Mit 1,25 Liter Wasser auffüllen, Lorbeerblätter und Majoran zugeben.",
+      "Den Deckel fest verschließen. Auf Stufe 2 ca. 30 Min. kochen. Danach den Dampf nach Anleitung ablassen, bevor du den Deckel öffnest.",
+      "Mit Salz, Pfeffer und zum Schluss mit dem Essig abschmecken."
+    ]
+  },
+  "en": {
+    "title": "Pea soup from the pressure cooker",
+    "steps": [
+      "Dice the onions. Slit the leek lengthways, wash it thoroughly under water (there is often sand between the leaves) and slice it.",
+      "Peel the celeriac and dice it. Dice the bacon and smoked pork as well.",
+      "Heat the oil in the pressure cooker. Fry the bacon and smoked pork for about 1 min.",
+      "Add the peas, onions, leek and celeriac and sweat for about 2 min.",
+      "Top up with 1.25 litres of water and add the bay leaves and marjoram.",
+      "Close the lid firmly. Cook on setting 2 for about 30 min. Afterwards release the steam as described in the instructions before you open the lid.",
+      "Season with salt, pepper and, last of all, the vinegar."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "stalk"
+      },
+      {
+        "index": 2,
+        "amount": 0.5,
+        "unit": "piece"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "tbsp"
+      },
+      {
+        "index": 7,
+        "amount": 3,
+        "unit": "piece"
+      },
+      {
+        "index": 8,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 11,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Source states 4 to 6 servings (4 used) and gives no water amount or cooking time under pressure; the steps give 1.25 litres of water and about 30 minutes, written as guidance, please check. Page states 70 minutes. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

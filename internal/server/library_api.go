@@ -34,13 +34,22 @@ type articleJSON struct {
 	PictureSource string   `json:"picture_source"`
 	HiddenByHand  bool     `json:"hidden_by_hand"`
 	Pantry        bool     `json:"pantry"`
-	CreatedBy     *string  `json:"created_by"`
-	CreatedAt     *string  `json:"created_at"`
+	// Food is the food behind the nutrition values of recipes, PieceG the
+	// weight of one piece in grams (ticket 288); null when not known.
+	Food      *nutFoodJSON `json:"food"`
+	PieceG    *float64     `json:"piece_g"`
+	CreatedBy *string      `json:"created_by"`
+	CreatedAt *string      `json:"created_at"`
 }
 
 func (s *server) articleToJSON(p principal, it articleItem) articleJSON {
 	j := articleJSON{ID: it.ID, Source: "hejmo", NameDE: it.De, NameEN: it.En, Dept: it.Dept, Kind: string(it.Kind), Allergens: nonNil(it.Allergens),
 		Units: it.Units, OfferedUnits: s.offeredUnits(p, it.Article), Symbol: it.Symbol, HiddenByHand: it.handHidden, Pantry: it.Pantry}
+	// The food and its values are nutrition values: a child whose switch is off
+	// gets none (ticket 288).
+	if p.mayWatchNutrition() {
+		j.Food, j.PieceG = articleFood(it)
+	}
 	if it.own == nil {
 		j.Symbol = it.Symbol
 		return j
@@ -101,6 +110,8 @@ type articleIn struct {
 	Symbol        *string   `json:"symbol"`
 	PictureURL    *string   `json:"picture_url"`
 	Pantry        *bool     `json:"pantry"`
+	Food          *string   `json:"food"`
+	PieceG        *float64  `json:"piece_g"`
 	RemovePicture bool      `json:"remove_picture"`
 }
 
@@ -159,6 +170,10 @@ func (s *server) articleWrite(w http.ResponseWriter, r *http.Request, p principa
 	}
 	if in.Pantry != nil {
 		cur.Pantry = *in.Pantry
+	}
+	if bad := checkOwnFood(in.Food, in.PieceG, &cur); bad != nil {
+		writeFieldError(w, http.StatusUnprocessableEntity, bad.Field, bad.Msg)
+		return
 	}
 	change := store.KeepPicture
 	var pic *store.ArticlePicture

@@ -1,0 +1,178 @@
+{
+  "n": 61,
+  "slug": "gefuellte-zucchini-hackfleisch",
+  "category": "Hauptgerichte",
+  "servings": 4,
+  "time_minutes": 50,
+  "diet_suggested": null,
+  "allergens_suggested": [
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/gefuellte-zucchini-mit-hackfleisch-81714.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Zwiebel, mittelgroß",
+      "article_en": "Onion, medium",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Zehe",
+      "article_de": "Knoblauch",
+      "article_en": "Garlic",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Zucchini, klein bis mittelgroß",
+      "article_en": "Zucchini, small to medium",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Öl",
+      "article_en": "Oil",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Hackfleisch, gemischt",
+      "article_en": "Mixed mince (beef and pork)",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Dose",
+      "article_de": "Tomaten, stückig",
+      "article_en": "Canned tomatoes",
+      "note_de": "ca. 425 ml",
+      "note_en": "about 425 ml"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Pfeffer",
+      "article_en": "Pepper",
+      "note_de": "zum Abschmecken",
+      "note_en": "to taste"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "zum Abschmecken",
+      "note_en": "to taste"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Paprikapulver",
+      "article_en": "Paprika",
+      "note_de": "zum Abschmecken",
+      "note_en": "to taste"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "article_de": "Kirschtomaten",
+      "article_en": "Cherry tomatoes",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "article_de": "Gouda, gerieben",
+      "article_en": "Grated Gouda",
+      "note_de": null,
+      "note_en": null
+    }
+  ],
+  "de": {
+    "title": "Gefüllte Zucchini mit Hackfleisch",
+    "steps": [
+      "Zwiebel und Knoblauch fein würfeln. Zucchini der Länge nach halbieren und mit einem kleinen Löffel aushöhlen. Einen schmalen Rand stehen lassen, damit die Boote stabil bleiben.",
+      "Das ausgehöhlte Zucchinifleisch klein hacken und aufheben.",
+      "Ofen auf 200 °C Ober-/Unterhitze (175 °C Umluft) vorheizen. Er soll heiß sein, wenn die Zucchini hineinkommen.",
+      "Das Öl in einer Pfanne bei hoher Hitze erhitzen. Das Hackfleisch etwa 5 Minuten krümelig anbraten.",
+      "Zwiebel und Knoblauch dazugeben und 2 Minuten mitbraten.",
+      "Das gehackte Zucchinifleisch und die stückigen Dosentomaten unterrühren. Etwa 10 Minuten köcheln lassen. Mit Salz, Pfeffer, Zucker und Paprikapulver würzen.",
+      "Die Kirschtomaten halbieren und unter die Füllung mischen.",
+      "Die Zucchinihälften in eine Auflaufform setzen, mit der Hackmasse füllen und mit Gouda bestreuen.",
+      "Etwa 20 Minuten im Ofen backen."
+    ]
+  },
+  "en": {
+    "title": "Stuffed zucchini",
+    "steps": [
+      "Finely dice the onion and garlic. Halve the courgettes lengthways and hollow them out with a small spoon. Leave a narrow rim so the boats stay stable.",
+      "Chop the scooped-out courgette flesh and set it aside.",
+      "Preheat the oven to 200 C top/bottom (175 C fan). It should be hot when the courgettes go in.",
+      "Heat the oil in a pan over high heat. Fry the mince for about 5 minutes until crumbly.",
+      "Add the onion and garlic and fry for 2 more minutes.",
+      "Stir in the chopped courgette flesh and the chunky canned tomatoes. Simmer for about 10 minutes. Season with salt, pepper, sugar and paprika.",
+      "Halve the cherry tomatoes and mix them into the filling.",
+      "Set the courgette halves in a baking dish, fill them with the mince mixture and sprinkle with Gouda.",
+      "Bake in the oven for about 20 minutes."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 1,
+        "amount": 1,
+        "unit": "clove"
+      },
+      {
+        "index": 2,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 2,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "can"
+      }
+    ]
+  },
+  "review_note": "Sugar and paprika appear in the method but not in the ingredient list; added without amounts. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

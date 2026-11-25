@@ -1,0 +1,189 @@
+{
+  "n": 150,
+  "slug": "bananen-pfannkuchen",
+  "category": "Frühstück",
+  "servings": 4,
+  "time_minutes": 30,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.lecker.de/pfannkuchen-mit-bananen-67084.html",
+    "site": "Lecker",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eier, Größe M",
+      "article_en": "Eggs, size M",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 250,
+      "unit": "ml",
+      "article_de": "Haferdrink",
+      "article_en": "Oat drink",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 3,
+      "unit": "EL",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "article_de": "Bourbon-Vanillezucker",
+      "article_en": "Bourbon vanilla sugar",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "article_de": "Zimt, gemahlen",
+      "article_en": "Ground cinnamon",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 1,
+      "unit": "Msp.",
+      "article_de": "Kardamom",
+      "article_en": "Cardamom",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 4,
+      "unit": "Stk",
+      "article_de": "Bananen, klein",
+      "article_en": "Bananas, small",
+      "note_de": "à ca. 150 g",
+      "note_en": "about 150 g each"
+    },
+    {
+      "amount": 2,
+      "unit": "EL",
+      "article_de": "Zitronensaft",
+      "article_en": "Lemon juice",
+      "note_de": null,
+      "note_en": null
+    },
+    {
+      "amount": 40,
+      "unit": "g",
+      "article_de": "Butter oder Margarine",
+      "article_en": "Butter or margarine",
+      "note_de": "Quelle: 40 bis 50 g",
+      "note_en": "source: 40 to 50 g"
+    }
+  ],
+  "de": {
+    "title": "Pfannkuchen mit Bananen",
+    "steps": [
+      "Eier, Haferdrink, Mehl und eine Prise Salz glatt verquirlen. Den Teig abgedeckt mindestens 30 Min. ruhen lassen.",
+      "Zucker, Vanillezucker, Zimt und Kardamom in einer kleinen Schale mischen.",
+      "Die Bananen schälen, in Scheiben schneiden und mit dem Zitronensaft beträufeln. Einen Teller zum Warmhalten bereitstellen.",
+      "Etwas Fett in einer beschichteten Pfanne (ca. 15 cm) bei mittlerer Hitze erhitzen. Ein Viertel des Teigs hineingießen und 12 Bananenscheiben darauflegen.",
+      "2–3 Min. backen. Zum Wenden einen Deckel oder Teller auf die Pfanne legen, alles umdrehen und den Pfannkuchen zurück in die Pfanne gleiten lassen.",
+      "Die zweite Seite ca. 2 Min. backen. Mit dem Gewürzzucker bestreuen und auf dem warmen Teller halten.",
+      "So vier Pfannkuchen backen."
+    ]
+  },
+  "en": {
+    "title": "Banana pancakes",
+    "steps": [
+      "Whisk the eggs, oat drink, flour and a pinch of salt until smooth. Let the batter rest covered for at least 30 min.",
+      "Mix the sugar, vanilla sugar, cinnamon and cardamom in a small bowl.",
+      "Peel the bananas, slice them and drizzle with the lemon juice. Set out a plate for keeping the pancakes warm.",
+      "Heat a little fat in a coated pan (about 15 cm) over medium heat. Pour in a quarter of the batter and lay 12 banana slices on top.",
+      "Cook for 2-3 min. To flip, put a lid or plate on the pan, turn everything over and slide the pancake back into the pan.",
+      "Cook the second side for about 2 min. Sprinkle with the spiced sugar and keep on the warm plate.",
+      "Make four pancakes in this way."
+    ],
+    "amounts_converted": [
+      {
+        "index": 0,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 4,
+        "amount": 3,
+        "unit": "tbsp"
+      },
+      {
+        "index": 5,
+        "amount": 1,
+        "unit": "packet"
+      },
+      {
+        "index": 6,
+        "amount": 1,
+        "unit": "tsp"
+      },
+      {
+        "index": 7,
+        "amount": 1,
+        "unit": "pinch"
+      },
+      {
+        "index": 8,
+        "amount": 4,
+        "unit": "piece"
+      },
+      {
+        "index": 9,
+        "amount": 2,
+        "unit": "tbsp"
+      }
+    ]
+  },
+  "review_note": "Source steps not copied; where the bananas go (batter vs. topping) is written as one reasonable option, please check against the source. Rating count from the list. Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

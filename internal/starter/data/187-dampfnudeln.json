@@ -1,0 +1,202 @@
+{
+  "n": 187,
+  "slug": "dampfnudeln",
+  "category": "Desserts",
+  "servings": 4,
+  "time_minutes": 135,
+  "diet_suggested": "vegetarian",
+  "allergens_suggested": [
+    {
+      "de": "Gluten",
+      "en": "Gluten"
+    },
+    {
+      "de": "Eier",
+      "en": "Eggs"
+    },
+    {
+      "de": "Milch",
+      "en": "Milk"
+    }
+  ],
+  "suggestion_note": "diet_suggested and allergens_suggested are suggestions copied from the approved list (keyword-derived), not verified; check before production use.",
+  "source": {
+    "url": "https://www.kuechengoetter.de/rezepte/dampfnudeln-mit-krusterl-63654",
+    "site": "Küchengötter",
+    "ratings": "Redaktionsküche"
+  },
+  "ingredients": [
+    {
+      "amount": 500,
+      "unit": "g",
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "für den Teig",
+      "note_en": "for the dough"
+    },
+    {
+      "amount": 80,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "für den Teig",
+      "note_en": "for the dough"
+    },
+    {
+      "amount": 200,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": "für den Teig",
+      "note_en": "for the dough"
+    },
+    {
+      "amount": 1,
+      "unit": "Würfel",
+      "article_de": "Hefe",
+      "article_en": "Fresh yeast",
+      "note_de": "42 g",
+      "note_en": "42 g"
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "article_de": "Butter",
+      "article_en": "Butter",
+      "note_de": "für den Teig",
+      "note_en": "for the dough"
+    },
+    {
+      "amount": 2,
+      "unit": "Stk",
+      "article_de": "Eier",
+      "article_en": "Eggs",
+      "note_de": "Größe M",
+      "note_en": "size M"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Salz",
+      "article_en": "Salt",
+      "note_de": "Prisen für Teig und Dämpfwasser",
+      "note_en": "pinches for the dough and the steaming water"
+    },
+    {
+      "amount": 80,
+      "unit": "g",
+      "article_de": "Butterschmalz",
+      "article_en": "Clarified butter (ghee)",
+      "note_de": "für den Topf",
+      "note_en": "for the pot"
+    },
+    {
+      "amount": null,
+      "unit": null,
+      "article_de": "Mehl",
+      "article_en": "Flour",
+      "note_de": "für die Arbeitsfläche",
+      "note_en": "for the work surface"
+    },
+    {
+      "amount": 1,
+      "unit": "Stk",
+      "article_de": "Vanilleschote",
+      "article_en": "Vanilla pod",
+      "note_de": "für die Vanillesauce",
+      "note_en": "for the vanilla sauce"
+    },
+    {
+      "amount": 600,
+      "unit": "ml",
+      "article_de": "Milch",
+      "article_en": "Milk",
+      "note_de": "für die Vanillesauce",
+      "note_en": "for the vanilla sauce"
+    },
+    {
+      "amount": 6,
+      "unit": "Stk",
+      "article_de": "Eigelb",
+      "article_en": "Egg yolks",
+      "note_de": "für die Vanillesauce",
+      "note_en": "for the vanilla sauce"
+    },
+    {
+      "amount": 80,
+      "unit": "g",
+      "article_de": "Zucker",
+      "article_en": "Sugar",
+      "note_de": "für die Vanillesauce",
+      "note_en": "for the vanilla sauce"
+    },
+    {
+      "amount": 1,
+      "unit": "Msp.",
+      "article_de": "Zimt, gemahlen",
+      "article_en": "Ground cinnamon",
+      "note_de": "für die Vanillesauce",
+      "note_en": "for the vanilla sauce"
+    }
+  ],
+  "de": {
+    "title": "Dampfnudeln mit Krusterl",
+    "steps": [
+      "Vorteig: Erwärme 200 ml Milch nur lauwarm. Verrühre sie mit der zerbröselten Hefe (1 Würfel, 42 g) und etwas Mehl aus den 500 g. Lass das 20 Minuten gehen.",
+      "Gib das restliche Mehl in eine Schüssel, drücke eine Mulde hinein und streue 80 g Zucker an den Rand. Gieße den Vorteig in die Mulde.",
+      "Schmilz 100 g Butter. Gib sie mit den 2 Eiern und 1 Prise Salz zum Teig. Rühre Butter und Eier nicht vorher in der Milch zusammen.",
+      "Knete den Teig mit den Knethaken des Mixers, bis er glatt ist und Bläschen wirft. Lass ihn 20 Minuten ruhen, knete ihn noch einmal durch und lass ihn nochmals 20 Minuten gehen.",
+      "Teile den Teig auf der bemehlten Arbeitsfläche in 8 Kugeln und lass sie 15 Minuten ruhen.",
+      "Fette einen großen Topf mit Deckel mit 80 g Butterschmalz. Gib 400 ml lauwarmes Wasser und 1 Prise Salz dazu. Setze die Kugeln hinein, lege ein Geschirrtuch unter den Deckel (es fängt das Kondenswasser auf) und schließe den Deckel.",
+      "Dämpfe bei mittlerer Hitze 35 bis 40 Minuten. Heb den Deckel in dieser Zeit nie hoch, sonst fallen die Dampfnudeln zusammen. Danach kurz stehen lassen.",
+      "Vanillesauce: Koche 600 ml Milch mit der aufgeschlitzten Vanilleschote auf. Verrühre in der Metallschüssel 6 Eigelb mit 80 g Zucker und gieße die heiße Milch nach und nach dazu.",
+      "Rühre die Masse über dem heißen Wasserbad 10 bis 15 Minuten, bis sie dick wird. Sieb die Schote ab und gib 1 Msp. Zimt dazu. Serviere die Sauce zu den Dampfnudeln."
+    ]
+  },
+  "en": {
+    "title": "Steamed yeast dumplings with crust",
+    "steps": [
+      "Starter: warm 200 ml milk until just lukewarm. Mix it with the crumbled yeast (1 cube, 42 g) and a little of the 500 g flour. Let it rise for 20 minutes.",
+      "Put the rest of the flour in a bowl, make a well and sprinkle 80 g sugar around the rim. Pour the starter into the well.",
+      "Melt 100 g butter. Add it with the 2 eggs and 1 pinch of salt to the dough. Do not mix butter and eggs into the milk beforehand.",
+      "Knead the dough with the dough hooks of the mixer until smooth and bubbly. Let it rest for 20 minutes, knead it through again and let it rise another 20 minutes.",
+      "On a floured surface, divide the dough into 8 balls and let them rest for 15 minutes.",
+      "Grease a large lidded pot with 80 g clarified butter. Add 400 ml lukewarm water and 1 pinch of salt. Place the balls in, put a dish towel under the lid (it catches the condensation) and close the lid.",
+      "Steam over medium heat for 35 to 40 minutes. Never lift the lid during this time, or the dumplings collapse. Then let them stand briefly.",
+      "Vanilla sauce: bring 600 ml milk to the boil with the split vanilla pod. In the metal bowl, whisk 6 egg yolks with 80 g sugar and pour in the hot milk gradually.",
+      "Stir the mixture over a hot water bath for 10 to 15 minutes until thick. Strain out the pod and add 1 pinch of cinnamon. Serve the sauce with the dumplings."
+    ],
+    "amounts_converted": [
+      {
+        "index": 3,
+        "amount": 1,
+        "unit": "cube"
+      },
+      {
+        "index": 5,
+        "amount": 2,
+        "unit": "piece"
+      },
+      {
+        "index": 9,
+        "amount": 1,
+        "unit": "piece"
+      },
+      {
+        "index": 11,
+        "amount": 6,
+        "unit": "piece"
+      },
+      {
+        "index": 13,
+        "amount": 1,
+        "unit": "pinch"
+      }
+    ]
+  },
+  "review_note": "Source page shows 305 ratings; list says Redaktionsküche. time_minutes = prep 60 + cook 75 from source. Flour type not stated in source (\"Mehl\"). Butterschmalz amount 80 g for the pot; 400 ml water also in the pot (not listed as a source ingredient). Schritte im Clean-Room-Verfahren neu geschrieben (23/11/2026).",
+  "originality": {
+    "method": "clean-room",
+    "checked": "23/11/2026"
+  }
+}

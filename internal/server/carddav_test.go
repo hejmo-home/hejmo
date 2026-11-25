@@ -6,9 +6,11 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"html"
 	"image/jpeg"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -471,5 +473,55 @@ func TestTheDevicePagesNameTheAddressOfTheAddressBook(t *testing.T) {
 	created := c.b.do(http.MethodPost, "/caldav/tokens", url.Values{"name": {"Pixel"}}, map[string]string{"Accept-Language": "de"})
 	if created.status != http.StatusOK || !strings.Contains(created.body, "Adresse des Adressbuchs (CardDAV)") || !strings.Contains(created.body, "/carddav/") {
 		t.Fatalf("new token = %d\n%s", created.status, created.body)
+	}
+}
+
+// A sync as iOS Contacts and DAVx5 do it: list the ETags (PROPFIND, depth 1), fetch what is new (multiget), save
+// a change with If-Match, list again and see only that ETag move.
+func TestASyncRoundListsEtagsFetchesAndSeesOnlyTheChangedCard(t *testing.T) {
+	t.Parallel()
+	c := signedInAPI(t)
+	h := mustHousehold(t, c)
+	for _, n := range []string{"Opa", "Oma"} {
+		if _, err := c.b.db.CreateContact(h.ID, "", store.ContactInput{HejmoName: n}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	d := c.addressDevice(t, "contacts")
+	book, _ := d.book()
+	etags := func() map[string]string {
+		_, _, ms := d.raw("PROPFIND", book.Path, `<?xml version="1.0"?><D:propfind xmlns:D="DAV:"><D:prop><D:getetag/></D:prop></D:propfind>`, map[string]string{"Depth": "1", "Content-Type": "application/xml"})
+		out := map[string]string{}
+		for _, m := range regexp.MustCompile(`(?s)<[^>]*href>([^<]*\.vcf)</[^>]*href>.*?<[^>/]*getetag[^>]*>([^<]*)<`).FindAllStringSubmatch(ms, -1) {
+			out[m[1]] = html.UnescapeString(m[2])
+		}
+		return out
+	}
+	first := etags()
+	if len(first) != 3 { // Mama, Opa, Oma
+		t.Fatalf("etags = %v", first)
+	}
+	var paths []string
+	for p := range first {
+		paths = append(paths, p)
+	}
+	got, err := d.cc.MultiGetAddressBook(context.Background(), book.Path, &carddav.AddressBookMultiGet{Paths: paths, DataRequest: carddav.AddressDataRequest{AllProp: true}})
+	if err != nil || len(got) != 3 {
+		t.Fatalf("multiget = %d, %v", len(got), err)
+	}
+	var opa string
+	for _, o := range got {
+		if o.Card.PreferredValue(vcard.FieldNickname) == "Opa" {
+			opa = o.Path
+		}
+	}
+	if status, _, _ := d.put(opa, vcardText("FN:Opa", "NICKNAME:Opa", "TEL;type=CELL:12"), map[string]string{"If-Match": first[opa]}); status >= 300 {
+		t.Fatalf("put = %d", status)
+	}
+	second := etags()
+	for p, e := range second {
+		if (p == opa) == (e == first[p]) {
+			t.Errorf("%s: etag %q -> %q", p, first[p], e)
+		}
 	}
 }

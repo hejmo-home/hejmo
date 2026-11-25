@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/datefmt"
-	"github.com/hejmo-home/hejmo/internal/library"
 	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/internal/recipe"
@@ -193,7 +192,6 @@ type shopPage struct {
 	Meals                                   []shopMealView
 	MealCands                               []shopCand
 	Selected                                []shopCand
-	Head                                    shopHead
 	Rows                                    []shopRowView
 	New, On, Pantry                         []shopRowView
 	Same                                    []template.HTML
@@ -212,13 +210,9 @@ type shopPage struct {
 	Button                                  string
 	Patterns                                map[string]string
 	Empty                                   string // "", "nolist", "noingredients"
-	Name, Symbol, WhenHead, Portions        string
-	Scaled                                  string
 	rows                                    []shop.Row
 	steps                                   []shop.Step
 }
-
-type shopHead struct{ Title string }
 
 // weekdayShort is "Di" or "Tue".
 func (c *itemCtx) weekdayShort(day string) string {
@@ -330,7 +324,7 @@ func (c *itemCtx) buildShop(in shopIn) (*shopPage, error) {
 		if v, ok := in.Versions[m.Rec.ID]; ok && v != m.Version && m.Status() != "empty" {
 			if !slices.Contains(pg.Changed, m.Rec.Name) {
 				pg.Changed = append(pg.Changed, m.Rec.Name)
-				pg.ChangedAt = p.clockSeconds(m.Rec.UpdatedAt)[:5]
+				pg.ChangedAt = p.clock(m.Rec.UpdatedAt)
 			}
 			changedRec[m.Rec.ID] = true
 		}
@@ -474,9 +468,7 @@ func (c *itemCtx) wasWords(q list.Quantity, free bool) string {
 
 func (c *itemCtx) shopMealView(m shopCand) shopMealView {
 	v := shopMealView{Key: m.Key, Name: m.Rec.Name, Symbol: m.Rec.Category.Symbol(), Checked: m.Checked, Add: m.Add, Planned: m.Planned, OnList: m.OnList, Recipe: m.Rec.ID}
-	d, _ := time.Parse(task.DateLayout, m.Day)
 	v.When = c.dayLong(m.Day) + ", " + c.t("meals.mealtime."+string(m.Mealtime))
-	_ = d
 	parts := []string{v.When}
 	switch m.Status() {
 	case "empty":
@@ -739,17 +731,7 @@ func (c *itemCtx) undoLines(u store.ShopUndo) []template.HTML {
 }
 
 // listSources are the lines under the open entries of a list that meals brought quantities to.
-func (c *itemCtx) listSources(es []list.Entry) (map[string]string, map[string]string, error) {
-	var ids []string
-	for _, e := range es {
-		if !e.Done {
-			ids = append(ids, e.ID)
-		}
-	}
-	src, err := c.s.db.EntrySources(c.p.household.ID, ids)
-	if err != nil {
-		return nil, nil, err
-	}
+func (c *itemCtx) listSources(es []list.Entry, src map[string]store.EntrySource) (map[string]string, map[string]string) {
 	lines, tiles := map[string]string{}, map[string]string{}
 	for _, e := range es {
 		s, ok := src[e.ID]
@@ -776,10 +758,8 @@ func (c *itemCtx) listSources(es []list.Entry) (map[string]string, map[string]st
 		lines[e.ID] = c.shareLine(parts, prior, hand)
 		tiles[e.ID] = c.shareLine(parts, list.Quantity{}, true)
 	}
-	return lines, tiles, nil
+	return lines, tiles
 }
-
-var _ = library.Fold
 
 // patternsJSON is what the script of the tick list needs to word the count and the button.
 func patternsJSON(m map[string]string) string {

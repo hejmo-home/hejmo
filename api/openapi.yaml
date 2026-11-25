@@ -2623,7 +2623,9 @@ paths:
         entries; basis for taking quantities back). A meal that is on a list
         already is never added twice: only missing portions are. `versions` are
         the recipe versions from the preview: if a recipe changed since, nothing is
-        added and the answer is 409 with the ids in `changed`. Without `picks` the
+        added and the answer is 409 with the ids in `changed`. Without `versions` this check is skipped
+        (send them). If the meal got on a list since the preview (a double send), the
+        answer is 409 too and nothing is added. Without `picks` the
         rows the preview ticks are added; `meals` (week only) leaves out whole
         meals. Undo the run with `POST /meal-shopping/runs/{id}/undo`.
       requestBody:

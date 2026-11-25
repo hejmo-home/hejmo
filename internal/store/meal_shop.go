@@ -21,6 +21,10 @@ type ShopMeal struct {
 	RecipeID   string
 	RecipeName string
 	Portions   int
+	// Planned, if above 0, is the portions the meal is planned for: AddMealShop
+	// refuses the run (ErrShopStale) when other runs have put more than
+	// Planned-Portions of it on a list already, as a double tap would.
+	Planned int
 }
 
 // ShopInput is one run: the picked rows, the meals they come from and what was left out.
@@ -55,6 +59,9 @@ type ShopRun struct {
 // ErrShopTaken means the run was taken back already, or is not there.
 var ErrShopTaken = errors.New("store: the run is not there or was taken back")
 
+// ErrShopStale means a meal got on a list since the page was made: nothing was added.
+var ErrShopStale = errors.New("store: a meal is on a list already")
+
 // AddMealShop puts the rows on a list in one transaction, through list.PlanAdd, and records the run.
 func (db *DB) AddMealShop(householdID string, in ShopInput) (ShopRun, error) {
 	l, err := db.List(householdID, in.ListID)
@@ -66,16 +73,30 @@ func (db *DB) AddMealShop(householdID string, in ShopInput) (ShopRun, error) {
 		return ShopRun{}, err
 	}
 	defer tx.Rollback()
-	es, err := entriesTx(tx, l.ID)
-	if err != nil {
-		return ShopRun{}, err
-	}
-	steps := shop.Plan(es, in.Rows, in.Show)
 	run := ShopRun{ID: newID(), ListID: l.ID, ListName: l.Name, Day: in.Day, Meals: in.Meals, LeftOut: in.LeftOut}
 	if _, err := tx.Exec(`INSERT INTO meal_shop_runs (id, household_id, list_id, list_name, day, created_at, left_out) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		run.ID, householdID, l.ID, l.Name, in.Day, now(), strings.Join(in.LeftOut, "\n")); err != nil {
 		return ShopRun{}, err
 	}
+	for _, m := range in.Meals { // the run row took the write lock: nobody adds between this check and the commit
+		if m.Planned == 0 {
+			continue
+		}
+		var on int
+		if err := tx.QueryRow(`SELECT COALESCE(SUM(m.portions), 0) FROM meal_shop_meals m JOIN meal_shop_runs r ON r.id = m.run_id
+			WHERE r.household_id = ? AND r.undone_at IS NULL AND m.day = ? AND m.mealtime = ? AND m.recipe_id = ? AND m.run_id <> ?`,
+			householdID, m.Day, m.Mealtime, m.RecipeID, run.ID).Scan(&on); err != nil {
+			return ShopRun{}, err
+		}
+		if on+m.Portions > m.Planned {
+			return ShopRun{}, ErrShopStale
+		}
+	}
+	es, err := entriesTx(tx, l.ID)
+	if err != nil {
+		return ShopRun{}, err
+	}
+	steps := shop.Plan(es, in.Rows, in.Show)
 	for _, m := range in.Meals {
 		if _, err := tx.Exec(`INSERT INTO meal_shop_meals (run_id, day, mealtime, recipe_id, recipe_name, portions) VALUES (?, ?, ?, ?, ?, ?)`,
 			run.ID, m.Day, m.Mealtime, m.RecipeID, m.RecipeName, m.Portions); err != nil {
@@ -239,10 +260,10 @@ func (db *DB) ShopMeals(householdID, from, to string) ([]ShopOnList, error) {
 	return out, rows.Err()
 }
 
-// ShopLastList is the list the last run (not taken back) used, "" if none or the list is gone.
+// ShopLastList is the list the last run (not taken back) used, "" if there is none. A deleted list takes its runs with it.
 func (db *DB) ShopLastList(householdID string) (string, error) {
 	var id string
-	err := db.sql.QueryRow(`SELECT list_id FROM meal_shop_runs WHERE household_id = ? ORDER BY created_at DESC, rowid DESC LIMIT 1`, householdID).Scan(&id)
+	err := db.sql.QueryRow(`SELECT list_id FROM meal_shop_runs WHERE household_id = ? AND undone_at IS NULL ORDER BY created_at DESC, rowid DESC LIMIT 1`, householdID).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
 	}
@@ -340,6 +361,14 @@ func (db *DB) UndoMealShop(householdID, runID string) (ShopUndo, error) {
 		return ShopUndo{}, err
 	}
 	defer tx.Rollback()
+	// Mark first: the conditional update takes the write lock, and a second submit finds the run taken back.
+	done, err := tx.Exec(`UPDATE meal_shop_runs SET undone_at = ? WHERE id = ? AND undone_at IS NULL`, now(), runID)
+	if err != nil {
+		return ShopUndo{}, err
+	}
+	if n, _ := done.RowsAffected(); n == 0 {
+		return ShopUndo{}, ErrShopTaken
+	}
 	var res ShopUndo
 	for i := len(run.Steps) - 1; i >= 0; i-- {
 		s := run.Steps[i]
@@ -367,6 +396,9 @@ func (db *DB) UndoMealShop(householdID, runID string) (ShopUndo, error) {
 			if rest := cur.Base - s.Added.Base; !cur.None() && !s.Added.None() && cur.Kind() == s.Added.Kind() && rest > 1e-9 {
 				return list.Quantity{Base: rest, Unit: cur.Unit}
 			}
+			if !cur.None() && !s.Added.None() && cur.Kind() == s.Added.Kind() && cur.Base-s.Added.Base > -1e-9 {
+				return list.Quantity{} // only what this run added is left: the entry had none from anything else that still counts
+			}
 			return s.Before
 		}
 		switch s.Action {
@@ -390,17 +422,11 @@ func (db *DB) UndoMealShop(householdID, runID string) (ShopUndo, error) {
 			res.Reverted = append(res.Reverted, ShopReverted{label, q})
 		default:
 			q := restore()
-			if s.Action == list.Filled {
-				q = list.Quantity{}
-			}
 			if err := set(q); err != nil {
 				return ShopUndo{}, err
 			}
 			res.Reverted = append(res.Reverted, ShopReverted{label, q})
 		}
-	}
-	if _, err := tx.Exec(`UPDATE meal_shop_runs SET undone_at = ? WHERE id = ?`, now(), runID); err != nil {
-		return ShopUndo{}, err
 	}
 	if err := tx.Commit(); err != nil {
 		return ShopUndo{}, fmt.Errorf("undo meal shop: %w", err)

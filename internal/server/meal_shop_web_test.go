@@ -324,3 +324,26 @@ func showFor() list.Show {
 		return unit.ShowUnit(base, kind, []string{"g", "kg"}, unit.DefaultActive)
 	}
 }
+
+// The "recipe changed at" line shows the time without seconds, also for a 12-hour household.
+func TestTheChangedAtTimeIsAClockTimeInA12HourHousehold(t *testing.T) {
+	t.Parallel()
+	sb := newShopBox(t)
+	h, err := sb.b.db.HomeHousehold()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := sb.b.db.SaveHouseholdSettings(sb.hid, store.HouseholdSettings{DateFormat: h.DateFormat, TimeFormat: store.Time12h, TemperatureUnit: h.TemperatureUnit, AutoUpdate: h.AutoUpdate, MealCutoffs: h.MealCutoffs}); err != nil {
+		t.Fatal(err)
+	}
+	f := shopFormOf(t, sb.shopPage(t, "meal="+shopMeal))
+	rec := sb.rec.Recipe
+	rec.Ingredients = append([]recipe.Ingredient{{Amount: 2, Unit: "piece", Text: "Limetten", ArticleID: "lime"}}, rec.Ingredients[1:]...)
+	if _, err := sb.b.db.UpdateRecipe(sb.hid, sb.mama.ID, rec, mealOptionsForTest()); err != nil {
+		t.Fatal(err)
+	}
+	r := sb.b.do(http.MethodPost, "/meals/shop", f, enHeader)
+	if !regexp.MustCompile(`was changed at \d{1,2}:\d{2}[ \x{a0}\x{202f}](AM|PM) while`).MatchString(r.body) {
+		t.Errorf("the changed-at time is not a 12-hour clock time:\n%s", r.body)
+	}
+}

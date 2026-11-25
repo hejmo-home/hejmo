@@ -1194,7 +1194,9 @@ func TestRenderedLayout(t *testing.T) {
 
 	ctx := startChrome(t, chrome)
 	// The timeout comes after the first call: a timeout on that call would stop the browser.
-	ctx, cancelTimeout := context.WithTimeout(ctx, 15*time.Minute)
+	// 20 minutes: the crawl took 16.5 minutes on main with a 15-minute deadline already near its end;
+	// ticket 283 adds three pages (60 variants). The shard's go test -timeout is 25 minutes.
+	ctx, cancelTimeout := context.WithTimeout(ctx, 20*time.Minute)
 	defer cancelTimeout()
 
 	names, _ := json.Marshal(layoutNames)

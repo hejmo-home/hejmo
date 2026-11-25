@@ -271,6 +271,14 @@ func (s *server) handleShopSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 	run, err := c.addShop(pg)
 	switch {
+	case errors.Is(err, store.ErrShopStale): // a double tap: the meal is on a list now, show the page as it is
+		fresh, err := c.buildShop(in)
+		if err != nil {
+			s.fail(w, "shop", err)
+			return
+		}
+		s.renderShop(w, r, c, http.StatusConflict, fresh, shopOut{})
+		return
 	case errors.Is(err, store.ErrNotFound): // the list was deleted a moment ago
 		pg.ListGone = pg.ListID
 		pg.ListID = ""
@@ -330,7 +338,7 @@ func (c *itemCtx) addShop(pg *shopPage) (store.ShopRun, error) {
 	}
 	var meals []store.ShopMeal
 	for _, m := range pg.Selected {
-		meals = append(meals, store.ShopMeal{Day: m.Day, Mealtime: m.Mealtime, RecipeID: m.Rec.ID, RecipeName: m.Rec.Name, Portions: m.Add})
+		meals = append(meals, store.ShopMeal{Day: m.Day, Mealtime: m.Mealtime, RecipeID: m.Rec.ID, RecipeName: m.Rec.Name, Portions: m.Add, Planned: m.Planned})
 	}
 	return c.s.db.AddMealShop(c.p.household.ID, store.ShopInput{ListID: pg.ListID, Day: c.s.today(c.p), Rows: rows, Meals: meals, LeftOut: left, Show: c.shopShow})
 }

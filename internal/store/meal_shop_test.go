@@ -1,6 +1,7 @@
 package store_test
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 
@@ -100,9 +101,58 @@ func TestTheListLastUsedForMealsIsKept(t *testing.T) {
 		t.Fatalf("no list used yet: %q", id)
 	}
 	rows, m := shopRows("2026-11-19", 4, coconut)
-	addShop(t, db, h, l, rows, m)
+	run := addShop(t, db, h, l, rows, m)
 	if id, _ := db.ShopLastList(h.ID); id != l.ID {
 		t.Errorf("last list = %q", id)
 	}
-	_ = store.ErrNotFound
+	if _, err := db.UndoMealShop(h.ID, run.ID); err != nil {
+		t.Fatal(err)
+	}
+	if id, _ := db.ShopLastList(h.ID); id != "" {
+		t.Errorf("a run taken back does not count, got %q", id)
+	}
+}
+
+// Acceptance: take back exactly that run. A run that filled an entry must not
+// wipe what later runs added to it.
+func TestUndoOfAFillingRunKeepsWhatALaterRunAdded(t *testing.T) {
+	db, h, l := shopping(t)
+	if _, err := db.AddItem(h.ID, l.ID, store.Item{Text: "Süßkartoffeln", ArticleID: "sweet-potatoes"}, show("g", "kg")); err != nil {
+		t.Fatal(err)
+	}
+	rows1, m1 := shopRows("2026-11-19", 4, potatoes)
+	run1 := addShop(t, db, h, l, rows1, m1)
+	rows2, m2 := shopRows("2026-11-20", 2, potatoes)
+	run2 := addShop(t, db, h, l, rows2, m2)
+	if got := lines(t, db, h, l); !reflect.DeepEqual(got, []string{"Süßkartoffeln 900 g"}) {
+		t.Fatalf("list = %v", got)
+	}
+	if _, err := db.UndoMealShop(h.ID, run1.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got := lines(t, db, h, l); !reflect.DeepEqual(got, []string{"Süßkartoffeln 300 g"}) {
+		t.Fatalf("after taking back the first run = %v", got)
+	}
+	if _, err := db.UndoMealShop(h.ID, run2.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got := lines(t, db, h, l); !reflect.DeepEqual(got, []string{"Süßkartoffeln"}) {
+		t.Fatalf("after taking back both = %v", got)
+	}
+}
+
+// A double tap on the same page must not put the same meal on the list twice.
+func TestAMealThatGotOnTheListSinceThePageWasMadeIsRefused(t *testing.T) {
+	db, h, l := shopping(t)
+	rows, m := shopRows("2026-11-19", 4, potatoes)
+	m.Planned = 4
+	addShop(t, db, h, l, rows, m)
+	_, err := db.AddMealShop(h.ID, store.ShopInput{ListID: l.ID, Day: "2026-11-17", Rows: rows, Meals: []store.ShopMeal{m},
+		Show: func(shop.Row) list.Show { return show("piece", "g", "kg") }})
+	if !errors.Is(err, store.ErrShopStale) {
+		t.Fatalf("second add = %v, want ErrShopStale", err)
+	}
+	if got := lines(t, db, h, l); !reflect.DeepEqual(got, []string{"Süßkartoffeln 600 g"}) {
+		t.Errorf("list = %v", got)
+	}
 }

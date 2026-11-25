@@ -257,6 +257,9 @@ func (s *server) apiShopAdd(w http.ResponseWriter, r *http.Request, p principal)
 	}
 	run, err := c.addShop(pg)
 	switch {
+	case errors.Is(err, store.ErrShopStale):
+		writeError(w, http.StatusConflict, "a meal got on a list since it was read: nothing was added")
+		return
 	case errors.Is(err, store.ErrNotFound):
 		writeError(w, http.StatusUnprocessableEntity, "list_id is not a list of this household")
 		return

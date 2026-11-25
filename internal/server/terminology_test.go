@@ -72,7 +72,13 @@ func TestOldPhoneTermIsGoneFromLocalesTemplatesContractAndRoutes(t *testing.T) {
 	}
 	for _, f := range templates {
 		b, _ := os.ReadFile(f)
-		if oldTerm.MatchString(strings.ReplaceAll(string(b), "iPhone", "")) || oldTerm.MatchString(filepath.Base(f)) {
+		// The licence page links to the phone number library by its repository name, the one place the word
+		// is a proper name of somebody else's project (#300). Only these two URLs are exempt.
+		page := string(b)
+		for _, u := range []string{"https://github.com/nyaruka/phonenumbers/blob/master/LICENSE", "https://github.com/nyaruka/phonenumbers"} {
+			page = strings.ReplaceAll(page, u, "")
+		}
+		if oldTerm.MatchString(strings.ReplaceAll(page, "iPhone", "")) || oldTerm.MatchString(filepath.Base(f)) {
 			t.Errorf("%s uses the old term", f)
 		}
 	}

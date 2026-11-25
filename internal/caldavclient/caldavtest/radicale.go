@@ -174,6 +174,17 @@ type Tamper struct {
 	writes   int      // status answered for PUT and DELETE
 	seen     map[string]int
 	after    string // Retry-After header sent with the refusals of PUT and DELETE
+	state    int    // status answered for the PROPFIND of a calendar's state (Depth 0)
+	stateAt  string // Retry-After header sent with those refusals
+}
+
+// RefuseState makes every PROPFIND with Depth 0 (the read of a calendar's
+// CTag and sync token) answer with status and a Retry-After header, until it
+// is called with 0: a server that throttles before the import lists anything.
+func (tp *Tamper) RefuseState(status int, retryAfter string) {
+	tp.mu.Lock()
+	defer tp.mu.Unlock()
+	tp.state, tp.stateAt = status, retryAfter
 }
 
 // RefuseWritesWait is RefuseWrites with a Retry-After header (seconds or an
@@ -217,6 +228,9 @@ func (tp *Tamper) refused(req *http.Request) int {
 	if tp.writes != 0 && (req.Method == http.MethodPut || req.Method == http.MethodDelete) {
 		return tp.writes
 	}
+	if tp.state != 0 && req.Method == "PROPFIND" && req.Header.Get("Depth") == "0" {
+		return tp.state
+	}
 	switch {
 	case tp.refuse == 0:
 		return 0
@@ -259,10 +273,13 @@ func (tr tamper) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 	tr.seen[req.Method]++
 	after := tr.after
+	if req.Method == "PROPFIND" {
+		after = tr.stateAt
+	}
 	tr.mu.Unlock()
 	if status := tr.refused(req); status != 0 {
 		header := http.Header{}
-		if after != "" && (req.Method == http.MethodPut || req.Method == http.MethodDelete) {
+		if after != "" && (req.Method == http.MethodPut || req.Method == http.MethodDelete || req.Method == "PROPFIND") {
 			header.Set("Retry-After", after)
 		}
 		return &http.Response{

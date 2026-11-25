@@ -320,7 +320,7 @@ One of breakfast, lunch, snack or dinner, in the order of the day.
 _Avoid_: meal type, course
 
 **Meal plan template**:
-A week pattern from Monday to Sunday that fills one mealtime or all mealtimes of the meal plan by itself, every X weeks (1 to 52) from a start week. Two templates may never fill the same mealtime on the same day of the same week. Edited only in the Templates menu; its changes reach today and later, never days before today.
+A week pattern from Monday to Sunday that fills one mealtime or all mealtimes of the meal plan by itself, every X weeks (1 to 52) from a start week. Each slot is free text or a recipe, planned with the number of people in the household as portions; a deleted recipe leaves its slot as its name in free text. Two templates may never fill the same mealtime on the same day of the same week. Edited only in the Templates menu; its changes reach today and later, never days before today.
 _Avoid_: template (alone; clashes with routine template), preset, default plan
 
 **Adjusted meal**:

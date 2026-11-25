@@ -91,7 +91,7 @@ var (
 		opt("mealtime", "string", "With mealtimes one: breakfast, lunch, snack or dinner"),
 		req("interval", "integer", "Repeats every n weeks"),
 		req("start_week", "string", "Monday of the first week it fills, YYYY-MM-DD"),
-		req("entries", "array", "A list of {weekday (1 Monday to 7 Sunday), mealtime, text}"),
+		req("entries", "array", "A list of {weekday (1 Monday to 7 Sunday), mealtime, text or recipe_id (a recipe of the household, planned with the household's number of people as portions)}"),
 	}
 )
 

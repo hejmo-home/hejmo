@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"slices"
+	"strings"
 
 	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -14,7 +15,8 @@ import (
 type templateEntryJSON struct {
 	Weekday  int    `json:"weekday"` // 1 Monday to 7 Sunday
 	Mealtime string `json:"mealtime"`
-	Text     string `json:"text"`
+	Text     string `json:"text,omitempty"`
+	RecipeID string `json:"recipe_id,omitempty"`
 }
 
 type mealTemplateJSON struct {
@@ -45,14 +47,14 @@ func templateToJSON(t meal.Template) mealTemplateJSON {
 		return slices.Index(order, a.Mealtime) - slices.Index(order, b.Mealtime)
 	})
 	for _, s := range slots {
-		out.Entries = append(out.Entries, templateEntryJSON{s.Weekday, string(s.Mealtime), filled[s]})
+		out.Entries = append(out.Entries, templateEntryJSON{s.Weekday, string(s.Mealtime), filled[s], t.Recipes[s]})
 	}
 	return out
 }
 
 // templateFromJSON reads a template from a request; the error says what is wrong.
 func templateFromJSON(in mealTemplateJSON) (meal.Template, error) {
-	t := meal.Template{Name: in.Name, Interval: in.Interval, Start: in.StartWeek, Mealtime: meal.Mealtime(in.Mealtime), Entries: map[meal.Slot]string{}}
+	t := meal.Template{Name: in.Name, Interval: in.Interval, Start: in.StartWeek, Mealtime: meal.Mealtime(in.Mealtime), Entries: map[meal.Slot]string{}, Recipes: map[meal.Slot]string{}}
 	switch in.Mealtimes {
 	case "all":
 		t.AllMealtimes, t.Mealtime = true, ""
@@ -67,7 +69,15 @@ func templateFromJSON(in mealTemplateJSON) (meal.Template, error) {
 		if !meal.Mealtime(e.Mealtime).Valid() {
 			return t, &meal.InvalidError{Field: "entries", Msg: "unknown mealtime"}
 		}
-		t.Entries[meal.Slot{Weekday: e.Weekday, Mealtime: meal.Mealtime(e.Mealtime)}] = e.Text
+		slot := meal.Slot{Weekday: e.Weekday, Mealtime: meal.Mealtime(e.Mealtime)}
+		if e.RecipeID != "" {
+			if strings.TrimSpace(e.Text) != "" {
+				return t, &meal.InvalidError{Field: "entries", Msg: "give text or recipe_id, not both"}
+			}
+			t.Recipes[slot] = e.RecipeID
+			continue
+		}
+		t.Entries[slot] = e.Text
 	}
 	return t, nil
 }

@@ -1576,6 +1576,7 @@
   "meals.tpl.hint.tail": ", and so on.",
   "meals.tpl.week.title": "Meals of the week",
   "meals.tpl.week.hint": "Leave a field empty and the template leaves that meal free; you plan it in the meal plan yourself.",
+  "meals.tpl.week.recipe.hint": "Type the name of a recipe and the template plans that recipe, for as many portions as there are people in the household.",
   "meals.tpl.save": "Save template",
   "meals.tpl.edit.lead": "Changes reach today and all coming weeks. Days before today stay as they were, and meals adjusted for one week keep their change.",
   "meals.tpl.delete.summary": "Delete template",

@@ -30,6 +30,10 @@ const dateLayout = "2006-01-02"
 // itself, every Interval weeks from the week of Start (a Monday, YYYY-MM-DD).
 // It fills one mealtime, or all of them. Entries of mealtimes it does not fill
 // are ignored; an empty entry leaves that meal free.
+//
+// A slot holds free text, or a recipe: Recipes maps the slot to the id of a
+// recipe of the household. The text of a recipe slot is the recipe's name, kept
+// so that a deleted recipe leaves the slot as that name in free text.
 type Template struct {
 	ID, Name     string
 	AllMealtimes bool
@@ -37,6 +41,7 @@ type Template struct {
 	Interval     int
 	Start        string
 	Entries      map[Slot]string
+	Recipes      map[Slot]string // slot -> recipe id; the slot's entry is then the recipe's name
 }
 
 // Fills reports whether the template fills the mealtime.
@@ -45,13 +50,19 @@ func (t Template) Fills(m Mealtime) bool {
 }
 
 // Filled returns the entries that count: of mealtimes the template fills, with
-// a text.
+// a text or a recipe (a recipe slot may still have no text).
 func (t Template) Filled() map[Slot]string {
 	out := map[Slot]string{}
+	count := func(s Slot) bool { return s.Weekday >= 1 && s.Weekday <= 7 && t.Fills(s.Mealtime) }
 	for s, text := range t.Entries {
 		text = strings.TrimSpace(text)
-		if text != "" && s.Weekday >= 1 && s.Weekday <= 7 && t.Fills(s.Mealtime) {
+		if text != "" && count(s) {
 			out[s] = text
+		}
+	}
+	for s, id := range t.Recipes {
+		if id != "" && count(s) {
+			out[s] = strings.TrimSpace(t.Entries[s])
 		}
 	}
 	return out
@@ -114,6 +125,16 @@ func (t Template) Dish(d time.Time, m Mealtime) (string, bool) {
 	wd := (int(d.Weekday())+6)%7 + 1
 	text, ok := t.Filled()[Slot{wd, m}]
 	return text, ok
+}
+
+// RecipeAt returns the id of the recipe the template fills in for a day and
+// mealtime, "" when it fills in free text or nothing.
+func (t Template) RecipeAt(d time.Time, m Mealtime) string {
+	if _, ok := t.Dish(d, m); !ok {
+		return ""
+	}
+	wd := (int(d.Weekday())+6)%7 + 1
+	return t.Recipes[Slot{wd, m}]
 }
 
 // Weeks returns the Mondays of the next n weeks the template fills, from the

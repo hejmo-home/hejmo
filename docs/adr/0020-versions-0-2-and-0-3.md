@@ -111,7 +111,7 @@ Details decided while building #179 (grilling Q76 to Q82, preview approved 16/11
 - Per article a rhythm like the meal plan templates (every week up to every 52nd week), **one weekday** and a target list.
 - Hejmo adds the article at **03:00** on that day; the time is a **configurable household setting**. If the chosen day is today when saving, the rule starts at the next time.
 - If the article is already open on the list (for example from a recipe with a set quantity), Hejmo **adds the rule's quantity** and shows a **note behind the entry** that part of it is already planned (for example "500 g for Pancakes + 1 kg always"), because a recipe's quantity is not free to use.
-- **Holiday mode** replaces "skip once": household-wide, with from and to dates, it pauses all such rules; the list and the settings say so while it is on.
+- **Holiday** (first called holiday mode; one term, ticket 285) replaces "skip once": household-wide, with from and to dates, it pauses all such rules; the list and the settings say so while it is on.
 - The rule keeps running when the article is hidden by hand or for an allergy; the entry carries the allergy warning (ADR 0019).
 
 #### Notes added with the implementation (#168)

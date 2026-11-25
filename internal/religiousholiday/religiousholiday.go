@@ -214,3 +214,34 @@ func inYears(hs []Holiday, from, to int) []Holiday {
 	}
 	return out
 }
+
+// Skipped is a holiday left out because it is a public holiday of the household's region already.
+type Skipped struct {
+	Holiday
+	// Partial: a public holiday in most, but not all, places of the region.
+	Partial bool
+}
+
+// Skip splits holidays into the ones the calendar gets and the ones that every
+// day of which is a public holiday of the region: those are in the calendar
+// already and are never added twice. public says whether a day is one and
+// whether it is a partial holiday.
+func Skip(hs []Holiday, public func(time.Time) (partial, ok bool)) (kept []Holiday, skipped []Skipped) {
+	for _, h := range hs {
+		all, partial := true, false
+		for t := h.Start; !t.After(h.End); t = t.AddDate(0, 0, 1) {
+			p, ok := public(t)
+			if !ok {
+				all = false
+				break
+			}
+			partial = partial || p
+		}
+		if all {
+			skipped = append(skipped, Skipped{h, partial})
+		} else {
+			kept = append(kept, h)
+		}
+	}
+	return kept, skipped
+}

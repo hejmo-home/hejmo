@@ -16,7 +16,7 @@ import (
 // The calendar style and the Serbian Slava on the Birthdays calendar page (ticket 338).
 
 // ndMismatchOrder is the order of the notices "your church follows the other calendar".
-var ndMismatchOrder = []nameday.List{nameday.RussianOrthodox, nameday.BulgarianOrthodox, nameday.GreekOrthodox, nameday.RomanianOrthodox}
+var ndMismatchOrder = []nameday.List{nameday.BulgarianOrthodox, nameday.GreekOrthodox, nameday.RomanianOrthodox}
 
 // sentinel marks a word of a text that the template writes in bold: the text is split at it.
 const sentinel = "\x00"

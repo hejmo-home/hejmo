@@ -288,7 +288,7 @@ func TestAMartyrologiumEntryNamesItsOwnSourceOnTheEventPageAndTheLicences(t *tes
 	ctHasNot(t, "event page", page, "Regionalkalender")
 	// A Regionalkalender entry keeps its own source.
 	ctHas(t, "licences", c.page("/settings/licences", "de").body, "<li><b>Katholisch</b>", "<span>Regionalkalender für das deutsche Sprachgebiet</span>", "<span>Martyrologium Romanum</span>",
-		"Patriarhia Română", "<span>Православный календарь Русской Православной Церкви (Московский патриархат)</span>")
+		"Patriarhia Română", "<span>Календар Православної церкви України, geprüft an der Ausgabe 2026 (kalendar_2026.pdf, pomisna.info)</span>")
 }
 
 func TestSettingsAPIHasTheNameDaysOffByDefaultAndTakesAChurch(t *testing.T) {

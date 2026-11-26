@@ -598,7 +598,17 @@ func shrinkRun(tx *sql.Tx, runID, day string, mealtime meal.Mealtime, recipeID s
 			return err
 		}
 		if done {
-			continue // ticked: bought already, quantity and note stay
+			// Ticked: bought already, so the entry's quantity and note stay. The
+			// recorded part follows the meal's portions all the same (ticket 359), so
+			// unticking later scales the next shrink from the right base. A meal that
+			// leaves the plan keeps its part: it is the note of what was bought.
+			if left > 0 {
+				if _, err := tx.Exec(`UPDATE meal_shop_parts SET portions = ?, qty_base = ? WHERE run_id = ? AND entry_id = ? AND day = ? AND mealtime = ?`,
+					left, p.qty.Base*float64(left)/float64(was), runID, p.entry, day, mealtime); err != nil {
+					return err
+				}
+			}
+			continue
 		}
 		newQty := p.qty.Base * float64(left) / float64(was)
 		if left == 0 {

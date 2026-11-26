@@ -34,6 +34,8 @@ type shopSelection struct {
 	Week   bool
 	Meal   string    // "<day>.<mealtime>"
 	Monday time.Time // for a week
+	// Days, if above 0 (with Week), is the automatic run's window: today and the days after it, Days in all (ticket 285).
+	Days int
 }
 
 func parseMealKey(key string) (string, meal.Mealtime, bool) {
@@ -90,12 +92,16 @@ func (c *itemCtx) shopCandidates(sel shopSelection) ([]shopCand, error) {
 	s, p := c.s, c.p
 	today := s.today(p)
 	var from, to string
-	if sel.Week {
+	switch {
+	case sel.Days > 0:
+		t, _ := time.Parse(task.DateLayout, today)
+		from, to = today, t.AddDate(0, 0, sel.Days-1).Format(task.DateLayout)
+	case sel.Week:
 		from, to = sel.Monday.Format(task.DateLayout), sel.Monday.AddDate(0, 0, 6).Format(task.DateLayout)
 		if from < today {
 			from = today
 		}
-	} else {
+	default:
 		day, _, ok := parseMealKey(sel.Meal)
 		if !ok {
 			return nil, store.ErrNotFound

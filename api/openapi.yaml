@@ -6978,7 +6978,7 @@ components:
         region_code: { type: string, description: "ISO 3166-2 code of the state or canton, one of the regions of the setup form", example: DE-BY }
     Settings:
       type: object
-      required: [date_format, time_format, temperature_unit, auto_update, home_name, home_place_id, latitude, longitude, below_zero, first_steps_hidden, first_steps_skipped, meal_cutoffs, name_days, religious_holidays]
+      required: [date_format, time_format, temperature_unit, auto_update, home_name, home_place_id, latitude, longitude, below_zero, first_steps_hidden, first_steps_skipped, meal_cutoffs, name_days, religious_holidays, meal_shopping]
       properties:
         date_format: { type: string, enum: [dmy, mdy], description: "Day first DD.MM.YYYY (default) or month first MM/DD/YYYY. Only how the web interface writes dates in numbers; this API, CalDAV and iCalendar stay ISO 8601" }
         home_name: { type: string, description: "The name of the home place; the name of the place picked from the list" }
@@ -6996,6 +6996,15 @@ components:
         auto_update: { type: string, enum: [on, off, notify], description: "Auto-update (ADR 0018; has no effect unless GET /update says managed): on (default) installs new published versions at 03:30, off never checks, notify only tells parents that an update is available" }
         meal_cutoffs: { $ref: "#/components/schemas/MealCutoffs" }
         religious_holidays: { $ref: "#/components/schemas/ReligiousHolidays" }
+        meal_shopping: { $ref: "#/components/schemas/MealShoppingSetting" }
+    MealShoppingSetting:
+      type: object
+      description: "How the ingredients of the meal plan get on a shopping list (ticket 285, ADR 0021): by hand (default; `POST /meal-shopping`) or automatic: every day at the household's time of day (03:00 unless changed, see `GET /library/always`) the ingredients of the meals with a recipe of the next `days` days, today included, go on the list through the same adding rule, pantry articles left out. A meal that is on a list already is never added again, only portions that are missing; nothing is added during the holiday (`GET /library/always`) and nothing is caught up afterwards. Each run is recorded like one made by hand, so its meals show their notes and `POST /meal-shopping/runs/{id}/undo` applies."
+      required: [mode, days, list_id]
+      properties:
+        mode: { type: string, enum: [manual, automatic] }
+        days: { type: integer, minimum: 1, maximum: 14, default: 7 }
+        list_id: { type: string, nullable: true, description: "A list with suggestions (else 422). The list the automatic run uses; null: the list of the last run, else the first list with suggestions. A deleted list sets it back to null" }
     ReligiousHolidays:
       type: object
       description: "Whether the holidays of the chosen religions are in the generated calendar of kind `religious` (ticket 339). Off by default: Hejmo never guesses a faith. Switching off keeps the religions and the two calendar choices. A holiday that is a public holiday of the household's region is not added again."
@@ -7057,6 +7066,13 @@ components:
           properties:
             on: { type: boolean }
             list: { type: string, description: "catholic, protestant, romanian_orthodox or greek_orthodox" }
+        meal_shopping:
+          type: object
+          description: "Choose by hand or automatic, the days ahead and the list; omitted parts stay as they are and `list_id: null` takes the chosen list away. An unknown mode, days outside 1 to 14, a list that is not of this household or a newly named list without suggestions refuses the whole request with 422."
+          properties:
+            mode: { type: string, description: "manual or automatic" }
+            days: { type: integer }
+            list_id: { type: string, nullable: true }
         meal_cutoffs:
           type: object
           description: "Only the mealtimes given change; a time outside hh:mm refuses the whole request with 422"

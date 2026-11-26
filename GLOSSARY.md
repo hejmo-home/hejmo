@@ -288,8 +288,8 @@ An article that Hejmo puts on a chosen list by itself on one weekday every X wee
 _Avoid_: recurring item, staple, auto-add
 
 **Holiday**:
-A household-wide pause from a first to a last day (both included) for every always-on-the-list rule. Nothing is caught up afterwards, and the holiday switches itself off after its last day. Only one at a time; tasks and the meal plan go on.
-_Avoid_: vacation mode, skip
+A household-wide pause from a first to a last day (both included) for everything Hejmo puts on a list by itself: every always-on-the-list rule and the automatic shopping list from the meal plan. Nothing is caught up afterwards, and the holiday switches itself off after its last day. Only one at a time; tasks and the meal plan go on. The lists and settings say so while it is on. This is the one term for what ADR 0020 first called "holiday mode" (ticket 285).
+_Avoid_: holiday mode, vacation mode, skip
 
 **Tile view**:
 A list shown as tiles with symbol or picture, name and tick; the default for children. The choice (tiles or list) is one per person for all lists and every device. A display is not a person and keeps its own view, tiles until someone switches it. An entry that names no article shows its first letter on a dashed ring instead of a picture.
@@ -378,6 +378,10 @@ _Avoid_: staple, stock item
 One tap of "Zutaten auf die Liste" for a meal or a week: the ticked ingredients go onto a list through the one adding rule, and the run records per list entry and meal how much each meal contributed (the contribution). A meal already on a list is never added twice, only its missing portions; Undo takes back exactly one run.
 _Avoid_: import, sync
 
+**Automatic shopping list**:
+The household setting (default: by hand) that makes Hejmo do a shopping run by itself every day at the household's time (03:00 unless changed, the time of always on the list) for the meals with a recipe of the next days (7 unless changed, 1 to 14, today included): pantry articles are left out, a meal already on a list is never added again, and nothing is added in the holiday. It records contributions like a run by hand, so Undo and taking quantities back work the same (ticket 285).
+_Avoid_: auto-shop, sync
+
 **Contribution**:
 What one meal brought to one list entry in a shopping run: meal day and mealtime, recipe, portions and the base quantity (none for a kitchen measure or free text). It is the line under the entry ("Für Erdnuss-Curry (Di)") and the basis for taking quantities back later.
 _Avoid_: source row, link
@@ -389,10 +393,6 @@ _Avoid_: kitchen mode, cook mode
 **Cut-off time**:
 The time of day from which a mealtime is no longer shown on displays, set per mealtime in the household settings. Empty means the mealtime is shown for the rest of the day.
 _Avoid_: deadline, expiry
-
-**Holiday mode**:
-A household-wide pause, with from and to dates, of all articles that are put on a list by themselves. The lists and settings say so while it is on.
-_Avoid_: vacation mode, skip
 
 **Task**:
 Something to be done once or repeatedly, ticked off when done; may belong to a routine, carry a star value and be split into subtasks.
@@ -454,7 +454,7 @@ The days in a row on which a person completed a routine, counting only the days 
 _Avoid_: chain, combo
 
 **Pause day**:
-A day a parent marks for the whole family or for chosen people (ill, holiday), in spans with a first and last day, on which routines do not count: if the routine is not done that day the day drops out of the week and does not end the best streak; if it is done anyway the day counts like a normal day. No reason is recorded. Not the household-wide holiday mode of article rules.
+A day a parent marks for the whole family or for chosen people (ill, holiday), in spans with a first and last day, on which routines do not count: if the routine is not done that day the day drops out of the week and does not end the best streak; if it is done anyway the day counts like a normal day. No reason is recorded. Not the household-wide holiday of article rules.
 _Avoid_: skip day, excuse
 
 **Badge**:

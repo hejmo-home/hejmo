@@ -74,27 +74,33 @@ func e(src, iso string, unchecked bool) Entry {
 // dates are computed without a table that ends. The page says so when it ends
 // before the end of the calendar.
 func TableEnd(r Religion, o Options) int {
+	_, last := tableYears(r, o)
+	return last
+}
+
+// tableYears is the first and last year of the table the religion follows (0, 0: none).
+func tableYears(r Religion, o Options) (first, last int) {
+	var es []Entry
 	switch r {
 	case Muslim, Alevi:
 		if o.islamic() == Diyanet {
-			return tableLastYear(diyanetEntries())
+			es = diyanetEntries()
 		}
 	case Bahai:
-		return tableLastYear(bahaiEntries())
+		es = bahaiEntries()
 	case Buddhist:
-		return tableLastYear(losarEntries())
+		es = losarEntries()
 	case Sikh:
-		return tableLastYear(sgpcEntries())
+		es = sgpcEntries()
 	}
-	return 0
-}
-
-func tableLastYear(es []Entry) int {
-	last := 0
 	for _, x := range es {
-		if y := x.Date.Year(); y > last {
+		y := x.Date.Year()
+		if first == 0 || y < first {
+			first = y
+		}
+		if y > last {
 			last = y
 		}
 	}
-	return last
+	return first, last
 }

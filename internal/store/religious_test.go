@@ -383,9 +383,10 @@ func TestTheCalendarWindowFollowsTheBoxClock(t *testing.T) {
 	}
 }
 
-// A holiday that has no date of its own calendar and falls twice in a Gregorian year (the SGPC table lists Guru
-// Gobind Singh on 6 January and 27 December 2025) is two events, not one.
-func TestTwoOccurrencesOfOneHolidayInAYearAreTwoEvents(t *testing.T) {
+// A holiday that has no date of its own calendar can fall twice in a Gregorian year; since the SGPC table was checked
+// (ticket 354) it holds only Guru Gobind Singh's 27 December 2025 (the 6 January one is in the Jantri of the year before,
+// not checked), so no table has such a year now and the occurrence ids are not exercised by data. Saving again keeps the ids.
+func TestSavingAgainKeepsTheEventIdsOfASikhHoliday(t *testing.T) {
 	t.Parallel()
 	db, h := religiousHousehold(t, "DE-HH", 0, 0)
 	if _, err := db.SaveReligiousHolidays(h.ID, on(rh.Sikh), "Religiöse Feiertage", "de"); err != nil {
@@ -398,7 +399,7 @@ func TestTwoOccurrencesOfOneHolidayInAYearAreTwoEvents(t *testing.T) {
 		}
 	}
 	slices.Sort(days)
-	if !slices.Equal(days, []string{"2025-01-06", "2025-12-27"}) {
+	if !slices.Equal(days, []string{"2025-12-27"}) {
 		t.Errorf("Guru Gobind Singh 2025: %v", days)
 	}
 	// Saving again keeps both and the ids.

@@ -31,6 +31,7 @@ func allTables() map[string][]Entry {
 	return map[string][]Entry{
 		SrcDiyanet: diyanetEntries(),
 		SrcAABF:    nil, // fixed days, see alevi
+		SrcBahai:   bahaiEntries(),
 		SrcLosar:   losarEntries(),
 		SrcSGPC:    sgpcEntries(),
 	}
@@ -78,6 +79,8 @@ func TableEnd(r Religion, o Options) int {
 		if o.islamic() == Diyanet {
 			return tableLastYear(diyanetEntries())
 		}
+	case Bahai:
+		return tableLastYear(bahaiEntries())
 	case Buddhist:
 		return tableLastYear(losarEntries())
 	case Sikh:

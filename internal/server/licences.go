@@ -84,13 +84,20 @@ type licenceLine struct {
 }
 
 // religiousLicences lists what the religious holidays calendar is made from (ticket 339): the three libraries with
-// their licences, the rules that were worked out, and every table with its source, the years it covers and how
-// much of it was not yet checked against the source.
+// their licences, the rules that were worked out, and every table with its source, the years it covers and what it was checked against (ticket 354) and how
+// much of it was not yet checked.
 func (s *server) religiousLicences(lang string) []licenceLine {
 	t := func(key string, kv ...string) string { return s.i18n.Format(lang, i18n.Msg(key, kv...)) }
 	out := []licenceLine{{Text: t("lic.rh.lib.hebcal")}, {Text: t("lic.rh.lib.hijri")}, {Text: t("lic.rh.lib.meeus")}}
 	for _, tb := range rh.Tables() {
 		out = append(out, licenceLine{Text: s.rhSourceName(lang, tb.ID)})
+		if tb.UncheckedEntries == 0 {
+			edition := t("lic.rh.edition." + tb.ID)
+			out = append(out, licenceLine{Text: t("lic.rh.checked", "source", edition)})
+		}
+		if tb.ID == rh.SrcBahai {
+			out = append(out, licenceLine{Text: t("lic.rh.bahai.copyright")})
+		}
 		if tb.UncheckedEntries > 0 {
 			out = append(out, licenceLine{Text: t("lic.rh.unchecked", "n", strconv.Itoa(tb.UncheckedEntries), "total", strconv.Itoa(tb.Entries)), Unchecked: true})
 		}

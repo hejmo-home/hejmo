@@ -9,37 +9,55 @@ import (
 // A Hijri year of the Diyanet table: the first day of Muharram, the evening of
 // Mevlid Kandili (the night before 12 Rabi' al-awwal), the first day of
 // Ramadan and of Shawwal, and the 10th of Dhu al-Hijja (Kurban Bayrami). The
-// Diyanet İşleri Başkanlığı publishes these in its religious days table. They
-// were entered without the table at hand, so every one is Unchecked until it
-// is checked against the source (ticket 339: the product owner decides on the
-// download).
+// Diyanet İşleri Başkanlığı publishes these in its lists of religious days.
+// The table holds what the lists of 2020 to 2035 give, every entry compared
+// with them (ticket 354: 2020 and 2021 from the query form, 2022 to 2035 from the
+// yearly lists). A date outside 2020 to 2035 is not in the table: it is left out
+// of the first row (Hijri year 1441 starts in 2019) and the last (1457 ends in 2036).
 type diyanetRow struct {
 	hy                                      int
 	newYear, mawlid, ramadan, shawwal, adha Entry
 }
 
+// diyanet makes a row; an empty date is one outside the years of the table.
 func diyanet(hy int, newYear, mawlid, ramadan, shawwal, adha string) diyanetRow {
-	x := func(iso string) Entry { return e(SrcDiyanet, iso, true) }
+	x := func(iso string) Entry {
+		if iso == "" {
+			return Entry{}
+		}
+		return e(SrcDiyanet, iso, false)
+	}
 	return diyanetRow{hy, x(newYear), x(mawlid), x(ramadan), x(shawwal), x(adha)}
 }
 
 var diyanetRows = []diyanetRow{
+	diyanet(1441, "", "", "2020-04-24", "2020-05-24", "2020-07-31"),
 	diyanet(1442, "2020-08-20", "2020-10-28", "2021-04-13", "2021-05-13", "2021-07-20"),
-	diyanet(1443, "2021-08-09", "2021-10-18", "2022-04-02", "2022-05-02", "2022-07-09"),
+	diyanet(1443, "2021-08-10", "2021-10-17", "2022-04-02", "2022-05-02", "2022-07-09"),
 	diyanet(1444, "2022-07-30", "2022-10-07", "2023-03-23", "2023-04-21", "2023-06-28"),
 	diyanet(1445, "2023-07-19", "2023-09-26", "2024-03-11", "2024-04-10", "2024-06-16"),
-	diyanet(1446, "2024-07-07", "2024-09-15", "2025-03-01", "2025-03-30", "2025-06-06"),
+	diyanet(1446, "2024-07-07", "2024-09-14", "2025-03-01", "2025-03-30", "2025-06-06"),
 	diyanet(1447, "2025-06-26", "2025-09-03", "2026-02-19", "2026-03-20", "2026-05-27"),
 	diyanet(1448, "2026-06-16", "2026-08-24", "2027-02-08", "2027-03-09", "2027-05-16"),
 	diyanet(1449, "2027-06-06", "2027-08-13", "2028-01-28", "2028-02-26", "2028-05-05"),
-	diyanet(1450, "2028-05-26", "2028-08-01", "2029-01-16", "2029-02-14", "2029-04-24"),
-	diyanet(1451, "2029-05-15", "2029-07-22", "2030-01-06", "2030-02-04", "2030-04-14"),
+	diyanet(1450, "2028-05-25", "2028-08-02", "2029-01-16", "2029-02-14", "2029-04-24"),
+	diyanet(1451, "2029-05-14", "2029-07-23", "2030-01-05", "2030-02-04", "2030-04-13"),
+	diyanet(1452, "2030-05-03", "2030-07-12", "2030-12-26", "2031-01-24", "2031-04-02"),
+	diyanet(1453, "2031-04-23", "2031-07-01", "2031-12-15", "2032-01-14", "2032-03-22"),
+	diyanet(1454, "2032-04-11", "2032-06-19", "2032-12-04", "2033-01-02", "2033-03-11"),
+	diyanet(1455, "2033-04-01", "2033-06-09", "2033-11-23", "2033-12-23", "2034-03-01"),
+	diyanet(1456, "2034-03-21", "2034-05-29", "2034-11-12", "2034-12-12", "2035-02-18"),
+	diyanet(1457, "2035-03-11", "2035-05-19", "2035-11-01", "2035-12-01", ""),
 }
 
 func diyanetEntries() []Entry {
 	var out []Entry
 	for _, r := range diyanetRows {
-		out = append(out, r.newYear, r.mawlid, r.ramadan, r.shawwal, r.adha)
+		for _, x := range []Entry{r.newYear, r.mawlid, r.ramadan, r.shawwal, r.adha} {
+			if !x.Date.IsZero() {
+				out = append(out, x)
+			}
+		}
 	}
 	return out
 }
@@ -51,6 +69,9 @@ type islamicYear struct {
 	src                                     string
 	unchecked                               bool
 }
+
+// inTable says whether the date is in the table (the first and last row of the Diyanet table lack some).
+func inTable(t time.Time) bool { return !t.IsZero() }
 
 // islamicYears lists the Hijri years of a calendar that reach into the Gregorian years.
 func islamicYears(c IslamicCalendar, from, to int) []islamicYear {
@@ -83,22 +104,29 @@ func islamicHolidays(y islamicYear) []Holiday {
 	mk := func(key string, from, to time.Time, own CalDate) Holiday {
 		return Holiday{Key: key, Start: from, End: to, Vary: true, Own: own, Source: y.src, Unchecked: y.unchecked}
 	}
-	nRamadan := int(y.shawwal.Sub(y.ramadan).Hours() / 24) // 29 or 30 days
-	qadr := mk("lailat_al_qadr", y.ramadan.AddDate(0, 0, 25), y.ramadan.AddDate(0, 0, 25), hijriCal(27, 9, y.hy, 27, 9, y.hy))
-	qadr.Evening = true
-	mawlid := mk("mawlid", y.mawlid, y.mawlid, hijriCal(12, 3, y.hy, 12, 3, y.hy))
-	mawlid.Evening = true
-	ramadan := mk("ramadan", y.ramadan, y.shawwal.AddDate(0, 0, -1), hijriCal(1, 9, y.hy, nRamadan, 9, y.hy))
-	ramadan.ShowOwn = true
-	newYear := mk("islamic_new_year", y.newYear, y.newYear, hijriCal(1, 1, y.hy, 1, 1, y.hy))
-	newYear.ShowOwn = true
-	return []Holiday{
-		newYear,
-		mk("ashura", y.newYear.AddDate(0, 0, 9), y.newYear.AddDate(0, 0, 9), hijriCal(10, 1, y.hy, 10, 1, y.hy)),
-		mawlid, ramadan, qadr,
-		mk("eid_al_fitr", y.shawwal, y.shawwal.AddDate(0, 0, 2), hijriCal(1, 10, y.hy, 3, 10, y.hy)),
-		mk("eid_al_adha", y.adha, y.adha.AddDate(0, 0, 3), hijriCal(10, 12, y.hy, 13, 12, y.hy)),
+	var out []Holiday
+	if inTable(y.newYear) {
+		newYear := mk("islamic_new_year", y.newYear, y.newYear, hijriCal(1, 1, y.hy, 1, 1, y.hy))
+		newYear.ShowOwn = true
+		out = append(out, newYear, mk("ashura", y.newYear.AddDate(0, 0, 9), y.newYear.AddDate(0, 0, 9), hijriCal(10, 1, y.hy, 10, 1, y.hy)))
 	}
+	if inTable(y.mawlid) {
+		mawlid := mk("mawlid", y.mawlid, y.mawlid, hijriCal(12, 3, y.hy, 12, 3, y.hy))
+		mawlid.Evening = true
+		out = append(out, mawlid)
+	}
+	if inTable(y.ramadan) && inTable(y.shawwal) {
+		nRamadan := int(y.shawwal.Sub(y.ramadan).Hours() / 24) // 29 or 30 days
+		ramadan := mk("ramadan", y.ramadan, y.shawwal.AddDate(0, 0, -1), hijriCal(1, 9, y.hy, nRamadan, 9, y.hy))
+		ramadan.ShowOwn = true
+		qadr := mk("lailat_al_qadr", y.ramadan.AddDate(0, 0, 25), y.ramadan.AddDate(0, 0, 25), hijriCal(27, 9, y.hy, 27, 9, y.hy))
+		qadr.Evening = true
+		out = append(out, ramadan, qadr, mk("eid_al_fitr", y.shawwal, y.shawwal.AddDate(0, 0, 2), hijriCal(1, 10, y.hy, 3, 10, y.hy)))
+	}
+	if inTable(y.adha) {
+		out = append(out, mk("eid_al_adha", y.adha, y.adha.AddDate(0, 0, 3), hijriCal(10, 12, y.hy, 13, 12, y.hy)))
+	}
+	return out
 }
 
 // muslim lists the Islamic holidays after the calendar the household chose.
@@ -125,6 +153,9 @@ func alevi(o Options, from, to int) []Holiday {
 		)
 	}
 	for _, iy := range islamicYears(o.islamic(), from, to) {
+		if !inTable(iy.newYear) {
+			continue
+		}
 		// Twelve days of fast from the 1st of Muharrem; Aşure Günü follows on the 13th.
 		fast := Holiday{Key: "muharrem_fast", Start: iy.newYear, End: iy.newYear.AddDate(0, 0, 11), Vary: true, ShowOwn: true,
 			Own: hijriCal(1, 1, iy.hy, 12, 1, iy.hy), Source: SrcAABF, Unchecked: true}

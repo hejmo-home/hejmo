@@ -376,3 +376,18 @@ func TestTheShippedLibraryMarksTypicalPantryArticlesAndNoFreshOnes(t *testing.T)
 		t.Errorf("%d shipped pantry articles, want a sensible few", n)
 	}
 }
+
+// Fold runs for every article name on every lookup (the starter recipes resolve
+// thousands of ingredients against the shipped list), so a name without umlauts
+// must cost no allocation: the race test binary of internal/server peaked at
+// gigabytes of garbage in it (ticket 238).
+func TestFoldOfAPlainNameAllocatesNothing(t *testing.T) {
+	for _, s := range []string{"mehl", "Milk chocolate", "  Eier "} {
+		if n := testing.AllocsPerRun(100, func() { _ = library.Fold(s) }); n > 1 {
+			t.Errorf("Fold(%q) allocates %v times, want at most 1 (the lower-casing of capitals)", s, n)
+		}
+	}
+	if n := testing.AllocsPerRun(100, func() { _ = library.Fold("mehl") }); n != 0 {
+		t.Errorf("Fold of a lower-case plain name allocates %v times, want 0", n)
+	}
+}

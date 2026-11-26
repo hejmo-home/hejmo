@@ -13,7 +13,9 @@ import (
 	"net/textproto"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -103,8 +105,30 @@ func (l libBox) postMultipart(path string, f url.Values, files ...upload) resp {
 	return resp{res.StatusCode, res.Header.Get("Location"), out.String()}
 }
 
+// testJPEGs holds one encoded photo per size, jpegDraws how often one was drawn.
+var (
+	testJPEGsMu sync.Mutex
+	testJPEGs   = map[[2]int][]byte{}
+	jpegDraws   = map[[2]int]int{}
+)
+
+func jpegDrawn(w, h int) int {
+	testJPEGsMu.Lock()
+	defer testJPEGsMu.Unlock()
+	return jpegDraws[[2]int{w, h}]
+}
+
+// testJPEG returns a gradient photo of the size, drawn once per size and handed out as a copy:
+// the layout crawls ask for a 3024 x 4032 one, 48 MB of pixels, several times in one package run.
 func testJPEG(t *testing.T, w, h int) []byte {
 	t.Helper()
+	key := [2]int{w, h}
+	testJPEGsMu.Lock()
+	defer testJPEGsMu.Unlock()
+	if b, ok := testJPEGs[key]; ok {
+		return slices.Clone(b)
+	}
+	jpegDraws[key]++
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
@@ -115,7 +139,8 @@ func testJPEG(t *testing.T, w, h int) []byte {
 	if err := jpeg.Encode(&b, img, nil); err != nil {
 		t.Fatal(err)
 	}
-	return b.Bytes()
+	testJPEGs[key] = b.Bytes()
+	return slices.Clone(testJPEGs[key])
 }
 
 // loopbackFetcher lets the box reach the test's own server, and nothing else.

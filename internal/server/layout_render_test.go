@@ -1123,6 +1123,7 @@ func TestEveryPageIsInTheRenderedLayoutCheck(t *testing.T) {
 	t.Parallel()
 	f := newLayoutFixture(t)
 	pages := append(layoutPages(t, f), wizardPages(t)...)
+	t.Run("parts cover every page once", func(t *testing.T) { layoutPartsCoverEveryPageOnce(t, pages) })
 	for _, route := range htmlRoutes(t) {
 		if _, skip := notRendered[route]; skip {
 			continue

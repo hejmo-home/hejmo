@@ -109,7 +109,22 @@ func (a Article) Name(lang string) string {
 var fold = strings.NewReplacer("ä", "a", "ö", "o", "ü", "u", "ß", "ss")
 
 // Fold lowers case and treats ä, ö, ü like a, o, u, so searching ignores them.
-func Fold(s string) string { return fold.Replace(strings.ToLower(strings.TrimSpace(s))) }
+func Fold(s string) string {
+	s = strings.ToLower(strings.TrimSpace(s))
+	if !hasNonASCII(s) {
+		return s // no ä, ö, ü or ß in it: the replacer would only copy it
+	}
+	return fold.Replace(s)
+}
+
+func hasNonASCII(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] >= 0x80 {
+			return true
+		}
+	}
+	return false
+}
 
 // Matches reports whether the article's name in either language holds q.
 func Matches(a Article, q string) bool {

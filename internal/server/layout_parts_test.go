@@ -30,10 +30,12 @@ func TestLayoutPartOfAPageIsStable(t *testing.T) {
 	}
 }
 
-func TestLayoutPartsCoverEveryPageOnce(t *testing.T) {
-	t.Parallel()
-	f := newLayoutFixture(t)
-	pages := append(layoutPages(t, f), wizardPages(t)...)
+// layoutPartsCoverEveryPageOnce checks the split of the pages into parts. It runs
+// as a subtest of TestEveryPageIsInTheRenderedLayoutCheck, on the pages that test
+// already crawled: a second crawl in its own test held its own fixture, server and
+// pages, and under -race that was most of the memory of the whole package (ticket 238).
+func layoutPartsCoverEveryPageOnce(t *testing.T, pages []layoutPage) {
+	t.Helper()
 	seen := map[string]int{}
 	sizes := [layoutParts]int{}
 	for part := range layoutParts {

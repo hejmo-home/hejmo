@@ -42,7 +42,7 @@ func TestBirthdaysPageHasTheOrthodoxCardsTheStyleAndTheSlava(t *testing.T) {
 	ctHasNot(t, "russian", page, `russian_orthodox`, `Russisch-orthodox`, `Russischen Orthodoxen Kirche`)
 	ctHasNot(t, "russian", c.page("/contacts/birthdays", "en").body, `russian_orthodox`, `Russian Orthodox`)
 	// The order of the Orthodox cards is alphabetical by their German name.
-	order := []string{"bulgarian_orthodox", "greek_orthodox", "romanian_orthodox", "ukrainian_orthodox", "ukrainian_orthodox"}
+	order := []string{"bulgarian_orthodox", "greek_orthodox", "romanian_orthodox", "ukrainian_orthodox"}
 	last := -1
 	for _, v := range order {
 		i := strings.Index(page, `name="name_day_list" value="`+v+`"`)

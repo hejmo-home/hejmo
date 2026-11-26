@@ -388,7 +388,7 @@ paths:
         Health data (ADR 0019). Only the explicit scope `health` or `health:read`
         reaches it: the broad scopes `read` and `write` do not, and children
         never do (403). Every answer says that free-text allergies are not
-        checked automatically and cannot be filtered by. Allergen information without guarantee. The ingredient list on the pack is what counts.
+        checked automatically and cannot be filtered by.
       responses:
         "200":
           description: One entry per person, in the order of the family view
@@ -405,7 +405,7 @@ paths:
       summary: Diet and allergies of a person (scope health:read, parents only)
       description: |
         A person nobody has edited eats everything (`omnivore`) and has no
-        allergies. Health data: see `/food` for who may read it. Allergen information without guarantee. The ingredient list on the pack is what counts.
+        allergies. Health data: see `/food` for who may read it.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       responses:

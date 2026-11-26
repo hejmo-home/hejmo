@@ -10,7 +10,8 @@
     <li><a href="{{.Href}}"{{if .Current}} aria-current="true"{{end}}>{{if .Symbol}}<span class="e" aria-hidden="true">{{.Symbol}}</span>{{end}}{{.Text}}</a></li>{{end}}
   </ul></nav>
   {{if .Searching}}<h2>{{.ResultTitle}}</h2>{{end}}
-  {{if .Rows}}{{template "recipeRows" .Rows}}{{else}}
+  {{if .Rows}}{{template "recipeRows" .Rows}}
+  {{template "allergenNotice"}}{{else}}
   <div class="empty" data-empty><p>{{.NoneText}}</p><p class="row-actions">{{if .Q}}<a href="{{.ClearHref}}">{{t "recipes.search.clear"}}</a>{{else}}<a href="{{.AllHref}}">{{t "recipes.show.all"}}</a>{{end}}</p></div>
   {{end}}
   {{template "freeBox" (dict "Title" (t "lib.free.title") "Hint" (t "recipes.free.hint") "People" .FreeText)}}

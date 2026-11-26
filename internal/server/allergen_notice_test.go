@@ -32,8 +32,7 @@ func TestEveryScreenWithAllergenInformationSaysItComesWithoutGuarantee(t *testin
 
 	t.Run("library and article page", func(t *testing.T) {
 		l := newLibBox(t)
-		mia := l.person("Mia", "child", "omnivore", "peanuts")
-		_ = mia
+		l.person("Mia", "child", "omnivore", "peanuts")
 		wantNotice(t, "library", l.en("/settings/lists/library").body, noticeEN)
 		wantNotice(t, "library de", l.de("/settings/lists/library").body, noticeDE)
 		wantNotice(t, "article", l.en("/settings/lists/library/peanut-butter").body, noticeEN)
@@ -47,6 +46,11 @@ func TestEveryScreenWithAllergenInformationSaysItComesWithoutGuarantee(t *testin
 	t.Run("shopping list", func(t *testing.T) {
 		s := newShop(t)
 		s.person("Mia", "child", "omnivore", "peanuts")
+		// A list without a food article shows no allergen information.
+		s.add(s.item("washing-up-liquid"))
+		if strings.Contains(s.en(s.path("")).body, noticeEN) {
+			t.Error("a list without food says it")
+		}
 		s.add(s.item("peanut-butter"))
 		wantNotice(t, "list", s.en(s.path("")).body, noticeEN)
 	})
@@ -73,6 +77,8 @@ func TestEveryScreenWithAllergenInformationSaysItComesWithoutGuarantee(t *testin
 		r := rb.curry(t)
 		wantNotice(t, "recipe list", rb.b.do(http.MethodGet, "/meals/recipes", nil, enHeader).body, noticeEN)
 		wantNotice(t, "recipe list de", rb.b.do(http.MethodGet, "/meals/recipes", nil, rcpDE).body, noticeDE)
+		wantNotice(t, "starter recipes", rb.b.do(http.MethodGet, "/meals/recipes/starter", nil, enHeader).body, noticeEN)
+		wantNotice(t, "starter recipes de", rb.b.do(http.MethodGet, "/meals/recipes/starter", nil, rcpDE).body, noticeDE)
 		wantNotice(t, "cooking view", rb.b.do(http.MethodGet, "/meals/recipes/"+r.ID+"/cook", nil, enHeader).body, noticeEN)
 		wantNotice(t, "recipe form", rb.b.do(http.MethodGet, "/meals/recipes/"+r.ID+"/edit", nil, enHeader).body, noticeEN)
 		// The recipe page, the article form, the person's diet page and the
@@ -85,19 +91,25 @@ func TestEveryScreenWithAllergenInformationSaysItComesWithoutGuarantee(t *testin
 	t.Run("meal plan", func(t *testing.T) {
 		mb := newMealBox(t)
 		curry := mb.curry(t)
+		// A week without a planned recipe shows no allergen information.
+		if strings.Contains(mb.page(t, enHeader), noticeEN) {
+			t.Error("a week without recipes says it")
+		}
 		mb.plan(t, store.Meal{Day: today, Mealtime: meal.Dinner, RecipeID: curry.ID, Portions: 6})
 		wantNotice(t, "week", mb.page(t, enHeader), noticeEN)
 		wantNotice(t, "week of a child", mb.child.do(http.MethodGet, "/meals", nil, enHeader).body, noticeEN)
 	})
 }
 
-// The same sentence, in English, on what REST and MCP return about allergens.
+// The same sentence, in English, on what REST and MCP return about the
+// allergens of articles and recipes. A person's own diet and allergies are
+// what the family entered, not library tags: those answers do not carry it.
 func TestRESTAndMCPDescribeAllergenInformationAsWithoutGuarantee(t *testing.T) {
 	t.Parallel()
 	doc := loadSpec(t)
 	for _, c := range []struct{ path, method string }{
 		{"/articles", http.MethodGet}, {"/articles/{id}", http.MethodGet}, {"/articles/{id}/warnings", http.MethodGet},
-		{"/recipes/{id}/warnings", http.MethodGet}, {"/people/{id}/food", http.MethodGet}, {"/food", http.MethodGet},
+		{"/recipes/{id}/warnings", http.MethodGet},
 	} {
 		item := doc.Paths.Find(c.path)
 		if item == nil || item.GetOperation(c.method) == nil {
@@ -106,6 +118,11 @@ func TestRESTAndMCPDescribeAllergenInformationAsWithoutGuarantee(t *testing.T) {
 		}
 		if d := item.GetOperation(c.method).Description; !strings.Contains(d, noticeEN) {
 			t.Errorf("%s %s: description lacks the sentence:\n%s", c.method, c.path, d)
+		}
+	}
+	for _, path := range []string{"/people/{id}/food", "/food"} {
+		if d := doc.Paths.Find(path).GetOperation(http.MethodGet).Description; strings.Contains(d, noticeEN) {
+			t.Errorf("GET %s describes a person's own entries as without guarantee:\n%s", path, d)
 		}
 	}
 	if d := doc.Components.Schemas["Article"].Value.Properties["allergens"].Value.Description; !strings.Contains(d, noticeEN) {
@@ -123,10 +140,15 @@ func TestRESTAndMCPDescribeAllergenInformationAsWithoutGuarantee(t *testing.T) {
 	seen := map[string]bool{}
 	for _, tool := range res.Tools {
 		switch tool.Name {
-		case "get_recipe_warnings", "get_diet_and_allergies", "list_diets_and_allergies":
+		case "get_recipe_warnings":
 			seen[tool.Name] = true
 			if !strings.Contains(tool.Description, noticeEN) {
 				t.Errorf("tool %s: description lacks the sentence: %s", tool.Name, tool.Description)
+			}
+		case "get_diet_and_allergies", "list_diets_and_allergies":
+			seen[tool.Name] = true
+			if strings.Contains(tool.Description, noticeEN) {
+				t.Errorf("tool %s returns a person's own entries, not library tags: %s", tool.Name, tool.Description)
 			}
 		}
 	}

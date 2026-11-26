@@ -20,6 +20,7 @@
     {{end}}
   </section>
   {{else}}{{template "recipeRows" .Rows}}{{end}}
+  {{template "allergenNotice"}}
   {{template "freeBox" (dict "Title" (t "lib.free.title") "Hint" (t "recipes.free.hint") "People" .FreeText)}}
   {{else if .Parent}}<div class="empty" data-empty><p>{{t "recipes.empty"}}</p><p class="rcp-act"><a class="button" href="{{.NewHref}}">{{template "plusIcon"}}{{t "recipes.new"}}</a><a class="button secondary" href="{{.ImportHref}}">{{template "linkIcon"}}{{t "recipes.import.button"}}</a></p></div>
   {{else}}<div class="empty" data-empty><p>{{t "recipes.empty.child"}}</p></div>

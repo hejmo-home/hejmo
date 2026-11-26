@@ -15,6 +15,7 @@
     {{if .Suggested}}<dt>{{t "art.f.suggested"}}</dt><dd>{{if .SuggestedExp}}<span class="tag exp">{{.Suggested}}</span><span class="hint">{{t "art.sug.allergy.hint"}} <a href="/settings/lists">{{t "art.sug.allergy.link"}}</a></span>{{else}}<span class="tag hidden-tag">{{.Suggested}}</span>{{end}}</dd>{{end}}
     {{if .OnLists}}<dt>{{t "art.f.on"}}</dt><dd>{{.OnLists}}</dd>{{end}}
   </dl>
+  {{if .IsFood}}{{template "allergenNotice"}}{{end}}
   <form method="post" action="/settings/lists/library/{{.ID}}/hidden" class="steps lib-form">
     {{template "autoCard" .Auto}}
     <fieldset>

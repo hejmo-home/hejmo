@@ -2233,6 +2233,7 @@
   "food.allergens.hint": "The 14 main allergens that must be named on every package in the EU. Tick what {name} cannot tolerate: Hejmo then warns about articles that contain it and names {name}.",
   "food.allergens.caveat.lead": "Experimental, no guarantee:",
   "food.allergens.caveat.text": "A warning can be missing or wrong. When in doubt, read the ingredients on the package.",
+  "food.allergens.notice": "Allergen information without guarantee. The ingredient list on the pack is what counts.",
   "food.other.legend": "Anything else?",
   "food.other.label": "Other allergies or intolerances",
   "food.other.placeholder": "for example kiwi, strawberries",

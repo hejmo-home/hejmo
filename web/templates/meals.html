@@ -42,6 +42,7 @@
     {{end}}
   </div>
   {{end}}
+  {{if .AllergenNote}}{{template "allergenNotice"}}{{end}}
 {{template "foot"}}
 
 {{define "tplIcon"}}<svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="12" height="13" rx="2"/><path d="M8 4h10a2 2 0 0 1 2 2v11"/></svg>{{end}}

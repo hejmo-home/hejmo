@@ -46,6 +46,8 @@ type listsViewData struct {
 	ViewLine  string // the success line after switching the view
 	ViewError string // the view could not be saved
 	FreeText  []freeTextPerson
+	// AllergenNote is set when the list holds a food article: the notice that allergen information comes without guarantee (ticket 214).
+	AllergenNote bool
 }
 
 // errNoList means the list of a lists view is gone (deleted meanwhile).
@@ -122,7 +124,7 @@ func (s *server) listsView(h store.Household, d store.Display, lang, listID stri
 		if err != nil {
 			return v, err
 		}
-		lk.apply(v.Open, v.Ticked)
+		v.AllergenNote = lk.apply(v.Open, v.Ticked)
 		if v.Auto, err = s.autoOverlay(principal{household: h, person: store.Person{Role: store.RoleChild}}, lang, *cur, es, v.Open, v.Ticked); err != nil {
 			return v, err
 		}
@@ -155,7 +157,9 @@ func (s *server) listsView(h store.Household, d store.Display, lang, listID stri
 	if err != nil {
 		return v, err
 	}
-	v.FreeText = lk.freeTextNote(lk.apply(v.Open, v.Ticked))
+	food := lk.apply(v.Open, v.Ticked)
+	v.AllergenNote = food
+	v.FreeText = lk.freeTextNote(food)
 	if v.Auto, err = s.autoOverlay(principal{household: h, person: store.Person{Role: store.RoleChild}}, lang, *cur, es, v.Open, v.Ticked); err != nil {
 		return v, err
 	}

@@ -39,6 +39,7 @@
   {{if .Open}}{{if .Tiles}}<div class="list-tiles"><ul class="tiles" data-person="{{.List.Slot}}">
   {{range .Open}}{{template "listTile" (dict "Prefix" "/lists/" "List" $.List.ID "Hide" $.Hide "E" .)}}{{end}}</ul></div>{{else}}<ul class="entries">
   {{range .Open}}{{template "tickRow" (dict "Root" $ "E" .)}}{{end}}</ul>{{end}}{{end}}
+  {{if .AllergenNote}}{{template "allergenNotice"}}{{end}}
   {{with .FreeBox}}{{template "freeBox" .}}{{end}}
   {{if and (not .Child) .List.Total}}<p class="tools"><a href="/lists/{{.List.ID}}?edit=1{{if .Hide}}&amp;ticked=hide{{end}}">{{if .Manual}}{{t "lists.tools"}}{{else}}{{t "lists.tools.az"}}{{end}}</a></p>{{end}}
   {{if .List.Done}}{{if .Hide}}<p class="hidden-line">{{if eq .List.Done 1}}{{t "lists.hidden_line.one"}}{{else}}{{printf (t "lists.hidden_line") .List.Done}}{{end}} <a href="/lists/{{.List.ID}}">{{t "lists.group.show"}}</a></p>

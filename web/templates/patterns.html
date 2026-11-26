@@ -213,6 +213,9 @@
 {{define "unchecked"}}<span class="unchecked"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.5v.6M12 16.8v.4"/></svg><span>{{.}}</span></span>{{end}}
 
 {{/* The people whose free-text allergies Hejmo cannot check or filter by (ticket 164). Arguments: Title, Hint and People (each with Chip and Text). */}}
+{{/* The line under every screen that shows allergen information or an allergen warning (ticket 214): without guarantee, the pack counts. */}}
+{{define "allergenNotice"}}<p class="hint allergen-notice">{{t "food.allergens.notice"}}</p>{{end}}
+
 {{define "freeBox"}}{{if .People}}<section class="unchecked-box{{with .Class}} {{.}}{{end}}" aria-labelledby="unch"><h2 id="unch"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.5v.6M12 16.8v.4"/></svg>{{.Title}}</h2><p class="hint">{{.Hint}}</p><ul>{{range .People}}<li><span class="who"><span class="marker" data-person="{{.Chip.Slot}}" data-shape="{{.Chip.Shape}}" aria-hidden="true"></span>{{printf "%s:" .Chip.Name}}</span> <span>{{.Text}}</span></li>{{end}}</ul></section>{{end}}{{end}}
 
 {{/* Rows of articles of the library (ticket 164): symbol or picture, name, what it is in words, tags and one warning line per affected group. The argument is a list of rows. */}}

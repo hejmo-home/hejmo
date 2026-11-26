@@ -388,7 +388,7 @@ paths:
         Health data (ADR 0019). Only the explicit scope `health` or `health:read`
         reaches it: the broad scopes `read` and `write` do not, and children
         never do (403). Every answer says that free-text allergies are not
-        checked automatically and cannot be filtered by.
+        checked automatically and cannot be filtered by. Allergen information without guarantee. The ingredient list on the pack is what counts.
       responses:
         "200":
           description: One entry per person, in the order of the family view
@@ -405,7 +405,7 @@ paths:
       summary: Diet and allergies of a person (scope health:read, parents only)
       description: |
         A person nobody has edited eats everything (`omnivore`) and has no
-        allergies. Health data: see `/food` for who may read it.
+        allergies. Health data: see `/food` for who may read it. Allergen information without guarantee. The ingredient list on the pack is what counts.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       responses:
@@ -3122,6 +3122,7 @@ paths:
         free-text allergies (`not_checked_allergies`) are not checked
         automatically (`note`). The answer is experimental and without
         guarantee. Warnings never block anything. Works for starter recipes too.
+        Allergen information without guarantee. The ingredient list on the pack is what counts.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
       responses:
@@ -4180,7 +4181,7 @@ paths:
         replaced by the nearest active unit of its kind (kg by g), piece when
         nothing is left. Articles say which
         allergens they contain; who is warned about them is health data, see
-        `/articles/{id}/warnings`.
+        `/articles/{id}/warnings`. Allergen information without guarantee. The ingredient list on the pack is what counts.
       parameters:
         - { name: q, in: query, required: false, schema: { type: string } }
       responses:
@@ -4224,6 +4225,8 @@ paths:
     get:
       operationId: getArticle
       summary: One article, by its key (shipped) or id (own) (scope lists:read)
+      description: |
+        Allergen information without guarantee. The ingredient list on the pack is what counts.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
       responses:
@@ -4527,7 +4530,7 @@ paths:
         with exactly the same allergens share one entry. The answer is
         experimental and without guarantee: it only knows the 14 main
         allergens as tagged in the library, no traces, and cannot check free
-        text (`note`).
+        text (`note`). Allergen information without guarantee. The ingredient list on the pack is what counts.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
       responses:
@@ -6180,6 +6183,7 @@ components:
         kind: { type: string, enum: [meat, fish, veg, vegan, nonfood] }
         allergens:
           type: array
+          description: "Allergen information without guarantee. The ingredient list on the pack is what counts."
           items: { type: string, enum: [celery, gluten, crustaceans, eggs, fish, lupin, milk, molluscs, mustard, nuts, peanuts, sesame, soy, sulphites] }
         units:
           type: array

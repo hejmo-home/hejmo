@@ -1,6 +1,7 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "lib.title") "Frame" .Frame)}}
   <h1>{{t "lib.title"}}</h1>
   <p class="lead">{{t "lib.lead"}}</p>
+  {{template "allergenNotice"}}
   <p><a class="button" href="/settings/lists/library/new">{{t "lib.new"}}</a></p>
   <form class="lib-search" method="get" action="/settings/lists/library" role="search">
     <div class="f"><label>{{t "lib.search.label"}}<input name="q" type="search" value="{{.Q}}" placeholder="{{t "lib.search.placeholder"}}"></label></div>

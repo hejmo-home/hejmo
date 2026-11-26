@@ -38,14 +38,18 @@ const (
 	GreekOrthodox    List = "greek_orthodox"    // Calendar of the Church of Greece
 
 	BulgarianOrthodox List = "bulgarian_orthodox" // Calendar of the Bulgarian Orthodox Church (ticket 338)
-	RussianOrthodox   List = "russian_orthodox"   // Calendar of the Russian Orthodox Church, Moscow Patriarchate
+	// RussianOrthodox (Calendar of the Russian Orthodox Church, Moscow Patriarchate; Julian calendar) is withheld: no
+	// source of it can be read, so its list waits unchecked in pending/ until ticket 374 has checked it. It is not in
+	// Lists(), so it is not a choice, not valid and not in the binary. To offer it again: check the entries, move the
+	// file to data/, add the constant to Lists() and to Calendar() (Julian) and the choice card in the server.
+	RussianOrthodox   List = "russian_orthodox"
 	UkrainianOrthodox List = "ukrainian_orthodox" // Calendar of the Orthodox Church of Ukraine
 )
 
 // Lists are the lists in the order the settings page shows them: the Western churches, then the Orthodox ones
-// alphabetically by their German name.
+// alphabetically by their German name. The Russian list is not among them (see RussianOrthodox).
 func Lists() []List {
-	return []List{Catholic, Protestant, BulgarianOrthodox, GreekOrthodox, RomanianOrthodox, RussianOrthodox, UkrainianOrthodox}
+	return []List{Catholic, Protestant, BulgarianOrthodox, GreekOrthodox, RomanianOrthodox, UkrainianOrthodox}
 }
 
 // Orthodox reports whether the list is the calendar of an Orthodox church: the lists that follow the calendar style.
@@ -58,8 +62,6 @@ func (l List) Orthodox() bool {
 // Julian one, so the Ukrainian list has none (ok is false), like the Western lists.
 func (l List) Calendar() (style Style, ok bool) {
 	switch l {
-	case RussianOrthodox:
-		return Julian, true
 	case BulgarianOrthodox, GreekOrthodox, RomanianOrthodox:
 		return RevisedJulian, true
 	}

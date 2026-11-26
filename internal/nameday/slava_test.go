@@ -1,6 +1,9 @@
 package nameday
 
-import "testing"
+import (
+	"regexp"
+	"testing"
+)
 
 func TestSlavaListHasSourcesAndSaints(t *testing.T) {
 	l := Slavas()
@@ -14,8 +17,13 @@ func TestSlavaListHasSourcesAndSaints(t *testing.T) {
 		if e.Name == "" || e.Saint == "" || e.SaintDE == "" {
 			t.Errorf("%s: name, saint (Serbian) and saint in German are required", e.ID)
 		}
-		if !e.Unchecked {
-			t.Errorf("%s: not checked against the source", e.ID)
+		if e.Unchecked {
+			t.Errorf("%s: still unchecked; check it against its source or remove it", e.ID)
+		}
+	}
+	for k, name := range l.Sources {
+		if !regexp.MustCompile(`20\d\d`).MatchString(name) {
+			t.Errorf("%s: the source names no edition or year: %q", k, name)
 		}
 	}
 	nik, ok := l.Entry("nikola")

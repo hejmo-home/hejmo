@@ -1,7 +1,7 @@
 {
  "list": "bulgarian_orthodox",
  "sources": {
-  "bgp": "Православен календар на Българската православна църква (Български патриаршия)"
+  "bgp": "Българска Патриаршия (https://www.bg-patriarshia.bg): Православен календар, geprüft an den Monatsseiten 2026 (bg-patriarshia.bg/calendar/2026-1 bis 2026-12)"
  },
  "entries": [
   {
@@ -19,8 +19,7 @@
    "saint": "Johannes der Täufer (Iwanowden)",
    "day": "01-07",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "iwan-10-19",
@@ -32,8 +31,7 @@
    ],
    "saint": "Ehrwürdiger Iwan von Rila",
    "day": "10-19",
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "iwan-06-24",
@@ -45,8 +43,7 @@
    ],
    "saint": "Geburt Johannes des Täufers (Enjowden)",
    "day": "06-24",
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "georgi-05-06",
@@ -63,20 +60,7 @@
    "saint": "Großmärtyrer Georg der Siegbringer (Gergjowden)",
    "day": "05-06",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
-  },
-  {
-   "id": "georgi-11-03",
-   "name": "Georgi",
-   "variants": [
-    "Георги",
-    "Georg"
-   ],
-   "saint": "Georg, Weihe der Kirche in Lydda",
-   "day": "11-03",
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "dimitar-10-26",
@@ -92,8 +76,7 @@
    "saint": "Großmärtyrer Demetrios von Thessaloniki (Dimitrowden)",
    "day": "10-26",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "nikolaj-12-06",
@@ -110,8 +93,7 @@
    "saint": "Nikolaus von Myra (Nikulden)",
    "day": "12-06",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "petar-06-29",
@@ -125,8 +107,7 @@
    "saint": "Apostel Petrus (Petrowden)",
    "day": "06-29",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "pawel-06-29",
@@ -139,8 +120,7 @@
    "saint": "Apostel Paulus (Petrowden)",
    "day": "06-29",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "todor-easter-minus-43",
@@ -154,8 +134,7 @@
    "saint": "Todorowden: Samstag der ersten Fastenwoche, Theodor Tiron",
    "easter": -43,
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "todora-easter-minus-43",
@@ -167,8 +146,7 @@
    "saint": "Todorowden: Samstag der ersten Fastenwoche",
    "easter": -43,
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "wasil-01-01",
@@ -184,8 +162,7 @@
    "saint": "Basilius der Große (Wasiljowden)",
    "day": "01-01",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "atanas-01-18",
@@ -199,8 +176,7 @@
    "saint": "Athanasius der Große (Atanasowden)",
    "day": "01-18",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "trifon-02-01",
@@ -213,8 +189,7 @@
    "saint": "Märtyrer Tryphon (Trifon Zarezan)",
    "day": "02-01",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "marija-08-15",
@@ -230,8 +205,7 @@
    "saint": "Entschlafung der Gottesmutter (Goljama Bogoroditza)",
    "day": "08-15",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "marija-07-22",
@@ -243,8 +217,7 @@
    ],
    "saint": "Maria Magdalena",
    "day": "07-22",
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "elena-05-21",
@@ -258,8 +231,7 @@
    "saint": "Zarin Helena, den Aposteln gleich",
    "day": "05-21",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "konstantin-05-21",
@@ -275,8 +247,7 @@
    "saint": "Kaiser Konstantin der Große, den Aposteln gleich",
    "day": "05-21",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "stefan-12-27",
@@ -291,8 +262,7 @@
    "saint": "Erzmärtyrer Stephanus (Stefanowden)",
    "day": "12-27",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "michail-11-08",
@@ -306,22 +276,20 @@
    "saint": "Erzengel Michael (Archangelowden)",
    "day": "11-08",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
-   "id": "gawrail-11-08",
+   "id": "gawrail-03-26",
    "name": "Gawrail",
    "variants": [
     "Гавраил",
     "Gabriel",
     "Gavrail"
    ],
-   "saint": "Erzengel Gabriel (Archangelowden)",
-   "day": "11-08",
+   "saint": "Synaxis des Erzengels Gabriel",
+   "day": "03-26",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "angel-11-08",
@@ -332,25 +300,10 @@
     "Angelina",
     "Angelika"
    ],
-   "saint": "Erzengel (Archangelowden)",
+   "saint": "Märtyrer Angel von Lerin (Archangelowden)",
    "day": "11-08",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
-  },
-  {
-   "id": "rafail-11-08",
-   "name": "Rafail",
-   "variants": [
-    "Рафаил",
-    "Raphael",
-    "Rafael"
-   ],
-   "saint": "Erzengel Raphael (Archangelowden)",
-   "day": "11-08",
-   "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "jordan-01-06",
@@ -364,8 +317,7 @@
    "saint": "Theophanie, Taufe des Herrn (Jordanowden)",
    "day": "01-06",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "bogdan-01-06",
@@ -377,8 +329,7 @@
    "saint": "Theophanie, Taufe des Herrn (Bogojawlenie)",
    "day": "01-06",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "christo-12-25",
@@ -393,8 +344,7 @@
    "saint": "Geburt Christi",
    "day": "12-25",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "christina-07-24",
@@ -408,11 +358,10 @@
    "saint": "Großmärtyrerin Christina von Tyrus",
    "day": "07-24",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
-   "id": "sawa-01-14",
+   "id": "sawa-01-12",
    "name": "Sawa",
    "variants": [
     "Сава",
@@ -420,10 +369,9 @@
     "Sabas"
    ],
    "saint": "Heiliger Sava von Serbien",
-   "day": "01-14",
+   "day": "01-12",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "ilija-07-20",
@@ -440,8 +388,7 @@
    "saint": "Prophet Elija (Ilinden)",
    "day": "07-20",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "boris-05-02",
@@ -453,11 +400,10 @@
    "saint": "Fürst Boris-Michail, den Aposteln gleich",
    "day": "05-02",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
-   "id": "kiril-05-24",
+   "id": "kiril-05-11",
    "name": "Kiril",
    "variants": [
     "Кирил",
@@ -466,13 +412,12 @@
     "Cyril"
    ],
    "saint": "Kyrill und Method, den Aposteln gleich",
-   "day": "05-24",
+   "day": "05-11",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
-   "id": "metodi-05-24",
+   "id": "metodi-05-11",
    "name": "Metodi",
    "variants": [
     "Методи",
@@ -481,10 +426,9 @@
     "Metodij"
    ],
    "saint": "Kyrill und Method, den Aposteln gleich",
-   "day": "05-24",
+   "day": "05-11",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "aleksandar-08-30",
@@ -501,8 +445,7 @@
    "saint": "Alexander von Konstantinopel",
    "day": "08-30",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "pantelej-07-27",
@@ -517,8 +460,7 @@
    "saint": "Großmärtyrer Pantaleon",
    "day": "07-27",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "petka-10-14",
@@ -532,8 +474,7 @@
    "saint": "Ehrwürdige Paraskewa (Petkowden)",
    "day": "10-14",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "paraskewa-10-14",
@@ -545,8 +486,7 @@
    "saint": "Ehrwürdige Paraskewa von Epiwates",
    "day": "10-14",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "warwara-12-04",
@@ -559,8 +499,7 @@
    "saint": "Großmärtyrerin Barbara",
    "day": "12-04",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "blagowest-03-25",
@@ -573,8 +512,7 @@
    "saint": "Verkündigung an Maria",
    "day": "03-25",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "zwetan-easter-minus-7",
@@ -589,8 +527,7 @@
    "saint": "Palmsonntag (Zwetnitza)",
    "easter": -7,
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "zwetelina-easter-minus-7",
@@ -603,8 +540,7 @@
    ],
    "saint": "Palmsonntag (Zwetnitza)",
    "easter": -7,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "lazar-easter-minus-8",
@@ -618,8 +554,7 @@
    "saint": "Lazarsamstag (Lazarowden)",
    "easter": -8,
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "lazarina-easter-minus-8",
@@ -629,8 +564,7 @@
    ],
    "saint": "Lazarsamstag",
    "easter": -8,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "spas-easter-plus-39",
@@ -644,8 +578,7 @@
    "saint": "Christi Himmelfahrt (Spasowden)",
    "easter": 39,
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "toma-easter-plus-7",
@@ -660,8 +593,7 @@
    "saint": "Thomassonntag, Sonntag nach Ostern",
    "easter": 7,
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "krasimir-09-14",
@@ -671,35 +603,19 @@
    ],
    "saint": "Kreuzerhöhung",
    "day": "09-14",
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
-   "id": "wladimir-11-21",
+   "id": "wladimir-07-15",
    "name": "Wladimir",
    "variants": [
     "Владимир",
     "Vladimir",
     "Wlado"
    ],
-   "saint": "Eintritt der Gottesmutter in den Tempel",
-   "day": "11-21",
-   "source": "bgp",
-   "unchecked": true
-  },
-  {
-   "id": "maksim-03-09",
-   "name": "Maksim",
-   "variants": [
-    "Максим",
-    "Maxim",
-    "Maximilian",
-    "Max"
-   ],
-   "saint": "Märtyrer Maximus",
-   "day": "03-09",
-   "source": "bgp",
-   "unchecked": true
+   "saint": "Fürst Wladimir von Kiew, den Aposteln gleich",
+   "day": "07-15",
+   "source": "bgp"
   },
   {
    "id": "luka-10-18",
@@ -713,8 +629,7 @@
    "saint": "Apostel und Evangelist Lukas",
    "day": "10-18",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "marko-04-25",
@@ -728,8 +643,7 @@
    "saint": "Apostel und Evangelist Markus",
    "day": "04-25",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "andrej-11-30",
@@ -744,8 +658,7 @@
    "saint": "Apostel Andreas der Erstberufene (Andrejowden)",
    "day": "11-30",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "spiridon-12-12",
@@ -757,8 +670,7 @@
    "saint": "Spyridon von Trimythous",
    "day": "12-12",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "aleksej-03-17",
@@ -771,19 +683,17 @@
    "saint": "Alexius, der Mann Gottes",
    "day": "03-17",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
-   "id": "romil-10-01",
+   "id": "romil-01-16",
    "name": "Romil",
    "variants": [
     "Ромил"
    ],
    "saint": "Ehrwürdiger Romil von Widin",
-   "day": "10-01",
-   "source": "bgp",
-   "unchecked": true
+   "day": "01-16",
+   "source": "bgp"
   },
   {
    "id": "olga-07-11",
@@ -794,8 +704,7 @@
    ],
    "saint": "Fürstin Olga, den Aposteln gleich",
    "day": "07-11",
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "sofija-09-17",
@@ -810,8 +719,7 @@
    "saint": "Märtyrerin Sofija mit Wera, Nadeschda und Ljubow",
    "day": "09-17",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "wjara-09-17",
@@ -823,8 +731,7 @@
    ],
    "saint": "Märtyrerin Wera",
    "day": "09-17",
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "nadeschda-09-17",
@@ -837,8 +744,7 @@
    ],
    "saint": "Märtyrerin Nadeschda",
    "day": "09-17",
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "ljubow-09-17",
@@ -850,8 +756,7 @@
    ],
    "saint": "Märtyrerin Ljubow",
    "day": "09-17",
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "jakow-10-23",
@@ -864,8 +769,7 @@
    ],
    "saint": "Apostel Jakobus, Bruder des Herrn",
    "day": "10-23",
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "filip-11-14",
@@ -879,8 +783,7 @@
    "saint": "Apostel Philippus",
    "day": "11-14",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "simeon-02-03",
@@ -894,8 +797,7 @@
    "saint": "Simeon der Gottesempfänger",
    "day": "02-03",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "toma-10-06",
@@ -906,8 +808,7 @@
    ],
    "saint": "Apostel Thomas",
    "day": "10-06",
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "tatjana-01-12",
@@ -919,8 +820,7 @@
    ],
    "saint": "Märtyrerin Tatjana",
    "day": "01-12",
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "sebastian-12-18",
@@ -934,8 +834,7 @@
    "saint": "Märtyrer Sebastian",
    "day": "12-18",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   },
   {
    "id": "iona-09-22",
@@ -949,8 +848,7 @@
    "saint": "Prophet Jona",
    "day": "09-22",
    "usual": true,
-   "source": "bgp",
-   "unchecked": true
+   "source": "bgp"
   }
  ]
 }

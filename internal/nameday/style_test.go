@@ -6,15 +6,15 @@ import (
 )
 
 const styleList = `{
- "list": "russian_orthodox",
- "sources": {"rpc": "Calendar of the Russian Orthodox Church"},
+ "list": "ukrainian_orthodox",
+ "sources": {"ocu": "Calendar of the Orthodox Church of Ukraine"},
  "entries": [
-  {"id":"nikolaj","name":"Nikolaj","saint":"Nikolaus von Myra","day":"12-06","usual":true,"source":"rpc"},
-  {"id":"jekaterina","name":"Jekaterina","variants":["Екатерина"],"saint":"Katharina","day":"11-24","source":"rpc"},
-  {"id":"foma","name":"Foma","saint":"Thomas","easter":7,"source":"rpc"},
-  {"id":"georgij","name":"Georgij","saint":"Georg","day":"04-23","move":"easter_monday","source":"rpc"},
-  {"id":"leap","name":"Leap","saint":"Leap","day":"02-29","source":"rpc"},
-  {"id":"stefan","name":"Stefan","saint":"Stephan","day":"12-27","source":"rpc"}
+  {"id":"nikolaj","name":"Nikolaj","saint":"Nikolaus von Myra","day":"12-06","usual":true,"source":"ocu"},
+  {"id":"jekaterina","name":"Jekaterina","variants":["Екатерина"],"saint":"Katharina","day":"11-24","source":"ocu"},
+  {"id":"foma","name":"Foma","saint":"Thomas","easter":7,"source":"ocu"},
+  {"id":"georgij","name":"Georgij","saint":"Georg","day":"04-23","move":"easter_monday","source":"ocu"},
+  {"id":"leap","name":"Leap","saint":"Leap","day":"02-29","source":"ocu"},
+  {"id":"stefan","name":"Stefan","saint":"Stephan","day":"12-27","source":"ocu"}
  ]
 }`
 
@@ -116,14 +116,14 @@ func TestListsOrder(t *testing.T) {
 	for _, l := range Lists() {
 		got = append(got, string(l))
 	}
-	want := "catholic,protestant,bulgarian_orthodox,greek_orthodox,romanian_orthodox,russian_orthodox,ukrainian_orthodox"
+	want := "catholic,protestant,bulgarian_orthodox,greek_orthodox,romanian_orthodox,ukrainian_orthodox"
 	if strings.Join(got, ",") != want {
 		t.Fatalf("Lists() = %v", got)
 	}
 }
 
 func TestFollowsCalendar(t *testing.T) {
-	for l, want := range map[List]Style{RussianOrthodox: Julian, BulgarianOrthodox: RevisedJulian, GreekOrthodox: RevisedJulian, RomanianOrthodox: RevisedJulian} {
+	for l, want := range map[List]Style{BulgarianOrthodox: RevisedJulian, GreekOrthodox: RevisedJulian, RomanianOrthodox: RevisedJulian} {
 		got, ok := l.Calendar()
 		if !ok || got != want {
 			t.Errorf("%s: %v %v", l, got, ok)
@@ -134,13 +134,13 @@ func TestFollowsCalendar(t *testing.T) {
 			t.Errorf("%s has no fixed calendar", l)
 		}
 	}
-	if !RussianOrthodox.Orthodox() || !UkrainianOrthodox.Orthodox() || Catholic.Orthodox() {
+	if !BulgarianOrthodox.Orthodox() || !UkrainianOrthodox.Orthodox() || Catholic.Orthodox() {
 		t.Fatal("Orthodox")
 	}
 }
 
 func TestNewListsAreSoundWithSourcesAndCyrillic(t *testing.T) {
-	for _, l := range []List{BulgarianOrthodox, RussianOrthodox, UkrainianOrthodox} {
+	for _, l := range []List{BulgarianOrthodox, UkrainianOrthodox} {
 		c, ok := Get(l)
 		if !ok {
 			t.Fatalf("%s not embedded", l)
@@ -153,9 +153,6 @@ func TestNewListsAreSoundWithSourcesAndCyrillic(t *testing.T) {
 			if e.Source == "" || c.Sources[e.Source] == "" {
 				t.Errorf("%s/%s: no source", l, e.ID)
 			}
-			if !e.Unchecked {
-				t.Errorf("%s/%s: compiled from memory of the calendar and not checked: must say unchecked", l, e.ID)
-			}
 			for _, n := range append([]string{e.Name}, e.Variants...) {
 				if strings.ContainsAny(n, "абвгдеёжзийклмнопрстуфхцчшщъыьэюяєіїґ") {
 					cyr++
@@ -167,8 +164,8 @@ func TestNewListsAreSoundWithSourcesAndCyrillic(t *testing.T) {
 			t.Errorf("%s: only %d of %d entries have a Cyrillic spelling", l, cyr, len(c.Entries))
 		}
 	}
-	c, _ := Get(RussianOrthodox)
-	if m, ok := c.Resolve("Екатерина Иванова", "Mama"); !ok || m.Entries[0].Name != "Jekaterina" {
+	c, _ := Get(UkrainianOrthodox)
+	if m, ok := c.Resolve("Катерина Іванова", "Mama"); !ok || m.Entries[0].Name != "Kateryna" {
 		t.Fatalf("Cyrillic name: %+v %v", m, ok)
 	}
 	if m, ok := c.Resolve("Thomas Maier", "Papa"); !ok || m.Entries[0].ID == "" {
@@ -177,7 +174,7 @@ func TestNewListsAreSoundWithSourcesAndCyrillic(t *testing.T) {
 }
 
 func TestParseRejectsAMissingSourceInTheNewLists(t *testing.T) {
-	for _, l := range []string{"bulgarian_orthodox", "russian_orthodox", "ukrainian_orthodox"} {
+	for _, l := range []string{"bulgarian_orthodox", "ukrainian_orthodox"} {
 		raw := `{"list":"` + l + `","sources":{"a":"A"},"entries":[{"id":"x","name":"X","saint":"X","day":"01-01"}]}`
 		if _, err := Parse([]byte(raw)); err == nil {
 			t.Errorf("%s: a missing source must be an error", l)

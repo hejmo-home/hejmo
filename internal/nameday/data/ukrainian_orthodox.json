@@ -1,7 +1,7 @@
 {
  "list": "ukrainian_orthodox",
  "sources": {
-  "ocu": "Календар Православної церкви України"
+  "ocu": "Календар Православної церкви України, geprüft an der Ausgabe 2026 (kalendar_2026.pdf, pomisna.info)"
  },
  "entries": [
   {
@@ -20,8 +20,7 @@
    "saint": "Nikolaus von Myra",
    "day": "12-06",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "mykola-05-09",
@@ -32,8 +31,7 @@
    ],
    "saint": "Übertragung der Reliquien des Nikolaus nach Bari",
    "day": "05-09",
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "serhij-09-25",
@@ -50,8 +48,7 @@
    "saint": "Sergius von Radonesch",
    "day": "09-25",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "mychajlo-11-08",
@@ -68,8 +65,7 @@
    "saint": "Synaxis des Erzengels Michael",
    "day": "11-08",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "heorhij-04-23",
@@ -87,8 +83,7 @@
    "saint": "Großmärtyrer Georg der Siegbringer",
    "day": "04-23",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "jurij-11-26",
@@ -101,8 +96,7 @@
    ],
    "saint": "Weihe der Georgskirche in Kiew",
    "day": "11-26",
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "wolodymyr-07-15",
@@ -117,8 +111,7 @@
    "saint": "Fürst Wladimir von Kiew, den Aposteln gleich",
    "day": "07-15",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "iwan-06-24",
@@ -136,8 +129,7 @@
    "saint": "Geburt Johannes des Täufers",
    "day": "06-24",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "iwan-01-07",
@@ -149,11 +141,10 @@
    ],
    "saint": "Synaxis Johannes des Täufers",
    "day": "01-07",
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
-   "id": "iwan-10-09",
+   "id": "iwan-09-26",
    "name": "Iwan",
    "variants": [
     "Іван",
@@ -161,9 +152,8 @@
     "Johann"
    ],
    "saint": "Apostel und Evangelist Johannes der Theologe",
-   "day": "10-09",
-   "source": "ocu",
-   "unchecked": true
+   "day": "09-26",
+   "source": "ocu"
   },
   {
    "id": "andrij-11-30",
@@ -179,26 +169,7 @@
    "saint": "Apostel Andreas der Erstberufene",
    "day": "11-30",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
-  },
-  {
-   "id": "oleksandr-11-23",
-   "name": "Oleksandr",
-   "variants": [
-    "Олександр",
-    "Alexander",
-    "Aleksandr",
-    "Sascha",
-    "Sasha",
-    "Alex",
-    "Олесь"
-   ],
-   "saint": "Alexander Newski",
-   "day": "11-23",
-   "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "oleksandr-08-30",
@@ -209,22 +180,8 @@
    ],
    "saint": "Alexander von Konstantinopel",
    "day": "08-30",
-   "source": "ocu",
-   "unchecked": true
-  },
-  {
-   "id": "oleksandra-11-23",
-   "name": "Oleksandra",
-   "variants": [
-    "Олександра",
-    "Alexandra",
-    "Sascha",
-    "Sasha"
-   ],
-   "saint": "Märtyrerin Alexandra",
-   "day": "11-23",
-   "source": "ocu",
-   "unchecked": true
+   "usual": true,
+   "source": "ocu"
   },
   {
    "id": "oleksandra-04-23",
@@ -236,8 +193,7 @@
    "saint": "Märtyrerin Alexandra, Kaiserin",
    "day": "04-23",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "kateryna-11-24",
@@ -255,8 +211,7 @@
    "saint": "Großmärtyrerin Katharina von Alexandrien",
    "day": "11-24",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "olha-07-11",
@@ -269,8 +224,7 @@
    "saint": "Fürstin Olga, den Aposteln gleich",
    "day": "07-11",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "olena-05-21",
@@ -285,8 +239,7 @@
    "saint": "Zarin Helena, den Aposteln gleich",
    "day": "05-21",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "kostjantyn-05-21",
@@ -301,8 +254,7 @@
    "saint": "Kaiser Konstantin der Große, den Aposteln gleich",
    "day": "05-21",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "wira-09-17",
@@ -316,8 +268,7 @@
    "saint": "Märtyrerin Wira (mit Nadija, Ljubow und Sofija)",
    "day": "09-17",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "nadija-09-17",
@@ -332,8 +283,7 @@
    "saint": "Märtyrerin Nadija",
    "day": "09-17",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "ljubow-09-17",
@@ -347,8 +297,7 @@
    "saint": "Märtyrerin Ljubow",
    "day": "09-17",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "sofija-09-17",
@@ -365,8 +314,7 @@
    "saint": "Märtyrerin Sofija",
    "day": "09-17",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "anastasija-12-22",
@@ -381,8 +329,7 @@
    "saint": "Anastasia die Befreierin von den Fesseln",
    "day": "12-22",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "hanna-12-09",
@@ -397,8 +344,7 @@
    "saint": "Mariä Empfängnis durch die heilige Anna",
    "day": "12-09",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "anna-02-03",
@@ -410,8 +356,7 @@
    ],
    "saint": "Prophetin Hanna",
    "day": "02-03",
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "maria-08-15",
@@ -424,8 +369,7 @@
    ],
    "saint": "Entschlafung der Gottesmutter",
    "day": "08-15",
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "maria-07-22",
@@ -437,8 +381,7 @@
    "saint": "Maria Magdalena, den Aposteln gleich",
    "day": "07-22",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "natalija-08-26",
@@ -456,8 +399,7 @@
    "saint": "Märtyrerin Natalia von Nikomedien",
    "day": "08-26",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "ksenija-01-24",
@@ -471,8 +413,7 @@
    "saint": "Ehrwürdige Xenia von Rom",
    "day": "01-24",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "tetjana-01-12",
@@ -488,8 +429,7 @@
    "saint": "Märtyrerin Tatjana von Rom",
    "day": "01-12",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "ljudmyla-09-16",
@@ -504,8 +444,7 @@
    "saint": "Heilige Ludmilla von Böhmen",
    "day": "09-16",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "wasyl-01-01",
@@ -521,8 +460,7 @@
    "saint": "Basilius der Große",
    "day": "01-01",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "antonij-01-17",
@@ -536,8 +474,7 @@
    "saint": "Antonius der Große",
    "day": "01-17",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "kyryl-05-11",
@@ -553,8 +490,7 @@
    "saint": "Kyrill und Method, den Aposteln gleich",
    "day": "05-11",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "mefodij-05-11",
@@ -567,8 +503,7 @@
    "saint": "Kyrill und Method, den Aposteln gleich",
    "day": "05-11",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "borys-07-24",
@@ -580,8 +515,7 @@
    "saint": "Boris und Gleb, Leidensdulder",
    "day": "07-24",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "hlib-07-24",
@@ -593,8 +527,7 @@
    "saint": "Boris und Gleb, Leidensdulder",
    "day": "07-24",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "illja-07-20",
@@ -609,8 +542,7 @@
    "saint": "Prophet Elija",
    "day": "07-20",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "petro-06-29",
@@ -625,8 +557,7 @@
    "saint": "Apostel Petrus",
    "day": "06-29",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "pawlo-06-29",
@@ -640,8 +571,7 @@
    "saint": "Apostel Paulus",
    "day": "06-29",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "stepan-12-27",
@@ -656,8 +586,7 @@
    "saint": "Erzmärtyrer Stephanus",
    "day": "12-27",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "dmytro-10-26",
@@ -672,8 +601,7 @@
    "saint": "Großmärtyrer Demetrios von Thessaloniki",
    "day": "10-26",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "iryna-05-05",
@@ -687,8 +615,7 @@
    "saint": "Große Märtyrerin Irene",
    "day": "05-05",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "maryna-07-17",
@@ -700,8 +627,7 @@
    "saint": "Großmärtyrerin Marina",
    "day": "07-17",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "krystyna-07-24",
@@ -715,8 +641,7 @@
    "saint": "Großmärtyrerin Christina von Tyrus",
    "day": "07-24",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "warwara-12-04",
@@ -729,8 +654,7 @@
    "saint": "Großmärtyrerin Barbara",
    "day": "12-04",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "oleksij-03-17",
@@ -746,11 +670,10 @@
    "saint": "Alexius, der Mann Gottes",
    "day": "03-17",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
-   "id": "maksym-03-09",
+   "id": "maksym-05-14",
    "name": "Maksym",
    "variants": [
     "Максим",
@@ -759,10 +682,9 @@
     "Max"
    ],
    "saint": "Märtyrer Maximus",
-   "day": "03-09",
+   "day": "05-14",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "luka-10-18",
@@ -776,8 +698,7 @@
    "saint": "Apostel und Evangelist Lukas",
    "day": "10-18",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "marko-04-25",
@@ -791,8 +712,7 @@
    "saint": "Apostel und Evangelist Markus",
    "day": "04-25",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "matwij-11-16",
@@ -807,8 +727,7 @@
    "saint": "Apostel und Evangelist Matthäus",
    "day": "11-16",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "matfij-08-09",
@@ -821,8 +740,7 @@
    "saint": "Apostel Matthias",
    "day": "08-09",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "pylyp-11-14",
@@ -835,8 +753,7 @@
    "saint": "Apostel Philippus",
    "day": "11-14",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "jakiw-10-23",
@@ -851,8 +768,7 @@
    "saint": "Apostel Jakobus, Bruder des Herrn",
    "day": "10-23",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "toma-easter-plus-7",
@@ -866,8 +782,7 @@
    "saint": "Thomassonntag, Sonntag nach Ostern",
    "easter": 7,
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "toma-10-06",
@@ -878,8 +793,7 @@
    ],
    "saint": "Apostel Thomas",
    "day": "10-06",
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "fedir-02-08",
@@ -893,8 +807,7 @@
    "saint": "Großmärtyrer Theodor Stratilates",
    "day": "02-08",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "jewdokija-03-01",
@@ -909,8 +822,7 @@
    "saint": "Märtyrerin Eudokia von Heliopolis",
    "day": "03-01",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "denys-10-03",
@@ -925,8 +837,7 @@
    "saint": "Dionysius der Areopagit",
    "day": "10-03",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "havrylo-03-26",
@@ -940,8 +851,7 @@
    "saint": "Synaxis des Erzengels Gabriel",
    "day": "03-26",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "symeon-02-03",
@@ -956,8 +866,7 @@
    "saint": "Simeon der Gottesempfänger",
    "day": "02-03",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "mykyta-09-15",
@@ -969,8 +878,7 @@
    "saint": "Großmärtyrer Nikita",
    "day": "09-15",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "roman-10-01",
@@ -982,8 +890,7 @@
    "saint": "Romanos der Melode",
    "day": "10-01",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "jaroslaw-02-20",
@@ -996,8 +903,7 @@
    "saint": "Fürst Jaroslaw der Weise",
    "day": "02-20",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "iona-09-22",
@@ -1012,8 +918,7 @@
    "saint": "Prophet Jona",
    "day": "09-22",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "sewastijan-12-18",
@@ -1025,14 +930,13 @@
     "Sewastian",
     "Basti"
    ],
-   "saint": "Märtyrer Sebastian von Rom",
+   "saint": "Märtyrer Sebastian von Mailand",
    "day": "12-18",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
-   "id": "wenjamin-10-02",
+   "id": "wenjamin-03-31",
    "name": "Wenjamin",
    "variants": [
     "Веніамін",
@@ -1042,13 +946,12 @@
     "Ben"
    ],
    "saint": "Märtyrer Wenjamin der Diakon von Persien",
-   "day": "10-02",
+   "day": "03-31",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
-   "id": "walentyna-07-23",
+   "id": "walentyna-02-10",
    "name": "Walentyna",
    "variants": [
     "Валентина",
@@ -1056,14 +959,13 @@
     "Walentina",
     "Valentine"
    ],
-   "saint": "Märtyrerin Valentina von Cäsarea",
-   "day": "07-23",
+   "saint": "Märtyrerinnen Enata, Valentina und Paula",
+   "day": "02-10",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
-   "id": "switlana-02-20",
+   "id": "switlana-03-20",
    "name": "Switlana",
    "variants": [
     "Світлана",
@@ -1072,13 +974,12 @@
     "Photina"
    ],
    "saint": "Photina, die Samariterin",
-   "day": "02-20",
+   "day": "03-20",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
-   "id": "wenedykt-01-14",
+   "id": "wenedykt-03-14",
    "name": "Wenedykt",
    "variants": [
     "Венедикт",
@@ -1087,10 +988,9 @@
     "Benedict"
    ],
    "saint": "Ehrwürdiger Benedikt",
-   "day": "01-14",
+   "day": "03-14",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "wiktor-11-11",
@@ -1103,8 +1003,7 @@
    "saint": "Märtyrer Viktor",
    "day": "11-11",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "tymofij-01-22",
@@ -1120,8 +1019,7 @@
    "saint": "Apostel Timotheus",
    "day": "01-22",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   },
   {
    "id": "danylo-12-17",
@@ -1133,8 +1031,7 @@
    "saint": "Prophet Daniel und die drei Jünglinge",
    "day": "12-17",
    "usual": true,
-   "source": "ocu",
-   "unchecked": true
+   "source": "ocu"
   }
  ]
 }

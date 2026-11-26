@@ -347,9 +347,9 @@ func TestTheEventPageOfAMoonSightingFestivalSpellsOutTheAlternativeDate(t *testi
 	rhHas(t, "event page", r.body, `class="ev-gen"`, "<h1>Zuckerfest (Eid al-Fitr)</h1>", "Dienstag, 09.03. bis Donnerstag, 11.03.2027 · ganztägig",
 		`class="notice ev-moved"`, "Gemeinden, die den neuen Mond selbst sichten, feiern oft einen Tag später: von Mittwoch, 10. März, bis Freitag, 12. März.",
 		`data-readonly>Diesen Termin macht Hejmo aus den religiösen Feiertagen.`, "<dt>Kalender</dt><dd>Religiöse Feiertage</dd>", "<dt>Für</dt><dd>Ganze Familie</dd>", "<dt>Religion</dt><dd>Islam</dd>",
-		"<dt>Im islamischen Kalender</dt><dd>1. bis 3. Schawwal 1448</dd>", "<dt>Wiederholung</dt>", "etwa 11 Tage früher", "<dt>Quelle</dt>", "Diyanet İşleri Başkanlığı", `<span class="vary">Noch nicht mit der Quelle abgeglichen</span>`,
+		"<dt>Im islamischen Kalender</dt><dd>1. bis 3. Schawwal 1448</dd>", "<dt>Wiederholung</dt>", "etwa 11 Tage früher", "<dt>Quelle</dt>", "Diyanet İşleri Başkanlığı",
 		`<a href="/settings/religious-holidays">Religiöse Feiertage</a>`)
-	rhHasNot(t, "event page", r.body, `name="title"`, `name="scope"`)
+	rhHasNot(t, "event page", r.body, `name="title"`, `name="scope"`, "Noch nicht mit der Quelle abgeglichen")
 }
 
 func TestTheEventPageOfAJewishFestivalNamesTheEveAndTheEveHasItsOwnEvent(t *testing.T) {
@@ -388,9 +388,13 @@ func TestLicencesListTheLibrariesAndEveryTableWithSourceRangeAndWhatIsUnchecked(
 	b := newRhBox(t)
 	r := b.page("/settings/licences", "de")
 	rhHas(t, "licences", r.body, `data-licence="religious_holidays"`, `class="lic-list"`, "hebcal-go, GPL-2.0 oder später", "go-hijri, MIT", "meeus v3, MIT",
-		"Diyanet İşleri Başkanlığı, Tabelle der religiösen Tage 2020–2030", "Nanakshahi-Jantri der SGPC", "Tibetischer Kalender", "Alevitische Gemeinde Deutschland (AABF)",
-		`<li class="unch">`, "noch nicht mit der Quelle abgeglichen")
-	rhHas(t, "English", b.page("/settings/licences", "en").body, "hebcal-go, GPL-2.0 or later", "not yet checked against the source")
+		"Diyanet İşleri Başkanlığı, Tabelle der religiösen Tage 2020–2035", "Abgeglichen mit der Liste der religiösen Tage der Diyanet",
+		"Nanakshahi-Jantri der SGPC, Tabelle 2025–2027", "Abgeglichen mit dem Nanakshahi-Jantri der SGPC, Jahre 557 und 558",
+		"Bahá’í-Weltzentrum, offizieller Bahá’í-Kalender 2026", "Copyright © Bahá’í International Community", "Alevitische Gemeinde Deutschland (AABF)")
+	if strings.Contains(r.body, "noch nicht mit der Quelle abgeglichen") || strings.Contains(r.body, "Tibetischer Kalender") {
+		t.Error("every table is checked, and Losar has no table")
+	}
+	rhHas(t, "English", b.page("/settings/licences", "en").body, "hebcal-go, GPL-2.0 or later", "Checked against the Diyanet list of religious days", "Copyright © Bahá’í International Community")
 }
 
 func TestStartRewritesTheCalendarSoARegionChangeIsNotLost(t *testing.T) {

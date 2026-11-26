@@ -389,3 +389,69 @@ func TestUndoAfterATakeBackOfOneOfTwoMealsOfTheSameRunLeavesWhatWasThere(t *test
 		t.Errorf("after undo = %v, the run's remaining 300 g must go", got)
 	}
 }
+
+func (f takeBackFixture) untick(t *testing.T, text string) {
+	t.Helper()
+	es, _ := f.db.Entries(f.h.ID, f.l.ID)
+	for _, e := range es {
+		if e.Text == text {
+			if err := f.db.SetEntryDone(f.h.ID, f.l.ID, e.ID, false); err != nil {
+				t.Fatal(err)
+			}
+			return
+		}
+	}
+	t.Fatalf("no entry %q", text)
+}
+
+// partOf returns the recorded part of the meal on the entry with this text.
+func (f takeBackFixture) partOf(t *testing.T, text string) store.EntryPart {
+	t.Helper()
+	es, _ := f.db.Entries(f.h.ID, f.l.ID)
+	for _, e := range es {
+		if e.Text == text {
+			src, err := f.db.EntrySources(f.h.ID, []string{e.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(src[e.ID].Parts) != 1 {
+				t.Fatalf("%s has parts %+v", text, src[e.ID].Parts)
+			}
+			return src[e.ID].Parts[0]
+		}
+	}
+	t.Fatalf("no entry %q", text)
+	return store.EntryPart{}
+}
+
+// Ticket 359: a ticked entry keeps its quantity, but its recorded part follows the meal's portions.
+func TestThePartOfATickedEntryFollowsTheMealsPortions(t *testing.T) {
+	f := newTakeBackFixture(t)
+	f.plan(t, f.curry.ID, "2026-11-19", 4)
+	f.shop(t, "2026-11-19", 4, potatoes, coconut, peanut)
+	f.tick(t, "Kokosmilch")
+	before := f.partOf(t, "Kokosmilch")
+	f.plan(t, f.curry.ID, "2026-11-19", 2)
+	p := f.partOf(t, "Kokosmilch")
+	if p.Portions != 2 || p.Qty.Base != before.Qty.Base/2 {
+		t.Errorf("part after 4 to 2 portions = %+v, was %+v", p, before)
+	}
+	if got := f.lines(t); !reflect.DeepEqual(got, []string{"Süßkartoffeln 300 g", "Kokosmilch 2 can (done)", "Erdnussbutter"}) {
+		t.Errorf("the ticked quantity stays: %v", got)
+	}
+}
+
+// Unticking after a shrink and shrinking again scales from the part's current base, not the stale one.
+func TestUntickingAfterAShrinkScalesTheNextShrinkFromTheCurrentPart(t *testing.T) {
+	f := newTakeBackFixture(t)
+	f.plan(t, f.curry.ID, "2026-11-19", 4)
+	f.shop(t, "2026-11-19", 4, potatoes, coconut, peanut)
+	f.tick(t, "Kokosmilch")
+	f.plan(t, f.curry.ID, "2026-11-19", 2)
+	f.untick(t, "Kokosmilch")
+	f.plan(t, f.curry.ID, "2026-11-19", 1)
+	// 2 cans on the list; the 2-portion part held 1 can, of which half leaves.
+	if got := f.lines(t); !reflect.DeepEqual(got, []string{"Süßkartoffeln 150 g", "Kokosmilch 1.5 can", "Erdnussbutter"}) {
+		t.Errorf("after 4 to 2 (ticked), unticking, 2 to 1 = %v", got)
+	}
+}

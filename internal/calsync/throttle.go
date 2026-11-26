@@ -36,8 +36,8 @@ func RetryAfter(value string, now time.Time) time.Duration {
 	return max(0, min(wait, MaxRetryAfter))
 }
 
-// throttledError says the server asked Hejmo to wait (429, or 503 for an
-// overloaded server). Nothing more goes to it in this run.
+// throttledError says the server asked Hejmo to wait (429, 503 for an
+// overloaded server, or Google's 403 with a rate limit reason). Nothing more goes to it in this run.
 type throttledError struct {
 	wait  time.Duration // 0: the server named no time
 	cause error
@@ -53,7 +53,7 @@ func throttleOf(err error, now time.Time) *throttledError {
 		return t
 	}
 	var dav *caldavclient.StatusError
-	if errors.As(err, &dav) && isThrottle(dav.Code) {
+	if errors.As(err, &dav) && (isThrottle(dav.Code) || dav.RateLimited()) {
 		return &throttledError{wait: RetryAfter(dav.RetryAfter, now), cause: err}
 	}
 	var gr *graph.StatusError

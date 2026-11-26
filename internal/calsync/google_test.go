@@ -410,3 +410,60 @@ func TestTheSchedulerClearsAnExpiredStashedToken(t *testing.T) {
 		t.Fatalf("RunDue left the token: %v", err)
 	}
 }
+
+func rateLimited(reason string) *caldavclient.StatusError {
+	return &caldavclient.StatusError{Code: 403, Status: "403 Forbidden", Reason: reason, RetryAfter: "1800"}
+}
+
+// #345: Google reports a rate limit as 403 with a reason; the sync reads it as a throttle.
+func TestGoogleRateLimit403OnSyncIsAThrottle(t *testing.T) {
+	for _, reason := range []string{"rateLimitExceeded", "userRateLimitExceeded"} {
+		g := newGoogleFixture(t)
+		if err := g.sync(t); err != nil {
+			t.Fatal(err)
+		}
+		g.stateErr = rateLimited(reason)
+		if err := g.sync(t); err == nil {
+			t.Fatalf("%s: the sync did not fail", reason)
+		}
+		log, _ := g.db.SyncLog(g.h.ID, 10)
+		if len(log) != 1 || log[0].Message.Key != "sync.fail.throttled" {
+			t.Fatalf("%s: sync log = %+v, want sync.fail.throttled", reason, log)
+		}
+		cal, err := g.db.SyncedCalendar(g.h.ID, g.cal.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := g.clock.Add(30 * time.Minute); cal.ThrottledUntil.Before(want) || cal.Sync.NextAttempt.Before(want) {
+			t.Fatalf("%s: wait until %v, next attempt %v, want at least %v", reason, cal.ThrottledUntil, cal.Sync.NextAttempt, want)
+		}
+	}
+}
+
+func TestGoogleRateLimit403OnPushStopsAndKeepsTheChangeQueued(t *testing.T) {
+	g := newGoogleFixture(t)
+	if err := g.sync(t); err != nil {
+		t.Fatal(err)
+	}
+	berlin, _ := time.LoadLocation("Europe/Berlin")
+	if _, err := g.db.CreateEvent(g.h.ID, calendar.Event{CalendarID: g.cal.ID, Title: "Piano",
+		Start: time.Date(2026, 11, 21, 15, 0, 0, 0, berlin), End: time.Date(2026, 11, 21, 16, 0, 0, 0, berlin)}); err != nil {
+		t.Fatal(err)
+	}
+	g.putErr = rateLimited("rateLimitExceeded")
+	if err := g.svc.Push(context.Background(), g.h.ID, g.cal.ID); err == nil {
+		t.Fatal("the push did not fail")
+	}
+	log, _ := g.db.SyncLog(g.h.ID, 10)
+	if len(log) != 1 || log[0].Message.Key != "sync.fail.throttled" {
+		t.Fatalf("sync log = %+v, want sync.fail.throttled", log)
+	}
+	g.putErr = nil
+	if err := g.svc.Push(context.Background(), g.h.ID, g.cal.ID); err != nil || len(g.puts) != 0 {
+		t.Fatalf("a push during the wait: err %v, puts %v, want none", err, g.puts)
+	}
+	g.clock = g.clock.Add(time.Hour)
+	if err := g.svc.Push(context.Background(), g.h.ID, g.cal.ID); err != nil || len(g.puts) != 1 {
+		t.Fatalf("push after the wait: err %v, puts %v, want the queued change sent", err, g.puts)
+	}
+}

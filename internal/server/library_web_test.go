@@ -119,8 +119,14 @@ func testJPEG(t *testing.T, w, h int) []byte {
 }
 
 // loopbackFetcher lets the box reach the test's own server, and nothing else.
+// loopbackTimeout is how long a test waits for its own loopback server. The
+// answer takes milliseconds; the limit is generous so that a loaded CI shard
+// (x86_64 shard 1 under -race) does not turn a slow scheduler into a failure.
+// Tests of the timeout itself use their own short limit.
+const loopbackTimeout = 30 * time.Second
+
 func loopbackFetcher() *picture.Fetcher {
-	return &picture.Fetcher{Gate: outbound.AllowAll(), Public: func(a netip.Addr) bool { return a == netip.MustParseAddr("127.0.0.1") }, Timeout: 3 * time.Second}
+	return &picture.Fetcher{Gate: outbound.AllowAll(), Public: func(a netip.Addr) bool { return a == netip.MustParseAddr("127.0.0.1") }, Timeout: loopbackTimeout}
 }
 
 func imageServer(t *testing.T, w, h int) *httptest.Server {

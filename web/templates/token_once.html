@@ -6,7 +6,7 @@
     <div class="row">
       <button class="button secondary" type="button" data-copy="{{.Token}}" data-copied="{{t "caldav.once.copied"}}" hidden>{{t "caldav.once.copy"}}</button>
     </div>
-    {{template "facts" (list (dict "Label" (t "caldav.address") "Value" .Address) (dict "Label" (t "caldav.username") "Value" .Username) (dict "Label" (t "caldav.once.password") "Value" (t "caldav.once.password_value")))}}
+    {{template "facts" (list (dict "Label" (t "caldav.address") "Value" .Address) (dict "Label" (t "caldav.address.contacts") "Value" .ContactsAddress) (dict "Label" (t "caldav.username") "Value" .Username) (dict "Label" (t "caldav.once.password") "Value" (t "caldav.once.password_value")))}}
   </section>
   <a class="button" href="/caldav/tokens/{{.ID}}">{{t "caldav.once.done"}}</a>
   <script src="/static/token-copy.js" defer></script>

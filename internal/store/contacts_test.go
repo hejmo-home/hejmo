@@ -475,3 +475,31 @@ func TestContactIsHiddenFromChildrenByDefaultAndTheSwitchIsStored(t *testing.T) 
 		t.Error("a save without the switch leaves it on")
 	}
 }
+
+// Ticket 299: what a phone saves that Hejmo does not model stays with the contact, and a phone names its card.
+
+func TestAPhoneNamesTheCardAndItsExtraLinesSurviveEdits(t *testing.T) {
+	t.Parallel()
+	db, h, f := exampleFamily(t)
+	extra := `[{"k":"ORG","v":"Acme"}]`
+	c, err := db.CreateContact(h.ID, f["Mama"].ID, store.ContactInput{ID: "7F3A-C1.vcf-id", HejmoName: "Oma", Extra: &extra})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.ID != "7F3A-C1.vcf-id" || c.Extra != extra {
+		t.Fatalf("%+v", c)
+	}
+	// A save by hand does not mention the extra lines and leaves them alone.
+	c, err = db.UpdateContact(h.ID, c.ID, f["Mama"].ID, store.ContactInput{HejmoName: "Oma", Note: "neu"})
+	if err != nil || c.Extra != extra {
+		t.Fatalf("%v %q", err, c.Extra)
+	}
+	none := ""
+	c, err = db.UpdateContact(h.ID, c.ID, f["Mama"].ID, store.ContactInput{HejmoName: "Oma", Extra: &none})
+	if err != nil || c.Extra != "" {
+		t.Fatalf("%v %q", err, c.Extra)
+	}
+	if _, err := db.CreateContact(h.ID, f["Mama"].ID, store.ContactInput{ID: c.ID, HejmoName: "Opa"}); !errors.Is(err, store.ErrInvalid) {
+		t.Fatalf("a name that is taken by another contact: %v", err)
+	}
+}

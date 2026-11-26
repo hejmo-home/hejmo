@@ -33,7 +33,7 @@ func TestParentDownloadsAnIOSProfileWithANewDeviceToken(t *testing.T) {
 	if m == nil {
 		t.Fatalf("no device token in the profile:\n%s", res.body)
 	}
-	for _, want := range []string{"com.apple.caldav.account", "<string>mama</string>", "<string>iPhone Mama</string>", "https://127.0.0.1:"} {
+	for _, want := range []string{"com.apple.caldav.account", "com.apple.carddav.account", "<key>CardDAVPrincipalURL</key>", "/carddav/", "<string>mama</string>", "<string>iPhone Mama</string>", "https://127.0.0.1:"} {
 		if !strings.Contains(res.body, want) {
 			t.Errorf("profile misses %q:\n%s", want, res.body)
 		}
@@ -41,7 +41,7 @@ func TestParentDownloadsAnIOSProfileWithANewDeviceToken(t *testing.T) {
 
 	// A new token with scope calendars exists, named after the device.
 	toks, _ := b.db.APITokens(h.ID)
-	if len(toks) != 1 || toks[0].Name != "iPhone Mama" || toks[0].Scopes != "calendars tasks" || toks[0].PersonName != "Mama" {
+	if len(toks) != 1 || toks[0].Name != "iPhone Mama" || toks[0].Scopes != "calendars tasks contacts" || toks[0].PersonName != "Mama" {
 		t.Fatalf("tokens = %+v", toks)
 	}
 	// It works as the CalDAV password, and lists like any device token.
@@ -51,6 +51,10 @@ func TestParentDownloadsAnIOSProfileWithANewDeviceToken(t *testing.T) {
 	}
 	if len(cals) < 2 {
 		t.Fatalf("the profile's token sees no task list: %v", cals)
+	}
+	// The same token opens the address book (ticket 299).
+	if _, err := c.addressDeviceWith(t, m[1]).book(); err != nil {
+		t.Fatalf("the profile's token does not sync contacts: %v", err)
 	}
 	if page := b.get("/caldav"); strings.Contains(page.body, m[1]) || !strings.Contains(page.body, "iPhone Mama") {
 		t.Fatalf("token page:\n%s", page.body)
@@ -179,7 +183,7 @@ func TestIOSProfileThroughTheAPI(t *testing.T) {
 		t.Fatalf("profile = %d %q\n%s", status, ct, raw)
 	}
 	toks, _ := c.b.db.APITokens(h.ID)
-	if len(toks) != 1 || toks[0].Scopes != "calendars tasks" || toks[0].Name != "iPad Mama" {
+	if len(toks) != 1 || toks[0].Scopes != "calendars tasks contacts" || toks[0].Name != "iPad Mama" {
 		t.Fatalf("tokens = %+v", toks)
 	}
 	if cals, err := c.personalDeviceWith(t, "mama", m[1]).calendars(); err != nil || len(cals) < 2 {

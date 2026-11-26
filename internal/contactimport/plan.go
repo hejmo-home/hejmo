@@ -933,3 +933,15 @@ func (p Plan) Ops(dec Decisions, file string) ([]store.ImportOp, Result) {
 	}
 	return ops, res
 }
+
+// NameFor is the Hejmo name a contact made from a card gets next to the contacts there are (ticket 299): the
+// nickname, else the full name, else the organisation, else the first number or e-mail address, shortened to
+// 40 characters, and numbered ("Anna 2") when every candidate is taken.
+func NameFor(c vcard.Card, existing []store.Contact) string {
+	taken := map[string]takenBy{}
+	for _, e := range existing {
+		taken[strings.ToLower(e.HejmoName)] = takenBy{e.HejmoName, e.IsPerson()}
+	}
+	name, _ := assignName(c, taken)
+	return name
+}

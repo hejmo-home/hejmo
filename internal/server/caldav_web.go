@@ -15,10 +15,9 @@ import (
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
-// deviceScope is the token scopes of a new CalDAV client: its calendars and,
-// since ADR 0018, the task lists. Tokens made before that hold calendars only
-// and are device tokens all the same.
-const deviceScope = "calendars tasks"
+// deviceScope is the token scopes of a new device: its calendars, since ADR 0018 the task lists and, since
+// ticket 299, the address book. Tokens made before that hold fewer of them and are device tokens all the same.
+const deviceScope = "calendars tasks contacts"
 
 type sharedView struct {
 	ID, Name, Color string
@@ -47,7 +46,7 @@ func isDeviceToken(t store.APIToken) bool {
 	}
 	scopes := strings.Fields(t.Scopes)
 	for _, sc := range scopes {
-		if sc != "calendars" && sc != "tasks" {
+		if sc != "calendars" && sc != "tasks" && sc != "contacts" {
 			return false
 		}
 	}
@@ -56,10 +55,18 @@ func isDeviceToken(t store.APIToken) bool {
 
 // scopeTextKey names the message that says what a device token may do.
 func scopeTextKey(t store.APIToken) string {
-	cal, tasks := scopedTo(t.Scopes, "calendars"), scopedTo(t.Scopes, "tasks")
+	cal, tasks, contacts := scopedTo(t.Scopes, "calendars"), scopedTo(t.Scopes, "tasks"), scopedTo(t.Scopes, "contacts")
 	switch {
+	case cal && tasks && contacts:
+		return "caldav.scope.calendars_tasks_contacts"
 	case cal && tasks:
 		return "caldav.scope.calendars_tasks"
+	case cal && contacts:
+		return "caldav.scope.calendars_contacts"
+	case tasks && contacts:
+		return "caldav.scope.tasks_contacts"
+	case contacts:
+		return "caldav.scope.contacts"
 	case tasks:
 		return "caldav.scope.tasks"
 	}
@@ -134,6 +141,7 @@ func (s *server) renderCalDAV(w http.ResponseWriter, r *http.Request, p principa
 	}
 	facts := []factView{
 		{Label: s.say(r, i18n.Msg("caldav.address")), Value: s.httpsOrigin(r) + davPrefix + "/"},
+		{Label: s.say(r, i18n.Msg("caldav.address.contacts")), Value: s.httpsOrigin(r) + cardPrefix + "/"},
 		{Label: s.say(r, i18n.Msg("caldav.username")), Value: acc.Username},
 	}
 	data := map[string]any{
@@ -178,7 +186,7 @@ func (s *server) handleDeviceTokenCreate(w http.ResponseWriter, r *http.Request)
 	// The secret is shown on this answer only: no redirect, nothing stored but its hash.
 	w.Header().Set("Cache-Control", "no-store")
 	s.render(w, r, http.StatusOK, "token_once.html", map[string]any{
-		"Person": p.person, "Name": name, "Token": value, "ID": created.ID, "Address": s.httpsOrigin(r) + davPrefix + "/", "Username": acc.Username,
+		"Person": p.person, "Name": name, "Token": value, "ID": created.ID, "Address": s.httpsOrigin(r) + davPrefix + "/", "ContactsAddress": s.httpsOrigin(r) + cardPrefix + "/", "Username": acc.Username,
 		"SuccessText": s.say(r, i18n.Msg("flash.token_created", "name", name)),
 	})
 }
@@ -226,7 +234,7 @@ func (s *server) handleDeviceTokenPage(w http.ResponseWriter, r *http.Request) {
 // iosProfile creates a new device token for the person and returns the iOS
 // configuration profile that holds it (ADR 0017). The box keeps no copy: the
 // token is stored hashed, the profile only exists in this answer.
-// The token opens the person's calendars and the task lists (ADR 0018).
+// The token opens the person's calendars, the task lists (ADR 0018) and the address book (ticket 299).
 func (s *server) iosProfile(r *http.Request, p principal, name string) ([]byte, error) {
 	acc, err := s.db.AccountByPerson(p.person.ID)
 	if err != nil {
@@ -250,6 +258,7 @@ func (s *server) iosProfile(r *http.Request, p principal, name string) ([]byte, 
 		DeviceName: name, Host: origin.Hostname(), Port: port, Username: acc.Username, Token: value,
 		PrincipalPath: davPrefix + "/" + p.person.ID + "/", Identifier: "org.hejmo.box.caldav." + p.person.ID,
 		ProfileUUID: iosprofile.NewUUID(), PayloadUUID: iosprofile.NewUUID(),
+		CardDAVPrincipalPath: cardPrefix + "/" + p.person.ID + "/", CardDAVPayloadUUID: iosprofile.NewUUID(),
 	})
 }
 

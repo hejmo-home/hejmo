@@ -7,6 +7,7 @@ require (
 	github.com/chromedp/cdproto v0.160.1
 	github.com/chromedp/chromedp v0.23.1
 	github.com/emersion/go-ical v0.0.0-20261112170022-46c5b53a1723
+	github.com/emersion/go-vcard v0.0.0-20230815062825-8fda7d206ec9
 	github.com/emersion/go-webdav v0.7.0
 	github.com/fxamacker/cbor/v2 v2.9.4
 	github.com/getkin/kin-openapi v0.153.0

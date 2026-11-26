@@ -204,3 +204,45 @@ func TestNewUUIDIsAVersion4UUIDAndDiffers(t *testing.T) {
 		t.Fatalf("uuids %q %q", a, b)
 	}
 }
+
+// Apple's documented keys for com.apple.carddav.account.
+var carddavKeys = map[string]string{
+	"CardDAVAccountDescription": "string", "CardDAVHostName": "string", "CardDAVPort": "integer",
+	"CardDAVPrincipalURL": "string", "CardDAVUsername": "string", "CardDAVPassword": "string", "CardDAVUseSSL": "bool",
+}
+
+// Ticket 299: the same profile sets up the address book.
+func TestProfileHoldsACardDAVAccountWhenAskedTo(t *testing.T) {
+	p := params
+	p.CardDAVPrincipalPath = "/carddav/0b1e8a58-0c6e-4a63-9b3e-0d6f6a1c2d3e/"
+	p.CardDAVPayloadUUID = "AAAAAAAA-BBBB-4CCC-8DDD-EEEEEEEEEEEE"
+	raw, err := iosprofile.CalDAV(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	content := parsePlist(t, raw).dict["PayloadContent"]
+	if len(content.items) != 2 {
+		t.Fatalf("want a CalDAV and a CardDAV payload, got %d", len(content.items))
+	}
+	acc := content.items[1]
+	checkTypes(t, acc, commonKeys, carddavKeys)
+	for key, want := range map[string]string{
+		"PayloadType": "com.apple.carddav.account", "PayloadUUID": p.CardDAVPayloadUUID, "PayloadIdentifier": p.Identifier + ".contacts",
+		"CardDAVHostName": "box.example.org", "CardDAVPort": "443", "CardDAVUsername": "mama", "CardDAVPassword": "hejmo_secret",
+		"CardDAVPrincipalURL": "https://box.example.org" + p.CardDAVPrincipalPath, "CardDAVAccountDescription": "iPhone Mama",
+	} {
+		if got := acc.dict[key]; got == nil || got.text != want {
+			t.Errorf("%s = %+v, want %q", key, got, want)
+		}
+	}
+	if acc.dict["CardDAVUseSSL"] == nil || acc.dict["CardDAVUseSSL"].kind != "true" {
+		t.Error("CardDAVUseSSL must be true")
+	}
+	if content.items[0].dict["PayloadUUID"].text == acc.dict["PayloadUUID"].text {
+		t.Error("two payloads, one UUID")
+	}
+	p.CardDAVPayloadUUID = ""
+	if _, err := iosprofile.CalDAV(p); err == nil {
+		t.Error("a CardDAV payload needs its UUID")
+	}
+}

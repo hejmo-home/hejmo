@@ -26,8 +26,8 @@ function reach(url, options) {
   return fetch(url, { ...options, signal: ctl.signal }).finally(() => clearTimeout(timer));
 }
 
-// Never kept: displays, the API and CalDAV, pairing and setup, sign-in.
-const SKIP = ['/display', '/api', '/dav', '/ca', '/setup', '/personal-devices/join'];
+// Never kept: displays, the API, CalDAV and CardDAV, pairing and setup, sign-in.
+const SKIP = ['/display', '/api', '/dav', '/carddav', '/ca', '/setup', '/personal-devices/join'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(ASSET_CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting()));

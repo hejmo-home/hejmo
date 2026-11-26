@@ -106,6 +106,7 @@ func readRhForm(r *http.Request, h store.Household) rhForm {
 type rhCard struct {
 	Code, Name, Hint string
 	Checked          bool
+	Sources          []rhSourceOf // the lines of the source (ticket 377): one, or one for each Islamic calendar
 }
 
 type rhDay struct {
@@ -129,7 +130,7 @@ type rhError struct {
 func (s *server) rhCards(lang string, f rhForm) []rhCard {
 	var cards []rhCard
 	for _, r := range rh.Religions() {
-		cards = append(cards, rhCard{Code: string(r), Name: s.religionText(lang, r, ""), Hint: s.religionText(lang, r, "hint"), Checked: f.Religion[r]})
+		cards = append(cards, rhCard{Code: string(r), Name: s.religionText(lang, r, ""), Hint: s.religionText(lang, r, "hint"), Checked: f.Religion[r], Sources: s.rhSourcesOf(lang, r)})
 	}
 	names := make([]string, len(cards))
 	for i, c := range cards {
@@ -375,6 +376,7 @@ func (s *server) renderReligious(w http.ResponseWriter, r *http.Request, p princ
 		"HasIslamic": f.Religion[rh.Muslim] || f.Religion[rh.Alevi], "HasOrthodox": f.Religion[rh.Orthodox],
 		"MoreSum": s.rhMoreSum(lang, f), "Islamic": islamicChoice(f), "Orthodox": orthodoxChoice(f),
 		"CalendarEnd": today.Year() + 9,
+		"CiteDiyanet": s.rhSourceLine(lang, rh.Muslim, rh.Options{Islamic: rh.Diyanet}), "CiteUmmAlQura": s.rhSourceLine(lang, rh.Muslim, rh.Options{Islamic: rh.UmmAlQura}),
 	}
 	if h.ReligiousHolidaysOn && len(h.Religions) > 0 {
 		data["Rels"] = s.rhRels(lang, h, today)

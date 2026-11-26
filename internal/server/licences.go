@@ -1,6 +1,7 @@
 package server
 
 import (
+	"cmp"
 	"net/http"
 	"sort"
 	"strconv"
@@ -31,50 +32,63 @@ type nameDayLicence struct {
 	Unchecked bool
 }
 
-// nameDaySource is a source in the reader's language and, when that does not already say it, the name recorded in the
-// data file (the original-language name of a church calendar).
-type nameDaySource struct{ Name, Original string }
+// nameDaySource is a source: its text is the data file's record when that starts with the name in the reader's
+// language, else "Name · record" (the record is the original-language name and the edition checked against).
+type nameDaySource struct{ Text string }
+
+// nameDaySourceText writes a source of a list by the rule both pages share.
+func nameDaySourceText(name, record string) string {
+	if record == "" || strings.HasPrefix(record, name) {
+		return cmp.Or(record, name)
+	}
+	return name + " · " + record
+}
 
 // nameDayLicences names every source of every name-day list, in the order of the settings page (tickets 318 and 338),
-// and of the Slava list: the rows of the licences page that credits the calendars of the churches.
+// and of the Slava list: the rows of the licences page that credits the calendars of the churches. The settings page
+// builds its source lines from the same rows.
 func (s *server) nameDayLicences(lang string) []nameDayLicence {
-	e := ctEnv{s: s, lang: lang}
 	var out []nameDayLicence
 	for _, l := range nameday.Lists() {
-		cal, ok := nameday.Get(l)
-		if !ok {
-			continue
+		if row, ok := s.nameDayRow(lang, l); ok {
+			out = append(out, row)
 		}
-		row := nameDayLicence{Name: s.i18n.T(lang, "nd.list."+string(l))}
-		used := map[string]bool{}
-		for _, en := range cal.Entries {
-			row.Unchecked = row.Unchecked || en.Unchecked
-			used[en.Source] = true
-		}
-		keys := make([]string, 0, len(used))
-		for k := range used {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		for _, k := range keys {
-			src := nameDaySource{Name: e.sourceName(cal, k)}
-			if !strings.HasPrefix(cal.Sources[k], src.Name) {
-				src.Original = cal.Sources[k]
-			}
-			row.Sources = append(row.Sources, src)
-		}
-		out = append(out, row)
 	}
+	return append(out, s.slavaRow(lang))
+}
+
+// nameDayRow is the row of one list.
+func (s *server) nameDayRow(lang string, l nameday.List) (nameDayLicence, bool) {
+	cal, ok := nameday.Get(l)
+	if !ok {
+		return nameDayLicence{}, false
+	}
+	e := ctEnv{s: s, lang: lang}
+	row := nameDayLicence{Name: s.i18n.T(lang, "nd.list."+string(l))}
+	used := map[string]bool{}
+	for _, en := range cal.Entries {
+		row.Unchecked = row.Unchecked || en.Unchecked
+		used[en.Source] = true
+	}
+	keys := make([]string, 0, len(used))
+	for k := range used {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		row.Sources = append(row.Sources, nameDaySource{nameDaySourceText(e.sourceName(cal, k), cal.Sources[k])})
+	}
+	return row, true
+}
+
+// slavaRow is the row of the Slava list.
+func (s *server) slavaRow(lang string) nameDayLicence {
 	slava := nameday.Slavas()
-	src := nameDaySource{Name: s.i18n.T(lang, "slava.source")}
-	if orig := slava.Sources["spc"]; !strings.HasPrefix(orig, src.Name) { // the edition the list was checked against
-		src.Original = orig
-	}
-	row := nameDayLicence{Name: s.i18n.T(lang, "slava.fact"), Sources: []nameDaySource{src}}
-	for _, en := range nameday.Slavas().Entries {
+	row := nameDayLicence{Name: s.i18n.T(lang, "slava.fact"), Sources: []nameDaySource{{nameDaySourceText(s.i18n.T(lang, "slava.source"), slava.Sources["spc"])}}}
+	for _, en := range slava.Entries {
 		row.Unchecked = row.Unchecked || en.Unchecked
 	}
-	return append(out, row)
+	return row
 }
 
 // licenceLine is a line of a licences card; Unchecked marks a table that was not yet checked against its source.
@@ -102,6 +116,6 @@ func (s *server) religiousLicences(lang string) []licenceLine {
 			out = append(out, licenceLine{Text: t("lic.rh.unchecked", "n", strconv.Itoa(tb.UncheckedEntries), "total", strconv.Itoa(tb.Entries)), Unchecked: true})
 		}
 	}
-	out = append(out, licenceLine{Text: s.rhSourceName(lang, rh.SrcAABF)}, licenceLine{Text: t("lic.rh.rules")})
+	out = append(out, licenceLine{Text: s.rhSourceName(lang, rh.SrcAABF), Unchecked: true}, licenceLine{Text: t("lic.rh.rules")})
 	return out
 }

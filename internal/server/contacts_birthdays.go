@@ -269,6 +269,7 @@ func (s *server) renderBirthdays(w http.ResponseWriter, r *http.Request, e ctEnv
 	type choice struct {
 		Value, Name, Hint string
 		Orth              bool
+		Source            sourceLine // the line of the source, from the row of Licences (ticket 377)
 	}
 	type group struct {
 		Title string
@@ -278,7 +279,7 @@ func (s *server) renderBirthdays(w http.ResponseWriter, r *http.Request, e ctEnv
 	for _, g := range ndGroups {
 		gr := group{Title: e.t(g.Key)}
 		for _, l := range g.Lists {
-			gr.Lists = append(gr.Lists, choice{string(l), e.t("nd.list." + string(l)), e.t("nd.list." + string(l) + ".hint"), l.Orthodox()})
+			gr.Lists = append(gr.Lists, choice{string(l), e.t("nd.list." + string(l)), e.t("nd.list." + string(l) + ".hint"), l.Orthodox(), e.s.nameDaySourceLine(e.lang, l)})
 		}
 		groups = append(groups, gr)
 	}

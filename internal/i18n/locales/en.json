@@ -6201,6 +6201,8 @@
   "slava.source": "Calendar of the Serbian Orthodox Church",
   "src.unchecked": "Not yet checked against the source",
   "src.unchecked.some": "Not all entries checked against the source yet",
+  "src.line": "Source: {source}",
+  "src.lines": "Sources: {sources}",
   "flash.bd_saved": "Saved: {what}.{count}",
   "flash.bd.nd": "{church} name days",
   "flash.bd.nd.style": "{church} name days in the {style} calendar",

@@ -130,6 +130,7 @@ func (e ctEnv) slavaData(data map[string]any, pg ndPage) {
 	}
 	groups = append(groups, eg)
 	data["SlavaOn"], data["SlavaGroups"] = pg.SlavaOn, groups
+	data["SlavaSource"] = e.s.slavaSourceLine(e.lang)
 	data["SlavaNone"], data["SlavaOwn"] = pg.Slava == "", pg.Slava == nameday.OwnID
 	data["SlavaName"], data["SlavaDay"], data["SlavaMonths"] = pg.SlavaName, pg.SlavaDay, e.months(pg.SlavaMonth)
 	data["SlavaErr"], data["SlavaNameErr"], data["SlavaDayErr"] = pg.SlavaErr, pg.NameErr, pg.DayErr

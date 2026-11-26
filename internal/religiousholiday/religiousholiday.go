@@ -12,6 +12,7 @@
 package religiousholiday
 
 import (
+	"slices"
 	"sort"
 	"time"
 )
@@ -90,6 +91,14 @@ func (o Options) islamic() IslamicCalendar {
 	return Diyanet
 }
 
+// islamicSource is the source id of the Islamic calendar chosen.
+func (o Options) islamicSource() string {
+	if o.islamic() == UmmAlQura {
+		return SrcUmmQura
+	}
+	return SrcDiyanet
+}
+
 func (o Options) orthodox() OrthodoxCalendar {
 	if o.Orthodox == Julian {
 		return Julian
@@ -158,6 +167,21 @@ func (h Holiday) Days() int { return int(h.End.Sub(h.Start).Hours()/24+0.5) + 1 
 // fromYear to toYear (both included), by date. A Hindu holiday needs a Place;
 // without it none is returned. Dates after the end of a table are left out.
 func Compute(r Religion, o Options, fromYear, toYear int) []Holiday {
+	out := days(r, o, fromYear, toYear)
+	for i := range out {
+		out[i].Religion = r
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		if !out[i].Start.Equal(out[j].Start) {
+			return out[i].Start.Before(out[j].Start)
+		}
+		return out[i].Key < out[j].Key
+	})
+	return out
+}
+
+// days lists the holidays of a religion in the order the religion's code makes them.
+func days(r Religion, o Options, fromYear, toYear int) []Holiday {
 	var out []Holiday
 	switch r {
 	case Christian:
@@ -179,15 +203,39 @@ func Compute(r Religion, o Options, fromYear, toYear int) []Holiday {
 	case Hindu:
 		out = hindu(o, fromYear, toYear)
 	}
-	for i := range out {
-		out[i].Religion = r
+	return out
+}
+
+// standIn is where Hindu dates are computed to find their source when the household has no place: the source does
+// not depend on it.
+var standIn = &Place{Lat: 48.14, Lon: 11.58}
+
+// SourcesOf lists the distinct source ids (Src...) of the days the religion produces, in order of first appearance.
+// It is worked out from the computed days, so a table that holds no entry (Losar) is not named. The page shows the
+// sources next to the choice of the religion (ticket 377).
+func SourcesOf(r Religion, o Options) []string {
+	if o.Place == nil {
+		o.Place = standIn
 	}
-	sort.SliceStable(out, func(i, j int) bool {
-		if !out[i].Start.Equal(out[j].Start) {
-			return out[i].Start.Before(out[j].Start)
+	// Two years from the start of the table the religion follows (or 2026): inside every table, so none is empty.
+	from := 2026
+	if first, _ := tableYears(r, o); first > 0 {
+		from = first
+	}
+	var out []string
+	add := func(id string) {
+		if !slices.Contains(out, id) {
+			out = append(out, id)
 		}
-		return out[i].Key < out[j].Key
-	})
+	}
+	if r == Alevi {
+		// The Muharrem fast and Aşure are the Alevi federation's days, but their dates come from the Islamic calendar
+		// of the household, which is the source the page names first.
+		add(o.islamicSource())
+	}
+	for _, h := range days(r, o, from, from+1) {
+		add(h.Source)
+	}
 	return out
 }
 

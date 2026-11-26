@@ -3122,6 +3122,7 @@ paths:
         free-text allergies (`not_checked_allergies`) are not checked
         automatically (`note`). The answer is experimental and without
         guarantee. Warnings never block anything. Works for starter recipes too.
+        Allergen information without guarantee. The ingredient list on the pack is what counts.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
       responses:
@@ -4180,7 +4181,7 @@ paths:
         replaced by the nearest active unit of its kind (kg by g), piece when
         nothing is left. Articles say which
         allergens they contain; who is warned about them is health data, see
-        `/articles/{id}/warnings`.
+        `/articles/{id}/warnings`. Allergen information without guarantee. The ingredient list on the pack is what counts.
       parameters:
         - { name: q, in: query, required: false, schema: { type: string } }
       responses:
@@ -4224,6 +4225,8 @@ paths:
     get:
       operationId: getArticle
       summary: One article, by its key (shipped) or id (own) (scope lists:read)
+      description: |
+        Allergen information without guarantee. The ingredient list on the pack is what counts.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
       responses:
@@ -4527,7 +4530,7 @@ paths:
         with exactly the same allergens share one entry. The answer is
         experimental and without guarantee: it only knows the 14 main
         allergens as tagged in the library, no traces, and cannot check free
-        text (`note`).
+        text (`note`). Allergen information without guarantee. The ingredient list on the pack is what counts.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
       responses:
@@ -6180,6 +6183,7 @@ components:
         kind: { type: string, enum: [meat, fish, veg, vegan, nonfood] }
         allergens:
           type: array
+          description: "Allergen information without guarantee. The ingredient list on the pack is what counts."
           items: { type: string, enum: [celery, gluten, crustaceans, eggs, fish, lupin, milk, molluscs, mustard, nuts, peanuts, sesame, soy, sulphites] }
         units:
           type: array

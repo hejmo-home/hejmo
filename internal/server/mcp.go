@@ -242,7 +242,7 @@ var mcpTools = []mcpTool{
 		idOf("recipe"), req("person_ids", "strings", "The ids of the people who like the recipe")}},
 	{name: "list_recipe_units", desc: "List the units an ingredient can have: the household's, kitchen measures and containers.", method: "GET", path: "/recipe-units"},
 	{name: "get_recipe_nutrition", desc: "The seven nutrition values of the EU declaration (energy, fat, saturated fat, carbohydrate, sugars, protein, salt) per portion of a recipe, calculated from its ingredients (BLS 4.0, USDA). Guide values. A value that is null is unknown, never 0; not_counted lists the ingredients that could not be counted.", method: "GET", path: "/recipes/{id}/nutrition", params: []mcpParam{idOf("recipe")}},
-	{name: "get_recipe_warnings", desc: "Who in the family has to look out for what in a recipe. Health data, read only. Free-text ingredients and free-text allergies are not checked automatically.", method: "GET", path: "/recipes/{id}/warnings", params: []mcpParam{idOf("recipe")}},
+	{name: "get_recipe_warnings", desc: "Who in the family has to look out for what in a recipe. Health data, read only. Free-text ingredients and free-text allergies are not checked automatically. Allergen information without guarantee. The ingredient list on the pack is what counts.", method: "GET", path: "/recipes/{id}/warnings", params: []mcpParam{idOf("recipe")}},
 	{name: "list_meal_templates", desc: "List the meal plan templates, by name.", method: "GET", path: "/meal-templates"},
 	{name: "get_meal_template", desc: "Get one meal plan template.", method: "GET", path: "/meal-templates/{id}", params: []mcpParam{idOf("template")}},
 	{name: "create_meal_template", desc: "Create a meal plan template.", method: "POST", path: "/meal-templates", params: mealTplBody},

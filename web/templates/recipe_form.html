@@ -28,6 +28,7 @@
     <fieldset id="ings">
       <legend>{{t "recipes.f.ings"}}</legend>
       <p class="hint">{{if .Web}}{{.IngsHint}}{{else}}{{t "recipes.f.ings.hint"}}{{end}}</p>
+      {{template "allergenNotice"}}
       <div class="ing-head" aria-hidden="true"><span>{{t "recipes.f.col.qty"}}</span><span>{{t "recipes.f.col.unit"}}</span><span>{{t "recipes.f.col.ing"}}</span></div>
       <ol class="ing-lines" data-lines="ing">{{range .F.Ings}}{{template "rcpIngLine" (dict "L" . "Groups" $.UnitGroups "Web" $.Web)}}{{end}}</ol>
       {{if and .Issues .Issues.ManyIngs}}<p class="ferr" role="alert">{{template "errIcon"}}<span>{{.Issues.ManyIngs}}</span></p>{{end}}

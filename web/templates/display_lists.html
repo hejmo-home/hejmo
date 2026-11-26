@@ -44,6 +44,7 @@
         {{else}}<ul>{{range .Ticked}}{{template "listsRow" (dict "E" . "List" $.Current.ID)}}{{end}}</ul>{{end}}
         {{$label := printf (t "lists.delete_ticked") $n}}{{if eq $n 1}}{{$label = t "lists.delete_ticked.one"}}{{end}}<details class="danger"><summary>{{$label}}</summary><p>{{if eq $n 1}}{{t "display.lists.delete_ticked.explain.one"}}{{else}}{{printf (t "display.lists.delete_ticked.explain") $n}}{{end}}</p>
           <form method="post" action="/display/lists/{{.Current.ID}}/completed/delete"><button class="button danger" type="submit">{{if eq $n 1}}{{t "lists.delete_ticked.confirm.one"}}{{else}}{{printf (t "lists.delete_ticked.confirm") $n}}{{end}}</button></form></details>{{end}}
+        {{if .AllergenNote}}{{template "allergenNotice"}}{{end}}
         {{template "freeBox" (dict "Title" (t "lists.free.title") "Hint" (t "lib.free.hint") "People" .FreeText)}}
       </div>
     </section>

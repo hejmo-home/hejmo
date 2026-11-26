@@ -2233,6 +2233,7 @@
   "food.allergens.hint": "Die 14 Hauptallergene, die in der EU auf jeder Verpackung stehen müssen. Hake an, was {name} nicht verträgt: Hejmo warnt dann bei Artikeln, die es enthalten, und nennt {name} dabei.",
   "food.allergens.caveat.lead": "Experimentell, ohne Gewähr:",
   "food.allergens.caveat.text": "Eine Warnung kann fehlen oder falsch sein. Lies im Zweifel die Zutaten auf der Packung.",
+  "food.allergens.notice": "Allergen-Angaben ohne Gewähr. Maßgeblich ist die Zutatenliste auf der Verpackung.",
   "food.other.legend": "Sonst noch etwas?",
   "food.other.label": "Weitere Allergien oder Unverträglichkeiten",
   "food.other.placeholder": "zum Beispiel Kiwi, Erdbeeren",

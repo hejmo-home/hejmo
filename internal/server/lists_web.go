@@ -295,6 +295,7 @@ func (s *server) renderList(w http.ResponseWriter, r *http.Request, p principal,
 			return
 		}
 		data["Auto"] = au
+		data["AllergenNote"] = food
 		if !l.Suggestions { // a list with suggestions has its own note, FreeBox
 			data["FreeText"] = lk.freeTextNote(food)
 		}

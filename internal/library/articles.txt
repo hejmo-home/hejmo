@@ -2,7 +2,7 @@
 # key | German name | English name | department | what is in it | symbol | default units | allergens | pantry
 # what is in it: meat, fish, veg (vegetarian), vegan or nonfood. Default units: one or two keys of
 # internal/unit. Allergens: keys of the 14 main allergens of EU regulation 1169/2011 annex II, as a
-# product of this kind usually carries them (no traces). Pantry: "athome" (not the department "pantry") for an article usually at home (salt, oil, flour), recipes leave it out of the shopping list by default (ADR 0021, ticket 278); empty otherwise. NOT yet reviewed by the product owner (follow-up issue 214): change this line only after the review is done.
+# product of this kind usually carries them (no traces). Pantry: "athome" (not the department "pantry") for an article usually at home (salt, oil, flour), recipes leave it out of the shopping list by default (ADR 0021, ticket 278); empty otherwise. The product owner accepted these allergen tags as they are on 26/11/2026 (issue 214); every screen that shows them carries the notice that the information comes without guarantee.
 # produce
 apples|Äpfel|Apples|produce|vegan|🍎|kg,piece||
 bananas|Bananen|Bananas|produce|vegan|🍌|piece,kg||

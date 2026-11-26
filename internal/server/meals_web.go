@@ -299,7 +299,7 @@ func (s *server) renderMeals(w http.ResponseWriter, r *http.Request, p principal
 		"Week": monday.Format(task.DateLayout), "Prev": monday.AddDate(0, 0, -7).Format(task.DateLayout), "Next": monday.AddDate(0, 0, 7).Format(task.DateLayout),
 		"WeekNo": isoWeek(monday), "From": from, "To": to, "ErrorWeekday": errDay, "ErrorMealtime": errMealtime, "ThisWeek": monday.Format(task.DateLayout) == weekOf(mustDay(today)).Format(task.DateLayout),
 		"Editable": p.person.Role == store.RoleParent, "Error": errKey, "ErrorField": errField, "ErrorPortions": strings.HasSuffix(errField, ".portions"),
-		"Dirty": dirty, "FreeText": free, "Suggest": "/meals/suggest",
+		"Dirty": dirty, "FreeText": free, "Suggest": "/meals/suggest", "AllergenNote": hasRecipe,
 	}
 	if p.person.Role == store.RoleParent {
 		sum, err := s.templateSummary(p, lang, monday)

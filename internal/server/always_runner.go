@@ -22,7 +22,8 @@ type AlwaysOptions struct {
 // AlwaysRunner puts articles on lists (ticket 168, Q27, Q43 to Q45): at the
 // household's time of day on the weekday of a due week. It runs once a day,
 // skips the holiday and catches nothing up, and switches the holiday off after
-// its last day.
+// its last day. With the household's choice "automatic" it also puts the
+// ingredients of the meal plan on a list (ticket 285).
 type AlwaysRunner struct {
 	opts AlwaysOptions
 	s    *server // only for the library and the units: no request is served
@@ -115,6 +116,9 @@ func (a *AlwaysRunner) run(ctx context.Context, h store.Household) error {
 		if err := a.put(h, r, day); err != nil {
 			a.opts.Logger.Error("article not put on the list", "article", r.ArticleID, "err", err)
 		}
+	}
+	if err := a.shopAuto(h); err != nil { // the meal plan's ingredients, ticket 285
+		a.opts.Logger.Error("meals not put on the list", "err", err)
 	}
 	return nil
 }

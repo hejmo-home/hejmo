@@ -4,6 +4,7 @@
   <ul class="list-rows">
     <li><a href="/settings/lists/library"><span class="art-sym" aria-hidden="true">{{.LibrarySymbol}}</span><span class="t"><b>{{t "lib.row.title"}}</b><span class="meta">{{.ShippedState}}</span><span class="meta">{{.OwnState}}</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     <li><a href="/settings/lists/always"><span class="art-sym" aria-hidden="true">{{template "repeatIcon" 24}}</span><span class="t"><b>{{t "always.title"}}</b>{{range .AlwaysRow}}<span class="meta{{if .Stopped}} auto-stopped{{end}}">{{.Text}}</span>{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li><a href="{{.ShopAutoPath}}"><span class="art-sym" aria-hidden="true">{{template "repeatIcon" 24}}</span><span class="t"><b>{{t "shopauto.title"}}</b><span class="meta">{{.ShopAutoState}}</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
   </ul>
   <form class="steps unit-set" method="post" action="/settings/lists/units" id="units">
     <fieldset><legend>{{t "lq.units.legend"}}</legend>

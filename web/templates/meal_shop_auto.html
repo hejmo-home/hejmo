@@ -1,0 +1,22 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "shopauto.title") "Frame" .Frame)}}
+  <h1>{{t "shopauto.title"}}</h1>
+  <p class="lead">{{t "shopauto.lead"}}</p>
+  {{with .HolidayNote}}<div class="auto-note holiday" role="status">{{template "pauseIcon" 20}}<p><b>{{.Head}}</b> {{.Text}} <a href="{{$.AlwaysHref}}#urlaub">{{t "always.note.change"}}</a></p></div>{{end}}
+  {{with .Stale}}<div class="auto-note" role="status">{{template "alertIcon"}}<p>{{.}}</p></div>{{end}}
+  <form method="post" action="/settings/lists/meal-shopping" class="steps lib-form auto-house">
+    <fieldset>
+      <legend>{{t "shopauto.legend"}}</legend>
+      {{template "switch" (dict "Name" "auto" "Label" (t "shopauto.switch") "OnText" (t "shopauto.on") "OffText" (t "shopauto.off") "Checked" .Form.On)}}
+      <div class="f{{if .Errs.Days}} invalid{{end}}">
+        <label>{{t "shopauto.days"}}<input name="days" type="number" inputmode="numeric" min="1" max="{{.MaxDays}}" step="1" value="{{.Form.Days}}"{{if .Errs.Days}} aria-invalid="true" aria-describedby="err-days"{{end}}></label>
+        {{if .Errs.Days}}<p class="ferr" id="err-days" role="alert">{{template "alertIcon"}}<span>{{.Errs.Days}}</span></p>{{end}}
+      </div>
+      <div class="f{{if .Errs.List}} invalid{{end}}">
+        <label>{{t "shopauto.list"}}<select name="list"{{if .Errs.List}} aria-invalid="true" aria-describedby="err-list"{{end}}><option value=""{{if not .Form.ListID}} selected{{end}}>{{t "shopauto.list.last"}}</option>{{range .Lists}}<option value="{{.ID}}"{{if eq .ID $.Form.ListID}} selected{{end}}>{{.Name}}</option>{{end}}</select></label>
+        {{if .Errs.List}}<p class="ferr" id="err-list" role="alert">{{template "alertIcon"}}<span>{{.Errs.List}}</span></p>{{end}}
+      </div>
+      <p class="hint">{{.Hint}} <a href="{{.AlwaysHref}}">{{t "shopauto.hint.link"}}</a></p>
+    </fieldset>
+    <button class="button" type="submit">{{t "people.save"}}</button>
+  </form>
+{{template "foot"}}

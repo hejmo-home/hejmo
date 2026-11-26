@@ -22,7 +22,7 @@ import (
 const importPath = "/meals/recipes/import"
 
 func loopbackRecipes() *recipeimport.Fetcher {
-	return &recipeimport.Fetcher{Gate: outbound.AllowAll(), Public: func(a netip.Addr) bool { return a.IsLoopback() }, AllowIPLiteral: true, Timeout: 3 * time.Second}
+	return &recipeimport.Fetcher{Gate: outbound.AllowAll(), Public: func(a netip.Addr) bool { return a.IsLoopback() }, AllowIPLiteral: true, Timeout: loopbackTimeout}
 }
 
 func ldPage(ld string) string {

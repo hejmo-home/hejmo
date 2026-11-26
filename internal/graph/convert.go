@@ -129,8 +129,9 @@ func icalDay(g string) string {
 }
 
 // RRuleOf writes a Graph recurrence as an RRULE. An end date counts to the end
-// of that day in zone.
-func RRuleOf(r Recurrence, zone *time.Location) (string, error) {
+// of that day in zone. UNTIL has the value type of the series' DTSTART: a date
+// for an all-day series, a UTC date-time for a timed one (RFC 5545, 3.3.10).
+func RRuleOf(r Recurrence, zone *time.Location, allDay bool) (string, error) {
 	p := r.Pattern
 	n := max(p.Interval, 1)
 	var parts []string
@@ -172,8 +173,8 @@ func RRuleOf(r Recurrence, zone *time.Location) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		until := time.Date(d.Year(), d.Month(), d.Day(), 23, 59, 59, 0, zone).UTC()
-		parts = append(parts, "UNTIL="+until.Format("20060102T150405Z"))
+		until := time.Date(d.Year(), d.Month(), d.Day(), 23, 59, 59, 0, zone)
+		parts = append(parts, "UNTIL="+calendar.UntilValue(until, allDay))
 	}
 	return strings.Join(parts, ";"), nil
 }
@@ -306,7 +307,7 @@ func ToEvent(g Event, household *time.Location) (Item, error) {
 		e.Location = g.Location.DisplayName
 	}
 	if g.Recurrence != nil && g.Type == "seriesMaster" {
-		if e.RRule, err = RRuleOf(*g.Recurrence, start.Location()); err != nil {
+		if e.RRule, err = RRuleOf(*g.Recurrence, start.Location(), g.IsAllDay); err != nil {
 			return Item{}, err
 		}
 	}
@@ -472,7 +473,7 @@ func ChangesOf(e calendar.Event, audienceLine string, remote Event, household *t
 		out["start"], out["end"] = full["start"], full["end"]
 	}
 	if rec, ok := full["recurrence"]; ok {
-		if serr != nil || remote.Recurrence == nil || !sameRecurrence(rec.(*Recurrence), *remote.Recurrence, rs) {
+		if serr != nil || remote.Recurrence == nil || !sameRecurrence(rec.(*Recurrence), *remote.Recurrence, rs, remote.IsAllDay) {
 			out["recurrence"] = rec
 		}
 	}
@@ -481,8 +482,8 @@ func ChangesOf(e calendar.Event, audienceLine string, remote Event, household *t
 
 // sameRecurrence compares a recurrence the box wrote with the one Outlook
 // has, both brought into the same form.
-func sameRecurrence(want *Recurrence, have Recurrence, start time.Time) bool {
-	rule, err := RRuleOf(have, start.Location())
+func sameRecurrence(want *Recurrence, have Recurrence, start time.Time, allDay bool) bool {
+	rule, err := RRuleOf(have, start.Location(), allDay)
 	if err != nil {
 		return false
 	}

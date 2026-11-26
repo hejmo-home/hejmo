@@ -44,7 +44,8 @@ Religious holidays calendar (ticket 339): Go libraries linked into the Hejmo bin
   soniakeys/meeus/v3 and soniakeys/unit (MIT): sun, moon, equinox and Easter (after Jean Meeus, Astronomical Algorithms).
     https://github.com/soniakeys/meeus
   Tables (internal/religiousholiday), only dates (facts), every entry compared with its source (ticket 354):
-    the Diyanet Isleri Baskanligi lists of religious days 2020-2035; the official Bahai calendar 2026 of the Bahai World Centre
-    (bahai.org), Copyright (c) Bahai International Community; the Nanakshahi Jantri of the SGPC, Nanakshahi years 557 and 558.
+    the Diyanet Isleri Baskanligi lists of religious days 2020-2035; the table of the Universal House of Justice for 2015-2064
+    (copy at bahai-library.com), checked against the official Bahai calendar 2026 of the Bahai World Centre (bahai.org),
+    Copyright (c) Bahai International Community; the Nanakshahi Jantri of the SGPC, Nanakshahi years 557 and 558.
     Losar has no table until one is checked against Men-Tsee-Khang.
   All named on the licences page of the web interface (Settings -> Licences).

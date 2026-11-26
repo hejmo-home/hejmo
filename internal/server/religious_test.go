@@ -390,11 +390,11 @@ func TestLicencesListTheLibrariesAndEveryTableWithSourceRangeAndWhatIsUnchecked(
 	rhHas(t, "licences", r.body, `data-licence="religious_holidays"`, `class="lic-list"`, "hebcal-go, GPL-2.0 oder später", "go-hijri, MIT", "meeus v3, MIT",
 		"Diyanet İşleri Başkanlığı, Tabelle der religiösen Tage 2020–2035", "Abgeglichen mit der Liste der religiösen Tage der Diyanet",
 		"Nanakshahi-Jantri der SGPC, Tabelle 2025–2027", "Abgeglichen mit dem Nanakshahi-Jantri der SGPC, Jahre 557 und 558",
-		"Bahá’í-Weltzentrum, offizieller Bahá’í-Kalender 2026", "Copyright © Bahá’í International Community", "Alevitische Gemeinde Deutschland (AABF)")
+		"Tabelle des Universalen Hauses der Gerechtigkeit 2015–2064", "Abgeglichen mit der Tabelle des Universalen Hauses der Gerechtigkeit (Kopie bei bahai-library.com)", "offiziellen Bahá’í-Kalender 2026", "Copyright © Bahá’í International Community", "Alevitische Gemeinde Deutschland (AABF)")
 	if strings.Contains(r.body, "noch nicht mit der Quelle abgeglichen") || strings.Contains(r.body, "Tibetischer Kalender") {
 		t.Error("every table is checked, and Losar has no table")
 	}
-	rhHas(t, "English", b.page("/settings/licences", "en").body, "hebcal-go, GPL-2.0 or later", "Checked against the Diyanet list of religious days", "Copyright © Bahá’í International Community")
+	rhHas(t, "English", b.page("/settings/licences", "en").body, "hebcal-go, GPL-2.0 or later", "Checked against the Diyanet list of religious days", "Checked against the table of the Universal House of Justice (copy at bahai-library.com)", "official Bahá’í calendar 2026", "Copyright © Bahá’í International Community")
 }
 
 func TestStartRewritesTheCalendarSoARegionChangeIsNotLost(t *testing.T) {

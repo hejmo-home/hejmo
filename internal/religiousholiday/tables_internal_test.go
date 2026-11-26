@@ -35,7 +35,7 @@ func TestTablesAreListedForTheLicencesPage(t *testing.T) {
 	if _, ok := got[SrcLosar]; ok {
 		t.Error("Losar has no checked source: no table")
 	}
-	for id, want := range map[string][2]int{SrcDiyanet: {2020, 2035}, SrcBahai: {2026, 2026}, SrcSGPC: {2025, 2027}} {
+	for id, want := range map[string][2]int{SrcDiyanet: {2020, 2035}, SrcBahai: {2015, 2064}, SrcSGPC: {2025, 2027}} {
 		if ti := got[id]; ti.From != want[0] || ti.To != want[1] || ti.UncheckedEntries != 0 {
 			t.Errorf("%s: %+v, want %d to %d, nothing unchecked", id, ti, want[0], want[1])
 		}

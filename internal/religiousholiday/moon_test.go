@@ -7,11 +7,20 @@ import (
 	rh "github.com/hejmo-home/hejmo/internal/religiousholiday"
 )
 
-// The official Bahá'í calendar of the Bahá'í World Centre gives 2026 (182-183 B.E.) only; no other year is
-// checked, so no other year is in the table (ticket 354).
-func TestBahaiDaysAreTheOfficialTableOf2026(t *testing.T) {
+// The table of the Universal House of Justice for 172-221 B.E. (2015 to 2064; copy at bahai-library.com) is the
+// source of the Bahá'í days, checked against the official bahai.org calendar of 2026 (ticket 354).
+func TestBahaiDaysAreTheTableOfTheUniversalHouseOfJustice(t *testing.T) {
 	t.Parallel()
-	hs := rh.Compute(rh.Bahai, rh.Options{}, 2024, 2030)
+	hs := rh.Compute(rh.Bahai, rh.Options{}, 2010, 2070)
+	if len(hs) != 50*9 {
+		t.Errorf("%d Bahá'í days in 2010 to 2070, want the 9 of each of the 50 years 2015 to 2064", len(hs))
+	}
+	for _, h := range hs {
+		if !h.Eve || h.Vary || h.Unchecked || h.Source != rh.SrcBahai {
+			t.Errorf("%s %s: eve %v vary %v unchecked %v source %q", h.Key, h.Start.Format("2006-01-02"), h.Eve, h.Vary, h.Unchecked, h.Source)
+		}
+	}
+	// The 2026 edition of bahai.org, day by day.
 	for _, c := range []struct {
 		key  string
 		want time.Time
@@ -26,18 +35,47 @@ func TestBahaiDaysAreTheOfficialTableOf2026(t *testing.T) {
 		{"birth_bab", d(2026, 11, 10)},
 		{"birth_bahaullah", d(2026, 11, 11)},
 	} {
-		h := find(t, hs, c.key, 2026)
-		if !h.Start.Equal(c.want) {
+		if h := find(t, hs, c.key, 2026); !h.Start.Equal(c.want) {
 			t.Errorf("%s: %s, want %s", c.key, h.Start.Format("2006-01-02"), c.want.Format("2006-01-02"))
 		}
-		if !h.Eve || h.Vary || h.Unchecked || h.Source != rh.SrcBahai {
-			t.Errorf("%s: eve %v vary %v unchecked %v source %q", c.key, h.Eve, h.Vary, h.Unchecked, h.Source)
+	}
+	// The days that moved against the computed dates beyond the rule of the two offsets.
+	for _, c := range []struct {
+		key  string
+		year int
+		want time.Time
+	}{
+		{"birth_bab", 2053, d(2053, 11, 11)}, // computed before: 13 October
+		{"birth_bahaullah", 2053, d(2053, 11, 12)},
+		{"naw_ruz", 2059, d(2059, 3, 20)}, // computed before: 21 March
+		{"ascension_bahaullah", 2059, d(2059, 5, 28)},
+		{"naw_ruz", 2015, d(2015, 3, 21)},
+		{"birth_bab", 2015, d(2015, 11, 13)},
+		{"martyrdom_bab", 2064, d(2064, 7, 9)},
+		{"birth_bahaullah", 2064, d(2064, 11, 11)},
+	} {
+		if h := find(t, hs, c.key, c.year); !h.Start.Equal(c.want) {
+			t.Errorf("%s %d: %s, want %s", c.key, c.year, h.Start.Format("2006-01-02"), c.want.Format("2006-01-02"))
 		}
 	}
-	if len(hs) != 9 {
-		t.Errorf("%d Bahá'í days in 2024 to 2030, want the 9 of 2026 only", len(hs))
+	// Part B of the table: the days after Naw-Rúz (20 or 21 March) are the same Gregorian day in every year that
+	// shares Naw-Rúz, and the Twin Holy Birthdays are two following days of October or November.
+	for y := 2015; y <= 2064; y++ {
+		nr := find(t, hs, "naw_ruz", y).Start
+		if nr.Month() != time.March || (nr.Day() != 20 && nr.Day() != 21) {
+			t.Errorf("%d: Naw-Rúz %s", y, nr.Format("2006-01-02"))
+		}
+		for key, off := range map[string]int{"ridvan_first": 31, "ridvan_ninth": 39, "ridvan_twelfth": 42, "declaration_bab": 64, "ascension_bahaullah": 69, "martyrdom_bab": 111} {
+			if got := find(t, hs, key, y).Start; !got.Equal(nr.AddDate(0, 0, off)) {
+				t.Errorf("%s %d: %s, want %d days after Naw-Rúz", key, y, got.Format("2006-01-02"), off)
+			}
+		}
+		b, u := find(t, hs, "birth_bab", y).Start, find(t, hs, "birth_bahaullah", y).Start
+		if !u.Equal(b.AddDate(0, 0, 1)) || (b.Month() != time.October && b.Month() != time.November) {
+			t.Errorf("%d: birthdays %s and %s", y, b.Format("2006-01-02"), u.Format("2006-01-02"))
+		}
 	}
-	if got := rh.TableEnd(rh.Bahai, rh.Options{}); got != 2026 {
+	if got := rh.TableEnd(rh.Bahai, rh.Options{}); got != 2064 {
 		t.Errorf("the Bahá'í table ends in %d", got)
 	}
 }

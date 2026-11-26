@@ -18,8 +18,8 @@
           <div>
             {{if .HasIslamic}}<fieldset class="choice">
               <legend>{{t "rh.islamic.legend"}}</legend>
-              <label><input type="radio" name="islamic_calendar" value="diyanet"{{if eq .Islamic "diyanet"}} checked{{end}}><b>{{t "rh.islamic.diyanet"}}</b><small>{{t "rh.islamic.diyanet.hint"}}</small><small class="cite">{{.CiteDiyanet.Text}}</small></label>
-              <label><input type="radio" name="islamic_calendar" value="umm_al_qura"{{if eq .Islamic "umm_al_qura"}} checked{{end}}><b>{{t "rh.islamic.umm_al_qura"}}</b><small>{{t "rh.islamic.umm_al_qura.hint"}}</small><small class="cite">{{.CiteUmmAlQura.Text}}</small></label>
+              <label><input type="radio" name="islamic_calendar" value="diyanet"{{if eq .Islamic "diyanet"}} checked{{end}}><b>{{t "rh.islamic.diyanet"}}</b><small>{{t "rh.islamic.diyanet.hint"}}</small><small class="cite">{{.CiteDiyanet.Text}}{{if .CiteDiyanet.Unchecked}} <span class="src-unchecked">{{t "src.unchecked.some"}}</span>{{end}}</small></label>
+              <label><input type="radio" name="islamic_calendar" value="umm_al_qura"{{if eq .Islamic "umm_al_qura"}} checked{{end}}><b>{{t "rh.islamic.umm_al_qura"}}</b><small>{{t "rh.islamic.umm_al_qura.hint"}}</small><small class="cite">{{.CiteUmmAlQura.Text}}{{if .CiteUmmAlQura.Unchecked}} <span class="src-unchecked">{{t "src.unchecked.some"}}</span>{{end}}</small></label>
             </fieldset>{{end}}
             {{if .HasOrthodox}}<fieldset class="choice">
               <legend>{{t "rh.orthodox.legend"}}</legend>

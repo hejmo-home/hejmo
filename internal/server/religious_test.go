@@ -77,7 +77,7 @@ func TestThePageStartsOffWithNineReligionsInAlphabeticalOrderAndNoneChosen(t *te
 	}
 	rhHas(t, "page", r.body, `<h1>Religiöse Feiertage</h1>`, `class="facts rh-now"`, "<dt>Gesetzliche Feiertage</dt>", "Bayern, aus dem Ort eures Zuhauses.", "<dd>Aus.</dd>",
 		`name="religious_holidays"`, `role="switch"`, `class="crumbs"`, `<button class="button" type="submit">Speichern</button>`, "Welche Religionen feiert ihr? Du kannst mehrere wählen.")
-	rhHasNot(t, "page", r.body, `checked`, `id="days"`, `details class="more"`)
+	rhHasNot(t, "page", r.body, ` checked>`, ` checked `, `id="days"`, `details class="more"`)
 	order := regexp.MustCompile(`name="religions" value="([a-z]+)"`).FindAllStringSubmatch(r.body, -1)
 	var got []string
 	for _, m := range order {

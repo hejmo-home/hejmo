@@ -108,6 +108,25 @@ func TestSourceLinesStayInsideTheirCardAndIslamShowsOneLineForTheCalendarTicked(
 					t.Errorf("%s shows %d source lines with Umm al-Qura ticked, want exactly 1", l, m.Lines[l])
 				}
 			}
+			// Swapping the Islamic calendar before saving (the :has rule, no reload) must still leave one line each.
+			if _, err := chromedp.Run(ctx, chromedp.Evaluate[string](`document.querySelector('input[name="islamic_calendar"][value="diyanet"]').click(), "ok"`)); err != nil {
+				t.Fatal(err)
+			}
+			got, err = chromedp.Run(ctx, chromedp.Evaluate[string](citeProbeJS))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := json.Unmarshal([]byte(got), &m); err != nil {
+				t.Fatalf("probe %q: %v", got, err)
+			}
+			for _, l := range []string{"muslim", "alevi", "diyanet", "umm_al_qura"} {
+				if m.Lines[l] != 1 {
+					t.Errorf("%s shows %d source lines after ticking Diyanet, want exactly 1", l, m.Lines[l])
+				}
+			}
+			if len(m.Over) > 0 {
+				t.Errorf("a source line overflows its card after ticking Diyanet: %s", strings.Join(m.Over, "; "))
+			}
 		})
 	}
 }

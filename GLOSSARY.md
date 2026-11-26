@@ -504,7 +504,7 @@ The yearly feast of the saint a contact's first name belongs to, from the **name
 _Avoid_: saint's day, Namenstagskalender (for the setting)
 
 **Name day list**:
-One church's compiled list of names and days that a household chooses for its name days: Catholic (Regionalkalender DE/AT/CH), Protestant (Namenkalender), Romanian Orthodox, Greek Orthodox (ticket 318), Bulgarian, Russian and Ukrainian Orthodox (ticket 338). Every entry records its source. German UI: "Nach welcher Kirche feiert ihr Namenstage?" with the church names; the word "Kalender" stays reserved for calendars.
+One church's compiled list of names and days that a household chooses for its name days: Catholic (Regionalkalender DE/AT/CH), Protestant (Namenkalender), Romanian Orthodox, Greek Orthodox (ticket 318), Bulgarian and Ukrainian Orthodox (ticket 338, checked against the calendars of 2026 in ticket 366). Every entry records its source and the edition it was checked against. The Russian Orthodox list is withheld (not offered, not in the binary) until ticket 374 has checked it. German UI: "Nach welcher Kirche feiert ihr Namenstage?" with the church names; the word "Kalender" stays reserved for calendars.
 _Avoid_: name day calendar, tradition
 
 **Calendar style**:

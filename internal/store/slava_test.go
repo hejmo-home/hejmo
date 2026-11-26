@@ -51,7 +51,7 @@ func TestSetBirthdaysSavesAllPartsTogetherOrNone(t *testing.T) {
 	db, h := bareHousehold(t)
 	julian := nameday.Julian
 	var fe *store.FieldError
-	_, err := db.SetBirthdays(h.ID, store.BirthdaySettings{NameDays: &store.NameDaySetting{On: true, List: "russian_orthodox", Word: "Name day"}, Style: &julian,
+	_, err := db.SetBirthdays(h.ID, store.BirthdaySettings{NameDays: &store.NameDaySetting{On: true, List: "ukrainian_orthodox", Word: "Name day"}, Style: &julian,
 		Slava: &store.SlavaInput{On: true, Choice: "no-such-saint"}}, "Geburtstage")
 	if !errors.As(err, &fe) || fe.Field != "slava" {
 		t.Fatalf("err = %v", err)
@@ -60,12 +60,12 @@ func TestSetBirthdaysSavesAllPartsTogetherOrNone(t *testing.T) {
 	if got.NameDaysOn || got.NameDayList != "" || got.OrthodoxCalendar != nameday.RevisedJulian || got.SlavaOn {
 		t.Fatalf("a refused save changed %+v", got)
 	}
-	if _, err := db.SetBirthdays(h.ID, store.BirthdaySettings{NameDays: &store.NameDaySetting{On: true, List: "russian_orthodox", Word: "Name day"}, Style: &julian,
+	if _, err := db.SetBirthdays(h.ID, store.BirthdaySettings{NameDays: &store.NameDaySetting{On: true, List: "ukrainian_orthodox", Word: "Name day"}, Style: &julian,
 		Slava: &store.SlavaInput{On: true, Choice: "nikola"}}, "Geburtstage"); err != nil {
 		t.Fatal(err)
 	}
 	got, _ = db.Household(h.ID)
-	if !got.NameDaysOn || got.NameDayList != "russian_orthodox" || got.OrthodoxCalendar != nameday.Julian || !got.SlavaOn || got.Slava != "nikola" {
+	if !got.NameDaysOn || got.NameDayList != "ukrainian_orthodox" || got.OrthodoxCalendar != nameday.Julian || !got.SlavaOn || got.Slava != "nikola" {
 		t.Fatalf("saved %+v", got)
 	}
 	if len(slavaEvents(t, db, got, 2026)) != 1 {
@@ -83,7 +83,7 @@ func TestSetBirthdaysRollsBackWhatWasWrittenWhenALaterPartFails(t *testing.T) {
 		t.Fatal(err)
 	}
 	julian := nameday.Julian
-	_, err := db.SetBirthdays(h.ID, store.BirthdaySettings{NameDays: &store.NameDaySetting{On: true, List: "russian_orthodox", Word: "Name day"}, Style: &julian,
+	_, err := db.SetBirthdays(h.ID, store.BirthdaySettings{NameDays: &store.NameDaySetting{On: true, List: "ukrainian_orthodox", Word: "Name day"}, Style: &julian,
 		Slava: &store.SlavaInput{On: true, Choice: "nikola"}}, "Geburtstage")
 	if err == nil || !strings.Contains(err.Error(), "disk on fire") {
 		t.Fatalf("err = %v, want the failure of the Slava update", err)
@@ -99,7 +99,7 @@ func TestSetBirthdaysRollsBackWhatWasWrittenWhenALaterPartFails(t *testing.T) {
 	if _, err := db.SQL().Exec(`DROP TRIGGER slava_fails`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.SetBirthdays(h.ID, store.BirthdaySettings{NameDays: &store.NameDaySetting{On: true, List: "russian_orthodox", Word: "Name day"}, Style: &julian,
+	if _, err := db.SetBirthdays(h.ID, store.BirthdaySettings{NameDays: &store.NameDaySetting{On: true, List: "ukrainian_orthodox", Word: "Name day"}, Style: &julian,
 		Slava: &store.SlavaInput{On: true, Choice: "nikola"}}, "Geburtstage"); err != nil {
 		t.Fatal(err)
 	}
@@ -112,14 +112,14 @@ func TestChangingTheCalendarStyleWritesTheNameDaysAgain(t *testing.T) {
 	t.Parallel()
 	db, h := bareHousehold(t)
 	nameDayContact(t, db, h, "Mama", "Katharina Maier")
-	setNameDays(t, db, h, true, nameday.RussianOrthodox)
-	if got := strings.Join(birthdayDays(t, db, h, 2026), ","); got != "24.11. Namenstag Mama (Jekaterina)" {
+	setNameDays(t, db, h, true, nameday.UkrainianOrthodox)
+	if got := strings.Join(birthdayDays(t, db, h, 2026), ","); got != "24.11. Namenstag Mama (Kateryna)" {
 		t.Fatalf("revised: %s", got)
 	}
 	if err := db.SetOrthodoxCalendar(h.ID, nameday.Julian, "Geburtstage"); err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.Join(birthdayDays(t, db, h, 2026), ","); got != "07.12. Namenstag Mama (Jekaterina)" {
+	if got := strings.Join(birthdayDays(t, db, h, 2026), ","); got != "07.12. Namenstag Mama (Kateryna)" {
 		t.Fatalf("julian: %s", got)
 	}
 	// A list that is not Orthodox does not follow the style.
@@ -128,9 +128,9 @@ func TestChangingTheCalendarStyleWritesTheNameDaysAgain(t *testing.T) {
 		t.Fatalf("catholic with julian set: %s", got)
 	}
 	// Switching the list back, the style that was set is still there.
-	setNameDays(t, db, h, true, nameday.RussianOrthodox)
-	if got := strings.Join(birthdayDays(t, db, h, 2026), ","); got != "07.12. Namenstag Mama (Jekaterina)" {
-		t.Fatalf("back to russian: %s", got)
+	setNameDays(t, db, h, true, nameday.UkrainianOrthodox)
+	if got := strings.Join(birthdayDays(t, db, h, 2026), ","); got != "07.12. Namenstag Mama (Kateryna)" {
+		t.Fatalf("back to ukrainian: %s", got)
 	}
 }
 
@@ -138,14 +138,14 @@ func TestEasterNameDaysAreTheSameInBothStyles(t *testing.T) {
 	t.Parallel()
 	db, h := bareHousehold(t)
 	nameDayContact(t, db, h, "Papa", "Thomas Maier")
-	setNameDays(t, db, h, true, nameday.RussianOrthodox)
-	// The usual day of Thomas is the Sunday after Easter (Foma), the same on both styles.
+	setNameDays(t, db, h, true, nameday.UkrainianOrthodox)
+	// The usual day of Thomas is the Sunday after Easter (Toma), the same on both styles.
 	a := strings.Join(birthdayDays(t, db, h, 2027), ",")
 	if err := db.SetOrthodoxCalendar(h.ID, nameday.Julian, "Geburtstage"); err != nil {
 		t.Fatal(err)
 	}
 	b := strings.Join(birthdayDays(t, db, h, 2027), ",")
-	if a != b || a != "09.05. Namenstag Papa (Foma)" {
+	if a != b || a != "09.05. Namenstag Papa (Toma)" {
 		t.Fatalf("revised %s, julian %s", a, b)
 	}
 }

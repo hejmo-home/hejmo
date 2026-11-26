@@ -7042,7 +7042,7 @@ components:
       required: [on, list]
       properties:
         on: { type: boolean }
-        list: { type: string, nullable: true, enum: [catholic, protestant, bulgarian_orthodox, greek_orthodox, romanian_orthodox, russian_orthodox, ukrainian_orthodox, null], description: "The name-day list: catholic (Regionalkalender for Germany, Austria and Switzerland), protestant, bulgarian_orthodox, greek_orthodox, romanian_orthodox, russian_orthodox or ukrainian_orthodox; null until a church was chosen. The Orthodox lists keep the days as the church numbers them and follow `religious_holidays.orthodox_calendar`. More values may follow." }
+        list: { type: string, nullable: true, enum: [catholic, protestant, bulgarian_orthodox, greek_orthodox, romanian_orthodox, ukrainian_orthodox, null], description: "The name-day list: catholic (Regionalkalender for Germany, Austria and Switzerland), protestant, bulgarian_orthodox, greek_orthodox, romanian_orthodox or ukrainian_orthodox; null until a church was chosen. The Orthodox lists keep the days as the church numbers them and follow `religious_holidays.orthodox_calendar`. The Russian Orthodox list (`russian_orthodox`) is not offered until its entries are checked against a source (ticket 374). More values may follow." }
     MealCutoffs:
       type: object
       description: "Per mealtime, the time of day (hh:mm, 24-hour) from which it is no longer shown on displays (ADR 0016). Empty means no cut-off: shown for the rest of the day. Defaults: breakfast 10:00, lunch 13:30, snack 16:30, dinner none."
@@ -7083,7 +7083,7 @@ components:
           description: "Switch name days on or off and choose the church; omitted parts stay as they are. `on: true` needs a church (the stored one or `list`), else 422; an unknown list is 422. Changing the church sets contacts whose `entry` or `name` the new list does not have back to `auto`."
           properties:
             on: { type: boolean }
-            list: { type: string, description: "catholic, protestant, bulgarian_orthodox, greek_orthodox, romanian_orthodox, russian_orthodox or ukrainian_orthodox" }
+            list: { type: string, description: "catholic, protestant, bulgarian_orthodox, greek_orthodox, romanian_orthodox or ukrainian_orthodox" }
         slava:
           type: object
           description: "Switch the Slava on or off and choose the saint; omitted parts stay as they are. The result must be valid, else 422 and nothing is saved: `on: true` needs a `saint` (an id of the list or `own`); an unknown id is 422; `own` needs `own_name` (1 to 60 characters) and `own_day` (MM-DD, a day that exists, 29 February included). A `saint` given while `on` is false is saved for later."

@@ -24,19 +24,19 @@ func orthodoxTheophany(t *testing.T, db *store.DB, h store.Household) string {
 	return strings.Join(days, ",")
 }
 
-// orthodoxHousehold has the Orthodox holidays and the Russian name days on, with one name day in November.
+// orthodoxHousehold has the Orthodox holidays and the Ukrainian name days on, with one name day in November.
 func orthodoxHousehold(t *testing.T) (*store.DB, store.Household) {
 	t.Helper()
 	db, h := religiousHousehold(t, "DE-BY", 0, 0)
 	nameDayContact(t, db, h, "Mama", "Katharina Maier")
-	setNameDays(t, db, h, true, nameday.RussianOrthodox)
+	setNameDays(t, db, h, true, nameday.UkrainianOrthodox)
 	if _, err := db.SaveReligiousHolidays(h.ID, on(rh.Orthodox), "Religiöse Feiertage", "de"); err != nil {
 		t.Fatal(err)
 	}
 	if got := orthodoxTheophany(t, db, h); !strings.Contains(got, "2027-01-06") || strings.Contains(got, "2027-01-19") {
 		t.Fatalf("revised Theophany: %s", got)
 	}
-	if got := strings.Join(birthdayDays(t, db, h, 2026), ","); got != "24.11. Namenstag Mama (Jekaterina)" {
+	if got := strings.Join(birthdayDays(t, db, h, 2026), ","); got != "24.11. Namenstag Mama (Kateryna)" {
 		t.Fatalf("revised name day: %s", got)
 	}
 	return db, h
@@ -66,20 +66,20 @@ func TestTheStyleOfTheReligiousHolidaysWritesTheNameDaysAgain(t *testing.T) {
 	if _, err := db.SaveReligiousHolidays(h.ID, store.ReligiousInput{On: true, Religions: []rh.Religion{rh.Orthodox}, Orthodox: rh.Julian}, "Religiöse Feiertage", "de"); err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.Join(birthdayDays(t, db, h, 2026), ","); got != "07.12. Namenstag Mama (Jekaterina)" {
+	if got := strings.Join(birthdayDays(t, db, h, 2026), ","); got != "07.12. Namenstag Mama (Kateryna)" {
 		t.Fatalf("name day after the religious holidays chose julian: %s", got)
 	}
 	// Back, and with the religious holidays off: the choice still moves the name days (the settings API sends it alone).
 	if _, err := db.SaveReligiousHolidays(h.ID, store.ReligiousInput{On: false, Orthodox: rh.RevisedJulian}, "Religiöse Feiertage", "de"); err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.Join(birthdayDays(t, db, h, 2026), ","); got != "24.11. Namenstag Mama (Jekaterina)" {
+	if got := strings.Join(birthdayDays(t, db, h, 2026), ","); got != "24.11. Namenstag Mama (Kateryna)" {
 		t.Fatalf("name day after revised_julian with the holidays off: %s", got)
 	}
 	if _, err := db.SaveReligiousHolidays(h.ID, store.ReligiousInput{On: false, Orthodox: rh.Julian}, "Religiöse Feiertage", "de"); err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.Join(birthdayDays(t, db, h, 2026), ","); got != "07.12. Namenstag Mama (Jekaterina)" {
+	if got := strings.Join(birthdayDays(t, db, h, 2026), ","); got != "07.12. Namenstag Mama (Kateryna)" {
 		t.Fatalf("name day after julian with the holidays off: %s", got)
 	}
 }

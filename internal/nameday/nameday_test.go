@@ -278,10 +278,11 @@ func TestCatholicMatthiasIsOn24February(t *testing.T) {
 	}
 }
 
-// awaitingCheck are the lists that were compiled for ticket 338 and not yet checked against their sources: every entry
-// of them says so (on its event page and under Licences) until a native speaker has checked it. A list leaves the set
-// when its entries are checked, and then the test below holds it to the same rule as the other lists.
-var awaitingCheck = map[List]bool{BulgarianOrthodox: true, RussianOrthodox: true, UkrainianOrthodox: true}
+// awaitingCheck are the lists that were compiled and not yet checked against their sources: every entry of them says
+// so (on its event page and under Licences) until it is checked. A list leaves the set when its entries are checked,
+// and then the test below holds it to the same rule as the other lists. The Bulgarian and Ukrainian lists and the
+// Slava list were checked in ticket 366; the Russian list is withheld, not listed, until ticket 374 has checked it.
+var awaitingCheck = map[List]bool{}
 
 func TestEveryEntryIsCheckedAgainstItsSource(t *testing.T) {
 	year := regexp.MustCompile(`20\d\d`)

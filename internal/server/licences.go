@@ -65,7 +65,12 @@ func (s *server) nameDayLicences(lang string) []nameDayLicence {
 		}
 		out = append(out, row)
 	}
-	row := nameDayLicence{Name: s.i18n.T(lang, "slava.fact"), Sources: []nameDaySource{{Name: s.i18n.T(lang, "slava.source")}}}
+	slava := nameday.Slavas()
+	src := nameDaySource{Name: s.i18n.T(lang, "slava.source")}
+	if orig := slava.Sources["spc"]; !strings.HasPrefix(orig, src.Name) { // the edition the list was checked against
+		src.Original = orig
+	}
+	row := nameDayLicence{Name: s.i18n.T(lang, "slava.fact"), Sources: []nameDaySource{src}}
 	for _, en := range nameday.Slavas().Entries {
 		row.Unchecked = row.Unchecked || en.Unchecked
 	}

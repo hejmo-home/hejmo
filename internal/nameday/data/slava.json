@@ -1,34 +1,15 @@
 {
  "sources": {
-  "spc": "Календар Српске православне цркве (Српска православна црква)"
+  "spc": "Календар Српске православне цркве, geprüft an den Heiligenseiten von spc.rs/sr/news/kalendar/ (Stand 26/11/2026)"
  },
  "entries": [
-  {
-   "id": "ignjatije",
-   "name": "Sveti Ignjatije",
-   "saint": "Sveti Ignjatije Bogonosac",
-   "saint_de": "Ignatius der Gottesträger",
-   "day": "12-20",
-   "source": "spc",
-   "unchecked": true
-  },
-  {
-   "id": "stefan",
-   "name": "Sveti Stefan (Stevanjdan)",
-   "saint": "Sveti Stefan",
-   "saint_de": "Erzmärtyrer Stephanus",
-   "day": "12-27",
-   "source": "spc",
-   "unchecked": true
-  },
   {
    "id": "jovan",
    "name": "Jovanjdan",
    "saint": "Sveti Jovan Krstitelj",
    "saint_de": "Johannes der Täufer",
    "day": "01-07",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "sava",
@@ -36,8 +17,7 @@
    "saint": "Sveti Sava",
    "saint_de": "Sava von Serbien",
    "day": "01-14",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "trifun",
@@ -45,8 +25,7 @@
    "saint": "Sveti Trifun",
    "saint_de": "Märtyrer Tryphon",
    "day": "02-01",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "simeon",
@@ -54,8 +33,7 @@
    "saint": "Sveti Simeon Mirotočivi",
    "saint_de": "Stefan Nemanja (Simeon der Myronspender)",
    "day": "02-13",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "blagovesti",
@@ -63,8 +41,7 @@
    "saint": "Blagovesti",
    "saint_de": "Verkündigung an Maria",
    "day": "03-25",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "djordje",
@@ -72,8 +49,7 @@
    "saint": "Sveti Georgije",
    "saint_de": "Georg der Siegbringer",
    "day": "04-23",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "kirilo",
@@ -81,17 +57,15 @@
    "saint": "Sveti Kirilo i Metodije",
    "saint_de": "Kyrill und Method",
    "day": "05-11",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "vasilije",
    "name": "Sveti Vasilije Ostroški",
    "saint": "Sveti Vasilije Ostroški",
    "saint_de": "Basilius von Ostrog",
-   "day": "05-12",
-   "source": "spc",
-   "unchecked": true
+   "day": "04-29",
+   "source": "spc"
   },
   {
    "id": "nikola-letnji",
@@ -99,8 +73,7 @@
    "saint": "Sveti Nikola",
    "saint_de": "Nikolaus von Myra (Übertragung der Reliquien)",
    "day": "05-09",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "vidovdan",
@@ -108,8 +81,7 @@
    "saint": "Sveti knez Lazar",
    "saint_de": "Fürst Lazar",
    "day": "06-15",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "petar",
@@ -117,17 +89,15 @@
    "saint": "Sveti Petar i Pavle",
    "saint_de": "Apostel Petrus und Paulus",
    "day": "06-29",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "ivanjdan",
    "name": "Ivanjdan",
    "saint": "Sveti Jovan Krstitelj",
    "saint_de": "Geburt Johannes des Täufers",
-   "day": "07-07",
-   "source": "spc",
-   "unchecked": true
+   "day": "06-24",
+   "source": "spc"
   },
   {
    "id": "marina",
@@ -135,8 +105,7 @@
    "saint": "Sveta Marina",
    "saint_de": "Märtyrerin Marina",
    "day": "07-17",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "ilija",
@@ -144,8 +113,7 @@
    "saint": "Sveti prorok Ilija",
    "saint_de": "Prophet Elija",
    "day": "07-20",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "pantelejmon",
@@ -153,8 +121,7 @@
    "saint": "Sveti Pantelejmon",
    "saint_de": "Großmärtyrer Pantaleon",
    "day": "07-27",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "preobrazenje",
@@ -162,8 +129,7 @@
    "saint": "Preobraženje Gospodnje",
    "saint_de": "Verklärung des Herrn",
    "day": "08-06",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "gospojina",
@@ -171,8 +137,7 @@
    "saint": "Uspenje Presvete Bogorodice",
    "saint_de": "Entschlafung der Gottesmutter",
    "day": "08-15",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "mala",
@@ -180,8 +145,7 @@
    "saint": "Rođenje Presvete Bogorodice",
    "saint_de": "Geburt der Gottesmutter",
    "day": "09-08",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "krstovdan",
@@ -189,8 +153,7 @@
    "saint": "Vozdviženje Časnog Krsta",
    "saint_de": "Kreuzerhöhung",
    "day": "09-14",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "petka",
@@ -198,8 +161,7 @@
    "saint": "Sveta Petka",
    "saint_de": "Ehrwürdige Paraskewa",
    "day": "10-14",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "luka",
@@ -207,8 +169,7 @@
    "saint": "Sveti apostol i jevanđelista Luka",
    "saint_de": "Apostel und Evangelist Lukas",
    "day": "10-18",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "mitar",
@@ -216,8 +177,7 @@
    "saint": "Sveti velikomučenik Dimitrije",
    "saint_de": "Großmärtyrer Demetrios von Thessaloniki",
    "day": "10-26",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "vraci",
@@ -225,8 +185,7 @@
    "saint": "Sveti Kozma i Damjan",
    "saint_de": "Kosmas und Damian",
    "day": "11-01",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "djurdjic",
@@ -234,8 +193,7 @@
    "saint": "Sveti Georgije",
    "saint_de": "Georg (Weihe der Kirche in Lydda)",
    "day": "11-03",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "arandjel",
@@ -243,8 +201,7 @@
    "saint": "Sabor svetog arhangela Mihaila",
    "saint_de": "Synaxis des Erzengels Michael",
    "day": "11-08",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "zlatousti",
@@ -252,26 +209,7 @@
    "saint": "Sveti Jovan Zlatousti",
    "saint_de": "Johannes Chrysostomos",
    "day": "11-13",
-   "source": "spc",
-   "unchecked": true
-  },
-  {
-   "id": "andrija",
-   "name": "Andrejevdan",
-   "saint": "Sveti apostol Andrej Prvozvani",
-   "saint_de": "Apostel Andreas der Erstberufene",
-   "day": "11-30",
-   "source": "spc",
-   "unchecked": true
-  },
-  {
-   "id": "varvara",
-   "name": "Sveta Varvara",
-   "saint": "Sveta velikomučenica Varvara",
-   "saint_de": "Großmärtyrerin Barbara",
-   "day": "12-04",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "nikola",
@@ -279,8 +217,7 @@
    "saint": "Sveti Nikola",
    "saint_de": "Nikolaus von Myra",
    "day": "12-06",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "ana",
@@ -288,17 +225,7 @@
    "saint": "Sveta Ana",
    "saint_de": "Hl. Anna (Mariä Empfängnis)",
    "day": "12-09",
-   "source": "spc",
-   "unchecked": true
-  },
-  {
-   "id": "spiridon",
-   "name": "Sveti Spiridon",
-   "saint": "Sveti Spiridon",
-   "saint_de": "Spyridon von Trimythous",
-   "day": "12-12",
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "spas",
@@ -306,8 +233,7 @@
    "saint": "Vaznesenje Gospodnje",
    "saint_de": "Christi Himmelfahrt",
    "easter": 39,
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   },
   {
    "id": "trojica",
@@ -315,8 +241,7 @@
    "saint": "Silazak Svetog Duha (Duhovi)",
    "saint_de": "Pfingsten",
    "easter": 49,
-   "source": "spc",
-   "unchecked": true
+   "source": "spc"
   }
  ]
 }

@@ -25,8 +25,7 @@ func TestBirthdaysPageHasTheOrthodoxCardsTheStyleAndTheSlava(t *testing.T) {
 	c := newCtBox(t)
 	page := c.page("/contacts/birthdays", "de").body
 	ctHas(t, "page", page,
-		`<label class="orth"><input type="radio" name="name_day_list" value="bulgarian_orthodox">`, `<b>Bulgarisch-orthodox</b>`, `<b>Russisch-orthodox</b>`, `<b>Ukrainisch-orthodox</b>`,
-		`Kalender der Russischen Orthodoxen Kirche (Moskauer Patriarchat). Sie feiert nach dem alten Kalender.`,
+		`<label class="orth"><input type="radio" name="name_day_list" value="bulgarian_orthodox">`, `<b>Bulgarisch-orthodox</b>`, `<b>Ukrainisch-orthodox</b>`,
 		`Seit 1. September 2023 nach dem neuen Kalender; Gemeinden des Moskauer Patriarchats feiern nach dem alten.`,
 		`<details class="more nd-style">`, `<span>Mehr Optionen</span><span class="sum">Kalender: neuer Kalender</span>`,
 		`<fieldset class="choice"><legend>Nach welchem Kalender feiert eure orthodoxe Kirche?</legend>`,
@@ -39,8 +38,11 @@ func TestBirthdaysPageHasTheOrthodoxCardsTheStyleAndTheSlava(t *testing.T) {
 		`<optgroup label="Nicht in der Liste"><option value="own">Ein anderer Heiliger …</option></optgroup>`,
 		`name="slava_name" type="text" maxlength="60"`, `name="slava_day" type="number"`, `name="slava_month"`, `id="hint-slava"`)
 	ctHasNot(t, "page", page, `<details class="more nd-style" open`, `class="slava-now"`, `class="ferr"`)
+	// The Russian list has no readable source yet (ticket 374): it is not offered.
+	ctHasNot(t, "russian", page, `russian_orthodox`, `Russisch-orthodox`, `Russischen Orthodoxen Kirche`)
+	ctHasNot(t, "russian", c.page("/contacts/birthdays", "en").body, `russian_orthodox`, `Russian Orthodox`)
 	// The order of the Orthodox cards is alphabetical by their German name.
-	order := []string{"bulgarian_orthodox", "greek_orthodox", "romanian_orthodox", "russian_orthodox", "ukrainian_orthodox"}
+	order := []string{"bulgarian_orthodox", "greek_orthodox", "romanian_orthodox", "ukrainian_orthodox"}
 	last := -1
 	for _, v := range order {
 		i := strings.Index(page, `name="name_day_list" value="`+v+`"`)
@@ -55,43 +57,43 @@ func TestBirthdaysPageHasTheOrthodoxCardsTheStyleAndTheSlava(t *testing.T) {
 		idx(`class="more nd-style"`) < idx(`<fieldset class="slava">`) && idx(`<fieldset class="slava">`) < idx(`class="button" type="submit"`)) || strings.Count(page, `class="button" type="submit"`) != 1 {
 		t.Error("the parts of the form are in the wrong order")
 	}
-	for _, l := range []string{"russian_orthodox", "bulgarian_orthodox", "greek_orthodox", "romanian_orthodox"} {
+	for _, l := range []string{"bulgarian_orthodox", "greek_orthodox", "romanian_orthodox"} {
 		ctHas(t, "mismatch "+l, page, `class="notice nd-mismatch" data-list="`+l+`"`)
 	}
 	ctHasNot(t, "mismatch", page, `data-list="ukrainian_orthodox"`)
-	ctHas(t, "russian notice", page, `Die Russische Orthodoxe Kirche feiert nach dem <b>alten Kalender</b>. Eingestellt ist der neue: So stehen eure Namenstage 13 Tage früher, als eure Kirche sie feiert. Wähle unter „Mehr Optionen“ den alten Kalender.`)
-	ctHas(t, "English", c.page("/contacts/birthdays", "en").body, "Another saint …", "More options", "Calendar: new calendar", "– Please choose –", "Russian Orthodox", "Slava in the calendar “Birthdays”")
+	ctHas(t, "bulgarian notice", page, `Die Bulgarische Orthodoxe Kirche feiert nach dem <b>neuen Kalender</b>. Eingestellt ist der alte: So stehen eure Namenstage 13 Tage später als in eurer Kirche. Stimmt das für eure Gemeinde nicht, wähle unter „Mehr Optionen“ den neuen Kalender.`)
+	ctHas(t, "English", c.page("/contacts/birthdays", "en").body, "Another saint …", "More options", "Calendar: new calendar", "– Please choose –", "Ukrainian Orthodox", "Slava in the calendar “Birthdays”")
 }
 
 func TestSavingAnOrthodoxChurchWithTheOldCalendarAndASlavaSaysItInWords(t *testing.T) {
 	t.Parallel()
 	c := newCtBox(t)
 	c.add(t, contactForm("Mama K", "Katharina Maier", nil, nil))
-	r := postBirthdays(c, url.Values{"name_days": {"1"}, "name_day_list": {"russian_orthodox"}, "orthodox_calendar": {"julian"}, "slava_on": {"1"}, "slava": {"nikola"}})
+	r := postBirthdays(c, url.Values{"name_days": {"1"}, "name_day_list": {"ukrainian_orthodox"}, "orthodox_calendar": {"julian"}, "slava_on": {"1"}, "slava": {"nikola"}})
 	if r.status != http.StatusSeeOther || r.location != "/contacts/birthdays" {
 		t.Fatalf("save = %d %q\n%s", r.status, r.location, r.body)
 	}
 	page := c.page("/contacts/birthdays", "de").body
-	ctHas(t, "page", page, `Gespeichert: russisch-orthodoxe Namenstage im alten Kalender und eure Slava Nikoljdan am 19. Dezember.`,
-		`<dt>Namenstage</dt><dd>An, nach den russisch-orthodoxen Namenstagen im alten Kalender.</dd>`, `<dt>Slava</dt><dd>Nikoljdan, jedes Jahr am 19. Dezember.</dd>`,
+	ctHas(t, "page", page, `Gespeichert: ukrainisch-orthodoxe Namenstage im alten Kalender und eure Slava Nikoljdan am 19. Dezember.`,
+		`<dt>Namenstage</dt><dd>An, nach den ukrainisch-orthodoxen Namenstagen im alten Kalender.</dd>`, `<dt>Slava</dt><dd>Nikoljdan, jedes Jahr am 19. Dezember.</dd>`,
 		`<details class="more nd-style" open>`, `<span class="sum">Kalender: alter Kalender</span>`, `name="orthodox_calendar" value="julian" checked`,
-		`name="name_day_list" value="russian_orthodox" checked`, `name="slava_on" value="1" checked`, `<option value="nikola" selected>19. Dezember · Nikoljdan</option>`,
+		`name="name_day_list" value="ukrainian_orthodox" checked`, `name="slava_on" value="1" checked`, `<option value="nikola" selected>19. Dezember · Nikoljdan</option>`,
 		`<p class="slava-now"><b>Nikoljdan</b>: Sveti Nikola (Nikolaus von Myra), jedes Jahr am 19. Dezember für die ganze Familie.</p>`)
 	ctHasNot(t, "page", page, `class="ferr"`)
 	// The notice for the church that fits the style is in the page but only the live rule shows it; nothing is saved wrongly.
-	ctHas(t, "English", c.page("/contacts/birthdays", "en").body, "Nikoljdan, every year on 19 December.", "On, from the Russian Orthodox name days in the old calendar.")
+	ctHas(t, "English", c.page("/contacts/birthdays", "en").body, "Nikoljdan, every year on 19 December.", "On, from the Ukrainian Orthodox name days in the old calendar.")
 }
 
 func TestAMismatchOfChurchAndStyleSavesWithoutAnError(t *testing.T) {
 	t.Parallel()
 	c := newCtBox(t)
-	r := postBirthdays(c, url.Values{"name_days": {"1"}, "name_day_list": {"russian_orthodox"}, "orthodox_calendar": {"revised_julian"}})
+	r := postBirthdays(c, url.Values{"name_days": {"1"}, "name_day_list": {"bulgarian_orthodox"}, "orthodox_calendar": {"julian"}})
 	if r.status != http.StatusSeeOther {
 		t.Fatalf("a mismatch is not an error: %d\n%s", r.status, r.body)
 	}
 	page := c.page("/contacts/birthdays", "de").body
-	ctHas(t, "page", page, `Gespeichert: russisch-orthodoxe Namenstage im neuen Kalender.`, `class="notice nd-mismatch" data-list="russian_orthodox"`, `<details class="more nd-style" open>`,
-		`name="orthodox_calendar" value="revised_julian" checked`)
+	ctHas(t, "page", page, `Gespeichert: bulgarisch-orthodoxe Namenstage im alten Kalender.`, `class="notice nd-mismatch" data-list="bulgarian_orthodox"`, `<details class="more nd-style" open>`,
+		`name="orthodox_calendar" value="julian" checked`)
 	// A church that fits the style leaves "Mehr Optionen" closed.
 	postBirthdays(c, url.Values{"name_days": {"1"}, "name_day_list": {"greek_orthodox"}, "orthodox_calendar": {"revised_julian"}})
 	ctHasNot(t, "fitting", c.page("/contacts/birthdays", "de").body, `<details class="more nd-style" open`)
@@ -182,24 +184,26 @@ func TestSlavaIsJulianWhateverTheHouseholdStyleAndNamesTheChurchCalendar(t *test
 		`Diesen Termin macht Hejmo aus eurer Slava im Geburtstagskalender. Ändern kannst du ihn nur dort.`, `data-readonly`,
 		`<dt>Kalender</dt><dd>Geburtstage</dd>`, `<dt>Für</dt><dd>Ganze Familie</dd>`, `<dt>Slava</dt><dd>Sveti Nikola (Nikolaus von Myra)</dd>`,
 		`<dt>Wiederholung</dt><dd>Jedes Jahr am 19. Dezember. Das ist der 6. Dezember im Kirchenkalender; die Serbische Orthodoxe Kirche feiert nach dem alten Kalender.</dd>`,
-		`<dt>Quelle</dt>`, `Kalender der Serbischen Orthodoxen Kirche`, `<span class="src-unchecked">Noch nicht mit der Quelle abgeglichen</span>`,
+		`<dt>Quelle</dt>`, `Kalender der Serbischen Orthodoxen Kirche`,
 		`<a class="button secondary" href="/contacts/birthdays">Geburtstagskalender öffnen</a>`)
-	ctHasNot(t, "slava page", page, `data-event-form`, `Kontakt „`)
-	ctHas(t, "English", c.page(href, "en").body, "Slava: Nikoljdan", "Not yet checked against the source")
+	ctHasNot(t, "slava page", page, `data-event-form`, `Kontakt „`, `src-unchecked`, `Noch nicht mit der Quelle abgeglichen`)
+	ctHas(t, "English", c.page(href, "en").body, "Slava: Nikoljdan")
+	ctHasNot(t, "English", c.page(href, "en").body, "Not yet checked against the source")
 }
 
 func TestANameDayInTheOldCalendarNamesTheChurchDay(t *testing.T) {
 	t.Parallel()
 	c := newCtBox(t)
 	c.add(t, contactForm("Mama K", "Katharina Maier", nil, nil))
-	postBirthdays(c, url.Values{"name_days": {"1"}, "name_day_list": {"russian_orthodox"}, "orthodox_calendar": {"julian"}})
-	href := nameDayEventHref(t, c, "2026-12-07", "Namenstag Mama K (Jekaterina)")
+	postBirthdays(c, url.Values{"name_days": {"1"}, "name_day_list": {"ukrainian_orthodox"}, "orthodox_calendar": {"julian"}})
+	href := nameDayEventHref(t, c, "2026-12-07", "Namenstag Mama K (Kateryna)")
 	page := c.page(href, "de").body
 	ctHas(t, "event", page, `Montag, 07.12.2026 · ganztägig`, `<dt>Wiederholung</dt><dd>Jedes Jahr am 7. Dezember. Das ist der 24. November im Kirchenkalender, nach dem alten Kalender 13 Tage später.</dd>`,
-		`Katharina von Alexandrien`, `<span class="src-unchecked">Noch nicht mit der Quelle abgeglichen</span>`, `Russischen Orthodoxen Kirche`)
+		`Katharina von Alexandrien`, `Orthodoxen Kirche der Ukraine`)
+	ctHasNot(t, "event", page, `src-unchecked`)
 	// In the revised style the page says nothing about a church day.
-	postBirthdays(c, url.Values{"name_days": {"1"}, "name_day_list": {"russian_orthodox"}, "orthodox_calendar": {"revised_julian"}})
-	page = c.page(nameDayEventHref(t, c, "2026-11-24", "Namenstag Mama K (Jekaterina)"), "de").body
+	postBirthdays(c, url.Values{"name_days": {"1"}, "name_day_list": {"ukrainian_orthodox"}, "orthodox_calendar": {"revised_julian"}})
+	page = c.page(nameDayEventHref(t, c, "2026-11-24", "Namenstag Mama K (Kateryna)"), "de").body
 	ctHas(t, "revised", page, `Jedes Jahr am 24. November</dd>`)
 	ctHasNot(t, "revised", page, `im Kirchenkalender`)
 }
@@ -208,25 +212,31 @@ func TestTheContactFormAndPageNameTheStyle(t *testing.T) {
 	t.Parallel()
 	c := newCtBox(t)
 	id := c.add(t, contactForm("Opa", "Thomas Maier", nil, nil))
-	postBirthdays(c, url.Values{"name_days": {"1"}, "name_day_list": {"russian_orthodox"}, "orthodox_calendar": {"julian"}})
+	postBirthdays(c, url.Values{"name_days": {"1"}, "name_day_list": {"ukrainian_orthodox"}, "orthodox_calendar": {"julian"}})
 	form := c.page("/contacts/"+id+"/edit", "de").body
-	ctHas(t, "form", form, `Nach den russisch-orthodoxen Namenstagen im alten Kalender. Kirche und Kalender stellst du im `, `href="/contacts/birthdays">Geburtstagskalender</a>`)
-	postBirthdays(c, url.Values{"name_days": {"1"}, "name_day_list": {"russian_orthodox"}, "orthodox_calendar": {"revised_julian"}})
-	ctHas(t, "form", c.page("/contacts/"+id+"/edit", "de").body, `Nach den russisch-orthodoxen Namenstagen im neuen Kalender. Kirche und Kalender stellst du im `)
+	ctHas(t, "form", form, `Nach den ukrainisch-orthodoxen Namenstagen im alten Kalender. Kirche und Kalender stellst du im `, `href="/contacts/birthdays">Geburtstagskalender</a>`)
+	postBirthdays(c, url.Values{"name_days": {"1"}, "name_day_list": {"ukrainian_orthodox"}, "orthodox_calendar": {"revised_julian"}})
+	ctHas(t, "form", c.page("/contacts/"+id+"/edit", "de").body, `Nach den ukrainisch-orthodoxen Namenstagen im neuen Kalender. Kirche und Kalender stellst du im `)
 	postBirthdays(c, url.Values{"name_days": {"1"}, "name_day_list": {"catholic"}, "orthodox_calendar": {"julian"}})
 	ctHasNot(t, "catholic", c.page("/contacts/"+id+"/edit", "de").body, `im alten Kalender`, `im neuen Kalender`)
 }
 
-func TestLicencesListEveryListAndSayWhatIsUnchecked(t *testing.T) {
+func TestLicencesNameTheSourceEditionEveryListWasCheckedAgainst(t *testing.T) {
 	t.Parallel()
 	c := newCtBox(t)
 	page := c.page("/settings/licences", "de").body
 	ctHas(t, "licences", page, `data-licence="namedays"`, `<h2>Namenstage und Slava</h2>`, `<ul class="nd-lic">`,
-		`<li><b>Bulgarisch-orthodox</b>`, `<li><b>Russisch-orthodox</b>`, `<li><b>Ukrainisch-orthodox</b>`, `<li><b>Slava</b>`, `Kalender der Serbischen Orthodoxen Kirche`,
-		`<span class="src-unchecked">Noch nicht alle Einträge mit der Quelle abgeglichen</span>`)
-	if strings.Count(page, `<ul class="nd-lic">`) != 1 || strings.Count(page, `<li><b>`) < 8 {
-		t.Error("one row per list and the Slava")
+		`<li><b>Bulgarisch-orthodox</b>`, `<li><b>Ukrainisch-orthodox</b>`, `<li><b>Slava</b>`,
+		`<span>Българска Патриаршия (https://www.bg-patriarshia.bg): Православен календар, geprüft an den Monatsseiten 2026 (bg-patriarshia.bg/calendar/2026-1 bis 2026-12)</span>`,
+		`<span>Календар Православної церкви України, geprüft an der Ausgabe 2026 (kalendar_2026.pdf, pomisna.info)</span>`,
+		`<span>Календар Српске православне цркве, geprüft an den Heiligenseiten von spc.rs/sr/news/kalendar/ (Stand 26/11/2026)</span>`,
+		`Kalender der Serbischen Orthodoxen Kirche`)
+	// Every entry is checked, so no row says otherwise; the Russian list is not offered.
+	ctHasNot(t, "licences", page, `src-unchecked`, `Noch nicht alle Einträge`, `Russisch-orthodox`, `Russischen Orthodoxen Kirche`)
+	if strings.Count(page, `<ul class="nd-lic">`) != 1 || strings.Count(page, `<li><b>`) != 7 {
+		t.Error("one row per list (six) and the Slava")
 	}
+	ctHas(t, "English", c.page("/settings/licences", "en").body, `Calendar of the Serbian Orthodox Church`, `Календар Српске православне цркве, geprüft an`)
 }
 
 func TestSettingsAPITakesTheCalendarStyleAndTheSlava(t *testing.T) {
@@ -239,7 +249,7 @@ func TestSettingsAPITakesTheCalendarStyleAndTheSlava(t *testing.T) {
 		t.Fatalf("defaults: %v", got)
 	}
 	status, got, _ := c.api.call(http.MethodPatch, "/settings", map[string]any{"religious_holidays": map[string]any{"orthodox_calendar": "julian"},
-		"name_days": map[string]any{"on": true, "list": "russian_orthodox"}, "slava": map[string]any{"on": true, "saint": "nikola"}})
+		"name_days": map[string]any{"on": true, "list": "ukrainian_orthodox"}, "slava": map[string]any{"on": true, "saint": "nikola"}})
 	sl, _ = got["slava"].(map[string]any)
 	rel, _ = got["religious_holidays"].(map[string]any)
 	if status != http.StatusOK || rel["orthodox_calendar"] != "julian" || sl["on"] != true || sl["saint"] != "nikola" {
@@ -296,10 +306,25 @@ func TestSettingsAPIRefusesABadStyleOrSlavaAndSavesNothing(t *testing.T) {
 func TestNameDayListsOfTheAPIIncludeTheNewChurches(t *testing.T) {
 	t.Parallel()
 	c := newCtBox(t)
-	for _, l := range []string{"bulgarian_orthodox", "russian_orthodox", "ukrainian_orthodox"} {
+	for _, l := range []string{"bulgarian_orthodox", "ukrainian_orthodox"} {
 		if status, got, _ := c.api.call(http.MethodPatch, "/settings", map[string]any{"name_days": map[string]any{"on": true, "list": l}}); status != http.StatusOK || got["name_days"].(map[string]any)["list"] != l {
 			t.Errorf("%s = %d %v", l, status, got)
 		}
+	}
+}
+
+// The Russian list is withheld until ticket 374 has checked it: the API does not take it, the page does not offer it.
+func TestTheRussianListIsRefusedByTheAPI(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	if status, _, _ := c.api.call(http.MethodPatch, "/settings", map[string]any{"name_days": map[string]any{"on": true, "list": "russian_orthodox"}}); status != http.StatusUnprocessableEntity {
+		t.Errorf("russian_orthodox = %d, want 422", status)
+	}
+	if r := postBirthdays(c, url.Values{"name_days": {"1"}, "name_day_list": {"russian_orthodox"}}); r.status != http.StatusUnprocessableEntity {
+		t.Errorf("the form took the Russian list: %d", r.status)
+	}
+	if _, got, _ := c.api.call(http.MethodGet, "/settings", nil); got["name_days"].(map[string]any)["on"] != false {
+		t.Errorf("a refused list was saved: %v", got["name_days"])
 	}
 }
 
@@ -318,7 +343,7 @@ func TestTheStyleIsOneValueAtSettingsReligiousHolidaysAndMovesTheNameDays(t *tes
 	t.Parallel()
 	c := newCtBox(t)
 	c.add(t, contactForm("Mama K", "Katharina Maier", nil, nil))
-	c.api.call(http.MethodPatch, "/settings", map[string]any{"name_days": map[string]any{"on": true, "list": "russian_orthodox"}})
+	c.api.call(http.MethodPatch, "/settings", map[string]any{"name_days": map[string]any{"on": true, "list": "ukrainian_orthodox"}})
 	if got := eventTitles(t, c, "2026-11-24", "2026-11-25"); len(got) != 1 || !strings.Contains(got[0], "Mama K") {
 		t.Fatalf("revised name day: %v", got)
 	}
@@ -342,7 +367,7 @@ func TestTheBirthdaysPageStyleMovesTheReligiousHolidays(t *testing.T) {
 	if got := eventTitles(t, c, "2027-01-19", "2027-01-20"); len(got) != 0 {
 		t.Fatalf("revised: %v", got)
 	}
-	postBirthdays(c, url.Values{"name_days": {"1"}, "name_day_list": {"russian_orthodox"}, "orthodox_calendar": {"julian"}})
+	postBirthdays(c, url.Values{"name_days": {"1"}, "name_day_list": {"ukrainian_orthodox"}, "orthodox_calendar": {"julian"}})
 	if got := eventTitles(t, c, "2027-01-19", "2027-01-20"); len(got) != 1 {
 		t.Fatalf("julian: %v", got)
 	}

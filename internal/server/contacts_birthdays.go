@@ -24,7 +24,7 @@ var ndGroups = []struct {
 	Lists []nameday.List
 }{
 	{"nd.grp.west", []nameday.List{nameday.Catholic, nameday.Protestant}},
-	{"nd.grp.orthodox", []nameday.List{nameday.BulgarianOrthodox, nameday.GreekOrthodox, nameday.RomanianOrthodox, nameday.RussianOrthodox, nameday.UkrainianOrthodox}},
+	{"nd.grp.orthodox", []nameday.List{nameday.BulgarianOrthodox, nameday.GreekOrthodox, nameday.RomanianOrthodox, nameday.UkrainianOrthodox}},
 }
 
 // churchAdj is the church as an adjective for a sentence: "katholischen", in "nach den katholischen Namenstagen".

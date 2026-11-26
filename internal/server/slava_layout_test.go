@@ -36,11 +36,11 @@ func birthdaysPages(t *testing.T, f *layoutFixture) []layoutPage {
 			return f.do(http.MethodGet, "/contacts/birthdays", nil, map[string]string{"Accept-Language": lang})
 		})
 	}
-	saved := url.Values{"name_days": {"1"}, "name_day_list": {"russian_orthodox"}, "orthodox_calendar": {"julian"}, "slava_on": {"1"}, "slava": {"nikola"}}
+	saved := url.Values{"name_days": {"1"}, "name_day_list": {"ukrainian_orthodox"}, "orthodox_calendar": {"julian"}, "slava_on": {"1"}, "slava": {"nikola"}}
 	if r := post(saved, "de"); r.status != http.StatusSeeOther {
 		t.Fatalf("save = %d\n%s", r.status, r.body)
 	}
-	view("saved-russian-julian-slava")
+	view("saved-ukrainian-julian-slava")
 	linkOf := func(week, title string) string {
 		t.Helper()
 		body := f.do(http.MethodGet, "/calendar?week="+week, nil, map[string]string{"Accept-Language": "de"}).body
@@ -67,7 +67,7 @@ func birthdaysPages(t *testing.T, f *layoutFixture) []layoutPage {
 	view("ukrainian-own-slava")
 	// Errors at the fields.
 	for name, form := range map[string]url.Values{
-		"error-no-saint":    {"name_days": {"1"}, "name_day_list": {"russian_orthodox"}, "orthodox_calendar": {"julian"}, "slava_on": {"1"}},
+		"error-no-saint":    {"name_days": {"1"}, "name_day_list": {"ukrainian_orthodox"}, "orthodox_calendar": {"julian"}, "slava_on": {"1"}},
 		"error-own-day":     {"slava_on": {"1"}, "slava": {"own"}, "slava_name": {strings.Repeat("Sveti ", 9)}, "slava_day": {"31"}, "slava_month": {"6"}},
 		"error-own-no-name": {"slava_on": {"1"}, "slava": {"own"}, "slava_day": {"25"}, "slava_month": {"5"}},
 	} {

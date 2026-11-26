@@ -5172,3 +5172,13 @@ ul.nd-lic li > span { font-size: var(--fs-label); color: var(--text-secondary); 
 ul.nd-lic .src-unchecked { justify-self: start; }
 /* fix found by the layout check of ticket 338: a name in the line "Kein Namenstag: ... kennen „Wilhelmine“ nicht" was hyphenated inside the word */
 .list-rows.nd-rows .none { -webkit-hyphens: manual; hyphens: manual; overflow-wrap: break-word; }
+
+/* ticket 377: every holiday and name-day choice names its source, one small line in the hint style.
+   The line is a second <small class="cite"> in the choice card; the text comes from the records of Settings > Licences. */
+.choice label:has(small.cite) input { grid-row: span 3; }
+.choice small.cite { overflow-wrap: anywhere; hyphens: manual; }
+.choice small.cite .src-unchecked { margin-top: 4px; }
+.slava .hint.cite { overflow-wrap: anywhere; hyphens: manual; }
+/* Islam and Alevism: the line follows the Islamic calendar ticked under "More options", before saving too. */
+form:not(:has(input[name="islamic_calendar"][value="umm_al_qura"]:checked)) small.cite[data-islamic="umm_al_qura"],
+form:has(input[name="islamic_calendar"][value="umm_al_qura"]:checked) small.cite[data-islamic="diyanet"] { display: none; }

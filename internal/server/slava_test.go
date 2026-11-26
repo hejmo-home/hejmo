@@ -112,7 +112,7 @@ func TestTheSlavaErrorsAppearAtTheirFieldsAndKeepWhatWasTyped(t *testing.T) {
 		t.Fatalf("no choice = %d", r.status)
 	}
 	ctHas(t, "no choice", r.body, `class="ferr" id="err-slava"`, `Wähle eure Slava aus der Liste. Steht sie nicht darin, wähle ganz unten „Ein anderer Heiliger …“ und trag Name und Tag ein.`,
-		`name="slava_on" value="1" checked`, `aria-describedby="err-slava hint-slava"`)
+		`name="slava_on" value="1" checked`, `aria-describedby="err-slava hint-slava src-slava"`)
 	r = postBirthdays(c, url.Values{"slava_on": {"1"}, "slava": {"own"}, "slava_name": {""}, "slava_day": {"25"}, "slava_month": {"5"}})
 	ctHas(t, "no name", r.body, `class="ferr" id="err-slava_name"`, `<option value="own" selected>`, `name="slava_day" type="number" inputmode="numeric" min="1" max="31" value="25"`)
 	r = postBirthdays(c, url.Values{"slava_on": {"1"}, "slava": {"own"}, "slava_name": {"Sveti Vasilije Ostroški"}, "slava_day": {"31"}, "slava_month": {"6"}})
@@ -227,9 +227,9 @@ func TestLicencesNameTheSourceEditionEveryListWasCheckedAgainst(t *testing.T) {
 	page := c.page("/settings/licences", "de").body
 	ctHas(t, "licences", page, `data-licence="namedays"`, `<h2>Namenstage und Slava</h2>`, `<ul class="nd-lic">`,
 		`<li><b>Bulgarisch-orthodox</b>`, `<li><b>Ukrainisch-orthodox</b>`, `<li><b>Slava</b>`,
-		`<span>Българска Патриаршия (https://www.bg-patriarshia.bg): Православен календар, geprüft an den Monatsseiten 2026 (bg-patriarshia.bg/calendar/2026-1 bis 2026-12)</span>`,
-		`<span>Календар Православної церкви України, geprüft an der Ausgabe 2026 (kalendar_2026.pdf, pomisna.info)</span>`,
-		`<span>Календар Српске православне цркве, geprüft an den Heiligenseiten von spc.rs/sr/news/kalendar/ (Stand 26/11/2026)</span>`,
+		`<span>Kalender der Bulgarischen Orthodoxen Kirche · Българска Патриаршия (https://www.bg-patriarshia.bg): Православен календар, geprüft an den Monatsseiten 2026 (bg-patriarshia.bg/calendar/2026-1 bis 2026-12)</span>`,
+		`<span>Kalender der Orthodoxen Kirche der Ukraine · Календар Православної церкви України, geprüft an der Ausgabe 2026 (kalendar_2026.pdf, pomisna.info)</span>`,
+		`<span>Kalender der Serbischen Orthodoxen Kirche · Календар Српске православне цркве, geprüft an den Heiligenseiten von spc.rs/sr/news/kalendar/ (Stand 26/11/2026)</span>`,
 		`Kalender der Serbischen Orthodoxen Kirche`)
 	// Every entry is checked, so no row says otherwise; the Russian list is not offered.
 	ctHasNot(t, "licences", page, `src-unchecked`, `Noch nicht alle Einträge`, `Russisch-orthodox`, `Russischen Orthodoxen Kirche`)

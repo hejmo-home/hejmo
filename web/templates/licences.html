@@ -32,7 +32,7 @@
       <h2>{{t "licences.nd.title"}}</h2>
       <p>{{t "licences.nd.text"}}</p>
       <ul class="nd-lic">{{range .NameDayLicences}}
-        <li><b>{{.Name}}</b>{{range .Sources}}<span>{{.Name}}</span>{{if .Original}}<span>{{.Original}}</span>{{end}}{{end}}{{if .Unchecked}}<span class="src-unchecked">{{t "src.unchecked.some"}}</span>{{end}}</li>{{end}}
+        <li><b>{{.Name}}</b>{{range .Sources}}<span>{{.Text}}</span>{{end}}{{if .Unchecked}}<span class="src-unchecked">{{t "src.unchecked.some"}}</span>{{end}}</li>{{end}}
       </ul>
     </li>
     <li class="card" data-licence="figtree">

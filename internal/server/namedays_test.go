@@ -274,8 +274,8 @@ func TestLicencesCreditTheNameDayCalendars(t *testing.T) {
 	t.Parallel()
 	c := newCtBox(t)
 	page := c.page("/settings/licences", "de").body
-	ctHas(t, "licences", page, `data-licence="namedays"`, `<h2>Namenstage und Slava</h2>`, "nichts ist von Namenstag-Webseiten kopiert", "<li><b>Katholisch</b>", "<span>Regionalkalender für das deutsche Sprachgebiet</span>", "<span>Martyrologium Romanum</span>", "Patriarhia Română",
-		"<li><b>Evangelisch</b><span>Evangelischer Namenkalender</span>", "<li><b>Rumänisch-orthodox</b><span>Kalender der Rumänischen Orthodoxen Kirche</span>", "<li><b>Griechisch-orthodox</b>")
+	ctHas(t, "licences", page, `data-licence="namedays"`, `<h2>Namenstage und Slava</h2>`, "nichts ist von Namenstag-Webseiten kopiert", "<li><b>Katholisch</b>", "<span>Regionalkalender für das deutsche Sprachgebiet, geprüft an den Direktorien 2026", "<span>Martyrologium Romanum, geprüft an den Tagesseiten", "Patriarhia Română",
+		"<li><b>Evangelisch</b><span>Evangelischer Namenkalender (Evangelische Kirche in Deutschland), Anhang zu", "<li><b>Rumänisch-orthodox</b><span>Kalender der Rumänischen Orthodoxen Kirche · Calendarul ortodox", "<li><b>Griechisch-orthodox</b>")
 }
 
 func TestAMartyrologiumEntryNamesItsOwnSourceOnTheEventPageAndTheLicences(t *testing.T) {
@@ -287,8 +287,8 @@ func TestAMartyrologiumEntryNamesItsOwnSourceOnTheEventPageAndTheLicences(t *tes
 	ctHas(t, "event page", page, "<dt>Quelle</dt><dd>", "Martyrologium Romanum")
 	ctHasNot(t, "event page", page, "Regionalkalender")
 	// A Regionalkalender entry keeps its own source.
-	ctHas(t, "licences", c.page("/settings/licences", "de").body, "<li><b>Katholisch</b>", "<span>Regionalkalender für das deutsche Sprachgebiet</span>", "<span>Martyrologium Romanum</span>",
-		"Patriarhia Română", "<span>Календар Православної церкви України, geprüft an der Ausgabe 2026 (kalendar_2026.pdf, pomisna.info)</span>")
+	ctHas(t, "licences", c.page("/settings/licences", "de").body, "<li><b>Katholisch</b>", "<span>Regionalkalender für das deutsche Sprachgebiet, geprüft an den Direktorien 2026", "<span>Martyrologium Romanum, geprüft an den Tagesseiten",
+		"Patriarhia Română", "<span>Kalender der Orthodoxen Kirche der Ukraine · Календар Православної церкви України, geprüft an der Ausgabe 2026 (kalendar_2026.pdf, pomisna.info)</span>")
 }
 
 func TestSettingsAPIHasTheNameDaysOffByDefaultAndTakesAChurch(t *testing.T) {

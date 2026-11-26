@@ -455,3 +455,20 @@ func TestUntickingAfterAShrinkScalesTheNextShrinkFromTheCurrentPart(t *testing.T
 		t.Errorf("after 4 to 2 (ticked), unticking, 2 to 1 = %v", got)
 	}
 }
+
+// Ticket 359: a meal that leaves the plan keeps its part on a ticked entry, as the note of what was bought.
+func TestAMealThatLeavesThePlanKeepsItsPartOnATickedEntry(t *testing.T) {
+	f := newTakeBackFixture(t)
+	f.plan(t, f.curry.ID, "2026-11-19", 4)
+	f.shop(t, "2026-11-19", 4, potatoes, coconut, peanut)
+	f.tick(t, "Kokosmilch")
+	before := f.partOf(t, "Kokosmilch")
+	f.clear(t, "2026-11-19")
+	p := f.partOf(t, "Kokosmilch")
+	if p.Portions != 4 || p.Qty != before.Qty || p.RecipeID != f.curry.ID {
+		t.Errorf("part after the meal left = %+v, was %+v", p, before)
+	}
+	if got := f.lines(t); !reflect.DeepEqual(got, []string{"Kokosmilch 2 can (done)"}) {
+		t.Errorf("list = %v", got)
+	}
+}

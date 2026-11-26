@@ -70,8 +70,8 @@ type islamicYear struct {
 	unchecked                               bool
 }
 
-// has says whether the date is in the table (the first and last row of the Diyanet table lack some).
-func has(t time.Time) bool { return !t.IsZero() }
+// inTable says whether the date is in the table (the first and last row of the Diyanet table lack some).
+func inTable(t time.Time) bool { return !t.IsZero() }
 
 // islamicYears lists the Hijri years of a calendar that reach into the Gregorian years.
 func islamicYears(c IslamicCalendar, from, to int) []islamicYear {
@@ -105,17 +105,17 @@ func islamicHolidays(y islamicYear) []Holiday {
 		return Holiday{Key: key, Start: from, End: to, Vary: true, Own: own, Source: y.src, Unchecked: y.unchecked}
 	}
 	var out []Holiday
-	if has(y.newYear) {
+	if inTable(y.newYear) {
 		newYear := mk("islamic_new_year", y.newYear, y.newYear, hijriCal(1, 1, y.hy, 1, 1, y.hy))
 		newYear.ShowOwn = true
 		out = append(out, newYear, mk("ashura", y.newYear.AddDate(0, 0, 9), y.newYear.AddDate(0, 0, 9), hijriCal(10, 1, y.hy, 10, 1, y.hy)))
 	}
-	if has(y.mawlid) {
+	if inTable(y.mawlid) {
 		mawlid := mk("mawlid", y.mawlid, y.mawlid, hijriCal(12, 3, y.hy, 12, 3, y.hy))
 		mawlid.Evening = true
 		out = append(out, mawlid)
 	}
-	if has(y.ramadan) && has(y.shawwal) {
+	if inTable(y.ramadan) && inTable(y.shawwal) {
 		nRamadan := int(y.shawwal.Sub(y.ramadan).Hours() / 24) // 29 or 30 days
 		ramadan := mk("ramadan", y.ramadan, y.shawwal.AddDate(0, 0, -1), hijriCal(1, 9, y.hy, nRamadan, 9, y.hy))
 		ramadan.ShowOwn = true
@@ -123,7 +123,7 @@ func islamicHolidays(y islamicYear) []Holiday {
 		qadr.Evening = true
 		out = append(out, ramadan, qadr, mk("eid_al_fitr", y.shawwal, y.shawwal.AddDate(0, 0, 2), hijriCal(1, 10, y.hy, 3, 10, y.hy)))
 	}
-	if has(y.adha) {
+	if inTable(y.adha) {
 		out = append(out, mk("eid_al_adha", y.adha, y.adha.AddDate(0, 0, 3), hijriCal(10, 12, y.hy, 13, 12, y.hy)))
 	}
 	return out
@@ -153,7 +153,7 @@ func alevi(o Options, from, to int) []Holiday {
 		)
 	}
 	for _, iy := range islamicYears(o.islamic(), from, to) {
-		if !has(iy.newYear) {
+		if !inTable(iy.newYear) {
 			continue
 		}
 		// Twelve days of fast from the 1st of Muharrem; Aşure Günü follows on the 13th.

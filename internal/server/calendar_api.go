@@ -143,6 +143,8 @@ type occurrenceJSON struct {
 	// ReadOnly and VariesBySighting: see eventJSON.
 	ReadOnly         bool `json:"read_only"`
 	VariesBySighting bool `json:"varies_by_sighting"`
+	// Generated says what the box makes the event from: "name_day" or "slava" (tickets 318 and 338); absent for every other event.
+	Generated string `json:"generated,omitempty"`
 }
 
 func (s *server) apiListEvents(w http.ResponseWriter, r *http.Request, p principal) {
@@ -176,12 +178,19 @@ func (s *server) apiListEvents(w http.ResponseWriter, r *http.Request, p princip
 	}
 	out := make([]occurrenceJSON, 0, len(occs))
 	for _, o := range occs {
+		generated := ""
+		switch {
+		case o.NameDayContact != "":
+			generated = "name_day"
+		case o.Slava:
+			generated = "slava"
+		}
 		rec := ""
 		if o.SeriesID != "" {
 			rec = formatTime(o.RecurrenceID, false, loc)
 		}
 		out = append(out, occurrenceJSON{o.EventID, o.SeriesID, rec, o.CalendarID, s.title(r, o.Title), o.Description, o.Location, o.AllDay,
-			formatTime(o.Start, o.AllDay, loc), formatTime(o.End, o.AllDay, loc), nonNil(o.People), nonNil(o.Groups), eventInvitationOf(o.Invitation), readOnly[o.CalendarID] || o.Invitation != nil, o.VarySighting})
+			formatTime(o.Start, o.AllDay, loc), formatTime(o.End, o.AllDay, loc), nonNil(o.People), nonNil(o.Groups), eventInvitationOf(o.Invitation), readOnly[o.CalendarID] || o.Invitation != nil, o.VarySighting, generated})
 	}
 	writeJSON(w, http.StatusOK, out)
 }

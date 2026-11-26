@@ -135,7 +135,7 @@ func (s *server) contactToJSON(p principal, c store.Contact) contactJSON {
 	}
 	out.NameDay = contactNameDay{Mode: c.NameDayMode, Entry: strPtr(c.NameDayEntry), Name: strPtr(c.NameDayName)}
 	if cal, ok := p.household.NameDayCalendar(); ok {
-		if info := ndOf(c, cal, s.householdNow(p.household)); info.Res.Found {
+		if info := ndOf(c, cal, s.householdNow(p.household), p.household.NameDayStyle()); info.Res.Found {
 			out.NameDay.Resolved = &contactNameDayFound{Date: info.Occ.Date.Format("2006-01-02"), Name: info.Res.Entry.Name, Saint: info.Res.Entry.Saint, Entry: info.Res.Entry.ID}
 		}
 	}

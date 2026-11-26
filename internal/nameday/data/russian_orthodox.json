@@ -1,0 +1,1291 @@
+{
+ "list": "russian_orthodox",
+ "sources": {
+  "rpc": "Православный календарь Русской Православной Церкви (Московский патриархат)"
+ },
+ "entries": [
+  {
+   "id": "aleksandr-11-23",
+   "name": "Aleksandr",
+   "variants": [
+    "Александр",
+    "Alexander",
+    "Alexandr",
+    "Sascha",
+    "Sasha",
+    "Саша",
+    "Alex"
+   ],
+   "saint": "Alexander Newski",
+   "day": "11-23",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "aleksandr-08-30",
+   "name": "Aleksandr",
+   "variants": [
+    "Александр",
+    "Alexander"
+   ],
+   "saint": "Alexander Newski (Übertragung der Reliquien)",
+   "day": "08-30",
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "aleksej-03-17",
+   "name": "Aleksej",
+   "variants": [
+    "Алексей",
+    "Alexej",
+    "Alexei",
+    "Alexey",
+    "Aleksei"
+   ],
+   "saint": "Alexius, der Mann Gottes",
+   "day": "03-17",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "anastasija-12-22",
+   "name": "Anastasija",
+   "variants": [
+    "Анастасия",
+    "Anastasia",
+    "Nastja",
+    "Nastya",
+    "Настя"
+   ],
+   "saint": "Anastasia die Befreierin von den Fesseln",
+   "day": "12-22",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "andrej-11-30",
+   "name": "Andrej",
+   "variants": [
+    "Андрей",
+    "Andreas",
+    "Andrei",
+    "Andrey",
+    "Andre"
+   ],
+   "saint": "Andreas der Erstberufene",
+   "day": "11-30",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "anna-12-09",
+   "name": "Anna",
+   "variants": [
+    "Анна",
+    "Ana",
+    "Anja",
+    "Anya",
+    "Аня"
+   ],
+   "saint": "Mariä Empfängnis durch die heilige Anna",
+   "day": "12-09",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "anna-02-03",
+   "name": "Anna",
+   "variants": [
+    "Анна",
+    "Anja"
+   ],
+   "saint": "Prophetin Hanna",
+   "day": "02-03",
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "anton-01-17",
+   "name": "Anton",
+   "variants": [
+    "Антон",
+    "Antonius",
+    "Anthony",
+    "Antoni"
+   ],
+   "saint": "Antonius der Große",
+   "day": "01-17",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "irina-05-05",
+   "name": "Irina",
+   "variants": [
+    "Ирина",
+    "Irene",
+    "Irena",
+    "Ira"
+   ],
+   "saint": "Große Märtyrerin Irene",
+   "day": "05-05",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "artemij-10-20",
+   "name": "Artemij",
+   "variants": [
+    "Артемий",
+    "Artemi",
+    "Artem",
+    "Артём"
+   ],
+   "saint": "Märtyrer Artemios von Antiochien",
+   "day": "10-20",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "boris-07-24",
+   "name": "Boris",
+   "variants": [
+    "Борис"
+   ],
+   "saint": "Boris und Gleb, Leidensdulder",
+   "day": "07-24",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "gleb-07-24",
+   "name": "Gleb",
+   "variants": [
+    "Глеб"
+   ],
+   "saint": "Boris und Gleb, Leidensdulder",
+   "day": "07-24",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "wassilij-01-01",
+   "name": "Wassilij",
+   "variants": [
+    "Василий",
+    "Basilius",
+    "Vasilij",
+    "Vasily",
+    "Wassili",
+    "Basil",
+    "Wasja"
+   ],
+   "saint": "Basilius der Große",
+   "day": "01-01",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "wiktor-11-11",
+   "name": "Wiktor",
+   "variants": [
+    "Виктор",
+    "Viktor",
+    "Victor"
+   ],
+   "saint": "Märtyrer Viktor",
+   "day": "11-11",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "wladimir-07-15",
+   "name": "Wladimir",
+   "variants": [
+    "Владимир",
+    "Vladimir",
+    "Volodymyr",
+    "Wolodja"
+   ],
+   "saint": "Fürst Wladimir, den Aposteln gleich",
+   "day": "07-15",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "wera-09-17",
+   "name": "Wera",
+   "variants": [
+    "Вера",
+    "Vera",
+    "Wiera"
+   ],
+   "saint": "Märtyrerinnen Wera, Nadeschda, Ljubow und ihre Mutter Sofija",
+   "day": "09-17",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "nadeschda-09-17",
+   "name": "Nadeschda",
+   "variants": [
+    "Надежда",
+    "Nadezhda",
+    "Nadja",
+    "Nadia",
+    "Надя"
+   ],
+   "saint": "Märtyrerinnen Wera, Nadeschda, Ljubow und ihre Mutter Sofija",
+   "day": "09-17",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "ljubow-09-17",
+   "name": "Ljubow",
+   "variants": [
+    "Любовь",
+    "Lyubov",
+    "Ljuba",
+    "Люба"
+   ],
+   "saint": "Märtyrerinnen Wera, Nadeschda, Ljubow und ihre Mutter Sofija",
+   "day": "09-17",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "sofija-09-17",
+   "name": "Sofija",
+   "variants": [
+    "София",
+    "Софья",
+    "Sophie",
+    "Sofia",
+    "Sophia",
+    "Sofie",
+    "Sonja",
+    "Sonia"
+   ],
+   "saint": "Märtyrerin Sofija, Mutter von Wera, Nadeschda und Ljubow",
+   "day": "09-17",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "galina-03-23",
+   "name": "Galina",
+   "variants": [
+    "Галина",
+    "Halina"
+   ],
+   "saint": "Märtyrerin Galina von Korinth",
+   "day": "03-23",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "georgij-04-23",
+   "name": "Georgij",
+   "variants": [
+    "Георгий",
+    "Georg",
+    "Georgi",
+    "George",
+    "Jörg",
+    "Jürgen",
+    "Juri"
+   ],
+   "saint": "Großmärtyrer Georg der Siegbringer",
+   "day": "04-23",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "georgij-11-26",
+   "name": "Georgij",
+   "variants": [
+    "Георгий",
+    "Georg",
+    "Juri"
+   ],
+   "saint": "Weihe der Georgskirche in Kiew",
+   "day": "11-26",
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "jurij-04-23",
+   "name": "Jurij",
+   "variants": [
+    "Юрий",
+    "Yuri",
+    "Juri",
+    "Jurja",
+    "Юра"
+   ],
+   "saint": "Großmärtyrer Georg der Siegbringer",
+   "day": "04-23",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "dmitrij-10-26",
+   "name": "Dmitrij",
+   "variants": [
+    "Дмитрий",
+    "Dimitri",
+    "Dmitri",
+    "Dmitry",
+    "Dimitrij",
+    "Demetrius",
+    "Mitja"
+   ],
+   "saint": "Großmärtyrer Demetrios von Thessaloniki",
+   "day": "10-26",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "jekaterina-11-24",
+   "name": "Jekaterina",
+   "variants": [
+    "Екатерина",
+    "Katharina",
+    "Ekaterina",
+    "Yekaterina",
+    "Katja",
+    "Katya",
+    "Katarina",
+    "Catherine",
+    "Катя"
+   ],
+   "saint": "Großmärtyrerin Katharina von Alexandrien",
+   "day": "11-24",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "jelena-05-21",
+   "name": "Jelena",
+   "variants": [
+    "Елена",
+    "Helena",
+    "Elena",
+    "Lena"
+   ],
+   "saint": "Zarin Helena, den Aposteln gleich",
+   "day": "05-21",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "jelisaweta-09-05",
+   "name": "Jelisaweta",
+   "variants": [
+    "Елизавета",
+    "Elisabeth",
+    "Elizaveta",
+    "Elisaveta",
+    "Liza",
+    "Lisa",
+    "Elisabet"
+   ],
+   "saint": "Gerechte Elisabeth, Mutter Johannes des Täufers",
+   "day": "09-05",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "jewgenij-12-13",
+   "name": "Jewgenij",
+   "variants": [
+    "Евгений",
+    "Eugen",
+    "Evgenij",
+    "Evgeny",
+    "Eugene"
+   ],
+   "saint": "Märtyrer Eugen von Sebaste",
+   "day": "12-13",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "iwan-06-24",
+   "name": "Iwan",
+   "variants": [
+    "Иван",
+    "Ivan",
+    "Johannes",
+    "Johann",
+    "Hans",
+    "Ioann",
+    "Jan",
+    "Wanja"
+   ],
+   "saint": "Geburt Johannes des Täufers",
+   "day": "06-24",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "iwan-01-07",
+   "name": "Iwan",
+   "variants": [
+    "Иван",
+    "Johannes",
+    "Johann",
+    "Ioann"
+   ],
+   "saint": "Synaxis Johannes des Täufers",
+   "day": "01-07",
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "iwan-10-09",
+   "name": "Iwan",
+   "variants": [
+    "Иван",
+    "Johannes",
+    "Ioann"
+   ],
+   "saint": "Apostel und Evangelist Johannes der Theologe",
+   "day": "10-09",
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "iwan-11-13",
+   "name": "Iwan",
+   "variants": [
+    "Иван",
+    "Johannes",
+    "Ioann"
+   ],
+   "saint": "Johannes Chrysostomos",
+   "day": "11-13",
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "ilja-07-20",
+   "name": "Ilja",
+   "variants": [
+    "Илья",
+    "Elias",
+    "Elija",
+    "Ilya",
+    "Ilia",
+    "Elijah"
+   ],
+   "saint": "Prophet Elija",
+   "day": "07-20",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "kirill-05-11",
+   "name": "Kirill",
+   "variants": [
+    "Кирилл",
+    "Cyrill",
+    "Kyrill",
+    "Cyril"
+   ],
+   "saint": "Kyrill und Method, den Aposteln gleich",
+   "day": "05-11",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "kristina-07-24",
+   "name": "Kristina",
+   "variants": [
+    "Кристина",
+    "Christina",
+    "Kristin"
+   ],
+   "saint": "Großmärtyrerin Christina von Tyrus",
+   "day": "07-24",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "ksenija-01-24",
+   "name": "Ksenija",
+   "variants": [
+    "Ксения",
+    "Xenia",
+    "Ksenia",
+    "Kseniya",
+    "Oksana"
+   ],
+   "saint": "Ehrwürdige Xenia von Rom",
+   "day": "01-24",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "ljudmila-09-16",
+   "name": "Ljudmila",
+   "variants": [
+    "Людмила",
+    "Ludmila",
+    "Lyudmila",
+    "Mila"
+   ],
+   "saint": "Heilige Ludmilla von Böhmen",
+   "day": "09-16",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "marija-07-22",
+   "name": "Marija",
+   "variants": [
+    "Мария",
+    "Maria",
+    "Mariya",
+    "Marie",
+    "Mascha",
+    "Masha",
+    "Маша"
+   ],
+   "saint": "Maria Magdalena, den Aposteln gleich",
+   "day": "07-22",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "marija-08-15",
+   "name": "Marija",
+   "variants": [
+    "Мария",
+    "Maria",
+    "Marie"
+   ],
+   "saint": "Entschlafung der Gottesmutter",
+   "day": "08-15",
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "marina-07-17",
+   "name": "Marina",
+   "variants": [
+    "Марина"
+   ],
+   "saint": "Großmärtyrerin Marina",
+   "day": "07-17",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "michail-11-08",
+   "name": "Michail",
+   "variants": [
+    "Михаил",
+    "Michael",
+    "Mikhail",
+    "Mischa",
+    "Misha",
+    "Миша"
+   ],
+   "saint": "Synaxis des Erzengels Michael",
+   "day": "11-08",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "michail-09-06",
+   "name": "Michail",
+   "variants": [
+    "Михаил",
+    "Michael"
+   ],
+   "saint": "Wunder des Erzengels Michael in Chonä",
+   "day": "09-06",
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "natalija-08-26",
+   "name": "Natalija",
+   "variants": [
+    "Наталья",
+    "Наталия",
+    "Natalia",
+    "Natalie",
+    "Natalja",
+    "Nathalie",
+    "Natascha",
+    "Natasha",
+    "Наташа"
+   ],
+   "saint": "Märtyrerin Natalia von Nikomedien",
+   "day": "08-26",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "nikita-09-15",
+   "name": "Nikita",
+   "variants": [
+    "Никита",
+    "Nikitas"
+   ],
+   "saint": "Großmärtyrer Nikita",
+   "day": "09-15",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "nikolaj-12-06",
+   "name": "Nikolaj",
+   "variants": [
+    "Николай",
+    "Nikolaus",
+    "Nikolai",
+    "Nikolay",
+    "Niklas",
+    "Nicolas",
+    "Nikolas",
+    "Kolja",
+    "Коля",
+    "Claus"
+   ],
+   "saint": "Nikolaus von Myra",
+   "day": "12-06",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "nikolaj-05-09",
+   "name": "Nikolaj",
+   "variants": [
+    "Николай",
+    "Nikolaus",
+    "Nikolai"
+   ],
+   "saint": "Übertragung der Reliquien des Nikolaus nach Bari",
+   "day": "05-09",
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "olga-07-11",
+   "name": "Olga",
+   "variants": [
+    "Ольга",
+    "Olya"
+   ],
+   "saint": "Fürstin Olga, den Aposteln gleich",
+   "day": "07-11",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "pawel-06-29",
+   "name": "Pawel",
+   "variants": [
+    "Павел",
+    "Paul",
+    "Pavel",
+    "Paolo",
+    "Pawlik"
+   ],
+   "saint": "Apostel Paulus",
+   "day": "06-29",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "pawel-11-06",
+   "name": "Pawel",
+   "variants": [
+    "Павел",
+    "Paul"
+   ],
+   "saint": "Paulus der Bekenner",
+   "day": "11-06",
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "pjotr-06-29",
+   "name": "Pjotr",
+   "variants": [
+    "Пётр",
+    "Петр",
+    "Peter",
+    "Petr",
+    "Pyotr",
+    "Petar"
+   ],
+   "saint": "Apostel Petrus",
+   "day": "06-29",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "roman-10-01",
+   "name": "Roman",
+   "variants": [
+    "Роман",
+    "Romanus"
+   ],
+   "saint": "Romanos der Melode",
+   "day": "10-01",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "semjon-02-03",
+   "name": "Semjon",
+   "variants": [
+    "Семён",
+    "Симеон",
+    "Simeon",
+    "Simon",
+    "Semyon"
+   ],
+   "saint": "Simeon der Gottesempfänger",
+   "day": "02-03",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "sergej-09-25",
+   "name": "Sergej",
+   "variants": [
+    "Сергей",
+    "Sergei",
+    "Sergey",
+    "Serge",
+    "Serjosha",
+    "Sergius"
+   ],
+   "saint": "Sergius von Radonesch",
+   "day": "09-25",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "sergej-07-05",
+   "name": "Sergej",
+   "variants": [
+    "Сергей",
+    "Sergius"
+   ],
+   "saint": "Auffindung der Reliquien des Sergius von Radonesch",
+   "day": "07-05",
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "stepan-12-27",
+   "name": "Stepan",
+   "variants": [
+    "Степан",
+    "Stefan",
+    "Stephan",
+    "Stephen",
+    "Steffen"
+   ],
+   "saint": "Erzmärtyrer Stephanus",
+   "day": "12-27",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "tatjana-01-12",
+   "name": "Tatjana",
+   "variants": [
+    "Татьяна",
+    "Tatiana",
+    "Tatyana",
+    "Tanja",
+    "Tanya",
+    "Таня"
+   ],
+   "saint": "Märtyrerin Tatjana von Rom",
+   "day": "01-12",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "timofej-01-22",
+   "name": "Timofej",
+   "variants": [
+    "Тимофей",
+    "Timotheus",
+    "Timofei",
+    "Timothy",
+    "Timo"
+   ],
+   "saint": "Apostel Timotheus",
+   "day": "01-22",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "foma-easter-plus-7",
+   "name": "Foma",
+   "variants": [
+    "Фома",
+    "Thomas",
+    "Toma",
+    "Tom",
+    "Tomas"
+   ],
+   "saint": "Thomassonntag, Sonntag nach Ostern",
+   "easter": 7,
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "foma-10-06",
+   "name": "Foma",
+   "variants": [
+    "Фома",
+    "Thomas"
+   ],
+   "saint": "Apostel Thomas",
+   "day": "10-06",
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "fjodor-02-08",
+   "name": "Fjodor",
+   "variants": [
+    "Фёдор",
+    "Федор",
+    "Theodor",
+    "Fedor",
+    "Fyodor",
+    "Feodor"
+   ],
+   "saint": "Großmärtyrer Theodor Stratilates",
+   "day": "02-08",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "filipp-11-14",
+   "name": "Filipp",
+   "variants": [
+    "Филипп",
+    "Philipp",
+    "Philip",
+    "Phillip"
+   ],
+   "saint": "Apostel Philippus",
+   "day": "11-14",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "jakow-10-23",
+   "name": "Jakow",
+   "variants": [
+    "Яков",
+    "Jakob",
+    "Yakov",
+    "Jacob",
+    "James"
+   ],
+   "saint": "Apostel Jakobus, Bruder des Herrn",
+   "day": "10-23",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "jaroslaw-02-20",
+   "name": "Jaroslaw",
+   "variants": [
+    "Ярослав",
+    "Yaroslav",
+    "Jaroslav"
+   ],
+   "saint": "Fürst Jaroslaw der Weise",
+   "day": "02-20",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "alexandra-04-23",
+   "name": "Alexandra",
+   "variants": [
+    "Александра",
+    "Sascha",
+    "Саша"
+   ],
+   "saint": "Märtyrerin Alexandra, Kaiserin",
+   "day": "04-23",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "swetlana-02-20",
+   "name": "Swetlana",
+   "variants": [
+    "Светлана",
+    "Svetlana",
+    "Photina",
+    "Фотина"
+   ],
+   "saint": "Photina, die Samariterin",
+   "day": "02-20",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "valentina-07-23",
+   "name": "Valentina",
+   "variants": [
+    "Валентина",
+    "Valentine",
+    "Walentina"
+   ],
+   "saint": "Märtyrerin Valentina von Cäsarea",
+   "day": "07-23",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "matwej-11-16",
+   "name": "Matwej",
+   "variants": [
+    "Матвей",
+    "Matthäus",
+    "Matthew",
+    "Matvey",
+    "Mathias"
+   ],
+   "saint": "Apostel und Evangelist Matthäus",
+   "day": "11-16",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "matfej-08-09",
+   "name": "Matfej",
+   "variants": [
+    "Матфий",
+    "Matthias",
+    "Mathias"
+   ],
+   "saint": "Apostel Matthias",
+   "day": "08-09",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "warwara-12-04",
+   "name": "Warwara",
+   "variants": [
+    "Варвара",
+    "Barbara",
+    "Varvara",
+    "Warja"
+   ],
+   "saint": "Großmärtyrerin Barbara",
+   "day": "12-04",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "wsewolod-02-11",
+   "name": "Wsewolod",
+   "variants": [
+    "Всеволод",
+    "Vsevolod"
+   ],
+   "saint": "Fürst Wsewolod-Gabriel von Pskow",
+   "day": "02-11",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "gawriil-03-26",
+   "name": "Gawriil",
+   "variants": [
+    "Гавриил",
+    "Gabriel",
+    "Gavriil"
+   ],
+   "saint": "Synaxis des Erzengels Gabriel",
+   "day": "03-26",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "denis-10-03",
+   "name": "Denis",
+   "variants": [
+    "Денис",
+    "Dionysius",
+    "Dennis",
+    "Denys",
+    "Dionysios"
+   ],
+   "saint": "Dionysius der Areopagit",
+   "day": "10-03",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "jewdokija-03-01",
+   "name": "Jewdokija",
+   "variants": [
+    "Евдокия",
+    "Eudokia",
+    "Evdokia",
+    "Dunja",
+    "Дуня"
+   ],
+   "saint": "Märtyrerin Eudokia von Heliopolis",
+   "day": "03-01",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "inna-01-20",
+   "name": "Inna",
+   "variants": [
+    "Инна",
+    "Rimma",
+    "Римма"
+   ],
+   "saint": "Märtyrer Inna, Pinna und Rimma",
+   "day": "01-20",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "mark-04-25",
+   "name": "Mark",
+   "variants": [
+    "Марк",
+    "Markus",
+    "Marc",
+    "Marco"
+   ],
+   "saint": "Apostel und Evangelist Markus",
+   "day": "04-25",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "luka-10-18",
+   "name": "Luka",
+   "variants": [
+    "Лука",
+    "Lukas",
+    "Luke",
+    "Luca"
+   ],
+   "saint": "Apostel und Evangelist Lukas",
+   "day": "10-18",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "wassilissa-11-21",
+   "name": "Wassilissa",
+   "variants": [
+    "Василиса",
+    "Vasilisa"
+   ],
+   "saint": "Märtyrerin Wassilissa von Nikomedien",
+   "day": "11-21",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "wenedikt-01-14",
+   "name": "Wenedikt",
+   "variants": [
+    "Венедикт",
+    "Benedikt",
+    "Venedikt",
+    "Benedict"
+   ],
+   "saint": "Ehrwürdiger Benedikt",
+   "day": "01-14",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "weniamin-10-02",
+   "name": "Weniamin",
+   "variants": [
+    "Вениамин",
+    "Benjamin",
+    "Veniamin",
+    "Wenjamin",
+    "Venjamin",
+    "Ben"
+   ],
+   "saint": "Märtyrer Wenjamin der Diakon von Persien",
+   "day": "10-02",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "maksim-03-09",
+   "name": "Maksim",
+   "variants": [
+    "Максим",
+    "Maxim",
+    "Maximilian",
+    "Max"
+   ],
+   "saint": "Märtyrer Maximus",
+   "day": "03-09",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "iona-09-22",
+   "name": "Iona",
+   "variants": [
+    "Иона",
+    "Jonas",
+    "Jona",
+    "Jonah",
+    "Ionas"
+   ],
+   "saint": "Prophet Jona",
+   "day": "09-22",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "sewastian-12-18",
+   "name": "Sewastian",
+   "variants": [
+    "Севастиан",
+    "Sebastian",
+    "Sevastian",
+    "Sebastián",
+    "Basti"
+   ],
+   "saint": "Märtyrer Sebastian von Rom",
+   "day": "12-18",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "ilarion-12-31",
+   "name": "Ilarion",
+   "variants": [
+    "Иларион",
+    "Hilarion"
+   ],
+   "saint": "Ehrwürdiger Hilarion",
+   "day": "12-31",
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "jefrem-02-10",
+   "name": "Jefrem",
+   "variants": [
+    "Ефрем",
+    "Ephraim",
+    "Efrem"
+   ],
+   "saint": "Ephraim der Syrer",
+   "day": "02-10",
+   "usual": true,
+   "source": "rpc",
+   "unchecked": true
+  },
+  {
+   "id": "iliodor-07-20",
+   "name": "Iliodor",
+   "variants": [
+    "Илиодор"
+   ],
+   "saint": "Märtyrer Heliodor",
+   "day": "07-20",
+   "source": "rpc",
+   "unchecked": true
+  }
+ ]
+}

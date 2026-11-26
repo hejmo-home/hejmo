@@ -44,7 +44,10 @@ type settingsJSON struct {
 	BelowZero bool `json:"below_zero"`
 	// NameDays says whether the name days of the contacts are in the calendar Birthdays and after which church (ticket 318).
 	NameDays nameDaysJSON `json:"name_days"`
+	// Slava is the household's Serbian Slava (ticket 338).
+	Slava slavaJSON `json:"slava"`
 	// ReligiousHolidays says whether the religious holidays are in their generated calendar and which religions (ticket 339).
+	// Its orthodox_calendar is the one calendar style of the Orthodox church: the Orthodox name days (ticket 338) follow it too.
 	ReligiousHolidays religiousJSON `json:"religious_holidays"`
 	// MealShopping says whether the ingredients of the meal plan go on a shopping list by hand or by themselves (ticket 285).
 	MealShopping mealShoppingJSON `json:"meal_shopping"`
@@ -80,6 +83,13 @@ func (s *server) settingsFor(h store.Household) (settingsJSON, error) {
 	return out, nil
 }
 
+type slavaJSON struct {
+	On      bool    `json:"on"`
+	Saint   *string `json:"saint"`    // an id of the Slava list or "own"; null until one was chosen
+	OwnName string  `json:"own_name"` // the name of an own Slava
+	OwnDay  string  `json:"own_day"`  // its fixed day as MM-DD in our calendar
+}
+
 type religiousJSON struct {
 	On               bool     `json:"on"`
 	Religions        []string `json:"religions"`
@@ -103,7 +113,8 @@ type nameDaysJSON struct {
 func settingsOf(h store.Household) settingsJSON {
 	out := settingsJSON{DateFormat: h.DateFormat, TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, AutoUpdate: h.AutoUpdate, HomeName: h.HomeName,
 		MealCutoffs: cutoffsToJSON(h.MealCutoffs), FirstStepsHidden: h.FirstStepsHidden, FirstStepsSkipped: skippedOrEmpty(h.FirstStepsSkipped), BelowZero: h.BelowZero,
-		NameDays: nameDaysJSON{On: h.NameDaysOn, List: strPtr(h.NameDayList)}, ReligiousHolidays: religiousOf(h)}
+		NameDays: nameDaysJSON{On: h.NameDaysOn, List: strPtr(h.NameDayList)}, ReligiousHolidays: religiousOf(h),
+		Slava: slavaJSON{On: h.SlavaOn, Saint: strPtr(h.Slava), OwnName: h.SlavaOwnName, OwnDay: h.SlavaOwnDay}}
 	if h.Latitude != 0 || h.Longitude != 0 {
 		out.Latitude, out.Longitude = &h.Latitude, &h.Longitude
 	}
@@ -165,6 +176,13 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 			On   *bool   `json:"on"`
 			List *string `json:"list"`
 		} `json:"name_days"`
+		// Slava switches the Serbian Slava on or off and chooses the saint; omitted parts stay as they are.
+		Slava *struct {
+			On      *bool   `json:"on"`
+			Saint   *string `json:"saint"`
+			OwnName *string `json:"own_name"`
+			OwnDay  *string `json:"own_day"`
+		} `json:"slava"`
 		// MealShopping chooses by hand or automatic, the days ahead and the list; omitted parts stay as they are, a null list takes the choice away.
 		MealShopping *struct {
 			Mode   *string         `json:"mode"`
@@ -231,6 +249,25 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 			ndList = *nd.List
 		}
 		if err := store.ValidateNameDays(ndOn, ndList); err != nil { // before anything is saved
+			writeError(w, http.StatusUnprocessableEntity, err.Error())
+			return
+		}
+	}
+	sl := store.SlavaInput{On: p.household.SlavaOn, Choice: p.household.Slava, OwnName: p.household.SlavaOwnName, OwnDay: p.household.SlavaOwnDay}
+	if v := in.Slava; v != nil {
+		if v.On != nil {
+			sl.On = *v.On
+		}
+		if v.Saint != nil {
+			sl.Choice = *v.Saint
+		}
+		if v.OwnName != nil {
+			sl.OwnName = *v.OwnName
+		}
+		if v.OwnDay != nil {
+			sl.OwnDay = *v.OwnDay
+		}
+		if err := store.ValidateSlava(sl); err != nil { // before anything is saved
 			writeError(w, http.StatusUnprocessableEntity, err.Error())
 			return
 		}
@@ -319,9 +356,16 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 			return
 		}
 	}
-	if in.NameDays != nil {
+	if in.NameDays != nil || in.Slava != nil {
 		lang := s.langOf(r)
-		if _, err := s.db.SetNameDays(p.household.ID, ndOn, ndList, s.i18n.T(lang, "birthdays.calendar_name"), s.i18n.T(lang, "nd.ev.word")); err != nil {
+		save := store.BirthdaySettings{}
+		if in.NameDays != nil {
+			save.NameDays = &store.NameDaySetting{On: ndOn, List: ndList, Word: s.i18n.T(lang, "nd.ev.word")}
+		}
+		if in.Slava != nil {
+			save.Slava = &sl
+		}
+		if _, err := s.db.SetBirthdays(p.household.ID, save, s.i18n.T(lang, "birthdays.calendar_name")); err != nil {
 			if errors.Is(err, store.ErrInvalid) {
 				writeError(w, http.StatusUnprocessableEntity, err.Error())
 				return

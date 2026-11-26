@@ -142,8 +142,7 @@ var flashFields = map[string][]string{
 	"flash.goal_set_for":           {"possessive", "name"},
 	"flash.goal_cleared_for":       {"name"},
 	"flash.otp_reset":              {"name"},
-	"flash.nd_on":                  {"church", "people", "total", "others"},
-	"flash.nd_changed":             {"church", "dropped"},
+	"flash.bd_saved":               {"church", "style", "slava", "slava_name", "slava_day", "people", "total", "others", "dropped"},
 	"flash.otp_reset_passkey":      {"name", "possessive", "passkeys"},
 	"flash.otp_reset_passkeys":     {"name", "possessive", "passkeys"},
 }
@@ -178,8 +177,8 @@ func (s *server) fieldsText(lang, key, token string) string {
 	if !ok {
 		return ""
 	}
-	if church, ok := values["church"]; ok && strings.HasPrefix(key, "flash.nd_") { // the church travels as its list, the word is the reader's language
-		values["church"] = s.i18n.T(lang, "nd.list."+church+".adj")
+	if key == "flash.bd_saved" { // the church and the saint travel as ids, the words are the reader's language
+		return s.birthdaysSavedText(lang, values)
 	}
 	kv := make([]string, 0, 2*len(values))
 	for _, n := range flashFields[key] {

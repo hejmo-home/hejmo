@@ -130,8 +130,8 @@ func eventHref(o calendar.Occurrence) string {
 func (c *calendarContext) item(o calendar.Occurrence) eventItem {
 	it := eventItem{Title: c.s.title(c.r, o.Title), Location: o.Location, ReadOnly: c.readOnly[o.CalendarID] && o.Religious == "", Repeats: o.SeriesID != ""}
 	it.Vary = o.VarySighting
-	// a name day (ticket 318) and a religious holiday (ticket 339) have a page of their own that says where they come from
-	if !it.ReadOnly || o.NameDayContact != "" || o.Religious != "" {
+	// a name day (ticket 318), the Slava (ticket 338) and a religious holiday (ticket 339) have a page of their own that says where they come from
+	if !it.ReadOnly || o.NameDayContact != "" || o.Slava || o.Religious != "" {
 		it.Href = eventHref(o)
 	}
 	if !o.AllDay {
@@ -593,6 +593,11 @@ func (s *server) renderEventPage(w http.ResponseWriter, r *http.Request, c *cale
 		"CalendarName": c.calendarName(occ.CalendarID), "Zone": master.Start.Location().String(), "CurrentRepeat": f.Repeat}
 	if inv := master.Invitation; inv != nil {
 		extra["Invite"] = s.outlookInvite(r, c, master, occ)
+	}
+	if master.Slava {
+		if pg, ok := s.slavaEventPage(r, c.p, extra["CalendarName"].(string), occ); ok {
+			extra["Gen"] = pg
+		}
 	}
 	if master.NameDayContact != "" {
 		if pg, ok := s.nameDayEventPage(r, c.p, master.NameDayContact, extra["CalendarName"].(string), occ); ok {

@@ -185,6 +185,11 @@ func (db *DB) SaveReligiousHolidays(householdID string, in ReligiousInput, calen
 	if change, err = db.syncReligious(tx, householdID, calendarName); err != nil {
 		return change, err
 	}
+	if orthodox != curOrthodox { // the style is shared: the Orthodox name days (ticket 338) follow it too
+		if err := syncBirthdays(tx, householdID, ""); err != nil {
+			return change, err
+		}
+	}
 	return change, tx.Commit()
 }
 

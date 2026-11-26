@@ -148,6 +148,21 @@ func TestMCPStopsAnOpenSessionWhenSwitchedOffOrRevoked(t *testing.T) {
 	}
 }
 
+// ADR 0018 keeps settings out of MCP: the Slava reaches an assistant as a read-only generated event of list_events.
+func TestMCPListEventsMarksTheSlavaAsGenerated(t *testing.T) {
+	t.Parallel()
+	c := newTaskBox(t).parent
+	c.switchMCP(t, true)
+	if status, _, _ := c.call(http.MethodPatch, "/settings", map[string]any{"slava": map[string]any{"on": true, "saint": "nikola"}}); status != http.StatusOK {
+		t.Fatalf("slava on = %d", status)
+	}
+	s := c.mcpSession(t, c.newMCPToken(t, "Kalender lesen", map[string]string{"events": "read"}))
+	out, failed := callTool(s, "list_events", map[string]any{"from": "2026-12-19T00:00:00Z", "to": "2026-12-20T00:00:00Z"})
+	if failed || !strings.Contains(out, "Nikoljdan") || !strings.Contains(out, `"generated":"slava"`) || !strings.Contains(out, `"read_only":true`) {
+		t.Fatalf("list_events = %v %s", failed, out)
+	}
+}
+
 func TestMCPTokenWithEventsReadOnlyCannotCreateAnEvent(t *testing.T) {
 	t.Parallel()
 	c := newTaskBox(t).parent

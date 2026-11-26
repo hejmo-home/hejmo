@@ -54,7 +54,10 @@ func TestBirthdaysPageStartsOffWithoutAChoice(t *testing.T) {
 		`<dl class="facts bd-now">`, `<dt>Namenstage</dt><dd>Aus.</dd>`, `<fieldset class="nd">`, `name="name_days"`,
 		`Aus: nur Geburtstage`, `<p class="grp">Katholisch und evangelisch</p>`, `<p class="grp">Orthodox</p>`,
 		`value="catholic"`, `value="protestant"`, `value="romanian_orthodox"`, `value="greek_orthodox"`, `<button class="button" type="submit">Speichern</button>`)
-	ctHasNot(t, "page", page, ` checked`, `nd-rows`, `nd-names`, `class="ferr"`)
+	ctHasNot(t, "page", page, `nd-rows`, `nd-names`, `class="ferr"`)
+	if regexp.MustCompile(`name="name_day_list"[^>]* checked`).MatchString(page) {
+		t.Error("a church is preselected")
+	}
 	ctHas(t, "English", c.page("/contacts/birthdays", "en").body, "<h1>Birthdays calendar</h1>", "Off: birthdays only", "Greek Orthodox")
 }
 
@@ -78,9 +81,9 @@ func TestSavingNameDaysSaysHowManyHaveOne(t *testing.T) {
 	c.add(t, f)
 	c.add(t, contactForm("Kinderarzt", "", nil, nil))
 	page := nameDaysOn(t, c, "catholic")
-	ctHas(t, "page", page, `Namenstage an, nach den katholischen Namenstagen.`, `<dt>Namenstage</dt><dd>An, nach den katholischen Namenstagen.</dd>`, `name="name_day_list" value="catholic" checked`,
+	ctHas(t, "page", page, `Gespeichert: katholische Namenstage.`, `<dt>Namenstage</dt><dd>An, nach den katholischen Namenstagen.</dd>`, `name="name_day_list" value="catholic" checked`,
 		`<h2 id="fam">Namenstage in eurer Familie</h2>`, `class="list-rows nd-rows"`)
-	m := regexp.MustCompile(`(\d+) von (\d+) Personen und (\d+) weitere Kontakte haben jetzt ihren Namenstag im Kalender`).FindStringSubmatch(page)
+	m := regexp.MustCompile(`(\d+) von (\d+) Personen und (\d+) weitere Kontakte haben ihren Namenstag im Kalender`).FindStringSubmatch(page)
 	if m == nil || m[3] != "1" {
 		t.Errorf("success line = %v\n%s", m, page)
 	}
@@ -113,7 +116,7 @@ func TestChangingTheChurchNamesTheContactsWhoseChoiceWentAway(t *testing.T) {
 		t.Fatalf("choose = %d\n%s", r.status, r.body)
 	}
 	page := nameDaysOn(t, c, "greek_orthodox")
-	ctHas(t, "page", page, "Namenstage jetzt nach den griechisch-orthodoxen Namenstagen.", "stehen wieder am üblichen Tag ihres Namens: Ben.")
+	ctHas(t, "page", page, "Gespeichert: griechisch-orthodoxe Namenstage im neuen Kalender.", "Diese von Hand gewählten Namenstage gibt es hier nicht, sie stehen wieder am üblichen Tag ihres Namens: Ben.")
 	// The same church again changes nothing.
 	page = nameDaysOn(t, c, "greek_orthodox")
 	ctHasNot(t, "page", page, "stehen wieder am üblichen Tag ihres Namens")
@@ -271,8 +274,21 @@ func TestLicencesCreditTheNameDayCalendars(t *testing.T) {
 	t.Parallel()
 	c := newCtBox(t)
 	page := c.page("/settings/licences", "de").body
-	ctHas(t, "licences", page, `data-licence="namedays"`, `<h2>Namenstage</h2>`, "nichts ist von Namenstag-Webseiten kopiert", "Katholisch: Regionalkalender für das deutsche Sprachgebiet",
-		"Evangelisch: Evangelischer Namenkalender", "Rumänisch-orthodox:", "Griechisch-orthodox:", "Patriarhia Română")
+	ctHas(t, "licences", page, `data-licence="namedays"`, `<h2>Namenstage und Slava</h2>`, "nichts ist von Namenstag-Webseiten kopiert", "<li><b>Katholisch</b>", "<span>Regionalkalender für das deutsche Sprachgebiet</span>", "<span>Martyrologium Romanum</span>", "Patriarhia Română",
+		"<li><b>Evangelisch</b><span>Evangelischer Namenkalender</span>", "<li><b>Rumänisch-orthodox</b><span>Kalender der Rumänischen Orthodoxen Kirche</span>", "<li><b>Griechisch-orthodox</b>")
+}
+
+func TestAMartyrologiumEntryNamesItsOwnSourceOnTheEventPageAndTheLicences(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	c.add(t, contactForm("Papa M", "Maurus Maier", nil, nil))
+	nameDaysOn(t, c, "catholic")
+	page := c.page(nameDayEventHref(t, c, "2027-01-15", "Namenstag Papa M (Maurus)"), "de").body
+	ctHas(t, "event page", page, "<dt>Quelle</dt><dd>", "Martyrologium Romanum")
+	ctHasNot(t, "event page", page, "Regionalkalender")
+	// A Regionalkalender entry keeps its own source.
+	ctHas(t, "licences", c.page("/settings/licences", "de").body, "<li><b>Katholisch</b>", "<span>Regionalkalender für das deutsche Sprachgebiet</span>", "<span>Martyrologium Romanum</span>",
+		"Patriarhia Română", "<span>Православный календарь Русской Православной Церкви (Московский патриархат)</span>")
 }
 
 func TestSettingsAPIHasTheNameDaysOffByDefaultAndTakesAChurch(t *testing.T) {

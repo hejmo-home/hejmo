@@ -57,6 +57,11 @@ type Household struct {
 	// (ticket 318). Off by default; the list is kept while name days are off.
 	NameDaysOn  bool
 	NameDayList string
+	// SlavaOn puts the Slava of the household into the calendar Birthdays; Slava is the saint (an id of
+	// nameday.Slavas or nameday.OwnID, "" until one was chosen) and SlavaOwnName and SlavaOwnDay ("MM-DD") the own
+	// Slava. Everything is kept while the Slava is off.
+	SlavaOn                          bool
+	Slava, SlavaOwnName, SlavaOwnDay string
 	// FirstStepsHidden is set when a parent hid the first steps card on the start page.
 	FirstStepsHidden bool
 	// BelowZero says unticking a task may take a star balance below zero (ticket 292); on by default.
@@ -66,7 +71,9 @@ type Household struct {
 	FirstStepsSkipped []string
 	// ReligiousHolidaysOn puts the holidays of the chosen Religions into the generated calendar Religious holidays
 	// (ticket 339). Off by default; the religions are kept while it is off. IslamicCalendar and OrthodoxCalendar
-	// are the two calendar choices. ReligiousLang is the language of the titles of the events.
+	// are the two calendar choices. OrthodoxCalendar is the one calendar style of the household's Orthodox church:
+	// the Orthodox holidays (ticket 339) and the Orthodox name days (ticket 338) both follow it, so changing it
+	// writes both generated calendars again. ReligiousLang is the language of the titles of the events.
 	ReligiousHolidaysOn bool
 	Religions           []rh.Religion
 	IslamicCalendar     rh.IslamicCalendar
@@ -345,7 +352,8 @@ func (db *DB) CreateHousehold(h Household) (Household, error) {
 func (db *DB) Household(id string) (Household, error) {
 	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(home_place_id, 0), COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, date_format, time_format, temperature_unit, auto_update, update_ack,
 		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled, below_zero, name_days_on, COALESCE(name_day_list, ''),
-		religious_holidays_on, religious_holidays, islamic_calendar, orthodox_calendar, religious_holidays_lang
+		religious_holidays_on, religious_holidays, islamic_calendar, orthodox_calendar, religious_holidays_lang,
+		slava_on, COALESCE(slava, ''), slava_own_name, slava_own_day
 		FROM households WHERE id = ?`, id))
 }
 
@@ -353,7 +361,8 @@ func (db *DB) Household(id string) (Household, error) {
 func (db *DB) HomeHousehold() (Household, error) {
 	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(home_place_id, 0), COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, date_format, time_format, temperature_unit, auto_update, update_ack,
 		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled, below_zero, name_days_on, COALESCE(name_day_list, ''),
-		religious_holidays_on, religious_holidays, islamic_calendar, orthodox_calendar, religious_holidays_lang
+		religious_holidays_on, religious_holidays, islamic_calendar, orthodox_calendar, religious_holidays_lang,
+		slava_on, COALESCE(slava, ''), slava_own_name, slava_own_day
 		FROM households ORDER BY created_at, rowid LIMIT 1`))
 }
 
@@ -362,7 +371,8 @@ func (db *DB) scanHousehold(row *sql.Row) (Household, error) {
 	var skipped, religions string
 	err := row.Scan(&h.ID, &h.Name, &h.HomeName, &h.HomePlaceID, &h.Latitude, &h.Longitude, &h.Region, &h.Timezone, &h.DateFormat, &h.TimeFormat, &h.TemperatureUnit, &h.AutoUpdate, &h.UpdateAck,
 		&h.MealCutoffs.Breakfast, &h.MealCutoffs.Lunch, &h.MealCutoffs.Snack, &h.MealCutoffs.Dinner, &h.FirstStepsHidden, &skipped, &h.MCPEnabled, &h.BelowZero, &h.NameDaysOn, &h.NameDayList,
-		&h.ReligiousHolidaysOn, &religions, &h.IslamicCalendar, &h.OrthodoxCalendar, &h.ReligiousLang)
+		&h.ReligiousHolidaysOn, &religions, &h.IslamicCalendar, &h.OrthodoxCalendar, &h.ReligiousLang,
+		&h.SlavaOn, &h.Slava, &h.SlavaOwnName, &h.SlavaOwnDay)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Household{}, ErrNotFound
 	}

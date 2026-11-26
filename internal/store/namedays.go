@@ -31,6 +31,39 @@ func (h Household) NameDayCalendar() (*nameday.Calendar, bool) {
 	return nameday.Get(nameday.List(h.NameDayList))
 }
 
+// NameDayStyle is the calendar style the name days of the household follow: the style it chose while its list is
+// an Orthodox one, else the revised Julian calendar (the Western churches have one calendar).
+func (h Household) NameDayStyle() nameday.Style {
+	if nameday.List(h.NameDayList).Orthodox() && h.OrthodoxCalendar.Valid() {
+		return h.OrthodoxCalendar
+	}
+	return nameday.RevisedJulian
+}
+
+// NameDayStyleApplies reports whether the calendar style matters for the household's list: only the Orthodox lists
+// follow it.
+func (h Household) NameDayStyleApplies() bool { return nameday.List(h.NameDayList).Orthodox() }
+
+// SetOrthodoxCalendar saves the calendar style of the household's Orthodox church (ticket 338; the Orthodox holidays
+// of ticket 339 share it) and writes the name days and the religious holidays again, whose dates follow it. Anything but the two styles is a
+// *FieldError at orthodox_calendar.
+func (db *DB) SetOrthodoxCalendar(householdID string, style nameday.Style, calendarName string) error {
+	_, err := db.SetBirthdays(householdID, BirthdaySettings{Style: &style}, calendarName)
+	return err
+}
+
+func setOrthodoxCalendarTx(tx *sql.Tx, householdID string, style nameday.Style) error {
+	return expectOne(tx.Exec(`UPDATE households SET orthodox_calendar = ?, updated_at = ? WHERE id = ?`, string(style), now(), householdID))
+}
+
+// ValidateOrthodoxCalendar checks a style without writing anything.
+func ValidateOrthodoxCalendar(style nameday.Style) error {
+	if !style.Valid() {
+		return &FieldError{Field: "orthodox_calendar", Msg: "orthodox_calendar: revised_julian or julian"}
+	}
+	return nil
+}
+
 // DroppedNameDay is a contact whose hand-picked name day the new list does not have.
 type DroppedNameDay struct{ ID, Name string }
 
@@ -59,22 +92,20 @@ func ValidateNameDays(on bool, list string) error {
 // them; switching off keeps the church and every choice. The calendar is made
 // when it is missing, and every name-day event is written again.
 func (db *DB) SetNameDays(householdID string, on bool, list, calendarName, word string) (NameDayChange, error) {
+	return db.SetBirthdays(householdID, BirthdaySettings{NameDays: &NameDaySetting{On: on, List: list, Word: word}}, calendarName)
+}
+
+// setNameDaysTx saves the name-day choice; the caller writes the events.
+func setNameDaysTx(tx *sql.Tx, householdID string, in NameDaySetting) (NameDayChange, error) {
 	var change NameDayChange
-	if err := ValidateNameDays(on, list); err != nil {
-		return change, err
-	}
-	tx, err := db.sql.Begin()
-	if err != nil {
-		return change, err
-	}
-	defer tx.Rollback()
 	var curList string
 	if err := tx.QueryRow(`SELECT COALESCE(name_day_list, '') FROM households WHERE id = ?`, householdID).Scan(&curList); errors.Is(err, sql.ErrNoRows) {
 		return change, ErrNotFound
 	} else if err != nil {
 		return change, err
 	}
-	newList := curList
+	newList, list := curList, in.List
+	var err error
 	if list != "" { // switching off leaves the church as it is; a church given while off is kept for later
 		newList = list
 	}
@@ -83,11 +114,78 @@ func (db *DB) SetNameDays(householdID string, on bool, list, calendarName, word 
 			return change, err
 		}
 	}
-	if err := expectOne(tx.Exec(`UPDATE households SET name_days_on = ?, name_day_list = ?, name_day_word = CASE WHEN ? <> '' THEN ? ELSE name_day_word END, updated_at = ? WHERE id = ?`, on, nullString(newList), word, word, now(), householdID)); err != nil {
+	err = expectOne(tx.Exec(`UPDATE households SET name_days_on = ?, name_day_list = ?, name_day_word = CASE WHEN ? <> '' THEN ? ELSE name_day_word END, updated_at = ? WHERE id = ?`, in.On, nullString(newList), in.Word, in.Word, now(), householdID))
+	return change, err
+}
+
+// NameDaySetting is the name-day part of BirthdaySettings (see SetNameDays).
+type NameDaySetting struct {
+	On         bool
+	List, Word string
+}
+
+// BirthdaySettings is what the Birthdays calendar page and the settings API save together: the name days, the
+// calendar style of the Orthodox church and the Slava. A nil part stays as it is.
+type BirthdaySettings struct {
+	NameDays *NameDaySetting
+	Style    *nameday.Style
+	Slava    *SlavaInput
+}
+
+// SetBirthdays validates every part, then saves them in one transaction and writes the Birthdays events once: a
+// failure saves nothing.
+func (db *DB) SetBirthdays(householdID string, in BirthdaySettings, calendarName string) (NameDayChange, error) {
+	var change NameDayChange
+	if in.NameDays != nil {
+		if err := ValidateNameDays(in.NameDays.On, in.NameDays.List); err != nil {
+			return change, err
+		}
+	}
+	if in.Style != nil {
+		if err := ValidateOrthodoxCalendar(*in.Style); err != nil {
+			return change, err
+		}
+	}
+	if in.Slava != nil {
+		if err := ValidateSlava(*in.Slava); err != nil {
+			return change, err
+		}
+	}
+	tx, err := db.sql.Begin()
+	if err != nil {
 		return change, err
+	}
+	defer tx.Rollback()
+	if in.NameDays != nil {
+		if change, err = setNameDaysTx(tx, householdID, *in.NameDays); err != nil {
+			return change, err
+		}
+	}
+	styleChanged := false
+	if in.Style != nil {
+		var cur string
+		if err := tx.QueryRow(`SELECT orthodox_calendar FROM households WHERE id = ?`, householdID).Scan(&cur); errors.Is(err, sql.ErrNoRows) {
+			return change, ErrNotFound
+		} else if err != nil {
+			return change, err
+		}
+		styleChanged = cur != string(*in.Style)
+		if err := setOrthodoxCalendarTx(tx, householdID, *in.Style); err != nil {
+			return change, err
+		}
+	}
+	if in.Slava != nil {
+		if err := setSlavaTx(tx, householdID, *in.Slava); err != nil {
+			return change, err
+		}
 	}
 	if err := syncBirthdays(tx, householdID, calendarName); err != nil {
 		return change, err
+	}
+	if styleChanged { // the style is shared: the Orthodox holidays (ticket 339) follow it too
+		if _, err := db.syncReligious(tx, householdID, ""); err != nil {
+			return change, err
+		}
 	}
 	return change, tx.Commit()
 }
@@ -143,9 +241,13 @@ type nameDay struct {
 // with it.
 func nameDayEvents(tx *sql.Tx, householdID string, loc *time.Location) ([]nameDay, error) {
 	var on bool
-	var list, word string
-	if err := tx.QueryRow(`SELECT name_days_on, COALESCE(name_day_list, ''), name_day_word FROM households WHERE id = ?`, householdID).Scan(&on, &list, &word); err != nil {
+	var list, word, calendar string
+	if err := tx.QueryRow(`SELECT name_days_on, COALESCE(name_day_list, ''), name_day_word, orthodox_calendar FROM households WHERE id = ?`, householdID).Scan(&on, &list, &word, &calendar); err != nil {
 		return nil, err
+	}
+	style := nameday.RevisedJulian
+	if nameday.List(list).Orthodox() {
+		style = nameday.ParseStyle(calendar)
 	}
 	if word == "" {
 		word = "Name day"
@@ -176,13 +278,14 @@ func nameDayEvents(tx *sql.Tx, householdID string, loc *time.Location) ([]nameDa
 		}
 		title := nameday.Title(word, hejmo, res.Entry.Name)
 		if res.Entry.Yearly() {
-			m, d := res.Entry.On(thisYear).Date.Month(), res.Entry.On(thisYear).Date.Day()
+			o := res.Entry.OnStyle(thisYear, style)
+			m, d := o.Date.Month(), o.Date.Day()
 			start := time.Date(2000, m, d, 0, 0, 0, 0, loc) // the series starts in a leap year, so 29 February is possible
 			out = append(out, nameDay{id: nameday.EventID(id, 0), contactID: id, title: title, rrule: "FREQ=YEARLY", start: start})
 			continue
 		}
 		for y := thisYear - nameDayYearsBack; y <= thisYear+nameDayYearsAhead; y++ {
-			date := res.Entry.On(y).Date
+			date := res.Entry.OnStyle(y, style).Date
 			out = append(out, nameDay{id: nameday.EventID(id, y), contactID: id, title: title, start: time.Date(y, date.Month(), date.Day(), 0, 0, 0, 0, loc)})
 		}
 	}
